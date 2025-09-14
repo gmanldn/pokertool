@@ -1,0 +1,25 @@
+# Poker Assistant - Python Requirements
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# Screen scraping and computer vision
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0
+pytesseract>=0.3.10
+mss>=9.0.0
+
+# Testing and development
+pytest>=7.0.0
+pytest-cov>=4.0.0
+psutil>=5.9.0
+
+# Performance monitoring
+coverage>=7.0.0
+
+# Platform-specific (uncomment as needed)
+# pywin32>=306  # Windows only
+# pyobjc-framework-Quartz>=9.0  # macOS only
+# python-xlib>=0.33  # Linux only
