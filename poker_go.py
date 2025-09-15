@@ -1,208 +1,242 @@
 #!/usr/bin/env python3
 """
-Poker Assistant Setup Script
-Fixes all common issues and launches the application
+poker_go.py — zero-prompt launcher for gmanldn/pokertool.
+
+Goals
+- Run from the repo folder without modifying files.
+- Auto-answer any input() prompts during setup ("y" / proceed).
+- Prefer GUI; fall back to CLI if tkinter or GUI import fails.
+- Keep sys.path sane so local modules beat any site-packages shadows.
+- Provide clear exit codes.
+
+Usage
+  python3 poker_go.py                 # normal, prefer GUI
+  python3 poker_go.py --cli           # force CLI
+  python3 poker_go.py --no-init       # skip database/init step
+  python3 poker_go.py --selftest      # quick import/run checks
+
+Only stdlib used.
 """
 
+from __future__ import annotations
+
+import argparse
+import builtins
+import contextlib
+import importlib
 import os
+import runpy
 import sys
-import subprocess
-import traceback
+import threading
+import time
 from pathlib import Path
-import os as _os
-if _os.environ.get('POKER_AUTOCONFIRM','1') in {'1','true','True'}:
-    import builtins as _bi
-    _bi.input = lambda *a, **k: 'y'
+from types import ModuleType
+from typing import Callable, Optional
 
-def check_python_version():
-    """Check if Python version is adequate."""
-    if sys.version_info < (3, 7):
-        print("❌ Python 3.7 or higher is required.")
-        print(f"Current version: {sys.version}")
-        return False
-    print(f"✅ Python version: {sys.version}")
-    return True
 
-def install_dependencies():
-    """Install required packages."""
-    print("\n🔧 Checking dependencies...")
-    
-    # Check tkinter (usually built-in)
-    try:
-        import tkinter
-        print("✅ tkinter is available")
-    except ImportError:
-        print("❌ tkinter is not available. Please install python3-tkinter")
-        print("On Ubuntu/Debian: sudo apt-get install python3-tkinter")
-        print("On macOS: tkinter should be included with Python")
-        return False
-    
-    return True
+REPO_ROOT = Path(__file__).resolve().parent
 
-def check_files():
-    """Check if all required files exist."""
-    print("\n📁 Checking files...")
-    
-    required_files = [
-        'poker_modules.py',
-        'poker_init.py',
-        'poker_gui.py',
-        'poker_main.py'
-    ]
-    
-    missing_files = []
-    for file in required_files:
-        if Path(file).exists():
-            print(f"✅ {file}")
-        else:
-            print(f"❌ {file} - MISSING")
-            missing_files.append(file)
-    
-    if missing_files:
-        print(f"\n❌ Missing files: {', '.join(missing_files)}")
-        print("Please ensure all poker files are in the same directory.")
-        return False
-    
-    return True
 
-def test_imports():
-    """Test if modules can be imported."""
-    print("\n🧪 Testing imports...")
-    
-    # Add current directory to path
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    if current_dir not in sys.path:
-        sys.path.insert(0, current_dir)
-    
-    try:
-        from poker_modules import Card, Suit, Position, analyse_hand
-        print("✅ poker_modules imports successfully")
-    except ImportError as e:
-        print(f"⚠️  poker_modules import warning: {e}")
-        print("Application will run with limited functionality")
-    
-    try:
-        from poker_init import initialise_db_if_needed
-        print("✅ poker_init imports successfully")
-    except ImportError as e:
-        print(f"⚠️  poker_init import warning: {e}")
-    
-    try:
-        from poker_gui import PokerAssistantGUI
-        print("✅ poker_gui imports successfully")
-        return True
-    except ImportError as e:
-        print(f"❌ poker_gui import failed: {e}")
-        return False
+def _put_repo_first_on_syspath() -> None:
+    # Ensure the repo root is first so local modules win.
+    repo = str(REPO_ROOT)
+    if sys.path[0] != repo:
+        if repo in sys.path:
+            sys.path.remove(repo)
+        sys.path.insert(0, repo)
 
-def create_config():
-    """Create configuration file if needed."""
-    config_file = Path("poker_config.json")
-    if not config_file.exists():
-        print("\n📝 Creating configuration file...")
-        import json
-        
-        config = {
-            "version": "1.0",
-            "database": {
-                "enabled": True,
-                "file": "poker_decisions.db"
-            },
-            "gui": {
-                "theme": "dark",
-                "window_size": "1000x700"
-            },
-            "analysis": {
-                "auto_save": True,
-                "show_statistics": True
-            }
-        }
-        
+
+@contextlib.contextmanager
+def _auto_confirm_inputs(answer: str = "y"):
+    """
+    Temporarily monkey-patch builtins.input to auto-confirm.
+
+    Any call like input("Continue? y/n: ") will receive `answer`.
+    """
+    original_input = builtins.input
+
+    def _fake_input(prompt: str = "") -> str:
+        # Print prompt to stay transparent, then auto-answer.
         try:
-            with open(config_file, 'w') as f:
-                json.dump(config, f, indent=2)
-            print("✅ Configuration file created")
-        except Exception as e:
-            print(f"⚠️  Could not create config file: {e}")
+            sys.stdout.write(str(prompt))
+            sys.stdout.flush()
+        except Exception:
+            pass
+        return answer
 
-def launch_application():
-    """Launch the poker assistant."""
-    print("\n🚀 Launching Poker Assistant...")
-    
+    builtins.input = _fake_input
     try:
-        # Change to script directory
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        os.chdir(script_dir)
-        
-        # Add to Python path
-        if script_dir not in sys.path:
-            sys.path.insert(0, script_dir)
-        
-        # Import and launch
-        from poker_gui import PokerAssistantGUI
-        
-        print("✅ Starting GUI...")
-        app = PokerAssistantGUI()
-        app.mainloop()
-        
-    except KeyboardInterrupt:
-        print("\n⚠️  Application interrupted by user")
-    except Exception as e:
-        print(f"\n❌ Failed to launch application: {e}")
-        traceback.print_exc()
-        return False
-    
-    return True
+        yield
+    finally:
+        builtins.input = original_input
 
-def main():
-    """Main setup and launch function."""
-    print("=" * 60)
-    print("       ♠♥ POKER ASSISTANT SETUP & LAUNCH ♦♣")
-    print("=" * 60)
-    
-    # Step 1: Check Python version
-    if not check_python_version():
+
+def _module_exists(name: str) -> bool:
+    try:
+        importlib.util.find_spec(name)
+        return True
+    except Exception:
         return False
-    
-    # Step 2: Install dependencies
-    if not install_dependencies():
+
+
+def _try_import(name: str) -> Optional[ModuleType]:
+    try:
+        return importlib.import_module(name)
+    except Exception:
+        return None
+
+
+def _tk_available() -> bool:
+    try:
+        import tkinter  # noqa: F401
+        return True
+    except Exception:
         return False
-    
-    # Step 3: Check files
-    if not check_files():
-        return False
-    
-    # Step 4: Test imports
-    if not test_imports():
-        print("\n⚠️  Some imports failed, but attempting to continue...")
-    
-    # Step 5: Create config
-    create_config()
-    
-    # Step 6: Launch application
-    print("\n" + "=" * 60)
-    success = launch_application()
-    
-    if success:
-        print("\n✅ Application closed successfully")
-    else:
-        print("\n❌ Application encountered errors")
-        print("\nTroubleshooting:")
-        print("1. Ensure all .py files are in the same directory")
-        print("2. Check that Python 3.7+ is installed")
-        print("3. Verify tkinter is available")
-        print("4. Try running: python3 poker_main.py")
-    
-    print("=" * 60)
-    return success
+
+
+def _run_module_as_main(mod_name: str) -> int:
+    """
+    Execute a module as if run via `python -m <mod>`.
+    Returns 0 on success, nonzero on error.
+    """
+    try:
+        runpy.run_module(mod_name, run_name="__main__")
+        return 0
+    except SystemExit as e:
+        # Allow modules that call sys.exit(code).
+        try:
+            code = int(e.code) if e.code is not None else 0
+        except Exception:
+            code = 1
+        return code
+    except Exception as e:
+        print(f"[poker_go] Error running module '{mod_name}': {e}", file=sys.stderr)
+        return 1
+
+
+def _run_with_timeout(fn: Callable[[], int], timeout_sec: float) -> int:
+    """
+    Run a callable that returns an int status, with a timeout.
+    If timeout elapses, returns 124 (like GNU timeout).
+    """
+    result_holder = {"code": 124}
+
+    def _target():
+        try:
+            result_holder["code"] = fn()
+        except Exception:
+            result_holder["code"] = 1
+
+    t = threading.Thread(target=_target, daemon=True)
+    t.start()
+    t.join(timeout=timeout_sec)
+    return result_holder["code"]
+
+
+def initialize(no_init: bool) -> int:
+    """
+    Run initialization steps in a non-interactive way.
+    Returns 0 on success or if skipped, nonzero on hard failure.
+    """
+    if no_init:
+        return 0
+
+    # Export an env flag some scripts may honor for non-interactive runs.
+    os.environ.setdefault("POKERTOOL_AUTOCONFIRM", "1")
+    os.environ.setdefault("PT_AUTOCONFIRM", "1")
+
+    # If an autoconfirm helper exists, import it first (safe no-op if unused).
+    if _module_exists("autoconfirm"):
+        _try_import("autoconfirm")
+
+    # If an explicit init module exists, run it with auto-confirm.
+    if _module_exists("poker_init"):
+        def _run_init() -> int:
+            with _auto_confirm_inputs("y"):
+                return _run_module_as_main("poker_init")
+
+        # Guard against hanging prompts with a hard timeout.
+        # If your init is slow but legit, bump this.
+        return _run_with_timeout(_run_init, timeout_sec=30.0)
+
+    # If there is no dedicated init, treat as success.
+    return 0
+
+
+def launch(prefer_cli: bool) -> int:
+    """
+    Launch the application. Prefer GUI unless --cli or no tkinter.
+    Fallback order:
+      GUI path: poker_gui -> poker_main
+      CLI path: poker_main
+    """
+    # Force local imports
+    _put_repo_first_on_syspath()
+
+    if not prefer_cli and _tk_available() and _module_exists("poker_gui"):
+        # Try GUI first
+        code = _run_module_as_main("poker_gui")
+        if code == 0:
+            return 0
+        print("[poker_go] GUI failed, falling back to CLI...", file=sys.stderr)
+
+    # CLI fallback
+    if _module_exists("poker_main"):
+        return _run_module_as_main("poker_main")
+
+    # As a last resort, try the GUI even if tkinter check failed previously
+    # in case the GUI has a CLI shim.
+    if _module_exists("poker_gui"):
+        return _run_module_as_main("poker_gui")
+
+    print("[poker_go] Neither poker_main.py nor poker_gui.py is available.", file=sys.stderr)
+    return 127
+
+
+def selftest() -> int:
+    """
+    Quick sanity checks: imports and dry-run init.
+    Returns 0 if things look workable.
+    """
+    _put_repo_first_on_syspath()
+    ok = True
+
+    for mod in ("poker_modules", "poker_main", "poker_gui", "poker_init"):
+        exists = _module_exists(mod)
+        print(f"[selftest] {mod:13s} : {'found' if exists else 'missing'}")
+        ok &= exists or (mod in ("poker_gui", "poker_init"))  # GUI/init may be optional
+
+    # Try a fast non-interactive init if present
+    init_code = initialize(no_init=False)
+    print(f"[selftest] init exit code: {init_code}")
+    ok &= (init_code in (0, 2))  # allow benign nonzero if script uses special codes
+
+    # Do not actually launch GUI here.
+    return 0 if ok else 1
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    p = argparse.ArgumentParser(add_help=True)
+    p.add_argument("--cli", action="store_true", help="force CLI mode (skip GUI)")
+    p.add_argument("--no-init", action="store_true", help="skip initialization step")
+    p.add_argument("--selftest", action="store_true", help="run quick checks and exit")
+    return p.parse_args(argv)
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    _put_repo_first_on_syspath()
+
+    if args.selftest:
+        return selftest()
+
+    init_code = initialize(no_init=args.no_init)
+    if init_code not in (0, 2):
+        # Non-fatal: proceed anyway but report.
+        print(f"[poker_go] init returned {init_code}, continuing...", file=sys.stderr)
+
+    return launch(prefer_cli=args.cli)
+
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\n⚠️  Setup interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
-        traceback.print_exc()
-        sys.exit(1)
+    sys.exit(main())
