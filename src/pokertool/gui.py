@@ -1,628 +1,75 @@
-#!/usr/bin/env python3
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: poker_gui.py
-# version: '20'
-# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
-# applied_improvements: [Improvement1.py]
-# summary: Main graphical user interface
-# ---
-# POKERTOOL-HEADER-END
-__version__ = "20"
-
-
-"""
-Simplified Poker GUI - Fixed for compatibility
-"""
-
+from __future__ import annotations
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
-import json
-import os
-import threading
-import time
-from datetime import datetime
-from typing import List, Optional, Dict, Any, Tuple
-from collections import deque, defaultdict
+from tkinter import messagebox
 
-# Fixed imports with proper error handling
-try:
-    passtry:
-    passtry:
-    passtry:
-    passtry:
-    from poker_modules import analyse_hand, parse_card, Position, Card
-except Exception as e:
-    class Position:
-        LATE=None; EARLY=None; MIDDLE=None; BLINDS=None
-    class Card: ...
-    def parse_card(s):
-        raise ValueError(f"Core unavailable: {e}")
-    def analyse_hand(*a, **k):
-        return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
-except Exception as e:
-    class Position:
-        LATE=None; EARLY=None; MIDDLE=None; BLINDS=None
-    class Card: ...
-    def parse_card(s):
-        raise ValueError(f"Core unavailable: {e}")
-    def analyse_hand(*a, **k):
-        return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
-except Exception as e:
-    class Position:
-        LATE=None; EARLY=None; MIDDLE=None; BLINDS=None
-    class Card: ...
-    def parse_card(s):
-        raise ValueError(f"Core unavailable: {e}")
-    def analyse_hand(*a, **k):
-        return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
-except Exception as e:
-    class Position:
-        LATE=None; EARLY=None; MIDDLE=None; BLINDS=None
-    class Card: ...
-    def parse_card(s):
-        raise ValueError(f"Core unavailable: {e}")
-    def analyse_hand(*a, **k):
-        return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
-        Card, Suit, Position, analyse_hand, get_hand_tier,
-        to_two_card_str, RANK_ORDER, GameState
-    
-    MODULES_LOADED = True
-except ImportError as e:
-    print(f"Warning: Could not import all poker_modules: {e}")
-    MODULES_LOADED = False
-    
-    # Minimal fallbacks
-    from collections import namedtuple
-    from enum import Enum
-    
-    Card = namedtuple('Card', 'rank suit')
-    RANK_ORDER = "23456789TJQKA"
-    
-    class Suit(Enum):
-        HEARTS = '♥'
-        DIAMONDS = '♦'
-        CLUBS = '♣'
-        SPADES = '♠'
-        H = '♥'
-        D = '♦'
-        C = '♣'
-        S = '♠'
-    
-    class Position(Enum):
-        UNDER_THE_GUN = 'UTG'
-        BUTTON = 'BTN'
-        SMALL_BLIND = 'SB'
-        BIG_BLIND = 'BB'
-        CUTOFF = 'CO'
-    
-    class GameState:
-        def __init__(self):
-            self.position = Position.UNDER_THE_GUN
-            self.stack_bb = 100
-            self.pot = 0.0
-            self.to_call = 0.0
-            self.board = []
-    
-    def to_two_card_str(cards):
-        if len(cards) != 2:
-            return "Invalid"
-        return f"{cards[0].rank}{cards[0].suit}{cards[1].rank}{cards[1].suit}"
-    
-    def get_hand_tier(cards):
-        return "Unknown"
-    
-    def analyse_hand(cards, board_cards=None, game_state=None):
-        class MockResult:
-            def __init__(self):
-                self.decision = "FOLD"
-                self.spr = 0.0
-                self.board_texture = "Unknown"
-        return MockResult()
-
-try:
-    from poker_init import open_db, initialise_db_if_needed
-    DB_AVAILABLE = True
-except ImportError:
-    print("Warning: Database functionality not available")
-    DB_AVAILABLE = False
-    
-    def open_db():
-        return None
-    
-    def initialise_db_if_needed():
-        pass
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENHANCED CARD INPUT WIDGET
-# ═══════════════════════════════════════════════════════════════════════════════
-
-class EnhancedCardEntry(ttk.Entry):
-    """Enhanced card entry with validation."""
-    
-    def __init__(self, parent, callback=None, **kwargs):
-        super().__init__(parent, width=5, justify='center', **kwargs)
-        self.callback = callback
-        
-        # Bind events
-        self.bind('<KeyRelease>', self._on_key_release)
-        self.bind('<FocusOut>', self._on_focus_out)
-        
-        # Configure validation
-        vcmd = (self.register(self._validate_input), '%P')
-        self.configure(validate='key', validatecommand=vcmd)
-    
-    def _validate_input(self, value: str) -> bool:
-        """Validate card input in real-time."""
-        value = value.upper()
-        
-        if not value:
-            return True
-        
-        if len(value) == 1:
-            return value in RANK_ORDER
-        
-        if len(value) == 2:
-            rank, suit_char = value[0], value[1]
-            return rank in RANK_ORDER and suit_char in 'SHDC'
-        
-        return len(value) <= 2
-    
-    def _on_key_release(self, event):
-        """Handle key release for validation."""
-        current_value = self.get().upper()
-        
-        if len(current_value) == 2:
-            if self._is_valid_card(current_value):
-                self._highlight_valid()
-                if self.callback:
-                    self.callback()
-            else:
-                self._highlight_invalid()
-        else:
-            self._clear_highlighting()
-    
-    def _on_focus_out(self, event):
-        """Handle focus out event."""
-        self._clear_highlighting()
-    
-    def _is_valid_card(self, card_str: str) -> bool:
-        """Check if card string is valid."""
-        if len(card_str) != 2:
-            return False
-        rank, suit = card_str[0], card_str[1]
-        return rank in RANK_ORDER and suit in 'SHDC'
-    
-    def _highlight_valid(self):
-        """Highlight valid input."""
-        self.configure(style='Valid.TEntry')
-    
-    def _highlight_invalid(self):
-        """Highlight invalid input."""
-        self.configure(style='Invalid.TEntry')
-    
-    def _clear_highlighting(self):
-        """Clear input highlighting."""
-        self.configure(style='TEntry')
-    
-    def get_card(self) -> Optional[Card]:
-        """Get Card object from input."""
-        card_str = self.get().upper()
-        if self._is_valid_card(card_str):
-            try:
-                rank, suit_char = card_str[0], card_str[1]
-                suit_map = {'S': Suit.SPADES, 'H': Suit.HEARTS, 'D': Suit.DIAMONDS, 'C': Suit.CLUBS}
-                suit = suit_map.get(suit_char)
-                if suit:
-                    return Card(rank, suit)
-            except (KeyError, ValueError):
-                return None
-        return None
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# MAIN APPLICATION
-# ═══════════════════════════════════════════════════════════════════════════════
-
-class PokerAssistantGUI(tk.Tk):
-    """Simplified Poker Assistant GUI."""
-    
-    def __init__(self):
-        super().__init__()
-
-        # Basic window setup
-        self.title("♠♥ Poker Assistant ♦♣")
-        self.geometry("1000x700")
-        self.minsize(800, 500)
-
-        # Internal state
-        self.cards: List[Card] = []
-        self.board_cards: List[Card] = []
-        self.game_state = GameState()
-        self.conn = None
-        self.cursor = None
-        
-        # Initialize database
-        self.init_database()
-        
-        # Setup UI
-        self.setup_styles()
-        self.build_gui()
-        self.bind_events()
-
-    def init_database(self):
-        """Initialize the database connection."""
-        if not DB_AVAILABLE:
-            return
-        
-        try:
-            initialise_db_if_needed()
-            self.conn = open_db()
-            if self.conn:
-                self.cursor = self.conn.cursor()
-        except Exception as e:
-            print(f"Database initialization warning: {e}")
-            self.conn = None
-            self.cursor = None
-
-    def setup_styles(self):
-        """Configure modern UI styles."""
-        style = ttk.Style()
-        
-        try:
-            style.theme_use('clam')
-        except:
-            style.theme_use('default')
-
-        # Configure colors
-        self.colors = {
-            'bg': '#2d2d2d',
-            'fg': '#e0e0e0',
-            'accent': '#4a90e2',
-            'highlight': '#3e3e3e',
-            'success': '#4caf50',
-            'error': '#f44336'
-        }
-
-        self.configure(bg=self.colors['bg'])
-
-        style.configure('TLabel', background=self.colors['bg'], foreground=self.colors['fg'])
-        style.configure('TButton', background=self.colors['accent'])
-        style.configure('TEntry', fieldbackground=self.colors['highlight'], foreground=self.colors['fg'])
-        style.configure('TFrame', background=self.colors['bg'])
-        
-        # Special styles for validation
-        style.configure('Valid.TEntry', fieldbackground='#c8e6c9')
-        style.configure('Invalid.TEntry', fieldbackground='#ffcdd2')
-
-    def build_gui(self):
-        """Create and lay out widgets."""
-        main_frame = ttk.Frame(self, padding="15")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(0, weight=1)
-
-        # Left panel - Input controls
-        self.build_input_panel(main_frame)
-
-        # Center panel - Analysis output  
-        self.build_output_panel(main_frame)
-
-        # Bottom panel - Action buttons
-        self.build_action_panel(main_frame)
-
-    def build_input_panel(self, parent):
-        """Build the input controls panel."""
-        input_frame = ttk.LabelFrame(parent, text="🎯 Game Input", padding="15")
-        input_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
-
-        row = 0
-
-        # Title
-        title_text = "♠♥ Poker Assistant ♦♣"
-        if MODULES_LOADED:
-            title_text += " ✓"
-        else:
-            title_text += " (Limited Mode)"
-        
-        title_label = ttk.Label(input_frame, text=title_text, font=('Arial', 16, 'bold'))
-        title_label.grid(row=row, column=0, columnspan=4, pady=(0, 10))
-        row += 1
-
-        # Hand Cards section
-        hand_label = ttk.Label(input_frame, text="Your Hand (2 cards):")
-        hand_label.grid(row=row, column=0, sticky=tk.W, columnspan=2)
-        row += 1
-
-        self.hand_entries: List[EnhancedCardEntry] = []
-        hand_frame = ttk.Frame(input_frame)
-        hand_frame.grid(row=row, column=0, columnspan=4, pady=(0, 5))
-        
-        for c in range(2):
-            entry = EnhancedCardEntry(hand_frame, callback=self._on_input_change)
-            entry.grid(row=0, column=c, padx=2)
-            self.hand_entries.append(entry)
-        
-        # Quick hand buttons
-        quick_frame = ttk.Frame(hand_frame)
-        quick_frame.grid(row=1, column=0, columnspan=2, pady=(5, 0))
-        
-        quick_hands = [("AA", ["AS", "AH"]), ("KK", ["KS", "KH"]), ("AK", ["AS", "KH"])]
-        for i, (label, hand) in enumerate(quick_hands):
-            btn = ttk.Button(quick_frame, text=label, width=6,
-                           command=lambda h=hand: self._set_quick_hand(h)
-            btn.grid(row=0, column=i, padx=1)
-
-        row += 1
-
-        # Board Cards section
-        board_label = ttk.Label(input_frame, text="Board (0-5 cards):")
-        board_label.grid(row=row, column=0, sticky=tk.W, columnspan=2)
-        row += 1
-
-        self.board_entries: List[ttk.Entry] = []
-        board_frame = ttk.Frame(input_frame)
-        board_frame.grid(row=row, column=0, columnspan=4, pady=(0, 5))
-        
-        for c in range(5):
-            entry = ttk.Entry(board_frame, width=5, justify='center')
-            entry.grid(row=0, column=c, padx=2)
-            self.board_entries.append(entry)
-
-        row += 1
-
-        # Position selector
-        ttk.Label(input_frame, text="Position:").grid(row=row, column=0, sticky=tk.W)
-        self.position_var = tk.StringVar(value=Position.UNDER_THE_GUN.name)
-        pos_combo = ttk.Combobox(
-            input_frame,
-            textvariable=self.position_var,
-            values=[p.name for p in Position],
-            state="readonly",
-            width=12
-        
-        pos_combo.grid(row=row, column=1, sticky=tk.W, padx=(5, 0))
-        row += 1
-
-        # Stack size in BB
-        ttk.Label(input_frame, text="Stack (BB):").grid(row=row, column=0, sticky=tk.W)
-        self.stack_var = tk.StringVar(value="100")
-        stack_entry = ttk.Entry(input_frame, textvariable=self.stack_var, width=8)
-        stack_entry.grid(row=row, column=1, sticky=tk.W, padx=(5, 0))
-        row += 1
-
-        # Pot size
-        ttk.Label(input_frame, text="Pot Size:").grid(row=row, column=0, sticky=tk.W)
-        self.pot_var = tk.StringVar(value="0")
-        pot_entry = ttk.Entry(input_frame, textvariable=self.pot_var, width=8)
-        pot_entry.grid(row=row, column=1, sticky=tk.W, padx=(5, 0))
-        row += 1
-
-        # Amount to call
-        ttk.Label(input_frame, text="To Call:").grid(row=row, column=0, sticky=tk.W)
-        self.call_var = tk.StringVar(value="0")
-        call_entry = ttk.Entry(input_frame, textvariable=self.call_var, width=8)
-        call_entry.grid(row=row, column=1, sticky=tk.W, padx=(5, 0))
-        row += 1
-
-        # Analyse button
-        analyse_btn = ttk.Button(input_frame, text="Analyse Hand", command=self.on_analyse)
-        analyse_btn.grid(row=row, column=0, columnspan=2, pady=(15, 0), sticky=tk.EW)
-
-    def build_output_panel(self, parent):
-        """Result/analysis text panel."""
-        output_frame = ttk.LabelFrame(parent, text="Analysis Output", padding="15")
-        output_frame.grid(row=0, column=1, sticky=(tk.N, tk.S, tk.E, tk.W))
-        output_frame.rowconfigure(0, weight=1)
-        output_frame.columnconfigure(0, weight=1)
-
-        self.output_text = scrolledtext.ScrolledText(
-            output_frame,
-            wrap=tk.WORD,
-            height=30,
-            width=50,
-            bg='#1a1a1a',
-            fg='#e0e0e0',
-            insertbackground='#e0e0e0',
-            font=('Consolas', 10)
-        
-        self.output_text.grid(row=0, column=0, sticky=tk.NSEW)
-
-    def build_action_panel(self, parent):
-        """Buttons along the bottom."""
-        action_frame = ttk.Frame(parent)
-        action_frame.grid(row=1, column=0, columnspan=2, pady=(10, 0), sticky=tk.EW)
-        action_frame.columnconfigure(0, weight=1)
-        action_frame.columnconfigure(1, weight=1)
-
-        clear_btn = ttk.Button(action_frame, text="Clear All", command=self.clear_all)
-        quit_btn = ttk.Button(action_frame, text="Quit", command=self.quit)
-
-        clear_btn.grid(row=0, column=0, sticky=tk.EW, padx=(0, 5))
-        quit_btn.grid(row=0, column=1, sticky=tk.EW, padx=(5, 0))
-
-    def bind_events(self):
-        """Bind keyboard events."""
-        self.bind("<Return>", lambda *_: self.on_analyse())
-        self.bind("<Control-q>", lambda *_: self.quit())
-
-    def _on_input_change(self):
-        """Called when input changes."""
-        pass  # Can be used for auto-analysis later
-
-    def _set_quick_hand(self, hand_cards):
-        """Set a quick hand."""
-        for i, card_str in enumerate(hand_cards):
-            if i < len(self.hand_entries):
-                self.hand_entries[i].delete(0, tk.END)
-                self.hand_entries[i].insert(0, card_str)
-
-    def clear_all(self):
-        """Reset every input + output field."""
-        for e in self.hand_entries + self.board_entries:
-            e.delete(0, tk.END)
-
-        self.position_var.set(Position.UNDER_THE_GUN.name)
-        self.stack_var.set("100")
-        self.pot_var.set("0")
-        self.call_var.set("0")
-
-        self.output_text.delete("1.0", tk.END)
-
-    def on_analyse(self):
-        """Run analysis then display + log result."""
-        try:
-            # Parse cards
-            self.cards = self._parse_card_entries(self.hand_entries, expected=2)
-            self.board_cards = self._parse_card_entries(self.board_entries, max_cards=5)
-
-            # Update game state
-            self.game_state.position = Position[self.position_var.get()]
-            self.game_state.stack_bb = int(self.stack_var.get() or 100)
-            self.game_state.pot = float(self.pot_var.get() or 0)
-            self.game_state.to_call = float(self.call_var.get() or 0)
-            self.game_state.board = self.board_cards
-
-            # Analyse
-            if MODULES_LOADED:
-                analysis = analyse_hand(self.cards, self.board_cards, self.game_state)
-                tier = get_hand_tier(self.cards)
-            else:
-                # Fallback analysis
-                analysis = self._fallback_analysis()
-                tier = "Unknown"
-
-            # Display
-            self._display_analysis(analysis, tier)
-
-            # Persist to database if available
-            if DB_AVAILABLE and self.cursor:
-                self._save_to_db(analysis, tier)
-
-        except ValueError as ve:
-            messagebox.showerror("Input Error", str(ve))
-        except Exception as e:
-            messagebox.showerror("Error", f"Analysis error: {e}")
-            import traceback
-            traceback.print_exc()
-
-    def _fallback_analysis(self):
-        """Fallback analysis when modules aren't loaded."""
-        class FallbackAnalysis:
-            def __init__(self):
-                self.decision = "CHECK/CALL"
-                self.spr = 10.0
-                self.board_texture = "Unknown"
-        
-        return FallbackAnalysis()
-
-    def _parse_card_entries(self, entries: List[tk.Entry], expected: int = None,
-                            max_cards: int = None) -> List[Card]:
-        """Parse card notation from entry widgets."""
-        cards: List[Card] = []
-        for entry in entries:
-            text = entry.get().strip().upper()
-            if not text:
-                continue
-            if not self._is_valid_card(text):
-                raise ValueError(f"Invalid card: '{text}'")
-            
-            rank, suit_char = text[0], text[1]
-            suit_map = {'S': Suit.SPADES, 'H': Suit.HEARTS, 'D': Suit.DIAMONDS, 'C': Suit.CLUBS}
-            suit = suit_map.get(suit_char)
-            if not suit:
-                raise ValueError(f"Invalid suit: '{suit_char}'")
-            
-            cards.append(Card(rank, suit))
-            
-        if expected is not None and len(cards) != expected:
-            raise ValueError(f"Expected {expected} cards but got {len(cards)}")
-        if max_cards is not None and len(cards) > max_cards:
-            raise ValueError(f"Maximum {max_cards} board cards allowed")
-        return cards
-
-    @staticmethod
-    def _is_valid_card(card_str: str) -> bool:
-        """Check syntax like 'AS', 'TD', '9H'."""
-        return (
-            len(card_str) == 2
-            and card_str[0] in RANK_ORDER
-            and card_str[1] in 'SHDC'
-        
-
-    def _display_analysis(self, analysis, tier: str):
-        """Pretty-print analysis to the output pane."""
-        self.output_text.delete("1.0", tk.END)
-        out = self.output_text
-
-        out.insert(tk.END, f"=== Hand Analysis ({datetime.now():%H:%M:%S}) ===\n\n")
-        
-        if MODULES_LOADED:
-            out.insert(tk.END, f"Your Hand: {to_two_card_str(self.cards)} (Tier {tier})\n")
-        else:
-            hand_str = " ".join([f"{c.rank}{c.suit}" for c in self.cards])
-            out.insert(tk.END, f"Your Hand: {hand_str} (Tier {tier})\n")
-            
-        if self.board_cards:
-            board_str = ", ".join(f"{c.rank}{c.suit}" for c in self.board_cards)
-            out.insert(tk.END, f"Board: {board_str}\n")
-            
-        out.insert(tk.END, f"Position: {self.game_state.position.name}\n")
-        out.insert(tk.END, f"Stack: {self.game_state.stack_bb} BB\n")
-        out.insert(tk.END, f"Pot: {self.game_state.pot}\n")
-        out.insert(tk.END, f"To Call: {self.game_state.to_call}\n\n")
-
-        out.insert(tk.END, f"Decision: {analysis.decision}\n")
-        out.insert(tk.END, f"SPR: {analysis.spr:.2f}\n")
-        out.insert(tk.END, f"Board texture: {analysis.board_texture}\n\n")
-        
-        if not MODULES_LOADED:
-            out.insert(tk.END, "Note: Running in limited mode. Install full poker_modules for advanced analysis.\n")
-
-    def _save_to_db(self, analysis, tier: str):
-        """Insert the decision into SQLite DB."""
-        if not self.cursor:
-            return
-        try:
-            board_str = ','.join(f"{c.rank}{c.suit}" for c in self.board_cards)
-            self.cursor.execute(
-                """
-                INSERT INTO decisions
-                    (position, hand_tier, stack_bb, pot, to_call, board,
-                     decision, spr, board_texture, hand
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    self.game_state.position.name,
-                    tier,
-                    self.game_state.stack_bb,
-                    self.game_state.pot,
-                    self.game_state.to_call,
-                    board_str,
-                    analysis.decision,
-                    analysis.spr,
-                    analysis.board_texture,
-                    board_str,
-                ),
-            
-            self.conn.commit()
-        except Exception as e:
-            print(f"DB Warning: Could not save hand: {e}")
-
-    def __del__(self):
-        """Clean up database connection."""
-        if hasattr(self, 'conn') and self.conn:
-            self.conn.close()
-
-# ──────────────────────────────────────────────────────
-#  Main
-# ──────────────────────────────────────────────────────
-if __name__ == "__main__":
+def _safe_analyse(hand: str, board: str | None) -> str:
     try:
-        app = PokerAssistantGUI()
-        app.mainloop()
+        from pokertool.core import analyse_hand  # type: ignore
+    except Exception:
+        # Fallback if core isn't ready yet
+        return f"[stub] analysed hand={hand!r} board={board!r}"
+    try:
+        result = analyse_hand(hand, board)  # your real function if present
     except Exception as e:
-        print(f"Failed to start application: {e}")
-        import traceback
-        traceback.print_exc()
+        return f"[error] {e}"
+    return str(result)
+
+def _on_analyse(hand_var: tk.StringVar, board_var: tk.StringVar, output: tk.Text) -> None:
+    hand = hand_var.get().strip()
+    board = board_var.get().strip() or None
+    try:
+        res = _safe_analyse(hand, board)
+        output.delete("1.0", tk.END)
+        output.insert(tk.END, res)
+    except Exception as e:
+        messagebox.showerror("PokerTool", f"Analysis failed:\n{e}")
+
+def _on_scrape() -> None:
+    try:
+        from pokertool import scrape  # type: ignore
+        res = scrape.run_screen_scraper()
+        messagebox.showinfo("Screen Scraper", str(res))
+    except Exception as e:
+        messagebox.showerror("Screen Scraper", f"Scraper failed:\n{e}")
+
+def main() -> int:
+    root = tk.Tk()
+    root.title("PokerTool")
+
+    frm = tk.Frame(root, padx=12, pady=12)
+    frm.pack(fill="both", expand=True)
+
+    tk.Label(frm, text="Hand (e.g., AsKh):").grid(row=0, column=0, sticky="w")
+    hand_var = tk.StringVar()
+    tk.Entry(frm, textvariable=hand_var, width=24).grid(row=0, column=1, sticky="we")
+
+    tk.Label(frm, text="Board (optional, e.g., 7d8d9c):").grid(row=1, column=0, sticky="w")
+    board_var = tk.StringVar()
+    tk.Entry(frm, textvariable=board_var, width=24).grid(row=1, column=1, sticky="we")
+
+    output = tk.Text(frm, height=10, width=50)
+    output.grid(row=3, column=0, columnspan=2, pady=(8,0), sticky="nsew")
+
+    btn = tk.Button(frm, text="Analyse", command=lambda: _on_analyse(hand_var, board_var, output))
+    btn.grid(row=2, column=0, columnspan=2, pady=(8,4))
+
+    # grid weights
+    frm.columnconfigure(1, weight=1)
+    frm.rowconfigure(3, weight=1)
+
+    # Menu with Screen Scraper hook
+    mbar = tk.Menu(root)
+    tools = tk.Menu(mbar, tearoff=False)
+    tools.add_command(label="Screen Scraper (stub)", command=_on_scrape)
+    mbar.add_cascade(label="Tools", menu=tools)
+    root.config(menu=mbar)
+
+    root.mainloop()
+    return 0
+
+# For legacy launchers that call gui.run()
+def run() -> int:
+    return main()
+
+if __name__ == "__main__":
+    raise SystemExit(main())
