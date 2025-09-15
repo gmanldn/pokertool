@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/apply_pokertool_fixes.py
+# version: '20'
+# last_commit: '2025-09-15T00:23:03.164704+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 apply_pokertool_fixes.py
 Run from the repo root. Creates a timestamped backup folder.

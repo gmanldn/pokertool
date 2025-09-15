@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/poker_gui.py
+# version: '20'
+# last_commit: '2025-09-15T01:25:21.987675+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 Simplified Poker GUI - Fixed for compatibility
 """

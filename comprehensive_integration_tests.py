@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/comprehensive_integration_tests.py
+# version: '20'
+# last_commit: '2025-09-09T15:38:42+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 Comprehensive Integration Tests for Poker Assistant.
 Tests the complete system integration across all modules and components.

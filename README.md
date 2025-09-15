@@ -1,3 +1,13 @@
+<!-- POKERTOOL-HEADER-START
+---
+schema: pokerheader.v1
+project: pokertool
+file: pokertool/README.md
+version: '20'
+last_commit: '2025-09-14T23:35:42.847310+00:00'
+fixes: []
+---
+POKERTOOL-HEADER-END -->
 # Poker Assistant - Fixed Version
 
 This directory contains the complete, fixed poker assistant application that resolves all regression bugs.

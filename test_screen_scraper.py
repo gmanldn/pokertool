@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/test_screen_scraper.py
+# version: '20'
+# last_commit: '2025-09-09T15:38:42+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 Test Suite for Poker Screen Scraper - Continued
 Comprehensive tests for the screen scraping functionality.

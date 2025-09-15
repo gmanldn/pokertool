@@ -1,3 +1,13 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/tools/verify_build.py
+# version: '20'
+# last_commit: '2025-09-15T01:25:21.990597+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 # tools/verify_build.py
 import os, importlib, sqlite3, contextlib
 os.environ.setdefault("POKER_AUTOCONFIRM","1")

@@ -1,3 +1,13 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/poker_modules.py
+# version: '20'
+# last_commit: '2025-09-15T00:23:59.410887+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from enum import Enum, auto

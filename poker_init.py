@@ -1,3 +1,13 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/poker_init.py
+# version: '20'
+# last_commit: '2025-09-15T01:32:28.233919+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 # -*- coding: utf-8 -*-
 import sqlite3, os, pathlib
 

@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/poker_main.py
+# version: '20'
+# last_commit: '2025-09-14T23:32:55.912500+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 Tiny launcher that wires everything together.
 FIXED VERSION - Resolves import issues

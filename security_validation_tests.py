@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/security_validation_tests.py
+# version: '20'
+# last_commit: '2025-09-09T15:38:42+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 Security and Input Validation Tests for Poker Assistant.
 Tests input sanitization, injection prevention, and security best practices.

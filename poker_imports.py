@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/poker_imports.py
+# version: '20'
+# last_commit: '2025-09-14T18:22:49.793988+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 Poker Imports - Safe import utilities for the poker assistant
 Provides robust error handling and fallback mechanisms for module imports

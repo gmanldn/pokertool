@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: pokertool/tests/test_poker.py
+# version: '20'
+# last_commit: '2025-09-14T23:36:05.182803+00:00'
+# fixes: []
+# ---
+# POKERTOOL-HEADER-END
 """
 Test script to verify poker modules are working correctly
 """
