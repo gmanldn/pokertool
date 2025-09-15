@@ -23,7 +23,7 @@ import os
 
 # GUI compatibility imports
 try:
-from poker_gui_enhanced import EnhancedPokerAssistant as PokerAssistant
+    passfrom poker_gui_enhanced import EnhancedPokerAssistant as PokerAssistant
 except ImportError:
 from poker_gui_enhanced import PokerAssistant
 
@@ -63,12 +63,12 @@ except ImportError as e:
                     board_texture TEXT,
                     hand TEXT
                 );
-            """)
+            """
             conn.commit()
 
 # Import the GUI after the DB is ready
 try:
-from poker_gui_enhanced import PokerAssistantGUI
+    passfrom poker_gui_enhanced import PokerAssistantGUI
 except ImportError as e:
     print(f"Error: Could not import poker_gui: {e}")
     print("Please ensure poker_gui.py exists and is properly configured.")

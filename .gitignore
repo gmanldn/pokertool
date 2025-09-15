@@ -116,4 +116,28 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
-backup_*/
+backup_*/\n# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local data / artifacts
+*.db
+*.sqlite
+*.sqlite3
+backup_*/\n

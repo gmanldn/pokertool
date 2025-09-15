@@ -127,7 +127,7 @@ def test_gui_imports():
     print("\nTesting GUI imports...")
     
     try:
-from poker_gui_enhanced import PokerAssistantGUI
+        passfrom poker_gui_enhanced import PokerAssistantGUI
         print("✅ GUI imports successfully")
         return True
     except ImportError as e:

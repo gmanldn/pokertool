@@ -39,7 +39,7 @@ def _analyse(m):
     assert hasattr(r,"advice")
 
 def _gui_import():
-import poker_gui_enhanced_enhanced  # should import cleanly
+    passimport poker_gui_enhanced_enhanced  # should import cleanly
 
 ok("core import", lambda: _import_core())
 m = importlib.import_module("poker_modules")

@@ -28,7 +28,7 @@ from typing import Optional, Dict, Any
 from poker_modules import (
     Card, Suit, Position, analyse_hand, get_hand_tier, 
     to_two_card_str, RANK_ORDER, GameState
-)
+
 from poker_init import open_db
 from poker_gui_enhanced import PokerAssistant  # Import original GUI
 
@@ -37,13 +37,13 @@ from poker_screen_scraper import (
 
 # GUI compatibility imports
 try:
-from poker_gui_enhanced import EnhancedPokerAssistant as PokerAssistant
+    passfrom poker_gui_enhanced import EnhancedPokerAssistant as PokerAssistant
 except ImportError:
 from poker_gui_enhanced import PokerAssistant
 
     PokerScreenScraper, PokerSite, TableState, 
     ScreenScraperBridge, CardRecognizer
-)
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -81,7 +81,7 @@ class AutopilotPanel(ttk.Frame):
             values=[site.value for site in PokerSite],
             state='readonly',
             width=15
-        )
+        
         site_combo.pack(side='left')
         
         # Control buttons
@@ -92,21 +92,21 @@ class AutopilotPanel(ttk.Frame):
             button_frame,
             text="▶️ Start Autopilot",
             command=self.toggle_autopilot
-        )
+        
         self.start_button.pack(side='left', padx=2)
         
         self.calibrate_button = ttk.Button(
             button_frame,
             text="🎯 Calibrate",
             command=self.calibrate_scraper
-        )
+        
         self.calibrate_button.pack(side='left', padx=2)
         
         self.debug_button = ttk.Button(
             button_frame,
             text="🐛 Debug",
             command=self.save_debug_image
-        )
+        
         self.debug_button.pack(side='left', padx=2)
         
         # Status display
@@ -129,7 +129,7 @@ class AutopilotPanel(ttk.Frame):
             variable=self.rate_var,
             orient='horizontal',
             length=150
-        )
+        
         rate_scale.pack(side='left')
         self.rate_label = ttk.Label(rate_frame, text="1.0s")
         self.rate_label.pack(side='left', padx=5)
@@ -155,7 +155,7 @@ class AutopilotPanel(ttk.Frame):
             
             ttk.Label(self.indicators_frame, text=f"{label}:").grid(
                 row=row, column=col*2, sticky='w', padx=2
-            )
+            
             value_label = ttk.Label(self.indicators_frame, text="--", font=('Arial', 9, 'bold'))
             value_label.grid(row=row, column=col*2+1, sticky='e', padx=(0, 10))
             self.indicator_labels[key] = value_label
@@ -358,7 +358,7 @@ class PokerAssistantWithAutopilot(PokerAssistant):
             self, 
             text="Autopilot Control", 
             padding="10"
-        )
+        
         autopilot_frame.grid(row=0, column=3, sticky=(tk.N, tk.S, tk.E, tk.W), padx=10, pady=10)
         
         # Add autopilot panel
@@ -410,7 +410,7 @@ class CalibrationWizard(tk.Toplevel):
             "3. Click 'Capture' to take a screenshot\n"
             "4. Verify the detected regions are correct\n"
             "5. Click 'Save' to complete calibration"
-        )
+        
         instructions.config(state='disabled')
         
         # Canvas for preview

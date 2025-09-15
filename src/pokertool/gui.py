@@ -29,10 +29,10 @@ from collections import deque, defaultdict
 
 # Fixed imports with proper error handling
 try:
-try:
-try:
-try:
-try:
+    passtry:
+    passtry:
+    passtry:
+    passtry:
     from poker_modules import analyse_hand, parse_card, Position, Card
 except Exception as e:
     class Position:
@@ -68,7 +68,7 @@ except Exception as e:
         return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
         Card, Suit, Position, analyse_hand, get_hand_tier,
         to_two_card_str, RANK_ORDER, GameState
-    )
+    
     MODULES_LOADED = True
 except ImportError as e:
     print(f"Warning: Could not import all poker_modules: {e}")
@@ -351,7 +351,7 @@ class PokerAssistantGUI(tk.Tk):
         quick_hands = [("AA", ["AS", "AH"]), ("KK", ["KS", "KH"]), ("AK", ["AS", "KH"])]
         for i, (label, hand) in enumerate(quick_hands):
             btn = ttk.Button(quick_frame, text=label, width=6,
-                           command=lambda h=hand: self._set_quick_hand(h))
+                           command=lambda h=hand: self._set_quick_hand(h)
             btn.grid(row=0, column=i, padx=1)
 
         row += 1
@@ -381,7 +381,7 @@ class PokerAssistantGUI(tk.Tk):
             values=[p.name for p in Position],
             state="readonly",
             width=12
-        )
+        
         pos_combo.grid(row=row, column=1, sticky=tk.W, padx=(5, 0))
         row += 1
 
@@ -426,7 +426,7 @@ class PokerAssistantGUI(tk.Tk):
             fg='#e0e0e0',
             insertbackground='#e0e0e0',
             font=('Consolas', 10)
-        )
+        
         self.output_text.grid(row=0, column=0, sticky=tk.NSEW)
 
     def build_action_panel(self, parent):
@@ -549,7 +549,7 @@ class PokerAssistantGUI(tk.Tk):
             len(card_str) == 2
             and card_str[0] in RANK_ORDER
             and card_str[1] in 'SHDC'
-        )
+        
 
     def _display_analysis(self, analysis, tier: str):
         """Pretty-print analysis to the output pane."""
@@ -590,7 +590,7 @@ class PokerAssistantGUI(tk.Tk):
                 """
                 INSERT INTO decisions
                     (position, hand_tier, stack_bb, pot, to_call, board,
-                     decision, spr, board_texture, hand)
+                     decision, spr, board_texture, hand
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
@@ -605,7 +605,7 @@ class PokerAssistantGUI(tk.Tk):
                     analysis.board_texture,
                     board_str,
                 ),
-            )
+            
             self.conn.commit()
         except Exception as e:
             print(f"DB Warning: Could not save hand: {e}")
