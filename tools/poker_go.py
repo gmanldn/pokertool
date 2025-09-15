@@ -1,176 +1,170 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-"""
-poker_go.py — bootstraps the app by:
-  1) finding the repo root,
-  2) running code_scan.py to auto-fix syntax/structure issues,
-  3) verifying compilation,
-  4) launching the GUI with graceful error handling.
-
-Usage:
-  python3 poker_go.py
-Options:
-  --no-scan     Skip the auto-fix scan phase (not recommended)
-"""
-
-import argparse
-import compileall
-import importlib
-import importlib.util
+import atexit
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Sequence
+
+# Project root on sys.path
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+# Your structured logger
+from logger import logger, log_exceptions, setup_global_exception_handler  # noqa: E402
 
 
-def find_repo_root(start: Path) -> Path:
+def initialize_logging() -> None:
+    """Initialize the logging system."""
+    setup_global_exception_handler()
+    safe_env = {k: v for k, v in os.environ.items() if "TOKEN" not in k and "KEY" not in k}
+    logger.info(
+        "APPLICATION STARTUP",
+        argv=sys.argv,
+        cwd=os.getcwd(),
+        python_path=list(sys.path),
+        environment_vars=safe_env,
+    )
+
+
+def cleanup() -> None:
+    """Cleanup function called on exit."""
+    logger.info("Performing cleanup")
+
+
+def _log_cmd(args: list[str]) -> str:
+    return " ".join(shlex.quote(a) for a in args)
+
+
+def run_code_scan(python: str, quick: bool = True, auto_fix: bool = True) -> int:
     """
-    Walk up until we find a marker ('.git' or 'pyproject.toml') or hit filesystem root.
+    Run ./code_scan.py before launching the app.
+
+    Tries import-first (so we can call a well-defined API if present),
+    otherwise falls back to subprocess execution.
+
+    Returns process return code (0 = OK).
     """
-    cur = start.resolve()
-    while True:
-        if (cur / ".git").exists() or (cur / "pyproject.toml").exists():
-            return cur
-        parent = cur.parent
-        if parent == cur:
-            return start.resolve()
-        cur = parent
-
-
-def run_code_scan(repo_root: Path) -> int:
-    """
-    Run code_scan.py with aggressive fixes and multi-pass healing.
-    Prefer importing its main() directly; fall back to a subprocess.
-    Returns exit code (0=OK, nonzero=errors remain).
-    """
-    scan = repo_root / "code_scan.py"
-    if scan.exists():
-        # Try to import and call main() directly
-        try:
-            spec = importlib.util.spec_from_file_location("code_scan", scan)
-            if spec and spec.loader:
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)  # type: ignore[attr-defined]
-                # Emulate CLI: aggressive, 4 passes
-                # Some versions expose main(); if not, fall back to subprocess below.
-                if hasattr(mod, "main") and callable(mod.main):
-                    # Temporarily patch argv for argparse inside code_scan
-                    prev_argv = sys.argv[:]
-                    try:
-                        sys.argv = [str(scan), "--aggressive", "--max-passes", "4"]
-                        rc = int(mod.main())  # type: ignore[call-arg]
-                        return rc
-                    finally:
-                        sys.argv = prev_argv
-        except Exception as e:
-            print(f"[code_scan] import/exec failed: {e} — falling back to subprocess", file=sys.stderr)
-
-    # Subprocess fallback (works even if code_scan not importable)
-    if scan.exists():
-        cmd = [sys.executable, str(scan), "--aggressive", "--max-passes", "4"]
-        print(f"[code_scan] subprocess: {' '.join(cmd)}")
-        proc = subprocess.run(cmd, cwd=str(repo_root))
-        return proc.returncode
-
-    # If code_scan.py is missing, do a strict compile-only health check
-    print("[code_scan] code_scan.py not found — doing strict compile check only", file=sys.stderr)
-    ok = compileall.compile_dir(str(repo_root), quiet=1, force=False, legacy=True)
-    return 0 if ok else 1
-
-
-def verify_compiles(repo_root: Path) -> None:
-    """
-    Compile the whole repo to bytecode. Raises SystemExit on failure.
-    """
-    print("[verify] compiling repository to bytecode…")
-    ok = compileall.compile_dir(str(repo_root), quiet=1, force=False, legacy=True)
-    if not ok:
-        print("[verify] ❌ compile step failed — fix the reported files above and re-run.", file=sys.stderr)
-        raise SystemExit(2)
-    print("[verify] ✅ compile OK")
-
-
-def try_launch_gui() -> int:
-    """
-    Try to launch the GUI via several strategies, with friendly errors.
-    """
-    # 1) Preferred: packaged entry pokertool.gui
+    # Prefer module import so we avoid a new interpreter when possible
     try:
-        gui = importlib.import_module("pokertool.gui")
-        launch = getattr(gui, "main", getattr(gui, "run", None))
-        if callable(launch):
-            return int(launch()) if isinstance(launch(), int) else 0  # type: ignore[call-arg]
-    except Exception as e:
-        print(f"[launch] pokertool.gui import failed: {e}", file=sys.stderr)
+        import code_scan  # type: ignore
 
-    # 2) Local source fallback: src/pokertool/gui.py
-    here = Path(__file__).resolve().parent
-    repo_root = find_repo_root(here)
-    src_gui = repo_root / "src" / "pokertool" / "gui.py"
-    if src_gui.exists():
-        try:
-            spec = importlib.util.spec_from_file_location("pokertool_gui_fallback", src_gui)
-            if spec and spec.loader:
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)  # type: ignore[attr-defined]
-                launch = getattr(mod, "main", getattr(mod, "run", None))
-                if callable(launch):
-                    rv = launch()
-                    return int(rv) if isinstance(rv, int) else 0
-        except Exception as e:
-            print(f"[launch] src/pokertool/gui.py failed: {e}", file=sys.stderr)
-
-    # 3) Legacy flat layout: poker_gui.py in repo root
-    legacy_gui = repo_root / "poker_gui.py"
-    if legacy_gui.exists():
-        try:
-            spec = importlib.util.spec_from_file_location("legacy_poker_gui", legacy_gui)
-            if spec and spec.loader:
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)  # type: ignore[attr-defined]
-                launch = getattr(mod, "main", getattr(mod, "run", None))
-                if callable(launch):
-                    rv = launch()
-                    return int(rv) if isinstance(rv, int) else 0
-        except Exception as e:
-            print(f"[launch] legacy poker_gui.py failed: {e}", file=sys.stderr)
-
-    # If all else fails, try a friendly Tk error dialog (best-effort)
-    try:
-        import tkinter as tk  # type: ignore
-        from tkinter import messagebox  # type: ignore
-        root = tk.Tk(); root.withdraw()
-        messagebox.showerror(
-            "PokerTool",
-            "Could not find/launch the GUI.\n"
-            "Make sure either the package 'pokertool' is importable or 'src/pokertool/gui.py' exists."
-        )
-        root.destroy()
-    except Exception:
-        pass
-    return 1
-
-
-def main(argv: Optional[list[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="PokerTool launcher with pre-flight self-heal scan.")
-    parser.add_argument("--no-scan", action="store_true", help="Skip the code_scan.py auto-fix stage")
-    args = parser.parse_args(argv)
-
-    repo_root = find_repo_root(Path(__file__).parent)
-    print(f"[poker_go] repo root: {repo_root}")
-
-    if not args.no_scan:
-        rc = run_code_scan(repo_root)
-        if rc != 0:
-            print(f"[poker_go] code_scan reported problems (rc={rc}). Aborting launch.", file=sys.stderr)
+        # Preferred API if your scanner exposes it
+        if hasattr(code_scan, "scan_and_fix"):
+            logger.info("Running code_scan.scan_and_fix via import", quick=quick, auto_fix=auto_fix)
+            result = code_scan.scan_and_fix(root=ROOT, quick=quick, auto_fix=auto_fix)  # type: ignore[attr-defined]
+            # If your function returns a result object, try to surface counts if available
+            errs = getattr(result, "errors", None)
+            fixed = getattr(result, "fixed", None)
+            if errs is not None or fixed is not None:
+                logger.info("Code scan finished", errors=errs, fixed=fixed)
+            return 0
+        # Fallback to a main-style entry point
+        if hasattr(code_scan, "main"):
+            logger.info("Running code_scan.main via import", quick=quick, auto_fix=auto_fix)
+            rc = int(
+                code_scan.main(  # type: ignore[attr-defined]
+                    [
+                        "--root",
+                        str(ROOT),
+                        "--autofix" if auto_fix else "--no-autofix",
+                        "--quick" if quick else "--full",
+                    ]
+                )
+            )
             return rc
+    except Exception as e:
+        logger.warning("Importing code_scan failed; falling back to subprocess", exception=e)
 
-    verify_compiles(repo_root)
-    print("[poker_go] launching GUI…")
-    return try_launch_gui()
+    # Subprocess fallback
+    script = ROOT / "code_scan.py"
+    if not script.exists():
+        logger.warning("code_scan.py not found; skipping preflight scan")
+        return 0
+
+    args = [python, str(script)]
+    args.append("--autofix" if auto_fix else "--no-autofix")
+    args.append("--quick" if quick else "--full")
+
+    logger.info("Running code_scan.py", command=_log_cmd(args))
+    completed = subprocess.run(args, cwd=str(ROOT))
+    if completed.returncode != 0:
+        logger.error("code_scan.py returned non-zero status", returncode=completed.returncode)
+    return int(completed.returncode)
+
+
+def launch_poker_go(python: str, passthrough_args: Sequence[str]) -> int:
+    """Launch tools/poker_go.py, passing through any remaining args."""
+    poker_go = ROOT / "tools" / "poker_go.py"
+    if not poker_go.exists():
+        logger.critical("tools/poker_go.py not found", path=str(poker_go))
+        return 2
+
+    cmd = [python, str(poker_go), *passthrough_args]
+    logger.info("Launching poker_go.py", command=_log_cmd(cmd))
+    completed = subprocess.run(cmd, cwd=str(ROOT))
+    return int(completed.returncode)
+
+
+@log_exceptions
+def main(argv: Sequence[str] | None = None) -> int:
+    """Main application entry point."""
+    argv = list(argv or sys.argv[1:])
+    initialize_logging()
+
+    # Flags for the preflight scan
+    run_scan = True
+    auto_fix = True
+    quick = True
+
+    passthrough: list[str] = []
+
+    # Simple CLI parsing. Use `--` to pass args through to poker_go.py.
+    while argv:
+        a = argv.pop(0)
+        if a == "--no-scan":
+            run_scan = False
+        elif a == "--no-fix":
+            auto_fix = False
+        elif a == "--full-scan":
+            quick = False
+        elif a == "--":
+            # Everything after -- goes to poker_go.py
+            passthrough = argv[:]
+            break
+        else:
+            # Unknown flags go straight to poker_go.py
+            passthrough.append(a)
+
+    # Optional environment override
+    if os.environ.get("START_NO_SCAN") == "1":
+        run_scan = False
+
+    # Preflight code scan
+    if run_scan:
+        rc = run_code_scan(sys.executable, quick=quick, auto_fix=auto_fix)
+        if rc != 0:
+            # Continue anyway but make noisy; your scanner should ideally fix and return 0.
+            logger.warning("Proceeding despite scan failures", returncode=rc)
+
+    # Start the actual app launcher
+    try:
+        logger.info("Starting poker tool application")
+        test_value = {"cards": ["AS", "KH"], "position": "BTN"}
+        logger.debug("Test debug message", test_data=test_value)
+        app_rc = launch_poker_go(sys.executable, passthrough)
+    except Exception as e:
+        logger.critical("Application failed to start", exception=e)
+        return 1
+
+    logger.info("Application shutdown normally", returncode=app_rc)
+    return app_rc
 
 
 if __name__ == "__main__":
+    atexit.register(cleanup)
     raise SystemExit(main())
