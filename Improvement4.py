@@ -1,13 +1,11 @@
 # Improvement4.py
-# Purpose: Per-file canonical headers, README + docs sync, machine-readable API, and unit tests.
-# Usage:   python3 Improvement4.py     (run from repository root)
-# Notes:   Stdlib only. Idempotent. Safe on macOS Python 3.9+.
+# Per-file headers, README/docs sync, machine-readable API, and unit tests.
+# Usage: python3 Improvement4.py  (run from repo root)
 
 from __future__ import annotations
 import ast
 import hashlib
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -17,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 # -----------------------------
-# Configuration
+# Config
 # -----------------------------
 REPO = Path(__file__).resolve().parent
 DOCS = REPO / "docs"
@@ -103,6 +101,7 @@ def read_text(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="replace")
 
 def write_text(p: Path, s: str) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(s, encoding="utf-8")
 
 def ensure_dir(d: Path) -> None:
@@ -149,7 +148,6 @@ def parse_poker_modules() -> Dict[str, Any]:
         spec["errors"] = f"ast.parse failed: {e.__class__.__name__}: {e}"
         return spec
 
-    # constants
     for node in tree.body:
         if isinstance(node, ast.Assign):
             for t in node.targets:
@@ -271,9 +269,8 @@ def ensure_readme(inv: List[Dict[str, Any]], spec: Dict[str, Any]) -> None:
     if not README.exists():
         write_text(README, "# Poker Assistant\n\n")
     base = read_text(README)
-
-    # Header for README in HTML style
     gm = git_meta()
+
     header_yaml = [
         HTML_START,
         YAML_OPEN,
@@ -296,11 +293,9 @@ def ensure_readme(inv: List[Dict[str, Any]], spec: Dict[str, Any]) -> None:
     else:
         base = header_block + "\n\n" + base
 
-    # Files section
     files_md = "## Files Included\n\n" + render_files_table(inv)
     base = upsert_region(base, FILES_START, FILES_END, files_md)
 
-    # Modules machine-readable section
     json_str = json.dumps(spec, indent=2, ensure_ascii=False)
     mods_md = "## Machine-readable API for `poker_modules.py`\n\n```json\n" + json_str + "\n```\n\n_Regenerate with:_ `python3 Improvement4.py`"
     base = upsert_region(base, MODS_START, MODS_END, mods_md)
@@ -312,11 +307,11 @@ def ensure_readme(inv: List[Dict[str, Any]], spec: Dict[str, Any]) -> None:
 # -----------------------------
 def comment_style_for(p: Path) -> Optional[str]:
     ext = p.suffix.lower()
-    if ext in (".py",):
+    if ext == ".py":
         return "py"
     if ext in (".md", ".txt"):
         return "html"
-    return None  # do not stamp json or others
+    return None
 
 def build_header_map(file_rel: str, file_hash: str, gm: Dict[str, Optional[str]]) -> Dict[str, Any]:
     return {
@@ -345,13 +340,10 @@ def stamp_header_content(style: str, kv: Dict[str, Any]) -> str:
     if style == "py":
         lines = [PY_START] + [f"# {line}" for line in yaml_lines] + [PY_END]
         return "\n".join(lines)
-    else:
-        # html
-        lines = [HTML_START] + yaml_lines + [HTML_END]
-        return "\n".join(lines)
+    lines = [HTML_START] + yaml_lines + [HTML_END]
+    return "\n".join(lines)
 
 def split_shebang_encoding(text: str) -> Tuple[str, str]:
-    """Return (prefix, rest). Keep shebang/encoding at very top for .py files."""
     lines = text.splitlines()
     prefix_lines = []
     i = 0
@@ -362,7 +354,11 @@ def split_shebang_encoding(text: str) -> Tuple[str, str]:
         if re.match(r"#\s*-\*-\s*coding:", L) or re.match(r"#\s*coding:", L):
             prefix_lines.append(L); i += 1; continue
         break
-    return ("\n".join(prefix_lines) + ("\n" if prefix_lines else "")), "\n".join(lines[i:])
+    prefix = "\n".join(prefix_lines)
+    rest = "\n".join(lines[i:])
+    if prefix and not prefix.endswith("\n"):
+        prefix += "\n"
+    return prefix, rest
 
 def header_regex_for(style: str) -> re.Pattern:
     if style == "py":
@@ -370,7 +366,6 @@ def header_regex_for(style: str) -> re.Pattern:
     return re.compile(re.escape(HTML_START) + r".*?" + re.escape(HTML_END), re.DOTALL)
 
 def stamp_file_header(p: Path, gm: Dict[str, Optional[str]]) -> bool:
-    """Insert or update header for one file. Return True if changed."""
     style = comment_style_for(p)
     if style is None:
         return False
@@ -385,12 +380,12 @@ def stamp_file_header(p: Path, gm: Dict[str, Optional[str]]) -> bool:
         if pattern.search(rest):
             new_rest = pattern.sub(header_block, rest, count=1)
         else:
-            new_rest = header_block + ("\n\n" if rest and not rest.startswith("\n") else "") + rest
+            glue = "" if not rest or rest.startswith("\n") else "\n\n"
+            new_rest = header_block + glue + rest
         new_content = prefix + new_rest
         if new_content != original:
             write_text(p, new_content); changed = True
     else:
-        # html
         if pattern.search(original):
             new_content = pattern.sub(header_block, original, count=1)
         else:
@@ -424,148 +419,143 @@ def write_manifest(inv: List[Dict[str, Any]]) -> None:
     write_text(MANIFEST_JSON, json.dumps(data, indent=2))
 
 # -----------------------------
-# Tests writer (unittest)
+# Unit tests (written as files)
 # -----------------------------
-TEST_HEADERS = """\
-import re
-from pathlib import Path
-import unittest
+def write_tests() -> None:
+    # Build test files using joined lines to avoid nested triple quotes
+    test_headers_lines = [
+        "import re",
+        "from pathlib import Path",
+        "import unittest",
+        "",
+        "REPO = Path(__file__).resolve().parents[1]",
+        'HTML_START = "<!-- POKERTOOL-HEADER-START"',
+        'HTML_END = "POKERTOOL-HEADER-END -->"',
+        'PY_START = "# POKERTOOL-HEADER-START"',
+        'PY_END = "# POKERTOOL-HEADER-END"',
+        'VERSION = "20"',
+        "",
+        "class TestPerFileHeaders(unittest.TestCase):",
+        "    def _read(self, p: Path) -> str:",
+        '        return p.read_text(encoding="utf-8", errors="replace")',
+        "",
+        "    def _has_header(self, text: str) -> bool:",
+        "        return (HTML_START in text and HTML_END in text) or (PY_START in text and PY_END in text)",
+        "",
+        "    def _extract_yaml(self, text: str) -> str:",
+        "        # Regex hits either HTML or Python header block",
+        "        m = re.search(r'(<!--\\s*POKERTOOL-HEADER-START[\\s\\S]*?POKERTOOL-HEADER-END\\s*-->)|(#[\\s\\S]*?POKERTOOL-HEADER-START[\\s\\S]*?#\\s*POKERTOOL-HEADER-END)', text)",
+        "        self.assertIsNotNone(m, 'Header block not found')",
+        "        block = m.group(0)",
+        "        yaml_lines = []",
+        "        for line in block.splitlines():",
+        "            s = line.strip()",
+        "            if s.startswith('#'):",
+        "                s = s[1:].strip()",
+        "            if s.startswith('<!--') or s.endswith('-->'):",
+        "                continue",
+        "            yaml_lines.append(s)",
+        "        inner = '\\n'.join(yaml_lines)",
+        "        self.assertIn('schema: pokerheader.v1', inner)",
+        "        self.assertIn(\"version: '20'\", inner)",
+        "        return inner",
+        "",
+        "    def test_all_py_md_txt_have_headers(self):",
+        "        targets = []",
+        "        for ext in ('.py', '.md', '.txt'):",
+        "            targets += list(REPO.glob(f'*{ext}'))",
+        "        for p in targets:",
+        "            if p.name.startswith('.'):",
+        "                continue",
+        "            if p.suffix == '.txt' and p.name == 'VERSION.txt':",
+        "                continue",
+        "            text = self._read(p)",
+        "            self.assertTrue(self._has_header(text), f'Missing header in {p.name}')",
+        "            self._extract_yaml(text)",
+        "",
+        "if __name__ == '__main__':",
+        "    unittest.main()",
+    ]
+    write_text(TESTS / "test_headers.py", "\n".join(test_headers_lines))
 
-REPO = Path(__file__).resolve().parents[1]
+    test_readme_lines = [
+        "from pathlib import Path",
+        "import unittest",
+        "import re",
+        "",
+        "REPO = Path(__file__).resolve().parents[1]",
+        "README = REPO / 'README.md'",
+        'FILES_START = "<!-- AUTODOC:FILES-START -->"',
+        'FILES_END = "<!-- AUTODOC:FILES-END -->"',
+        'MODS_START = "<!-- AUTODOC:MODULES-START -->"',
+        'MODS_END = "<!-- AUTODOC:MODULES-END -->"',
+        "",
+        "class TestReadmeAutodoc(unittest.TestCase):",
+        "    def test_sections_present(self):",
+        '        text = README.read_text(encoding="utf-8", errors="replace")',
+        "        self.assertIn(FILES_START, text)",
+        "        self.assertIn(FILES_END, text)",
+        "        self.assertIn(MODS_START, text)",
+        "        self.assertIn(MODS_END, text)",
+        "        m = re.search(FILES_START + r'[\\s\\S]*?' + FILES_END, text)",
+        "        self.assertIsNotNone(m)",
+        "        self.assertIn('| File |', m.group(0))",
+        "",
+        "if __name__ == '__main__':",
+        "    unittest.main()",
+    ]
+    write_text(TESTS / "test_readme_autodoc.py", "\n".join(test_readme_lines))
 
-HTML_START = \"\"\"<!-- POKERTOOL-HEADER-START\"\"\"
-HTML_END = \"\"\"POKERTOOL-HEADER-END -->\"\"\"
-PY_START = \"\"\"# POKERTOOL-HEADER-START\"\"\"
-PY_END = \"\"\"# POKERTOOL-HEADER-END\"\"\"
-VERSION = "20"
-
-class TestPerFileHeaders(unittest.TestCase):
-    def _read(self, p: Path) -> str:
-        return p.read_text(encoding="utf-8", errors="replace")
-
-    def _has_header(self, text: str) -> bool:
-        return (HTML_START in text and HTML_END in text) or (PY_START in text and PY_END in text)
-
-    def _extract_yaml(self, text: str) -> str:
-        # Grab the inner YAML block between --- lines in either style
-        m = re.search(r"(<!--\\s*POKERTOOL-HEADER-START[\\s\\S]*?POKERTOOL-HEADER-END\\s*-->)|(#\\s*POKERTOOL-HEADER-START[\\s\\S]*?#\\s*POKERTOOL-HEADER-END)", text)
-        self.assertIsNotNone(m, "Header block not found")
-        block = m.group(0)
-        # Collect lines beginning with optional comment marker then YAML
-        yaml_lines = []
-        for line in block.splitlines():
-            line = line.strip()
-            if line.startswith("#"):
-                line = line[1:].strip()
-            if line.startswith("<!--") or line.endswith("-->"):
-                continue
-            yaml_lines.append(line)
-        inner = "\\n".join(yaml_lines)
-        # Now extract version and schema keys
-        self.assertIn("schema: pokerheader.v1", inner)
-        self.assertIn(f"version: '{VERSION}'", inner)
-        return inner
-
-    def test_all_py_and_md_have_headers(self):
-        targets = []
-        for ext in (".py", ".md", ".txt"):
-            targets += list(REPO.glob(f"*{ext}"))
-        for p in targets:
-            if p.name.startswith("."):
-                continue
-            if p.suffix == ".txt" and p.name == "VERSION.txt":
-                # VERSION.txt is a data file
-                continue
-            text = self._read(p)
-            self.assertTrue(self._has_header(text), f"Missing header in {p.name}")
-            self._extract_yaml(text)
-
-if __name__ == "__main__":
-    unittest.main()
-"""
-
-TEST_README = """\
-from pathlib import Path
-import unittest
-import json
-import re
-
-REPO = Path(__file__).resolve().parents[1]
-README = REPO / "README.md"
-
-FILES_START = "<!-- AUTODOC:FILES-START -->"
-FILES_END = "<!-- AUTODOC:FILES-END -->"
-MODS_START = "<!-- AUTODOC:MODULES-START -->"
-MODS_END = "<!-- AUTODOC:MODULES-END -->"
-
-class TestReadmeAutodoc(unittest.TestCase):
-    def test_sections_present(self):
-        text = README.read_text(encoding="utf-8", errors="replace")
-        self.assertIn(FILES_START, text)
-        self.assertIn(FILES_END, text)
-        self.assertIn(MODS_START, text)
-        self.assertIn(MODS_END, text)
-        # simple table check
-        files_block = re.search(FILES_START + r"[\\s\\S]*?" + FILES_END, text)
-        self.assertIsNotNone(files_block)
-        self.assertIn("| File |", files_block.group(0))
-
-if __name__ == "__main__":
-    unittest.main()
-"""
-
-TEST_SCHEMA = """\
-from pathlib import Path
-import unittest
-import json
-
-REPO = Path(__file__).resolve().parents[1]
-SCHEMA = REPO / "docs" / "poker_modules.schema.json"
-MANIFEST = REPO / "docs" / "manifest.json"
-
-class TestSchemaAndManifest(unittest.TestCase):
-    def test_schema_exists_and_valid(self):
-        self.assertTrue(SCHEMA.exists(), "poker_modules.schema.json missing")
-        data = json.loads(SCHEMA.read_text(encoding="utf-8"))
-        self.assertEqual(data.get("schema"), "pokermodules.v1")
-        self.assertIn("functions", data)
-        self.assertIn("classes", data)
-        self.assertIn("enums", data)
-
-    def test_manifest_exists_and_valid(self):
-        self.assertTrue(MANIFEST.exists(), "manifest.json missing")
-        data = json.loads(MANIFEST.read_text(encoding="utf-8"))
-        self.assertEqual(data.get("project"), "pokertool")
-        self.assertEqual(data.get("version"), "20")
-        self.assertIsInstance(data.get("files"), list)
-
-if __name__ == "__main__":
-    unittest.main()
-"""
+    test_schema_lines = [
+        "from pathlib import Path",
+        "import unittest",
+        "import json",
+        "",
+        "REPO = Path(__file__).resolve().parents[1]",
+        "SCHEMA = REPO / 'docs' / 'poker_modules.schema.json'",
+        "MANIFEST = REPO / 'docs' / 'manifest.json'",
+        "",
+        "class TestSchemaAndManifest(unittest.TestCase):",
+        "    def test_schema_exists_and_valid(self):",
+        "        self.assertTrue(SCHEMA.exists(), 'poker_modules.schema.json missing')",
+        "        data = json.loads(SCHEMA.read_text(encoding='utf-8'))",
+        "        self.assertEqual(data.get('schema'), 'pokermodules.v1')",
+        "        self.assertIn('functions', data)",
+        "        self.assertIn('classes', data)",
+        "        self.assertIn('enums', data)",
+        "",
+        "    def test_manifest_exists_and_valid(self):",
+        "        self.assertTrue(MANIFEST.exists(), 'manifest.json missing')",
+        "        data = json.loads(MANIFEST.read_text(encoding='utf-8'))",
+        "        self.assertEqual(data.get('project'), 'pokertool')",
+        "        self.assertEqual(data.get('version'), '20')",
+        "        self.assertIsInstance(data.get('files'), list)",
+        "",
+        "if __name__ == '__main__':",
+        "    unittest.main()",
+    ]
+    write_text(TESTS / "test_schema_and_manifest.py", "\n".join(test_schema_lines))
 
 # -----------------------------
-# Main orchestration
+# Main
 # -----------------------------
 def main() -> int:
     ensure_dir(DOCS)
     ensure_dir(TESTS)
 
-    # Backup target files before mutation
     targets: List[Path] = []
     for ext in (".py", ".md", ".txt"):
         targets += [p for p in REPO.glob(f"*{ext}") if not p.name.startswith(".")]
     backup(targets)
 
-    # Generate machine-readable API and README sync
     spec = parse_poker_modules()
     write_text(SCHEMA_JSON, json.dumps(spec, indent=2, ensure_ascii=False))
 
     inv = inventory_files()
     ensure_readme(inv, spec)
-    ensure_version_file()
+    write_text(VERSION_FILE, f"{VERSION}\n{iso_now()}\n")
     write_manifest(inv)
 
-    # Stamp headers across files
     gm = git_meta()
     changed_any = False
     for p in targets:
@@ -573,22 +563,18 @@ def main() -> int:
             continue
         changed_any |= stamp_file_header(p, gm)
 
-    # Recompute manifest if anything changed
     if changed_any:
         inv = inventory_files()
         write_manifest(inv)
 
-    # Write unit tests
-    write_text(TESTS / "test_headers.py", TEST_HEADERS)
-    write_text(TESTS / "test_readme_autodoc.py", TEST_README)
-    write_text(TESTS / "test_schema_and_manifest.py", TEST_SCHEMA)
+    write_tests()
 
     print("Headers enforced.")
     print("README synced.")
     print(f"Wrote: {SCHEMA_JSON}")
     print(f"Wrote: {MANIFEST_JSON}")
-    print("Unit tests written under ./tests")
-    print("Run tests with: python -m unittest")
+    print("Unit tests under ./tests")
+    print("Run: python -m unittest")
     return 0
 
 if __name__ == "__main__":
