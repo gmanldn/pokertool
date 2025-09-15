@@ -1,110 +1,26 @@
-#!/usr/bin/env python3
-"""
-Initialisation / persistence layer for Poker-Assistant.
-FIXED VERSION - Compatible with new poker_modules structure
-"""
-import sqlite3
-import logging
-from pathlib import Path
-from typing import Optional
+# -*- coding: utf-8 -*-
+import sqlite3, os, pathlib
 
-# Local imports after project structure is clear
-from poker_modules import HandAnalysisResult, Position
+__all__ = ["init_db", "initialise_db_if_needed"]
 
-log = logging.getLogger(__name__)
-DB_FILE = "poker_decisions.db"
+DEFAULT_DB = "poker_decisions.db"
 
-# ──────────────────────────────────────────────────────
-#  Database bootstrap
-# ──────────────────────────────────────────────────────
-def _create_schema(conn: sqlite3.Connection) -> None:
-    """Create tables – called exactly once when the file did not exist."""
-    log.info("Creating DB schema for new version…")
-    conn.execute(
-        """
-        CREATE TABLE decisions (
-            id            INTEGER PRIMARY KEY,
-            timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP,
-            position      TEXT,
-            hand_tier     TEXT,
-            stack_bb      INTEGER,
-            pot           REAL,
-            to_call       REAL,
-            board         TEXT,
-            decision      TEXT,
-            showdown_win  INTEGER,
-            spr           REAL,
-            board_texture TEXT,
-            hand          TEXT
-        );
-        """
-    )
-    conn.commit()
+def init_db(db_path: str = DEFAULT_DB) -> str:
+    db_path = str(db_path or DEFAULT_DB)
+    path = pathlib.Path(db_path)
+    if db_path != ":memory:":
+        path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as _:
+        pass
+    return db_path
 
-def open_db() -> sqlite3.Connection:
-    """Return a live SQLite connection."""
-    return sqlite3.connect(DB_FILE)
+def initialise_db_if_needed(db_path: str = DEFAULT_DB) -> str:
+    return init_db(db_path)
 
-def initialise_db_if_needed(_cursor: Optional[sqlite3.Cursor] = None) -> None:
-    """
-    Ensure the database file and schema exist.
-
-    The optional *cursor* parameter is ignored and exists purely for
-    backward-compatibility, so legacy calls like
-    ``initialise_db_if_needed(self.cursor)`` no longer raise a
-    TypeError.
-    """
-    if not Path(DB_FILE).exists():
-        with sqlite3.connect(DB_FILE) as conn:
-            _create_schema(conn)
-
-# ──────────────────────────────────────────────────────
-#  Public helpers used by the rest of the program
-# ──────────────────────────────────────────────────────
-def record_decision(
-    analysis: HandAnalysisResult,
-    position: Position,
-    tier: str,
-    stack_bb: int,
-    pot: float,
-    to_call: float,
-    board: str,
-) -> int:
-    """Persist a decision and return its row-id."""
-    with open_db() as db:
-        cur = db.execute(
-            """
-            INSERT INTO decisions
-                (position, hand_tier, stack_bb, pot, to_call, board,
-                 decision, spr, board_texture, hand)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                position.name,
-                tier,
-                stack_bb,
-                pot,
-                to_call,
-                board,
-                analysis.decision,
-                analysis.spr,
-                analysis.board_texture,
-                board,  # Store board as hand for compatibility
-            ),
-        )
-        return cur.lastrowid
-
-# Make sure the DB exists right after import
-initialise_db_if_needed()
-
-if __name__ == '__main__':
-    import os
-    if os.environ.get('POKER_AUTOCONFIRM','1') in {'1','true','True'}:
+if __name__ == "__main__":
+    if os.environ.get("POKER_AUTOCONFIRM","1") in {"1","true","True"}:
         init_db()
     else:
-        ans = input('Initialize database now? (y/n): ').strip().lower()
-        if ans.startswith('y'):
+        ans = input("Initialize database now? (y/n): ").strip().lower()
+        if ans.startswith("y"):
             init_db()
-else:
-    # Safe default on import
-    init_db()

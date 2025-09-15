@@ -32,10 +32,6 @@ import time
 from pathlib import Path
 from types import ModuleType
 from typing import Callable, Optional
-import os as _os
-if _os.environ.get('POKER_AUTOCONFIRM','1') in {'1','true','True'}:
-    import builtins as _bi
-    _bi.input = lambda *a, **k: 'y'
 
 
 REPO_ROOT = Path(__file__).resolve().parent
