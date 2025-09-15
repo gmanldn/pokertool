@@ -433,3 +433,651 @@ RESOURCE USAGE:
   System CPU time: 0.019s
 
 --------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-16 00:05:20.019399
+SESSION ID: 20250916_000520
+Python Version: 3.13.1 (v3.13.1:06714517797, Dec  3 2024, 14:00:22) [Clang 15.0.0 (clang-1500.3.9.4)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: none
+====================================================================================================
+
+[2025-09-16 00:05:20.020131] [INFO] APPLICATION STARTUP
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 25: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'__CFBundleIdentifier': 'com.apple.Terminal', 'TMPDIR': '/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/', 'XPC_FLAGS': '0x0', 'TERM': 'xterm-256color', 'SSH_AUTH_SOCK': '/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners', 'XPC_SERVICE_NAME': '0', 'TERM_PROGRAM': 'Apple_Terminal', 'TERM_PROGRAM_VERSION': '455.1', 'TERM_SESSION_ID': 'C9D0EBF2-7AF3-4617-BCD9-B47995F60EF1', 'SHELL': '/bin/zsh', 'HOME': '/Users/georgeridout', 'LOGNAME': 'georgeridout', 'USER': 'georgeridout', 'PATH': '/Users/ge... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python313.zip",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/lib-dynload",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages"
+  ]
+  {
+    "__CFBundleIdentifier": "com.apple.Terminal",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "XPC_FLAGS": "0x0",
+    "TERM": "xterm-256color",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "XPC_SERVICE_NAME": "0",
+    "TERM_PROGRAM": "Apple_Terminal",
+    "TERM_PROGRAM_VERSION": "455.1",
+    "TERM_SESSION_ID": "C9D0EBF2-7AF3-4617-BCD9-B47995F60EF1",
+    "SHELL": "/bin/zsh",
+    "HOME": "/Users/georgeridout",
+    "LOGNAME": "georgeridout",
+    "USER": "georgeridout",
+    "PATH": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "LANG": "en_GB.UTF-8",
+    "_": "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 15976.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.028s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.094579] [INFO] Running code_scan.main via import
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 68: logger.info("Running code_scan.main via import", quick=quick, auto_fix=auto_fix)
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+
+ADDITIONAL DATA:
+  true
+  true
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.072s
+  System CPU time: 0.035s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.094838] [WARNING] Importing code_scan failed; falling back to subprocess
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 81: logger.warning("Importing code_scan failed; falling back to subprocess", exception=e)
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+  e = TypeError('main() takes 0 positional arguments but 1 was given')
+
+ADDITIONAL DATA:
+  "main() takes 0 positional arguments but 1 was given"
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.073s
+  System CPU time: 0.035s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.095082] [INFO] Running code_scan.py
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 93: logger.info("Running code_scan.py", command=_log_cmd(args))
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  args = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--autofix', '--quick']
+
+ADDITIONAL DATA:
+  "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3 /Users/georgeridout/Documents/github/pokertool/code_scan.py --autofix --quick"
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.073s
+  System CPU time: 0.035s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.160430] [ERROR] code_scan.py returned non-zero status
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 96: logger.error("code_scan.py returned non-zero status", returncode=completed.returncode)
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  args = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--autofix', '--quick']
+  completed = CompletedProcess(args=['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--autofix', '--quick'], returncode=2)
+
+ADDITIONAL DATA:
+  2
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.073s
+  System CPU time: 0.036s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.160926] [WARNING] Proceeding despite scan failures
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 152: logger.warning("Proceeding despite scan failures", returncode=rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+
+ADDITIONAL DATA:
+  2
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.073s
+  System CPU time: 0.036s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.161126] [INFO] Starting poker tool application
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 156: logger.info("Starting poker tool application")
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.073s
+  System CPU time: 0.037s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.161326] [DEBUG] Test debug message
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 158: logger.debug("Test debug message", test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+  test_value = {'cards': ['AS', 'KH'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "AS",
+      "KH"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.073s
+  System CPU time: 0.037s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.161606] [INFO] Launching poker_go.py
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 108: logger.info("Launching poker_go.py", command=_log_cmd(cmd))
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+
+ADDITIONAL DATA:
+  "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3 /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.074s
+  System CPU time: 0.037s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.220991] [INFO] Application shutdown normally
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 164: logger.info("Application shutdown normally", returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+  test_value = {'cards': ['AS', 'KH'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.074s
+  System CPU time: 0.038s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:05:20.221584] [INFO] Performing cleanup
+Session: 20250916_000520
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 36: logger.info("Performing cleanup")
+
+RESOURCE USAGE:
+  Memory (RSS): 18728.00 MB
+  User CPU time: 0.074s
+  System CPU time: 0.038s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-16 00:11:12.251259
+SESSION ID: 20250916_001112
+Python Version: 3.13.1 (v3.13.1:06714517797, Dec  3 2024, 14:00:22) [Clang 15.0.0 (clang-1500.3.9.4)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: none
+====================================================================================================
+
+[2025-09-16 00:11:12.251621] [INFO] APPLICATION STARTUP
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 25: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'__CFBundleIdentifier': 'com.apple.Terminal', 'TMPDIR': '/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/', 'XPC_FLAGS': '0x0', 'TERM': 'xterm-256color', 'SSH_AUTH_SOCK': '/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners', 'XPC_SERVICE_NAME': '0', 'TERM_PROGRAM': 'Apple_Terminal', 'TERM_PROGRAM_VERSION': '455.1', 'TERM_SESSION_ID': 'C9D0EBF2-7AF3-4617-BCD9-B47995F60EF1', 'SHELL': '/bin/zsh', 'HOME': '/Users/georgeridout', 'LOGNAME': 'georgeridout', 'USER': 'georgeridout', 'PATH': '/Users/ge... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python313.zip",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/lib-dynload",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages"
+  ]
+  {
+    "__CFBundleIdentifier": "com.apple.Terminal",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "XPC_FLAGS": "0x0",
+    "TERM": "xterm-256color",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "XPC_SERVICE_NAME": "0",
+    "TERM_PROGRAM": "Apple_Terminal",
+    "TERM_PROGRAM_VERSION": "455.1",
+    "TERM_SESSION_ID": "C9D0EBF2-7AF3-4617-BCD9-B47995F60EF1",
+    "SHELL": "/bin/zsh",
+    "HOME": "/Users/georgeridout",
+    "LOGNAME": "georgeridout",
+    "USER": "georgeridout",
+    "PATH": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "LANG": "en_GB.UTF-8",
+    "_": "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 15292.00 MB
+  User CPU time: 0.055s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.259469] [INFO] Running code_scan.main via import
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 68: logger.info("Running code_scan.main via import", quick=quick, auto_fix=auto_fix)
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+
+ADDITIONAL DATA:
+  true
+  true
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.060s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.259618] [WARNING] Importing code_scan failed; falling back to subprocess
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 81: logger.warning("Importing code_scan failed; falling back to subprocess", exception=e)
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+  e = TypeError('main() takes 0 positional arguments but 1 was given')
+
+ADDITIONAL DATA:
+  "main() takes 0 positional arguments but 1 was given"
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.060s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.259837] [INFO] Running code_scan.py
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 93: logger.info("Running code_scan.py", command=_log_cmd(args))
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  args = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--autofix', '--quick']
+
+ADDITIONAL DATA:
+  "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3 /Users/georgeridout/Documents/github/pokertool/code_scan.py --autofix --quick"
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.060s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.335184] [ERROR] code_scan.py returned non-zero status
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 96: logger.error("code_scan.py returned non-zero status", returncode=completed.returncode)
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  quick = True
+  auto_fix = True
+  code_scan = <module 'code_scan' from '/Users/georgeridout/Documents/github/pokertool/code_scan.py'>
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  args = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--autofix', '--quick']
+  completed = CompletedProcess(args=['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--autofix', '--quick'], returncode=2)
+
+ADDITIONAL DATA:
+  2
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.335684] [WARNING] Proceeding despite scan failures
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 152: logger.warning("Proceeding despite scan failures", returncode=rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+
+ADDITIONAL DATA:
+  2
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.336093] [INFO] Starting poker tool application
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 156: logger.info("Starting poker tool application")
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.336372] [DEBUG] Test debug message
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 158: logger.debug("Test debug message", test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+  test_value = {'cards': ['AS', 'KH'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "AS",
+      "KH"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.336864] [INFO] Launching poker_go.py
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 108: logger.info("Launching poker_go.py", command=_log_cmd(cmd))
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+
+ADDITIONAL DATA:
+  "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3 /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.397662] [INFO] Application shutdown normally
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 164: logger.info("Application shutdown normally", returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 2
+  test_value = {'cards': ['AS', 'KH'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.025s
+
+--------------------------------------------------------------------------------
+[2025-09-16 00:11:12.398210] [INFO] Performing cleanup
+Session: 20250916_001112
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 36: logger.info("Performing cleanup")
+
+RESOURCE USAGE:
+  Memory (RSS): 16296.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.025s
+
+--------------------------------------------------------------------------------
