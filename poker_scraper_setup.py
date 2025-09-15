@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/poker_scraper_setup.py
+# file: poker_scraper_setup.py
 # version: '20'
-# last_commit: '2025-09-14T18:22:49.795666+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Scraper setup helpers
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 import autoconfirm  # added by repo_fixer to disable prompts
 """
 Card Template Generator for Poker Screen Scraper

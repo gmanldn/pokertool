@@ -2,10 +2,11 @@
 ---
 schema: pokerheader.v1
 project: pokertool
-file: pokertool/README.md
+file: README.md
 version: '20'
-last_commit: '2025-09-14T23:35:42.847310+00:00'
-fixes: []
+last_updated_utc: '2025-09-15T02:07:40.588679+00:00'
+applied_improvements: [Improvement1.py, Improvement2.py]
+summary: Project readme
 ---
 POKERTOOL-HEADER-END -->
 # Poker Assistant - Fixed Version
@@ -146,3 +147,15 @@ python3 tools/apply_headers.py --version v20.0.0 --fix "Initial v20 header appli
 python3 tools/apply_headers.py --version v20.1.0 --fix "Fix import mismatch in poker_modules"
 python3 -m pytest -q tests/test_headers.py
 
+
+
+## Improvements Log
+
+
+
+<!-- IMPROVEMENTS-START -->
+| When (UTC) | Improvement | Summary | Files touched |
+|---|---|---|---|
+| 2025-09-15T02:05:50.037678+00:00 | Improvement1.py | v20 header rollout, version vars, compile+AST audit | 51 |
+| 2025-09-15T02:07:40.588679+00:00 | Improvement2.py | CHANGELOG added, module inventory refreshed, README log updated | 2 |
+<!-- IMPROVEMENTS-END -->

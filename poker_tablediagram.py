@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/poker_tablediagram.py
+# file: poker_tablediagram.py
 # version: '20'
-# last_commit: '2025-09-14T18:22:49.796576+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Table diagram utilities
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 """
 Separate table diagram window for Poker Assistant.
 Shows player positions, dealer button, and blinds in an always-on-top window.

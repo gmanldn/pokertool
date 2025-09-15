@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/hotfix_pokertool.py
+# file: hotfix_pokertool.py
 # version: '20'
-# last_commit: '2025-09-15T01:32:01.249677+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Auto-labeled purpose for hotfix_pokertool.py
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 # hotfix_pokertool.py
 import re, pathlib, shutil, time, compileall, os
 

@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/poker_go.py
+# file: poker_go.py
 # version: '20'
-# last_commit: '2025-09-15T01:25:21.989996+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Setup script with dependency checks
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 """
 poker_go.py — zero-prompt launcher for gmanldn/pokertool.
 

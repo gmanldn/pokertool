@@ -1,315 +1,375 @@
-# PokerTool version 20
-# Last updated: 2025-09-15
-# Description: Updated Poker tool with improved architecture, bug fixes, and documentation.
-# - Card: represents a playing card (rank & suit) with proper comparisons.
-# - Deck: represents a standard 52-card deck with shuffle and deal functionality.
-# - Player: represents a poker player (hole cards, best hand evaluation).
-# - Hand evaluation: logic to rank 5-card poker hands (supports Texas Hold'em 7-card evaluation).
-__version__ = "20"
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Improvement1.py — PokerTool v20 schema rollout (idempotent)
+- Adds/updates canonical headers (pokerheader.v1) on all relevant files
+- Sets module __version__ to "20" where applicable
+- Generates/updates README "Improvements Log" (idempotent)
+- Produces machine-readable audit: docs/improvements.json, docs/modules_index.json
+- Compiles all .py files (py_compile) and AST-parses them to detect syntax issues (no import side-effects)
+- Writes build report to build_reports/report_<timestamp>.json (+ .txt summary)
+- Records applied improvements in .pokertool_state.json
+"""
 
-import itertools
-from collections import Counter
+import os, re, json, ast, py_compile, traceback, hashlib
+from datetime import datetime, timezone
+from pathlib import Path
 
-class Card:
-    """Represents a standard playing card with rank and suit, and defines comparisons based on poker value."""
-    # Valid ranks (2-9, Ten, Jack, Queen, King, Ace) and suits (Hearts, Diamonds, Clubs, Spades)
-    RANKS = [str(n) for n in range(2, 10)] + ["T", "J", "Q", "K", "A"]
-    SUITS = ["H", "D", "C", "S"]
-    
-    def __init__(self, rank: str, suit: str):
-        # Normalize inputs to uppercase
-        rank = rank.upper()
-        suit = suit.upper()
-        if rank not in Card.RANKS:
-            raise ValueError(f"Invalid rank '{rank}'")
-        if suit not in Card.SUITS:
-            raise ValueError(f"Invalid suit '{suit}'")
-        self.rank = rank
-        self.suit = suit
-    
-    def __str__(self):
-        """String representation of the card, e.g. 'AH' for Ace of Hearts."""
-        return f"{self.rank}{self.suit}"
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __eq__(self, other):
-        if not isinstance(other, Card):
-            return False
-        # Cards are equal if their ranks are equal (suits ignored for poker ranking):contentReference[oaicite:22]{index=22}
-        return self.rank == other.rank
-    
-    def __lt__(self, other):
-        if not isinstance(other, Card):
-            return False
-        # Compare cards by rank ordering (suits not considered):contentReference[oaicite:23]{index=23} 
-        return Card.RANKS.index(self.rank) < Card.RANKS.index(other.rank)
+VERSION_STR = "20"
+PROJECT = "pokertool"
+SCHEMA = "pokerheader.v1"
+STATE_FILE = ".pokertool_state.json"
+DOCS_DIR = Path("docs")
+TOOLS_DIR = Path("tools")
+REPORTS_DIR = Path("build_reports")
+IMPROVEMENTS_JSON = DOCS_DIR / "improvements.json"
+MODULES_INDEX_JSON = DOCS_DIR / "modules_index.json"
+CHANGELOG_MD = Path("CHANGELOG.md")  # created by Improvement2, but we'll not touch here
+README_MD = Path("README.md")
+THIS_FILE = "Improvement1.py"
+UTC_NOW = datetime.now(timezone.utc).isoformat()
 
-class Deck:
-    """Represents a deck of 52 playing cards. Can be shuffled and used to deal cards."""
-    def __init__(self):
-        # Initialize a standard 52-card deck (no jokers).
-        self.cards = [Card(rank, suit) for suit in Card.SUITS for rank in Card.RANKS]
-    
-    def shuffle(self):
-        """Shuffle the deck randomly using Python's random.shuffle."""
-        import random
-        random.shuffle(self.cards)
-    
-    def deal_card(self):
-        """Deal one card from the deck. Removes and returns the top card of the deck."""
-        if len(self.cards) == 0:
-            raise IndexError("Cannot deal from an empty deck")
-        return self.cards.pop()
-    
-    def deal_cards(self, count: int):
-        """Deal a number of cards from the deck. Returns a list of Card objects."""
-        if count < 0 or count > len(self.cards):
-            raise ValueError("Cannot deal {} cards; deck has {}".format(count, len(self.cards)))
-        dealt = self.cards[-count:]  # take from the bottom of list (top of deck)
-        self.cards = self.cards[:-count]
-        return dealt
-    
-    def __len__(self):
-        """Return the number of cards remaining in the deck."""
-        return len(self.cards)
-    
-    def __str__(self):
-        """Return a space-separated string of all cards in the deck (mostly for debugging)."""
-        return " ".join(str(card) for card in self.cards)
+# File type header markers
+PY_START = "# POKERTOOL-HEADER-START"
+PY_END   = "# POKERTOOL-HEADER-END"
+MD_START = "<!-- POKERTOOL-HEADER-START"
+MD_END   = "POKERTOOL-HEADER-END -->"
 
-class Player:
-    """Represents a poker player with hole cards and best hand evaluation."""
-    def __init__(self, name: str):
-        self.name = name
-        self.hole_cards = []       # list of 2 Card objects
-        self.best_hand = None      # list of 5 Card objects (best hand)
-        self.best_hand_rank = None # tuple representing the best hand's rank for comparison
-    
-    def receive_card(self, card: Card):
-        """Give the player a hole card. In Texas Hold'em, a player can have at most 2 hole cards."""
-        if len(self.hole_cards) >= 2:
-            raise ValueError("Player already has 2 hole cards")
-        self.hole_cards.append(card)
-    
-    def reset_hand(self):
-        """Reset the player's hand (clear hole_cards and best_hand). Call between rounds."""
-        self.hole_cards.clear()
-        self.best_hand = None
-        self.best_hand_rank = None
-    
-    def update_best_hand(self, community_cards: list):
-        """
-        Determine the best 5-card poker hand from the player's hole cards and community cards.
-        :param community_cards: list of Card (typically 5 community cards on the table).
-        :return: the best 5-card hand (list of Card) and sets best_hand/best_hand_rank.
-        """
-        if len(self.hole_cards) != 2:
-            raise ValueError("Player must have 2 hole cards to evaluate best hand")
-        if len(community_cards) < 5:
-            raise ValueError("Need 5 community cards to determine best hand")
-        all_cards = self.hole_cards + community_cards
-        best_rank = None
-        best_combination = None
-        # Check all 5-card combinations from the 7 cards:contentReference[oaicite:24]{index=24}
-        for combo in itertools.combinations(all_cards, 5):
-            rank = evaluate_hand(combo)
-            if best_rank is None or rank > best_rank:
-                best_rank = rank
-                best_combination = combo
-        # Save the best hand (sorted for readability) and its rank
-        self.best_hand = sorted(list(best_combination), reverse=True)
-        self.best_hand_rank = best_rank
-        return self.best_hand
-    
-    def get_hole_cards_notation(self):
-        """
-        Return the hole cards in standard poker notation (e.g., 'AKs' for Ace-King suited, 'TT' for pair of Tens).
-        - Two same ranks: just the rank twice (e.g., "KK").
-        - Otherwise, add 's' if suited or 'o' if offsuit:contentReference[oaicite:25]{index=25}.
-        """
-        if len(self.hole_cards) != 2:
-            return ""
-        c1, c2 = sorted(self.hole_cards, reverse=True)  # sort by rank
-        r1, r2 = c1.rank, c2.rank
-        if r1 == r2:
-            return r1 + r2  # pocket pair, e.g., "QQ"
-        notation = r1 + r2
-        notation += "s" if c1.suit == c2.suit else "o"
-        return notation
-    
-    def __str__(self):
-        return f"{self.name}: Hole {self.hole_cards}, Best {self.best_hand}"
-    
-    def __repr__(self):
-        return str(self)
-
-# Hand ranking categories for reference (0 = High Card, ... 9 = Royal Flush)
-CATEGORY_NAMES = {
-    0: "High Card",
-    1: "Pair",
-    2: "Two Pair",
-    3: "Three of a Kind",
-    4: "Straight",
-    5: "Flush",
-    6: "Full House",
-    7: "Four of a Kind",
-    8: "Straight Flush",
-    9: "Royal Flush"
+# Purpose hints by filename (fallbacks are auto-generated)
+PURPOSE_HINTS = {
+    "poker_modules.py": "Core poker logic, hand analysis, and card handling",
+    "poker_init.py": "Database initialization and persistence layer",
+    "poker_gui.py": "Main graphical user interface",
+    "poker_main.py": "Application launcher",
+    "poker_go.py": "Setup script with dependency checks",
+    "poker_gui_autopilot.py": "GUI automation for tests",
+    "poker_imports.py": "Import glue / public API surface",
+    "poker_screen_scraper.py": "Screen scraping utilities",
+    "poker_scraper_setup.py": "Scraper setup helpers",
+    "poker_tablediagram.py": "Table diagram utilities",
+    "poker_test.py": "Unit tests",
+    "comprehensive_integration_tests.py": "Comprehensive integration tests",
+    "gui_integration_tests.py": "GUI integration tests",
+    "final_test_validation.py": "Final validation tests",
+    "security_validation_tests.py": "Security validation tests",
+    "saniitise_python_files.py": "Sanitize Python files",
+    "README.md": "Project overview and usage",
 }
 
-def evaluate_hand(cards):
-    """
-    Evaluate a 5-card poker hand and return a tuple (category, tiebreaker...) that can be used for comparison.
-    The tuple's first element is the category rank (0=High Card, ..., 9=Royal Flush), and subsequent elements are values for tie-breaking.
-    """
-    # Ensure input is a 5-card iterable (tuple or list of Card)
-    cards = list(cards)
-    if len(cards) != 5:
-        raise ValueError("Exactly 5 cards are required to evaluate a hand")
-    # Convert ranks to numerical values for comparison
-    rank_values = []
-    for card in cards:
-        r = card.rank
-        if r.isdigit():
-            rank_values.append(int(r))
-        else:
-            rank_values.append({"T":10, "J":11, "Q":12, "K":13, "A":14}[r])
-    rank_values.sort(reverse=True)
-    suits = [card.suit for card in cards]
-    # Count occurrences of each rank
-    counts = Counter(rank_values)
-    # Sort ranks by count (desc) then by value (desc)
-    # e.g., for hand [A,A,A,K,K] -> counts: {14:3, 13:2}, sorted_by_count -> [(14,3), (13,2)]
-    sorted_counts = sorted(counts.items(), key=lambda x: (x[1], x[0]), reverse=True)
-    sorted_ranks = [rank for rank, cnt in sorted_counts]
-    counts_list = [cnt for rank, cnt in sorted_counts]
-    # Check for flush and straight
-    flush = len(set(suits)) == 1
-    unique_vals = sorted(set(rank_values))
-    straight = False
-    top_of_straight = None
-    if len(unique_vals) == 5:
-        # Normal straight: max-min == 4
-        if max(unique_vals) - min(unique_vals) == 4:
-            straight = True
-            top_of_straight = max(unique_vals)
-        # Ace-low straight (5-high straight: A,2,3,4,5):contentReference[oaicite:26]{index=26}
-        if unique_vals == [2, 3, 4, 5, 14]:
-            straight = True
-            top_of_straight = 5  # treat 5 as the top value for the straight
-            unique_vals = [1, 2, 3, 4, 5]  # adjust for tiebreaker purposes
-    # Determine hand category
-    category = None
-    tiebreak = ()
-    if counts_list == [4, 1]:
-        # Four of a Kind
-        category = 7
-        four_val = sorted_ranks[0]
-        kicker_val = sorted_ranks[1]
-        tiebreak = (four_val, kicker_val)
-    elif counts_list == [3, 2]:
-        # Full House
-        category = 6
-        trip_val = sorted_ranks[0]
-        pair_val = sorted_ranks[1]
-        tiebreak = (trip_val, pair_val)
-    elif flush and straight:
-        # Straight Flush (or Royal Flush)
-        if top_of_straight == 14 and min(unique_vals) == 10:
-            category = 9  # Royal Flush:contentReference[oaicite:27]{index=27}
-        else:
-            category = 8  # Straight Flush
-        # For straight/straight flush, tiebreaker is the top card value
-        tiebreak = (top_of_straight,)
-    elif flush:
-        # Flush
-        category = 5
-        # Five cards sorted by value for tiebreaker
-        tiebreak = tuple(sorted(rank_values, reverse=True))
-    elif straight:
-        # Straight
-        category = 4
-        tiebreak = (top_of_straight,)
-    elif counts_list == [3, 1, 1]:
-        # Three of a Kind
-        category = 3
-        trip_val = sorted_ranks[0]
-        kickers = sorted(sorted_ranks[1:], reverse=True)
-        tiebreak = tuple([trip_val] + kickers)
-    elif counts_list == [2, 2, 1]:
-        # Two Pair
-        category = 2
-        pair_high = sorted_ranks[0]
-        pair_low = sorted_ranks[1]
-        kicker_val = sorted_ranks[2]
-        # Ensure pair_high is actually the higher value (sorted_ranks is already desc by count then value)
-        if pair_high < pair_low:
-            pair_high, pair_low = pair_low, pair_high
-        tiebreak = (pair_high, pair_low, kicker_val)
-    elif counts_list == [2, 1, 1, 1]:
-        # One Pair
-        category = 1
-        pair_val = sorted_ranks[0]
-        kickers = sorted(sorted_ranks[1:], reverse=True)
-        tiebreak = tuple([pair_val] + kickers)
+# ---------------------------------------------------------------------
+
+def load_state():
+    if Path(STATE_FILE).exists():
+        try:
+            return json.loads(Path(STATE_FILE).read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def save_state(state):
+    Path(STATE_FILE).write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+def ensure_dirs():
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    TOOLS_DIR.mkdir(parents=True, exist_ok=True)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+def relpath(p: Path) -> str:
+    try:
+        return str(p.relative_to(Path.cwd()))
+    except ValueError:
+        return str(p)
+
+def file_purpose(p: Path) -> str:
+    return PURPOSE_HINTS.get(p.name, f"Auto-labeled purpose for {p.name}")
+
+def hash_text(s: str) -> str:
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()[:12]
+
+def header_block_for_py(p: Path, applied_improvements):
+    rel = relpath(p)
+    purpose = file_purpose(p)
+    applied_str = ", ".join(applied_improvements)
+    lines = [
+        PY_START,
+        "# ---",
+        f"# schema: {SCHEMA}",
+        f"# project: {PROJECT}",
+        f"# file: {rel}",
+        f"# version: '{VERSION_STR}'",
+        f"# last_updated_utc: '{UTC_NOW}'",
+        f"# applied_improvements: [{applied_str}]",
+        f"# summary: {purpose}",
+        "# ---",
+        PY_END,
+        "",
+    ]
+    return "\n".join(lines)
+
+def header_block_for_md(p: Path, applied_improvements):
+    rel = relpath(p)
+    purpose = file_purpose(p)
+    applied_str = ", ".join(applied_improvements)
+    lines = [
+        MD_START,
+        "---",
+        f"schema: {SCHEMA}",
+        f"project: {PROJECT}",
+        f"file: {rel}",
+        f"version: '{VERSION_STR}'",
+        f"last_updated_utc: '{UTC_NOW}'",
+        f"applied_improvements: [{applied_str}]",
+        f"summary: {purpose}",
+        "---",
+        MD_END,
+        "",
+    ]
+    return "\n".join(lines)
+
+def parse_existing_improvements(header_text: str):
+    # Extract applied_improvements list if present
+    m = re.search(r"applied_improvements:\s*\[(.*?)\]", header_text, re.IGNORECASE)
+    if not m:
+        return []
+    raw = m.group(1).strip()
+    if not raw:
+        return []
+    # Split on commas (simple parser; entries are names like Improvement1.py)
+    parts = [x.strip() for x in raw.split(",")]
+    return [p for p in parts if p]
+
+def ensure_header(p: Path, improvement_name: str):
+    text = p.read_text(encoding="utf-8", errors="replace")
+    is_py = p.suffix == ".py"
+    start_marker = PY_START if is_py else MD_START
+    end_marker = PY_END if is_py else MD_END
+    header_re = re.compile(
+        r"(?s)" + re.escape(start_marker) + r".*?" + re.escape(end_marker) + r"\s*"
+    )
+    if header_re.search(text):
+        # Update existing header: merge applied_improvements and bump version/time
+        header_text = header_re.search(text).group(0)
+        applied = parse_existing_improvements(header_text)
+        if improvement_name not in applied:
+            applied.append(improvement_name)
+        # Rebuild header with merged list
+        block = header_block_for_py(p, applied) if is_py else header_block_for_md(p, applied)
+        new_text = header_re.sub(block, text, count=1)
+        if new_text != text:
+            p.write_text(new_text, encoding="utf-8")
+            return True, "updated-header"
+        return False, "header-unchanged"
     else:
-        # High Card
-        category = 0
-        tiebreak = tuple(sorted(rank_values, reverse=True))
-    return (category,) + tiebreak
+        # Insert new header at top (respect shebang for .py)
+        applied = [improvement_name]
+        block = header_block_for_py(p, applied) if is_py else header_block_for_md(p, applied)
+        if is_py and text.startswith("#!"):
+            # keep shebang first line
+            first_line, rest = text.split("\n", 1)
+            new_text = first_line + "\n" + block + rest
+        else:
+            new_text = block + text
+        p.write_text(new_text, encoding="utf-8")
+        return True, "inserted-header"
 
-def compare_hands(hand1, hand2):
-    """
-    Compare two 5-card hands.
-    :return: 1 if hand1 > hand2, -1 if hand1 < hand2, 0 if equal (tie).
-    """
-    score1 = evaluate_hand(hand1)
-    score2 = evaluate_hand(hand2)
-    if score1 > score2:
-        return 1
-    elif score1 < score2:
-        return -1
+def ensure_version_var(p: Path):
+    if p.suffix != ".py":
+        return False, "not-python"
+    text = p.read_text(encoding="utf-8", errors="replace")
+    # If __version__ exists, update; else insert right after header or at top
+    version_re = re.compile(r"^(__version__\s*=\s*['\"])([^'\"]+)(['\"])", re.MULTILINE)
+    m = version_re.search(text)
+    if m:
+        new_text = version_re.sub(rf"\g<1>{VERSION_STR}\3", text, count=1)
+        if new_text != text:
+            p.write_text(new_text, encoding="utf-8")
+            return True, "version-updated"
+        return False, "version-unchanged"
+    # Insert after header if present
+    header_end_idx = text.find(PY_END)
+    insertion = f"__version__ = \"{VERSION_STR}\"\n\n"
+    if header_end_idx != -1:
+        insert_at = header_end_idx + len(PY_END)
+        new_text = text[:insert_at] + "\n" + insertion + text[insert_at:]
     else:
-        return 0
+        new_text = insertion + text
+    p.write_text(new_text, encoding="utf-8")
+    return True, "version-inserted"
 
-def determine_winners(players: list, community_cards: list):
-    """
-    Determine the winner(s) among players given the community cards.
-    :return: list of Player objects who have the top hand (ties possible).
-    """
-    best_rank = None
-    winners = []
-    for player in players:
-        player.update_best_hand(community_cards)
-        if best_rank is None or player.best_hand_rank > best_rank:
-            best_rank = player.best_hand_rank
-            winners = [player]
-        elif player.best_hand_rank == best_rank:
-            winners.append(player)
-    return winners
+def find_target_files():
+    root = Path.cwd()
+    ignore_dirs = {".git", ".venv", "venv", "__pycache__", ".idea", ".eggs", "build", "dist"}
+    exts = {".py", ".md"}
+    files = []
+    for dp, dn, fn in os.walk(root):
+        dname = Path(dp).name
+        if dname in ignore_dirs:
+            continue
+        for f in fn:
+            p = Path(dp) / f
+            if p.suffix in exts:
+                files.append(p)
+    return files
 
-# Example usage (for manual testing, will run only if this file is executed directly)
+def py_compile_file(p: Path):
+    try:
+        py_compile.compile(str(p), doraise=True)
+        return True, None
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
+
+def ast_index_file(p: Path):
+    results = {"functions": [], "classes": []}
+    try:
+        tree = ast.parse(p.read_text(encoding="utf-8", errors="replace"), filename=str(p))
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef):
+                results["functions"].append(node.name)
+            elif isinstance(node, ast.ClassDef):
+                results["classes"].append(node.name)
+        return True, results, None
+    except Exception as e:
+        return False, results, f"{type(e).__name__}: {e}"
+
+def update_readme_log(entries):
+    # Ensure README exists
+    if not README_MD.exists():
+        README_MD.write_text("# PokerTool\n\n", encoding="utf-8")
+
+    text = README_MD.read_text(encoding="utf-8", errors="replace")
+    heading = "## Improvements Log"
+    if heading not in text:
+        text += f"\n\n{heading}\n\n"
+        README_MD.write_text(text, encoding="utf-8")
+
+    text = README_MD.read_text(encoding="utf-8", errors="replace")
+    # Build a normalized table section (idempotent insert/update for this improvement)
+    # We'll append a compact markdown list keyed by improvement name + hash of content.
+    out_lines = []
+    out_lines.append("\n<!-- IMPROVEMENTS-START -->\n")
+    # If there is an existing block, remove and replace (keep idempotent single block)
+    text = re.sub(r"\n<!-- IMPROVEMENTS-START -->.*?<!-- IMPROVEMENTS-END -->\n",
+                  "\n", text, flags=re.S)
+    out_lines.append("| When (UTC) | Improvement | Summary | Files touched |\n")
+    out_lines.append("|---|---|---|---|\n")
+    for e in entries:
+        out_lines.append(f"| {e['when']} | {e['name']} | {e['summary']} | {e['files_touched']} |\n")
+    out_lines.append("<!-- IMPROVEMENTS-END -->\n")
+    README_MD.write_text(text + "".join(out_lines), encoding="utf-8")
+
+def main():
+    ensure_dirs()
+    state = load_state()
+    applied = state.get("applied", [])
+    if THIS_FILE in applied:
+        print(f"[info] {THIS_FILE} already applied; idempotent no-op.")
+        return
+
+    all_files = find_target_files()
+    updated = []
+    header_changes = 0
+    version_changes = 0
+
+    # Apply headers + version bumps
+    for p in all_files:
+        if p.name == THIS_FILE:
+            continue
+        # headers
+        changed, how = ensure_header(p, THIS_FILE)
+        if changed:
+            updated.append({"file": relpath(p), "change": how})
+            header_changes += 1
+        # version var for .py
+        v_changed, v_how = ensure_version_var(p)
+        if v_changed and p.suffix == ".py":
+            updated.append({"file": relpath(p), "change": v_how})
+            version_changes += 1
+
+    # Compile and AST index
+    compile_results = {}
+    modules_index = {}
+    compile_failures = 0
+    for p in sorted([x for x in all_files if x.suffix == ".py"]):
+        ok, err = py_compile_file(p)
+        compile_results[relpath(p)] = {"compiled": ok, "error": err}
+        if not ok:
+            compile_failures += 1
+        ok2, idx, err2 = ast_index_file(p)
+        modules_index[relpath(p)] = {"ok": ok2, "index": idx, "error": err2}
+
+    # Write machine-readable outputs
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    MODULES_INDEX_JSON.write_text(json.dumps(modules_index, indent=2), encoding="utf-8")
+
+    # Improvements ledger (append or create)
+    improvements = []
+    if IMPROVEMENTS_JSON.exists():
+        try:
+            improvements = json.loads(IMPROVEMENTS_JSON.read_text(encoding="utf-8"))
+        except Exception:
+            improvements = []
+    summary = f"v{VERSION_STR} header rollout, version vars, compile+AST audit"
+    improvements.append({
+        "name": THIS_FILE,
+        "when": UTC_NOW,
+        "version": VERSION_STR,
+        "summary": summary,
+        "files_touched": len(updated),
+        "compile_failures": compile_failures,
+    })
+    IMPROVEMENTS_JSON.write_text(json.dumps(improvements, indent=2), encoding="utf-8")
+
+    # Update README Improvements Log (render last N=20)
+    update_readme_log(improvements[-20:])
+
+    # Build report
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    report = {
+        "improvement": THIS_FILE,
+        "timestamp_utc": UTC_NOW,
+        "version": VERSION_STR,
+        "updated": updated,
+        "compile_results": compile_results,
+        "compile_failures": compile_failures,
+        "modules_index_json": str(MODULES_INDEX_JSON),
+    }
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    (REPORTS_DIR / f"report_{THIS_FILE}_{stamp}.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (REPORTS_DIR / f"report_{THIS_FILE}_{stamp}.txt").write_text(
+        f"Improvement: {THIS_FILE}\nTime (UTC): {UTC_NOW}\nVersion: {VERSION_STR}\n"
+        f"Files touched: {len(updated)}\nCompile failures: {compile_failures}\n",
+        encoding="utf-8"
+    )
+
+    # Write a simple tools/verify_build.py (idempotent create if missing)
+    verify_path = TOOLS_DIR / "verify_build.py"
+    if not verify_path.exists():
+        verify_path.write_text(
+            "# Auto-generated by Improvement1.py\n"
+            "import py_compile, os, sys\n"
+            "fail=0\n"
+            "for root,_,files in os.walk('.'):\n"
+            "    if any(part in root for part in ('.git','venv','.venv','__pycache__','build','dist')):\n"
+            "        continue\n"
+            "    for f in files:\n"
+            "        if f.endswith('.py') and f!='verify_build.py':\n"
+            "            p=os.path.join(root,f)\n"
+            "            try:\n"
+            "                py_compile.compile(p, doraise=True)\n"
+            "            except Exception as e:\n"
+            "                print('[compile-fail]', p, e)\n"
+            "                fail+=1\n"
+            "print('compile_failures=',fail)\n"
+            "sys.exit(1 if fail else 0)\n",
+            encoding="utf-8"
+        )
+
+    # Mark state
+    applied.append(THIS_FILE)
+    state["applied"] = applied
+    save_state(state)
+
+    print(f"[ok] {THIS_FILE} applied. headers:{header_changes} version_updates:{version_changes} compile_failures:{compile_failures}")
+
 if __name__ == "__main__":
-    # Set up a quick demo round with 2 players
-    deck = Deck()
-    deck.shuffle()
-    players = [Player("Alice"), Player("Bob")]
-    # Deal 2 hole cards to each player
-    for player in players:
-        player.receive_card(deck.deal_card())
-        player.receive_card(deck.deal_card())
-    # Deal 5 community cards
-    community = deck.deal_cards(5)
-    # Determine each player's best hand
-    for player in players:
-        player.update_best_hand(community)
-        print(f"{player.name} hole: {player.hole_cards} -> best hand: {player.best_hand} ({CATEGORY_NAMES[player.best_hand_rank[0]]})")
-    # Determine winner(s)
-    winners = determine_winners(players, community)
-    if len(winners) == 1:
-        print(f"Winner: {winners[0].name} with {CATEGORY_NAMES[winners[0].best_hand_rank[0]]}")
-    else:
-        print("It's a tie between: " + " and ".join(w.name for w in winners) + 
-              f" with {CATEGORY_NAMES[winners[0].best_hand_rank[0]]}")
+    main()

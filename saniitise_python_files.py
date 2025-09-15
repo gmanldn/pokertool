@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/saniitise_python_files.py
+# file: saniitise_python_files.py
 # version: '20'
-# last_commit: '2025-09-14T18:22:49.797240+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Sanitize Python files
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 import sys, pathlib
 
 ZERO_WIDTH = {

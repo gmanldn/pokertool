@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/apply_headers.py
+# file: apply_headers.py
 # version: '20'
-# last_commit: '2025-09-15T01:40:48.814921+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Auto-labeled purpose for apply_headers.py
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 """
 Apply or update machine-readable headers across the repo.
 

@@ -1,0 +1,276 @@
+{
+  "poker_modules.py": {
+    "functions": [
+      "parse_card",
+      "analyse_hand"
+    ],
+    "classes": [
+      "Rank",
+      "Suit",
+      "Position",
+      "Card",
+      "HandAnalysisResult"
+    ]
+  },
+  "saniitise_python_files.py": {
+    "functions": [
+      "clean_text",
+      "has_merge_markers"
+    ],
+    "classes": []
+  },
+  "poker_tablediagram.py": {
+    "functions": [],
+    "classes": [
+      "TableState",
+      "TableDiagramWindow"
+    ]
+  },
+  "autoconfirm.py": {
+    "functions": [],
+    "classes": []
+  },
+  "Improvement2.py": {
+    "functions": [
+      "load_state",
+      "save_state",
+      "relpath",
+      "header_block_for_md",
+      "parse_existing_improvements",
+      "ensure_md_header",
+      "ast_index",
+      "update_readme_log",
+      "update_changelog",
+      "main"
+    ],
+    "classes": []
+  },
+  "poker_test.py": {
+    "functions": [],
+    "classes": []
+  },
+  "apply_pokertool_fixes.py": {
+    "functions": [
+      "backup_file",
+      "read_text",
+      "write_text",
+      "sanitize_repo",
+      "patch_poker_gui",
+      "patch_poker_go",
+      "patch_poker_init",
+      "replace_poker_modules",
+      "write_verify_build",
+      "compile_repo",
+      "main"
+    ],
+    "classes": []
+  },
+  "enhanced_poker_test_main.py": {
+    "functions": [],
+    "classes": []
+  },
+  "poker_scraper_setup.py": {
+    "functions": [
+      "main"
+    ],
+    "classes": [
+      "CardTemplateGenerator",
+      "PokerSiteConfigurator"
+    ]
+  },
+  "poker_gui.py": {
+    "error": "SyntaxError: unmatched ')' (poker_gui.py, line 71)"
+  },
+  "comprehensive_integration_tests.py": {
+    "functions": [],
+    "classes": [
+      "TestCompletePokerWorkflows",
+      "TestSystemIntegrationUnderLoad",
+      "TestDatabaseIntegrationWorkflows",
+      "TestPerformanceIntegrationValidation",
+      "TestErrorRecoveryIntegration"
+    ]
+  },
+  "test_screen_scraper.py": {
+    "functions": [
+      "test_suite"
+    ],
+    "classes": [
+      "TestPokerScreenScraper",
+      "TestScreenScraperBridge",
+      "TestTableConfig",
+      "TestIntegration",
+      "TestPerformance"
+    ]
+  },
+  "poker_init.py": {
+    "functions": [
+      "init_db",
+      "initialise_db_if_needed"
+    ],
+    "classes": []
+  },
+  "poker_main.py": {
+    "functions": [],
+    "classes": []
+  },
+  "security_validation_tests.py": {
+    "functions": [],
+    "classes": [
+      "TestInputSanitization",
+      "TestDatabaseSecurity",
+      "TestMemorySecurityValidation",
+      "TestDataValidationSecurity",
+      "TestPrivacyProtection",
+      "TestConcurrencySecurityValidation"
+    ]
+  },
+  "poker_screen_scraper.py": {
+    "functions": [
+      "test_screen_scraper"
+    ],
+    "classes": [
+      "TableRegion",
+      "SeatInfo",
+      "TableState",
+      "PokerSite",
+      "TableConfig",
+      "CardRecognizer",
+      "TextRecognizer",
+      "ButtonDetector",
+      "PokerScreenScraper",
+      "ScreenScraperBridge"
+    ]
+  },
+  "poker_imports.py": {
+    "functions": [
+      "safe_import",
+      "verify_poker_modules",
+      "create_minimal_fallbacks",
+      "repair_poker_modules",
+      "create_new_poker_modules",
+      "safe_launch_with_fallbacks"
+    ],
+    "classes": [
+      "ImportValidator"
+    ]
+  },
+  "poker_go.py": {
+    "functions": [
+      "_put_repo_first_on_syspath",
+      "_auto_confirm_inputs",
+      "_module_exists",
+      "_try_import",
+      "_tk_available",
+      "_run_module_as_main",
+      "_run_with_timeout",
+      "initialize",
+      "launch",
+      "selftest",
+      "parse_args",
+      "main"
+    ],
+    "classes": []
+  },
+  "gui_integration_tests.py": {
+    "functions": [],
+    "classes": [
+      "TestGUIComponentIntegration",
+      "TestGUIWorkflowIntegration",
+      "TestTableDiagramIntegration",
+      "TestGUIDataFlow",
+      "TestGUIErrorHandling",
+      "TestGUIPerformance"
+    ]
+  },
+  "hotfix_pokertool.py": {
+    "functions": [
+      "backup",
+      "patch_poker_gui",
+      "replace_poker_init",
+      "compile_skip_backups",
+      "main"
+    ],
+    "classes": []
+  },
+  "final_test_validation.py": {
+    "functions": [
+      "main"
+    ],
+    "classes": [
+      "TestResult",
+      "ValidationReport",
+      "TestValidator"
+    ]
+  },
+  "poker_gui_autopilot.py": {
+    "functions": [
+      "main"
+    ],
+    "classes": [
+      "AutopilotPanel",
+      "PokerAssistantWithAutopilot",
+      "CalibrationWizard"
+    ]
+  },
+  "Improvement1.py": {
+    "functions": [
+      "load_state",
+      "save_state",
+      "ensure_dirs",
+      "relpath",
+      "file_purpose",
+      "hash_text",
+      "header_block_for_py",
+      "header_block_for_md",
+      "parse_existing_improvements",
+      "ensure_header",
+      "ensure_version_var",
+      "find_target_files",
+      "py_compile_file",
+      "ast_index_file",
+      "update_readme_log",
+      "main"
+    ],
+    "classes": []
+  },
+  "apply_headers.py": {
+    "functions": [
+      "git_last_commit_iso",
+      "fs_mtime_iso",
+      "wants_sidecar",
+      "detect_style",
+      "split_shebang",
+      "extract_header_block",
+      "build_yaml_dict",
+      "render_block",
+      "apply_inline",
+      "apply_sidecar",
+      "should_consider",
+      "main"
+    ],
+    "classes": []
+  },
+  "tools/verify_build.py": {
+    "functions": [
+      "ok",
+      "_import_core",
+      "_db",
+      "_analyse",
+      "_gui_import"
+    ],
+    "classes": []
+  },
+  "tests/test_poker.py": {
+    "functions": [
+      "test_imports",
+      "test_card_creation",
+      "test_hand_analysis",
+      "test_hand_tier",
+      "test_database",
+      "test_gui_imports",
+      "main"
+    ],
+    "classes": []
+  }
+}

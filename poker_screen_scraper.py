@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/poker_screen_scraper.py
+# file: poker_screen_scraper.py
 # version: '20'
-# last_commit: '2025-09-09T15:38:42+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Screen scraping utilities
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 """
 Poker Screen Scraper Module
 Captures and analyzes poker table screenshots to extract game state.

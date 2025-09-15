@@ -2,12 +2,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/poker_modules.py
+# file: poker_modules.py
 # version: '20'
-# last_commit: '2025-09-15T00:23:59.410887+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Core poker logic, hand analysis, and card handling
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from enum import Enum, auto

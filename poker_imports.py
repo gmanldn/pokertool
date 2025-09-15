@@ -3,12 +3,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/poker_imports.py
+# file: poker_imports.py
 # version: '20'
-# last_commit: '2025-09-14T18:22:49.793988+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Import glue / public API surface
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 """
 Poker Imports - Safe import utilities for the poker assistant
 Provides robust error handling and fallback mechanisms for module imports

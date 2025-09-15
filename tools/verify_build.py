@@ -2,12 +2,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/tools/verify_build.py
+# file: tools/verify_build.py
 # version: '20'
-# last_commit: '2025-09-15T01:25:21.990597+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Auto-labeled purpose for verify_build.py
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 # tools/verify_build.py
 import os, importlib, sqlite3, contextlib
 os.environ.setdefault("POKER_AUTOCONFIRM","1")

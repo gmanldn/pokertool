@@ -2,12 +2,16 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/poker_init.py
+# file: poker_init.py
 # version: '20'
-# last_commit: '2025-09-15T01:32:28.233919+00:00'
-# fixes: []
+# last_updated_utc: '2025-09-15T02:05:50.037678+00:00'
+# applied_improvements: [Improvement1.py]
+# summary: Database initialization and persistence layer
 # ---
 # POKERTOOL-HEADER-END
+__version__ = "20"
+
+
 # -*- coding: utf-8 -*-
 import sqlite3, os, pathlib
 
