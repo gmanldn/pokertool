@@ -21,6 +21,13 @@ import logging
 import sys
 import os
 
+# GUI compatibility imports
+try:
+    from poker_gui import EnhancedPokerAssistant as PokerAssistant
+except ImportError:
+    from poker_gui import PokerAssistant
+
+
 # Add current directory to path to ensure modules can be found
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:

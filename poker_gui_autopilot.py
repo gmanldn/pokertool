@@ -34,6 +34,13 @@ from poker_gui import PokerAssistant  # Import original GUI
 
 # Import screen scraper
 from poker_screen_scraper import (
+
+# GUI compatibility imports
+try:
+    from poker_gui import EnhancedPokerAssistant as PokerAssistant
+except ImportError:
+    from poker_gui import PokerAssistant
+
     PokerScreenScraper, PokerSite, TableState, 
     ScreenScraperBridge, CardRecognizer
 )
