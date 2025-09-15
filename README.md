@@ -119,3 +119,30 @@ If you encounter any issues, check that:
 2. You're using Python 3.7+
 3. tkinter is available
 4. Try running `poker_go.py` for automated setup
+
+## File Headers (pokerheader.v1)
+
+Every file in this repo carries a machine-readable header for logging and audit.
+
+### Format
+- YAML payload, fenced by markers `POKERTOOL-HEADER-START` and `POKERTOOL-HEADER-END`.
+- For code and text files: YAML appears inside comments at the top of the file.
+- For files that cannot hold comments (e.g., JSON, binaries): a sidecar file named `<filename>.pokerheader.yml`.
+
+### Keys
+- `schema`: always `pokerheader.v1`.
+- `project`: `pokertool`.
+- `file`: repository-relative path.
+- `version`: semantic tag, starting at `v20.0.0`.
+- `last_commit`: ISO-8601 timestamp of the last Git commit for that file, or file mtime if not under Git.
+- `fixes`: list of `{date, summary}` entries documenting error fixes.
+
+### Maintenance
+Apply or update headers:
+
+```bash
+python3 tools/apply_headers.py --version v20.0.0 --fix "Initial v20 header applied"
+# later examples:
+python3 tools/apply_headers.py --version v20.1.0 --fix "Fix import mismatch in poker_modules"
+python3 -m pytest -q tests/test_headers.py
+
