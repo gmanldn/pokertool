@@ -288,3 +288,148 @@ RESOURCE USAGE:
   System CPU time: 0.018s
 
 --------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-15 23:22:40.627839
+SESSION ID: 20250915_232240
+Python Version: 3.13.1 (v3.13.1:06714517797, Dec  3 2024, 14:00:22) [Clang 15.0.0 (clang-1500.3.9.4)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: none
+====================================================================================================
+
+[2025-09-15 23:22:40.628231] [INFO] APPLICATION STARTUP
+Session: 20250915_232240
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 17: logger.info(
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python313.zip",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/lib-dynload",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages"
+  ]
+  {
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CFBundleIdentifier": "com.apple.Terminal",
+    "XPC_FLAGS": "0x0",
+    "TERM": "xterm-256color",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "XPC_SERVICE_NAME": "0",
+    "TERM_PROGRAM": "Apple_Terminal",
+    "TERM_PROGRAM_VERSION": "455.1",
+    "TERM_SESSION_ID": "5A262759-422B-4803-8F33-F85FDD0EE833",
+    "SHELL": "/bin/zsh",
+    "HOME": "/Users/georgeridout",
+    "LOGNAME": "georgeridout",
+    "USER": "georgeridout",
+    "PATH": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "LANG": "en_GB.UTF-8",
+    "_": "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13936.00 MB
+  User CPU time: 0.049s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-15 23:22:40.629288] [INFO] Starting poker tool application
+Session: 20250915_232240
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 36: logger.info("Starting poker tool application")
+
+RESOURCE USAGE:
+  Memory (RSS): 13936.00 MB
+  User CPU time: 0.049s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-15 23:22:40.629432] [DEBUG] Test debug message
+Session: 20250915_232240
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 38: logger.debug("Test debug message", test_data=test_value)
+
+LOCAL VARIABLES:
+  test_value = {'cards': ['AS', 'KH'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "AS",
+      "KH"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13936.00 MB
+  User CPU time: 0.049s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-15 23:22:40.629591] [INFO] Application shutdown normally
+Session: 20250915_232240
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 44: logger.info("Application shutdown normally")
+
+LOCAL VARIABLES:
+  test_value = {'cards': ['AS', 'KH'], 'position': 'BTN'}
+
+RESOURCE USAGE:
+  Memory (RSS): 13936.00 MB
+  User CPU time: 0.049s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-15 23:22:40.629779] [INFO] Performing cleanup
+Session: 20250915_232240
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 28: logger.info("Performing cleanup")
+
+RESOURCE USAGE:
+  Memory (RSS): 13936.00 MB
+  User CPU time: 0.049s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
