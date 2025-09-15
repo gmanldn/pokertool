@@ -19,7 +19,7 @@ Usage:
 Optional env flags for start.py:
   START_NO_SCAN=1        -> skip scanner entirely
   START_SCAN_DRY_RUN=1   -> ask scanner to dry-run (if supported)
-  START_NO_BACKUP=1      -> pass --no-backup (if supported)
+  START_NO_BACKUP=1      -> pass - -no-backup (if supported)
   START_SCAN_PATH=/path  -> override scan path (default: repo root)
 """
 from __future__ import annotations
