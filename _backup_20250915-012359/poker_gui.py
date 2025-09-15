@@ -15,34 +15,7 @@ from collections import deque, defaultdict
 
 # Fixed imports with proper error handling
 try:
-try:
-try:
-try:
-    from poker_modules import analyse_hand, parse_card, Position, Card
-except Exception as e:
-    class Position:
-        LATE=None; EARLY=None; MIDDLE=None; BLINDS=None
-    class Card: ...
-    def parse_card(s):
-        raise ValueError(f"Core unavailable: {e}")
-    def analyse_hand(*a, **k):
-        return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
-except Exception as e:
-    class Position:
-        LATE=None; EARLY=None; MIDDLE=None; BLINDS=None
-    class Card: ...
-    def parse_card(s):
-        raise ValueError(f"Core unavailable: {e}")
-    def analyse_hand(*a, **k):
-        return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
-except Exception as e:
-    class Position:
-        LATE=None; EARLY=None; MIDDLE=None; BLINDS=None
-    class Card: ...
-    def parse_card(s):
-        raise ValueError(f"Core unavailable: {e}")
-    def analyse_hand(*a, **k):
-        return type("R",(),{"strength":0.0,"advice":"unavailable","details":{"error":str(e)}})()
+    from poker_modules import (
         Card, Suit, Position, analyse_hand, get_hand_tier,
         to_two_card_str, RANK_ORDER, GameState
     )

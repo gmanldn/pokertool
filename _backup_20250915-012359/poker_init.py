@@ -97,14 +97,5 @@ def record_decision(
 # Make sure the DB exists right after import
 initialise_db_if_needed()
 
-if __name__ == '__main__':
-    import os
-    if os.environ.get('POKER_AUTOCONFIRM','1') in {'1','true','True'}:
-        init_db()
-    else:
-        ans = input('Initialize database now? (y/n): ').strip().lower()
-        if ans.startswith('y'):
-            init_db()
-else:
-    # Safe default on import
-    init_db()
+if __name__ == "__main__":
+    print("Database ready at", Path(DB_FILE).absolute())

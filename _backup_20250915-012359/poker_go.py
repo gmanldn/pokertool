@@ -9,10 +9,6 @@ import sys
 import subprocess
 import traceback
 from pathlib import Path
-import os as _os
-if _os.environ.get('POKER_AUTOCONFIRM','1') in {'1','true','True'}:
-    import builtins as _bi
-    _bi.input = lambda *a, **k: 'y'
 
 def check_python_version():
     """Check if Python version is adequate."""
