@@ -8,4 +8,58 @@
 # fixes: []
 # ---
 # POKERTOOL-HEADER-END
+.DS_Store# OS / editor
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# Local data / artifacts
+*.db
+*.sqlite
+*.sqlite3
+backup_*/
+# Bytecode in tools/tests as well
+tools/**/__pycache__/
+tests/**/__pycache__/# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# Local data / artifacts
+*.db
+*.sqlite
+*.sqlite3
+backup_*/
+# Bytecode in tools/tests as well
+tools/**/__pycache__/
+tests/**/__pycache__/
+.DS_Store
+.DS_Store.pokerheader.yml
+.DS_Store
+.pokertool_state.json

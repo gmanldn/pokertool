@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # POKERTOOL-HEADER-START
 # ---
 # schema: pokerheader.v1
@@ -60,7 +62,6 @@ def sanitize_repo():
 
 # --- Replacement content for poker_modules.py (clean Enums, Card, analyse_hand) ---
 POKER_MODULES_NEW = r'''# -*- coding: utf-8 -*-
-from __future__ import annotations
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Tuple, Dict

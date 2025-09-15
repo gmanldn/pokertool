@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # POKERTOOL-HEADER-START
 # ---
 # schema: pokerheader.v1
@@ -13,7 +15,6 @@ __version__ = "20"
 
 
 # -*- coding: utf-8 -*-
-from __future__ import annotations
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Tuple, Dict

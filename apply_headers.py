@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # POKERTOOL-HEADER-START
 # ---
 # schema: pokerheader.v1
@@ -25,7 +27,6 @@ Optional:
   --include "glob1,glob2"   limit to paths
   --exclude "glob1,glob2"   skip paths
 """
-from __future__ import annotations
 import argparse, datetime as dt, fnmatch, os, re, subprocess, sys, textwrap, yaml
 from pathlib import Path
 from typing import Dict, List, Tuple
