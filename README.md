@@ -57,7 +57,7 @@ python3 poker_main.py
 
 ### Option 3: Run GUI directly
 ```bash
-python3 poker_gui.py
+python3 poker_gui_enhanced.py
 ```
 
 ## Requirements
