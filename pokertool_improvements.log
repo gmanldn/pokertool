@@ -1,8 +1,0 @@
-2025-09-16 05:04:33,333 - __main__ - INFO - ============================================================
-2025-09-16 05:04:33,333 - __main__ - INFO - POKERTOOL SEPTEMBER 16 IMPROVEMENTS
-2025-09-16 05:04:33,334 - __main__ - INFO - ============================================================
-2025-09-16 05:04:33,334 - __main__ - INFO - 
-1. Running comprehensive test suite...
-2025-09-16 05:04:33,334 - __main__ - INFO - Starting comprehensive test suite
-2025-09-16 05:04:33,343 - __main__ - ERROR - ✗ Test failed: AA should have >80% equity vs random, got 0.519
-2025-09-16 05:04:33,350 - __main__ - INFO - Starting GTO solve with 100 iterations
