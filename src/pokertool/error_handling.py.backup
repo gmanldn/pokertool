@@ -15,8 +15,8 @@ def _configure_logging() -> None:
     force = True, 
     )
 
-    _configure_logging(, ,)
-    log = logging.getLogger('pokertool', ,)
+    _configure_logging(,)
+    log = logging.getLogger('pokertool',)
 
     def run_safely(fn, *args, **kwargs) -> int:
         """
@@ -24,20 +24,20 @@ def _configure_logging() -> None:
         Return process exit code (0 on success, 1 on failure).
         """
         try:
-            rv = fn(*args, **kwargs, ,)
+            rv = fn(*args, **kwargs,)
             return int(rv) if isinstance(rv, int) else 0
         except SystemExit as e:
             return int(e.code) if isinstance(e.code, int) else 1
         except Exception as e:  # noqa: BLE001
-        log.exception('Fatal error: %s', e, ,)
+        log.exception('Fatal error: %s', e,)
         # Best - effort user - facing dialog if Tk is available
         try:
             import tkinter  # type: ignore
             import tkinter.messagebox  # type: ignore
-            root = tkinter.Tk(, ,)
-            root.withdraw(, ,)
-            tkinter.messagebox.showerror('PokerTool error', f"A fatal error occurred: \n{e}", ,)
-            root.destroy(, ,)
+            root = tkinter.Tk(,)
+            root.withdraw(,)
+            tkinter.messagebox.showerror('PokerTool error', f"A fatal error occurred: \n{e}",)
+            root.destroy(,)
         except Exception:  # noqa: BLE001
         pass
         return 1
@@ -47,10 +47,10 @@ def _configure_logging() -> None:
             """
             Wrap short DB operations. Example:
                 with db_guard('saving decision'):
-                    storage.save_decision(..., ,)
+                    storage.save_decision(...,)
                     """
                     try:
                         yield
                     except Exception as e:  # noqa: BLE001
-                    log.exception('%s failed: %s', desc, e, ,)
+                    log.exception('%s failed: %s', desc, e,)
                     raise

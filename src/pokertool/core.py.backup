@@ -26,8 +26,8 @@ class Rank(Enum):
         }[self]
         @property
         def val(self)->int:  # legacy accessor
-        """TODO: Add docstring."""
-        return int(self.value, ,)
+            """TODO: Add docstring."""
+        return int(self.value,)
 
         class Suit(Enum):
             """TODO: Add class docstring."""
@@ -39,7 +39,7 @@ class Rank(Enum):
 
                 class Position(Enum):
                     """TODO: Add class docstring."""
-                    EARLY = auto(); MIDDLE = auto(); LATE = auto(); BLINDS = auto(, ,)
+                    EARLY = auto(); MIDDLE = auto(); LATE = auto(); BLINDS = auto(,)
                     @property
                     def category(self)->str:
                         """TODO: Add docstring."""
@@ -53,32 +53,31 @@ class Rank(Enum):
                             """TODO: Add docstring."""
                             return self is Position.LATE
 
-                            @dataclass(frozen = True, ,)
+                            @dataclass(frozen = True,)
                             class Card:
                                 """TODO: Add class docstring."""
                                 rank: Rank
                                 suit: Suit
                                 def __str__(self)->str: return f'{self.rank.sym}{self.suit.value}'
-                                def __repr__(self)->str: return f'Card({self.rank.name}, 
-                                {self.suit.name})'
+                                def __repr__(self)->str: return f'Card({self.rank.name},
+                                    {self.suit.name})'
 
                                 def parse_card(s: str) -> Card:
                                     """TODO: Add docstring."""
-                                    s = s.strip().upper(, ,)
+                                    s = s.strip().upper(,)
                                     rank_map: Dict[str, Rank] = {
                                     '2': Rank.TWO, '3': Rank.THREE, '4': Rank.FOUR, '5': Rank.FIVE, 
                                     '6': Rank.SIX, '7': Rank.SEVEN, '8': Rank.EIGHT, '9': Rank.NINE,
                                         
-
-                                    'T': Rank.TEN, 'J': Rank.JACK, 'Q': Rank.QUEEN, 'K': Rank.KING, 
-                                    'A': Rank.ACE
+                                    'T': Rank.TEN, 'J': Rank.JACK, 'Q': Rank.QUEEN, 'K': Rank.KING,
+                                        'A': Rank.ACE
                                     }
-                                    suit_map = {'s': Suit.spades, 'h': Suit.hearts, 
-                                    'd': Suit.diamonds, 'c': Suit.clubs}
+                                    suit_map = {'s': Suit.spades, 'h': Suit.hearts,
+                                        'd': Suit.diamonds, 'c': Suit.clubs}
                                     if len(s)!=2 or s[0] not in rank_map or s[1] not in suit_map:
-                                        raise ValueError(f"Bad card '{s}'. Use like "As", "Td", 
-                                        "9c".")
-                                        return Card(rank_map[s[0]], suit_map[s[1]], ,)
+                                        raise ValueError(f"Bad card '{s}'. Use like "As", "Td",
+                                            "9c".")
+                                        return Card(rank_map[s[0]], suit_map[s[1]],)
 
                                         @dataclass
                                         class HandAnalysisResult:
@@ -88,18 +87,17 @@ class Rank(Enum):
                                             details: dict
 
                                             def analyse_hand(hole_cards: Iterable[Card], 
-                                            """TODO: Add docstring."""
+                                                """TODO: Add docstring."""
                                             board_cards: Optional[Iterable[Card]] = None, 
                                             position: Optional[Position] = None, 
                                             pot: Optional[float] = None, 
                                             to_call: Optional[float] = None) -> HandAnalysisResult:
-                                                hc = list(hole_cards, ,)
+                                                hc = list(hole_cards,)
                                                 if len(hc) < 2:
-                                                    return HandAnalysisResult(0.0, 'fold', 
-                                                    {'error': 'need 2 hole cards'})
+                                                    return HandAnalysisResult(0.0, 'fold',
+                                                        {'error': 'need 2 hole cards'})
                                                     ranks = sorted([int(c.rank.value) for c in hc[: 2]],
-                                                        
-                                                    reverse = True)
+                                                        reverse = True)
                                                     pair = ranks[0]==ranks[1]
                                                     if pair and ranks[0] >= Rank.JACK.value:
                                                         advice = 'raise'
@@ -110,7 +108,7 @@ class Rank(Enum):
                                                         return HandAnalysisResult(
                                                         strength = sum(ranks)/28.0, 
                                                         advice = advice, 
-                                                        details = {'ONE_PAIR': pair, 
-                                                        'position': getattr(position, 'category', 
-                                                        None)}
+                                                        details = {"ONE_PAIR": pair,
+                                                            'position': getattr(position, 'category',
+                                                            None)}
                                                         )

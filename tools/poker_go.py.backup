@@ -10,10 +10,6 @@ import subprocess
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-# Also add src directory for pokertool module imports
-SRC_DIR = ROOT / 'src'
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
 
 # Your structured logger
 from logger import logger, log_exceptions, setup_global_exception_handler
@@ -107,17 +103,9 @@ def launch_main_application() -> int:
     """
     logger.info('Starting main poker application')
     
-    # Try to import and run the CLI directly to avoid subprocess path issues
-    try:
-        # Import from the src directory structure
-        sys.path.insert(0, str(SRC_DIR))
-        import pokertool.cli as cli_module
-        logger.info('Found pokertool.cli module, launching directly')
-        return cli_module.main()
-    except ImportError as e:
-        logger.warning('Could not import pokertool.cli', exception=e)
+    # TODO: Replace this with your actual poker application logic
+    # For now, we'll look for common entry points
     
-    # Fallback: look for executable scripts
     possible_mains = [
         ROOT / 'src' / 'pokertool' / 'cli.py',
         ROOT / 'src' / 'pokertool' / 'gui.py', 
@@ -128,16 +116,9 @@ def launch_main_application() -> int:
     for main_script in possible_mains:
         if main_script.exists():
             logger.info('Found main application script', script=str(main_script))
-            # Set up environment with proper PYTHONPATH for subprocess
-            env = os.environ.copy()
-            pythonpath_parts = [str(ROOT), str(SRC_DIR)]
-            if 'PYTHONPATH' in env:
-                pythonpath_parts.append(env['PYTHONPATH'])
-            env['PYTHONPATH'] = os.pathsep.join(pythonpath_parts)
-            
             cmd = [sys.executable, str(main_script)]
             logger.info('Launching main application', command=_log_cmd(cmd))
-            completed = subprocess.run(cmd, cwd=str(ROOT), env=env)
+            completed = subprocess.run(cmd, cwd=str(ROOT))
             return int(completed.returncode)
     
     # If no main application found, log warning and return success
