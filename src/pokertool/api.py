@@ -18,8 +18,8 @@ from functools import wraps
 
 # Try to import FastAPI dependencies
 try:
-    from fastapi import FastAPI, HTTPException, Depends, Security, WebSocket, WebSocketDisconnect
-    from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+    from fastapi import FastAPI, HTTPException, Depends, Security, WebSocket, WebSocketDisconnect, BackgroundTasks
+    from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
     from fastapi.responses import JSONResponse
@@ -31,6 +31,7 @@ try:
     from slowapi.middleware import SlowAPIMiddleware
     import redis.asyncio as redis
     import jwt
+    import bcrypt
     FASTAPI_AVAILABLE = True
 except ImportError:
     FastAPI = None
@@ -39,6 +40,7 @@ except ImportError:
     Security = None
     WebSocket = None
     WebSocketDisconnect = None
+    BackgroundTasks = None
     CORSMiddleware = None
     TrustedHostMiddleware = None
     JSONResponse = None
@@ -47,16 +49,20 @@ except ImportError:
     Field = None
     HTTPBearer = None
     HTTPAuthorizationCredentials = None
+    OAuth2PasswordBearer = None
+    OAuth2PasswordRequestForm = None
     Limiter = None
     SlowAPIMiddleware = None
     redis = None
     jwt = None
+    bcrypt = None
     FASTAPI_AVAILABLE = False
 
-from .database import get_production_db, ProductionDatabase
+from .production_database import get_production_db, ProductionDatabase, DatabaseConfig, initialize_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
-from .threading import get_thread_pool, TaskPriority
+from .threading import get_thread_pool, TaskPriority, get_poker_concurrency_manager
 from .error_handling import SecurityError, retry_on_failure
+from .hud_overlay import start_hud_overlay, stop_hud_overlay, update_hud_state, is_hud_running
 
 logger = logging.getLogger(__name__)
 

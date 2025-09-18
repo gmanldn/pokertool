@@ -56,6 +56,14 @@ from .threading import get_thread_pool, TaskPriority
 
 logger = logging.getLogger(__name__)
 
+# Import HUD overlay system
+try:
+    from .hud_overlay import update_hud_state, is_hud_running
+    HUD_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f'Could not import HUD overlay system: {e}')
+    HUD_AVAILABLE = False
+
 class EnhancedScraperManager:
     """
     Enhanced scraper manager with OCR integration and real-time analysis.
@@ -126,6 +134,13 @@ class EnhancedScraperManager:
                 game_state.update(enhanced_state)
 
         self.last_state = game_state
+
+        # Update HUD overlay if running
+        if HUD_AVAILABLE and is_hud_running():
+            try:
+                update_hud_state(game_state)
+            except Exception as e:
+                logger.error(f'HUD update error: {e}')
 
         # Save to database
         self._save_table_state(game_state)
@@ -511,24 +526,145 @@ async def run_screen_scraper_async(site: str = 'GENERIC', enable_ocr: bool = Tru
 
 # Anti-detection utilities
 def implement_anti_detection() -> Dict[str, Any]:
-    """Implement anti-detection mechanisms for screen scraping."""
+    """Implement advanced anti-detection mechanisms for screen scraping."""
     try:
-        # Random delays, mouse movements, etc.
         import random
+        import time
         
-        mechanisms = {
-            'random_delays': True,
-            'mouse_movements': True,
-            'varied_intervals': True,
-            'stealth_mode': True
+        mechanisms = {}
+        
+        # Random delays between captures
+        def add_random_delay():
+            delay = random.uniform(0.5, 2.0)  # 0.5 to 2 second delay
+            time.sleep(delay)
+            return delay
+        
+        # Simulate human-like mouse movements
+        def simulate_mouse_movement():
+            try:
+                import pyautogui
+                # Get current mouse position
+                current_x, current_y = pyautogui.position()
+                
+                # Small random movement (simulating human jitter)
+                offset_x = random.randint(-10, 10)
+                offset_y = random.randint(-10, 10)
+                
+                new_x = max(0, min(current_x + offset_x, pyautogui.size()[0] - 1))
+                new_y = max(0, min(current_y + offset_y, pyautogui.size()[1] - 1))
+                
+                # Smooth movement
+                pyautogui.moveTo(new_x, new_y, duration=random.uniform(0.1, 0.3))
+                return True
+            except ImportError:
+                logger.warning("pyautogui not available for mouse simulation")
+                return False
+            except Exception as e:
+                logger.debug(f"Mouse simulation failed: {e}")
+                return False
+        
+        # Vary capture intervals
+        def get_varied_interval(base_interval: float = 1.0) -> float:
+            # Add 20% variance to interval
+            variance = base_interval * 0.2
+            return base_interval + random.uniform(-variance, variance)
+        
+        # Process priority simulation (lower CPU usage randomly)
+        def simulate_process_priority():
+            try:
+                import psutil
+                import os
+                
+                current_process = psutil.Process(os.getpid())
+                # Randomly lower priority occasionally
+                if random.random() < 0.1:  # 10% chance
+                    current_process.nice(1)  # Lower priority
+                    time.sleep(random.uniform(0.1, 0.5))
+                    current_process.nice(0)  # Reset to normal
+                return True
+            except ImportError:
+                return False
+            except Exception as e:
+                logger.debug(f"Process priority simulation failed: {e}")
+                return False
+        
+        # Browser fingerprint randomization
+        def randomize_user_agent():
+            user_agents = [
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101'
+            ]
+            return random.choice(user_agents)
+        
+        # Network request timing simulation
+        def add_network_delay():
+            # Simulate network latency
+            delay = random.exponential(0.1)  # Exponential distribution
+            time.sleep(min(delay, 1.0))  # Cap at 1 second
+            return delay
+        
+        # Test each mechanism
+        mechanisms['random_delays'] = add_random_delay() > 0
+        mechanisms['mouse_movements'] = simulate_mouse_movement()
+        mechanisms['varied_intervals'] = True  # Always available
+        mechanisms['process_priority'] = simulate_process_priority()
+        mechanisms['user_agent_rotation'] = True  # Always available
+        mechanisms['network_simulation'] = add_network_delay() > 0
+        
+        # Store functions for later use
+        global _anti_detection_functions
+        _anti_detection_functions = {
+            'add_delay': add_random_delay,
+            'move_mouse': simulate_mouse_movement,
+            'vary_interval': get_varied_interval,
+            'simulate_priority': simulate_process_priority,
+            'get_user_agent': randomize_user_agent,
+            'network_delay': add_network_delay
         }
         
-        logger.info('Anti-detection mechanisms activated')
-        return {'status': 'success', 'mechanisms': mechanisms}
+        # Stealth mode configuration
+        mechanisms['stealth_mode'] = all([
+            mechanisms['random_delays'],
+            mechanisms['varied_intervals'],
+            mechanisms['network_simulation']
+        ])
+        
+        success_count = sum(1 for enabled in mechanisms.values() if enabled)
+        
+        logger.info(f'Anti-detection mechanisms activated: {success_count}/{len(mechanisms)}')
+        return {
+            'status': 'success', 
+            'mechanisms': mechanisms,
+            'success_rate': success_count / len(mechanisms)
+        }
         
     except Exception as e:
         logger.error(f'Failed to implement anti-detection: {e}')
         return {'status': 'error', 'message': str(e)}
+
+def apply_anti_detection_delay():
+    """Apply anti-detection delay before scraping operations."""
+    try:
+        global _anti_detection_functions
+        if '_anti_detection_functions' in globals():
+            # Random delay
+            _anti_detection_functions['add_delay']()
+            
+            # Occasional mouse movement
+            if random.random() < 0.3:  # 30% chance
+                _anti_detection_functions['move_mouse']()
+            
+            # Network simulation
+            if random.random() < 0.2:  # 20% chance
+                _anti_detection_functions['network_delay']()
+                
+    except Exception as e:
+        logger.debug(f"Anti-detection delay failed: {e}")
+
+# Global storage for anti-detection functions
+_anti_detection_functions = {}
 
 if __name__ == '__main__':
     # Test enhanced scraper functionality
