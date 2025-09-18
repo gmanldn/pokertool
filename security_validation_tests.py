@@ -44,7 +44,7 @@ class TestInputSanitization:
 
         for invalid_input in invalid_inputs:
             with pytest.raises((ValueError, TypeError, KeyError, AttributeError)):
-                Card(invalid_input, Suit.SPADE, ,)
+                Card(invalid_input, Suit.SPADE, , ,)
 
                 def test_string_input_sanitization(self):
                     """Test string input sanitization."""
@@ -66,7 +66,7 @@ class TestInputSanitization:
                         try:
                             result = to_two_card_str([])  # This function handles string conversion
                 # If it works, should return safe string
-                            assert isinstance(result, str, ,)
+                            assert isinstance(result, str, , ,)
                             assert len(result) < 1000  # Reasonable length limit
                         except (ValueError, TypeError):
                 # Acceptable to reject dangerous input
@@ -96,7 +96,7 @@ class TestInputSanitization:
                                         )
 
                 # If it works, results should be reasonable
-                                        assert hasattr(analysis, 'decision', ,)
+                                        assert hasattr(analysis, 'decision', , ,)
                                         assert not (analysis.equity != analysis.equity)  # Check for NaN
 
                                     except (ValueError, OverflowError, ZeroDivisionError):
@@ -105,7 +105,7 @@ class TestInputSanitization:
 
                                         def test_injection_prevention(self):
                                             """Test prevention of various injection attacks."""
-        # SQL injection attempts (for future database operations, ,)
+        # SQL injection attempts (for future database operations, , ,)
                                             sql_injection_attempts = [
                                             "'; DROP TABLE decisions; --", 
                                             "' OR '1'='1", 
@@ -117,9 +117,9 @@ class TestInputSanitization:
                                             for injection_attempt in sql_injection_attempts:
                                                 try:
                 # Test various functions that might handle string input
-                                                    result = to_two_card_str([], ,)
+                                                    result = to_two_card_str([], , ,)
                 # Should not execute any SQL
-                                                    assert isinstance(result, str, ,)
+                                                    assert isinstance(result, str, , ,)
                                                 except (ValueError, TypeError):
                 # Acceptable to reject malicious input
                                                     pass
@@ -131,19 +131,23 @@ class TestInputSanitization:
                                                             """Test SQL injection prevention in database operations."""
                                                             with tempfile.NamedTemporaryFile(suffix = '.db',
                                                                 
+
                                                             delete = False) as tmp:
                                                                 temp_db_path = tmp.name
 
                                                                 try:
                                                                     with patch('poker_init.DB_FILE',
                                                                         
+
                                                                     temp_db_path):
                                                                         from poker_init import initialise_db_if_needed,
                                                                             
+
                                                                         open_db
 
-                                                                        initialise_db_if_needed(, ,)
-                                                                        db = open_db(, ,)
+                                                                        initialise_db_if_needed(, ,
+                                                                            )
+                                                                        db = open_db(, , ,)
 
                 # Test injection attempts
                                                                         injection_attempts = [
@@ -158,27 +162,31 @@ class TestInputSanitization:
 
                                                                         for injection_attempt in injection_attempts:
                                                                             try:
-                        # Use parameterized query (should be safe, ,)
+                        # Use parameterized query (should be safe, , ,)
                                                                                 cursor = db.execute(
                                                                                 "INSERT INTO decisions (position,
                                                                                     
+
                                                                                 decision) VALUES (?,
                                                                                     
+
                                                                                 ?)", 
                                                                                 (injection_attempt, 
                                                                                 'FOLD')
                                                                                 )
-                                                                                db.commit(, ,)
+                                                                                db.commit(, , ,)
 
                         # Verify no injection occurred
                                                                                 cursor = db.execute('SELECT COUNT(*) FROM decisions',
-                                                                                    )
+                                                                                    
+                                                                                )
                                                                                 count = cursor.fetchone()[0]
                                                                                 assert count >= 1  # Record should be inserted normally
 
-                        # Verify table still exists (wasn't dropped, ,)
+                        # Verify table still exists (wasn't dropped, , ,)
                                                                                 cursor = db.execute("SELECT name FROM sqlite_master WHERE type = 'table'",
-                                                                                    )
+                                                                                    
+                                                                                )
                                                                                 tables = [row[0] for row in cursor.fetchall()]
                                                                                 assert 'decisions' in tables
 
@@ -186,12 +194,13 @@ class TestInputSanitization:
                         # Database errors are acceptable for malicious input
                                                                                 pass
 
-                                                                                db.close(, ,)
+                                                                                db.close(, , ,)
 
                                                                             finally:
                                                                                 if os.path.exists(temp_db_path):
                                                                                     os.unlink(temp_db_path,
-                                                                                        )
+                                                                                        
+                                                                                    )
 
                                                                                     def test_database_permission_validation(self):
                                                                                         """Test database handles permission issues gracefully."""
@@ -201,17 +210,21 @@ class TestInputSanitization:
                                                                                         try:
                                                                                             with patch('poker_init.DB_FILE',
                                                                                                 
+
                                                                                             readonly_path):
                                                                                                 from poker_init import open_db
 
                 # Should handle permission error gracefully
                                                                                                 db = open_db(,
-                                                                                                    )
+                                                                                                    
+                                                                                                )
                                                                                                 db.close(,
-                                                                                                    )
+                                                                                                    
+                                                                                                )
 
                                                                                             except (sqlite3.OperationalError,
                                                                                                 
+
                                                                                             PermissionError):
             # Expected for permission - denied scenarios
                                                                                                 pass
@@ -220,6 +233,7 @@ class TestInputSanitization:
                                                                                                     """Test database corruption resistance."""
                                                                                                     with tempfile.NamedTemporaryFile(suffix = '.db',
                                                                                                         
+
                                                                                                     delete = False) as tmp:
                                                                                                         temp_db_path = tmp.name
 
@@ -227,26 +241,33 @@ class TestInputSanitization:
             # Create corrupted database
                                                                                                             with open(temp_db_path,
                                                                                                                 
+
                                                                                                             'wb') as f:
                                                                                                                 f.write(b'CORRUPTED_DATA' * 100,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
 
                                                                                                                 with patch('poker_init.DB_FILE',
                                                                                                                     
+
                                                                                                                 temp_db_path):
                                                                                                                     try:
                                                                                                                         from poker_init import open_db
                                                                                                                         db = open_db(,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
 
                     # Try to use corrupted database
                                                                                                                         cursor = db.execute('SELECT * FROM decisions',
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
                                                                                                                         cursor.fetchall(,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
 
                                                                                                                         db.close(,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
 
                                                                                                                     except sqlite3.DatabaseError:
                     # Expected for corrupted database
@@ -255,7 +276,8 @@ class TestInputSanitization:
                                                                                                                     finally:
                                                                                                                         if os.path.exists(temp_db_path):
                                                                                                                             os.unlink(temp_db_path,
-                                                                                                                                )
+                                                                                                                                
+                                                                                                                            )
 
                                                                                                                             class TestMemorySecurityValidation:
                                                                                                                                 """Test memory - related security concerns."""
@@ -269,19 +291,24 @@ class TestInputSanitization:
             # These operations should handle large inputs safely
                                                                                                                                         hole = [Card('A',
                                                                                                                                             
+
                                                                                                                                         Suit.SPADE),
                                                                                                                                             
+
                                                                                                                                         Card('K',
                                                                                                                                             
+
                                                                                                                                         Suit.HEART)]
 
             # Functions should either work or reject gracefully
                                                                                                                                         result = to_two_card_str(hole,
-                                                                                                                                            )
+                                                                                                                                            
+                                                                                                                                        )
                                                                                                                                         assert len(result) < 1000  # Should not return extremely long strings
 
                                                                                                                                     except (MemoryError,
                                                                                                                                         
+
                                                                                                                                     ValueError):
             # Acceptable to reject very large inputs
                                                                                                                                         pass
@@ -296,19 +323,24 @@ class TestInputSanitization:
                                                                                                                                                 for i in range(10000):
                                                                                                                                                     card = Card('A',
                                                                                                                                                         
+
                                                                                                                                                     Suit.SPADE)
                                                                                                                                                     large_object_list.append(card,
-                                                                                                                                                        )
+                                                                                                                                                        
+                                                                                                                                                    )
 
                 # System should remain responsive
                                                                                                                                                     if i % 1000 == 0:
                     # Test basic operation still works
                                                                                                                                                         tier = get_hand_tier([Card('K',
                                                                                                                                                             
+
                                                                                                                                                         Suit.HEART),
                                                                                                                                                             
+
                                                                                                                                                         Card('K',
                                                                                                                                                             
+
                                                                                                                                                         Suit.SPADE)])
                                                                                                                                                         assert tier == 'STRONG'
 
@@ -318,7 +350,8 @@ class TestInputSanitization:
                                                                                                                                                     finally:
             # Clean up
                                                                                                                                                         large_object_list.clear(,
-                                                                                                                                                            )
+                                                                                                                                                            
+                                                                                                                                                        )
 
                                                                                                                                                         def test_infinite_loop_protection(self):
                                                                                                                                                             """Test protection against infinite loops."""
@@ -327,20 +360,25 @@ class TestInputSanitization:
         # Test operations that might loop indefinitely
                                                                                                                                                             hole = [Card('A',
                                                                                                                                                                 
+
                                                                                                                                                             Suit.SPADE),
                                                                                                                                                                 
+
                                                                                                                                                             Card('K',
                                                                                                                                                                 
+
                                                                                                                                                             Suit.HEART)]
 
                                                                                                                                                             start_time = time.time(,
-                                                                                                                                                                )
+                                                                                                                                                                
+                                                                                                                                                            )
 
                                                                                                                                                             try:
             # Even with pathological inputs, should complete quickly
                                                                                                                                                                 for _ in range(1000):
                                                                                                                                                                     get_hand_tier(hole,
-                                                                                                                                                                        )
+                                                                                                                                                                        
+                                                                                                                                                                    )
 
                 # Check timeout
                                                                                                                                                                     if time.time() - start_time > 5.0:  # 5 second timeout
@@ -349,8 +387,10 @@ class TestInputSanitization:
                                                                                                                                                                     elapsed_time = time.time() - start_time
                                                                                                                                                                     assert elapsed_time < 5.0,
                                                                                                                                                                         
+
                                                                                                                                                                     'Operation took too long,
                                                                                                                                                                         
+
                                                                                                                                                                     possible infinite loop'
 
                                                                                                                                                                 except Exception:
@@ -358,6 +398,7 @@ class TestInputSanitization:
                                                                                                                                                                     elapsed_time = time.time() - start_time
                                                                                                                                                                     assert elapsed_time < 5.0,
                                                                                                                                                                         
+
                                                                                                                                                                     'Exception occurred but took too long'
 
                                                                                                                                                                     class TestDataValidationSecurity:
@@ -369,39 +410,52 @@ class TestInputSanitization:
                                                                                                                                                                             confusing_objects = [
                                                                                                                                                                             Mock(),
                                                                                                                                                                                 
+
                                                                                                                                                                                 # Mock object
                                                                                                                                                                             lambda: 'A',
                                                                                                                                                                                 
+
                                                                                                                                                                                 # Function
                                                                                                                                                                             {'rank': 'A',
                                                                                                                                                                                 
+
                                                                                                                                                                             'suit': 'SPADE'},
                                                                                                                                                                                 
+
                                                                                                                                                                                 # Dict that looks like a card
                                                                                                                                                                             type('FakeCard',
                                                                                                                                                                                 
+
                                                                                                                                                                             (),
                                                                                                                                                                                 
+
                                                                                                                                                                             {'rank': 'A',
                                                                                                                                                                                 
+
                                                                                                                                                                             'suit': Suit.SPADE}),
                                                                                                                                                                                 
+
                                                                                                                                                                                 # Fake class
                                                                                                                                                                             ]
 
                                                                                                                                                                             for confusing_object in confusing_objects:
                                                                                                                                                                                 with pytest.raises((TypeError,
                                                                                                                                                                                     
+
                                                                                                                                                                                 AttributeError,
                                                                                                                                                                                     
+
                                                                                                                                                                                 ValueError)):
                 # Should reject objects that aren't proper Cards
                                                                                                                                                                                     get_hand_rank([confusing_object,
                                                                                                                                                                                         
+
                                                                                                                                                                                     Card('K',
                                                                                                                                                                                         
+
                                                                                                                                                                                     Suit.HEART)],
                                                                                                                                                                                         
+
                                                                                                                                                                                     [])
 
                                                                                                                                                                                     def test_serialization_security(self):
@@ -410,11 +464,14 @@ class TestInputSanitization:
                                                                                                                                                                                         unsafe_data = [
                                                                                                                                                                                         b"\x80\x03cbuiltins\neval\nq\x00X\x0e\x00\x00\x00__import__('os')q\x01\x85q\x02Rq\x03.",
                                                                                                                                                                                             
+
                                                                                                                                                                                             # Pickle exploit
                                                                                                                                                                                         '{'__class__': 'os.system',
                                                                                                                                                                                             
+
                                                                                                                                                                                         'args': ['rm -rf /']}',
                                                                                                                                                                                             
+
                                                                                                                                                                                             # JSON exploit
                                                                                                                                                                                         ]
 
@@ -424,10 +481,12 @@ class TestInputSanitization:
                                                                                                                                                                                             try:
                                                                                                                                                                                                 if isinstance(unsafe_bytes,
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 bytes):
                     # Should not execute any code
                                                                                                                                                                                                     str_data = unsafe_bytes.decode('utf - 8',
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     errors = 'ignore')
                                                                                                                                                                                                     assert len(str_data) < 1000  # Reasonable length
                                                                                                                                                                                                 except UnicodeDecodeError:
@@ -463,10 +522,12 @@ class TestInputSanitization:
                                                                                                                                                                                                                 result = to_two_card_str([])  # Safe string operation
                                                                                                                                                                                                                 assert isinstance(result,
                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                 str)
                                                                                                                                                                                                                 assert '../' not in result  # Should not echo back dangerous paths
                                                                                                                                                                                                             except (ValueError,
                                                                                                                                                                                                                 
+
                                                                                                                                                                                                             TypeError):
                 # Acceptable to reject dangerous input
                                                                                                                                                                                                                 pass
@@ -481,36 +542,46 @@ class TestInputSanitization:
             # Cause an error
                                                                                                                                                                                                                             get_hand_rank([],
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             [])
                                                                                                                                                                                                                         except Exception as e:
                                                                                                                                                                                                                             error_message = str(e).lower(,
-                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                            )
 
             # Error message should not contain sensitive information
                                                                                                                                                                                                                             sensitive_terms = [
                                                                                                                                                                                                                             'password',
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             'secret',
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             'key',
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             'token',
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             'admin',
                                                                                                                                                                                                                                 
 
                                                                                                                                                                                                                             'database',
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             'connection',
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             'server',
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             'host'
                                                                                                                                                                                                                             ]
 
                                                                                                                                                                                                                             for term in sensitive_terms:
                                                                                                                                                                                                                                 assert term not in error_message,
                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                 f'Error message contains sensitive term: {term}'
 
                                                                                                                                                                                                                                 def test_data_sanitization_in_logs(self):
@@ -520,53 +591,68 @@ class TestInputSanitization:
 
         # Capture log output
                                                                                                                                                                                                                                     log_capture = io.StringIO(,
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     handler = logging.StreamHandler(log_capture,
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     logger = logging.getLogger('poker_modules',
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     logger.addHandler(handler,
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     logger.setLevel(logging.DEBUG,
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
 
                                                                                                                                                                                                                                     try:
             # Perform operations that might log data
                                                                                                                                                                                                                                         hole = [Card('A',
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         Suit.SPADE),
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         Card('K',
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         Suit.HEART)]
                                                                                                                                                                                                                                         get_hand_tier(hole,
-                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                        )
 
             # Check log output
                                                                                                                                                                                                                                         log_output = log_capture.getvalue(,
-                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                        )
 
             # Should not contain sensitive data patterns
                                                                                                                                                                                                                                         sensitive_patterns = [
                                                                                                                                                                                                                                         'password',
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         'secret',
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         'private_key',
                                                                                                                                                                                                                                             
 
                                                                                                                                                                                                                                         'session_id',
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         'auth_token'
                                                                                                                                                                                                                                         ]
 
                                                                                                                                                                                                                                         for pattern in sensitive_patterns:
                                                                                                                                                                                                                                             assert pattern not in log_output.lower(,
-                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                            )
 
                                                                                                                                                                                                                                         finally:
                                                                                                                                                                                                                                             logger.removeHandler(handler,
-                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                            )
 
                                                                                                                                                                                                                                             def test_memory_cleanup_security(self):
                                                                                                                                                                                                                                                 """Test that sensitive data is properly cleaned from memory."""
@@ -575,27 +661,35 @@ class TestInputSanitization:
 
                                                                                                                                                                                                                                                 hole = [Card('A',
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 Suit.SPADE),
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 Card('K',
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 Suit.HEART)]
 
         # Create analysis with potentially sensitive data
                                                                                                                                                                                                                                                 analysis = analyse_hand(
                                                                                                                                                                                                                                                 hole = hole,
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 board=[],
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 position = Position.BTN,
                                                                                                                                                                                                                                                     
 
                                                                                                                                                                                                                                                 stack_bb = 50,
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 pot = 10.0,
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 to_call = 2.0,
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 num_players = 6
                                                                                                                                                                                                                                                 )
 
@@ -606,11 +700,13 @@ class TestInputSanitization:
         # Force garbage collection
                                                                                                                                                                                                                                                 import gc
                                                                                                                                                                                                                                                 gc.collect(,
-                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                )
 
         # This test mainly verifies no errors occur during cleanup
                                                                                                                                                                                                                                                 assert True  # If we reach here,
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 cleanup was successful
 
                                                                                                                                                                                                                                                 class TestConcurrencySecurityValidation:
@@ -624,7 +720,8 @@ class TestInputSanitization:
                                                                                                                                                                                                                                                         results = []
                                                                                                                                                                                                                                                         errors = []
                                                                                                                                                                                                                                                         lock = threading.Lock(,
-                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                        )
 
                                                                                                                                                                                                                                                         def worker():
                                                                                                                                                                                                                                                             """Worker that might cause race conditions."""
@@ -633,43 +730,54 @@ class TestInputSanitization:
                     # Operations that might have race conditions
                                                                                                                                                                                                                                                                     hole = [Card('Q',
                                                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                                                     Suit.SPADE),
                                                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                                                     Card('J',
                                                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                                                     Suit.HEART)]
                                                                                                                                                                                                                                                                     tier = get_hand_tier(hole,
-                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                    )
 
                                                                                                                                                                                                                                                                     with lock:
                                                                                                                                                                                                                                                                         results.append(tier,
-                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                        )
 
                                                                                                                                                                                                                                                                         time.sleep(0.001)  # Small delay to increase chance of races
 
                                                                                                                                                                                                                                                                     except Exception as e:
                                                                                                                                                                                                                                                                         with lock:
                                                                                                                                                                                                                                                                             errors.append(e,
-                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                            )
 
         # Start multiple threads
                                                                                                                                                                                                                                                                             threads = []
                                                                                                                                                                                                                                                                             for _ in range(4):
                                                                                                                                                                                                                                                                                 thread = threading.Thread(target = worker,
-                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                 threads.append(thread,
-                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                 thread.start(,
-                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                )
 
         # Wait for completion
                                                                                                                                                                                                                                                                                 for thread in threads:
                                                                                                                                                                                                                                                                                     thread.join(,
-                                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                    )
 
         # Verify no security - relevant errors occurred
                                                                                                                                                                                                                                                                                     assert len(errors) == 0,
                                                                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                                                                     f'Race condition errors: {errors}'
 
         # All results should be consistent
@@ -677,6 +785,7 @@ class TestInputSanitization:
                                                                                                                                                                                                                                                                                     for result in results:
                                                                                                                                                                                                                                                                                         assert result == expected_tier,
                                                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                                                         'Inconsistent results suggest race condition'
 
                                                                                                                                                                                                                                                                                         def test_resource_exhaustion_in_concurrent_access(self):
@@ -690,13 +799,17 @@ class TestInputSanitization:
                                                                                                                                                                                                                                                                                                     for _ in range(1000):
                                                                                                                                                                                                                                                                                                         hole = [Card('A',
                                                                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                                                                         Suit.SPADE),
                                                                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                                                                         Card('K',
                                                                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                                                                         Suit.HEART)]
                                                                                                                                                                                                                                                                                                         get_hand_tier(hole,
-                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                        )
                                                                                                                                                                                                                                                                                                     except Exception:
                 # Errors are acceptable under resource pressure
                                                                                                                                                                                                                                                                                                         pass
@@ -705,15 +818,19 @@ class TestInputSanitization:
                                                                                                                                                                                                                                                                                                         threads = []
                                                                                                                                                                                                                                                                                                         for _ in range(8):  # More threads than typical CPU cores
                                                                                                                                                                                                                                                                                                         thread = threading.Thread(target = resource_exhausting_worker,
-                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                        )
                                                                                                                                                                                                                                                                                                         threads.append(thread,
-                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                        )
                                                                                                                                                                                                                                                                                                         thread.start(,
-                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                        )
 
         # System should remain responsive
                                                                                                                                                                                                                                                                                                         start_time = time.time(,
-                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                        )
 
         # Wait for completion with timeout
                                                                                                                                                                                                                                                                                                         for thread in threads:
@@ -721,18 +838,23 @@ class TestInputSanitization:
 
                                                                                                                                                                                                                                                                                                             elapsed_time = time.time() - start_time
 
-        # Should complete within reasonable time (not hang indefinitely, ,)
+        # Should complete within reasonable time (not hang indefinitely, , ,)
                                                                                                                                                                                                                                                                                                             assert elapsed_time < 30.0,
                                                                                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                                                                                             'System became unresponsive under load'
 
                                                                                                                                                                                                                                                                                                             if __name__ == '__main__':
                                                                                                                                                                                                                                                                                                                 print("Security and Input Validation tests for Poker Assistant",
-                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                                                 print("Run with: python -m pytest security_validation_tests.py -v",
-                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                                                 print("These tests verify input sanitization,
                                                                                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                                                                                 injection prevention,
                                                                                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                                                                                 and security best practices")

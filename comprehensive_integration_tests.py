@@ -42,11 +42,11 @@ class TestCompletePokerWorkflows:
 
         for hand_num in range(20):  # 20 hands
             # Random hole cards
-        deck = list(poker_modules.FULL_DECK, ,)
-        random.shuffle(deck, ,)
+        deck = list(poker_modules.FULL_DECK, , ,)
+        random.shuffle(deck, , ,)
         hole = deck[: 2]
 
-            # Random position (simulating table rotation, ,)
+            # Random position (simulating table rotation, , ,)
         position = positions[hand_num % len(positions)]
 
             # Pre - flop analysis
@@ -99,7 +99,7 @@ class TestCompletePokerWorkflows:
                                 })
 
             # Validate each hand's analysis
-                                assert hasattr(preflop_analysis, 'decision', ,)
+                                assert hasattr(preflop_analysis, 'decision', , ,)
                                 assert preflop_analysis.decision in ['FOLD', 'CALL', 'RAISE', 
                                 'CHECK']
                                 assert 0 <= preflop_analysis.equity <= 1
@@ -124,6 +124,7 @@ class TestCompletePokerWorkflows:
                                         'players': 5}, 
                                         {'name': 'Final Table', 'stack_bb': 30, 'blinds': (3.0, 6.0),
                                             
+
                                         'players': 3}, 
                                         {'name': 'Heads Up', 'stack_bb': 25, 'blinds': (5.0, 10.0), 
                                         'players': 2}, 
@@ -136,14 +137,15 @@ class TestCompletePokerWorkflows:
                                                 Card(random.choice(poker_modules.RANK_ORDER), 
                                                 random.choice(list(Suit))), 
                                                 Card(random.choice(poker_modules.RANK_ORDER), 
-                                                random.choice(list(Suit)), ,)
+                                                random.choice(list(Suit)), , ,)
                                                 ]
 
                 # Ensure unique cards
                                                 while hole[0] == hole[1]:
                                                     hole[1] = Card(random.choice(poker_modules.RANK_ORDER),
                                                         
-                                                    random.choice(list(Suit)), ,)
+
+                                                    random.choice(list(Suit)), , ,)
 
                                                     analysis = analyse_hand(
                                                     hole = hole, board=[], 
@@ -155,12 +157,13 @@ class TestCompletePokerWorkflows:
                                                     )
 
                 # Validate analysis for tournament context
-                                                    assert hasattr(analysis, 'decision', ,)
-                                                    assert hasattr(analysis, 'spr', ,)
+                                                    assert hasattr(analysis, 'decision', , ,)
+                                                    assert hasattr(analysis, 'spr', , ,)
 
                 # SPR should reflect stack depth
                                                     expected_spr = stage['stack_bb'] / (stage['blinds'][0] + stage['blinds'][1],
-                                                        )
+                                                        
+                                                    )
                                                     assert abs(analysis.spr - expected_spr) < expected_spr * 0.5  # Within 50%
 
                                                     def test_multi_table_tournament_simulation(self):
@@ -194,6 +197,7 @@ class TestCompletePokerWorkflows:
                 # Strong hand should generally be playable
                                                                 assert analysis.decision in ['CALL',
                                                                     
+
                                                                 'RAISE']
                                                                 assert analysis.equity > 0.6  # AK should have good equity
 
@@ -202,6 +206,7 @@ class TestCompletePokerWorkflows:
                     # Button should be more aggressive
                                                                     assert analysis.decision in ['RAISE',
                                                                         
+
                                                                     'CALL']
 
                                                                     class TestSystemIntegrationUnderLoad:
@@ -211,8 +216,8 @@ class TestCompletePokerWorkflows:
                                                                             """Test multiple concurrent analysis sessions."""
                                                                             results = []
                                                                             errors = []
-                                                                            lock = threading.Lock(,
-                                                                                )
+                                                                            lock = threading.Lock(, 
+                                                                            )
 
                                                                             def analysis_worker(worker_id):
                                                                                 """Worker that runs poker analysis."""
@@ -220,15 +225,18 @@ class TestCompletePokerWorkflows:
                                                                                     for i in range(50):
                     # Generate unique cards for this iteration
                                                                                         deck = list(poker_modules.FULL_DECK,
-                                                                                            )
+                                                                                            
+                                                                                        )
                                                                                         random.shuffle(deck,
-                                                                                            )
+                                                                                            
+                                                                                        )
                                                                                         hole = deck[: 2]
                                                                                         board = deck[2: 5] if random.random() > 0.5 else []
 
                                                                                         analysis = analyse_hand(
                                                                                         hole = hole,
                                                                                             
+
                                                                                         board = board,
                                                                                             
 
@@ -237,15 +245,19 @@ class TestCompletePokerWorkflows:
 
                                                                                         stack_bb = random.randint(20,
                                                                                             
+
                                                                                         100), 
                                                                                         pot = random.uniform(5.0,
                                                                                             
+
                                                                                         50.0), 
                                                                                         to_call = random.uniform(1.0,
                                                                                             
+
                                                                                         20.0), 
                                                                                         num_players = random.randint(2,
                                                                                             
+
                                                                                         9)
                                                                                         )
 
@@ -267,32 +279,40 @@ class TestCompletePokerWorkflows:
                                                                                             with lock:
                                                                                                 errors.append({'worker': worker_id,
                                                                                                     
+
                                                                                                 'error': str(e)},
-                                                                                                    )
+                                                                                                    
+                                                                                                )
 
         # Start multiple worker threads
                                                                                                 threads = []
                                                                                                 for worker_id in range(4):
                                                                                                     thread = threading.Thread(target = analysis_worker,
                                                                                                         
+
                                                                                                     args=(worker_id,
                                                                                                         
+
                                                                                                     ))
                                                                                                     threads.append(thread,
-                                                                                                        )
+                                                                                                        
+                                                                                                    )
                                                                                                     thread.start(,
-                                                                                                        )
+                                                                                                        
+                                                                                                    )
 
         # Wait for completion
                                                                                                     for thread in threads:
                                                                                                         thread.join(timeout = 30.0)  # 30 second timeout
                                                                                                         assert not thread.is_alive(),
                                                                                                             
+
                                                                                                         "Thread didn't complete in time"
 
         # Validate results
                                                                                                         assert len(errors) == 0,
                                                                                                             
+
                                                                                                         f'Concurrent analysis errors: {errors}'
                                                                                                         assert len(results) == 200  # 4 workers * 50 iterations
 
@@ -300,17 +320,21 @@ class TestCompletePokerWorkflows:
                                                                                                         for result in results:
                                                                                                             assert result['decision'] in ['FOLD',
                                                                                                                 
+
                                                                                                             'CALL',
                                                                                                                 
+
                                                                                                             'RAISE',
                                                                                                                 
+
                                                                                                             'CHECK']
                                                                                                             assert 0 <= result['equity'] <= 1
 
                                                                                                             def test_long_running_session_stability(self):
                                                                                                                 """Test system stability over long running sessions."""
                                                                                                                 start_time = time.time(,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
                                                                                                                 iteration_count = 0
 
         # Run for up to 30 seconds
@@ -318,16 +342,21 @@ class TestCompletePokerWorkflows:
                                                                                                                     try:
                 # Generate random scenario
                                                                                                                         deck = list(poker_modules.FULL_DECK,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
                                                                                                                         random.shuffle(deck,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
                                                                                                                         hole = deck[: 2]
                                                                                                                         board = deck[2: 2 + random.choice([0,
                                                                                                                             
+
                                                                                                                         3,
                                                                                                                             
+
                                                                                                                         4,
                                                                                                                             
+
                                                                                                                         5])]
 
                 # Ensure no duplicates
@@ -336,6 +365,7 @@ class TestCompletePokerWorkflows:
                                                                                                                             analysis = analyse_hand(
                                                                                                                             hole = hole,
                                                                                                                                 
+
                                                                                                                             board = board,
                                                                                                                                 
 
@@ -344,27 +374,32 @@ class TestCompletePokerWorkflows:
 
                                                                                                                             stack_bb = random.randint(10,
                                                                                                                                 
+
                                                                                                                             200),
                                                                                                                                 
 
                                                                                                                             pot = random.uniform(2.0,
                                                                                                                                 
+
                                                                                                                             100.0),
                                                                                                                                 
 
                                                                                                                             to_call = random.uniform(0.5,
                                                                                                                                 
+
                                                                                                                             30.0),
                                                                                                                                 
 
                                                                                                                             num_players = random.randint(2,
                                                                                                                                 
+
                                                                                                                             9)
                                                                                                                             )
 
                     # Validate analysis
                                                                                                                             assert hasattr(analysis,
                                                                                                                                 
+
                                                                                                                             'decision')
                                                                                                                             assert 0 <= analysis.equity <= 1
 
@@ -374,21 +409,25 @@ class TestCompletePokerWorkflows:
                                                                                                                             if iteration_count % 100 == 0:
                                                                                                                                 import gc
                                                                                                                                 gc.collect(,
-                                                                                                                                    )
+                                                                                                                                    
+                                                                                                                                )
 
                                                                                                                             except Exception as e:
                 # System should remain stable even with errors
                                                                                                                                 print(f'Iteration {iteration_count} error: {e}',
-                                                                                                                                    )
+                                                                                                                                    
+                                                                                                                                )
                                                                                                                                 iteration_count += 1
 
                                                                                                                                 elapsed_time = time.time() - start_time
                                                                                                                                 print(f"Completed {iteration_count} iterations in {elapsed_time: .2f}s",
-                                                                                                                                    )
+                                                                                                                                    
+                                                                                                                                )
 
         # Should have completed significant number of iterations
                                                                                                                                 assert iteration_count > 100,
                                                                                                                                     
+
                                                                                                                                 f'Only completed {iteration_count} iterations'
 
                                                                                                                                 def test_memory_stability_under_load(self):
@@ -397,7 +436,8 @@ class TestCompletePokerWorkflows:
                                                                                                                                     import gc
 
                                                                                                                                     process = psutil.Process(,
-                                                                                                                                        )
+                                                                                                                                        
+                                                                                                                                    )
                                                                                                                                     initial_memory = process.memory_info().rss
 
         # Run sustained operations
@@ -407,24 +447,30 @@ class TestCompletePokerWorkflows:
             # Create many objects in this batch
                                                                                                                                         for i in range(1000):
                                                                                                                                             deck = list(poker_modules.FULL_DECK,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
                                                                                                                                             random.shuffle(deck,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
                                                                                                                                             hole = deck[: 2]
 
                 # Quick analysis
                                                                                                                                             tier = get_hand_tier(hole,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
                                                                                                                                             batch_results.append(tier,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
 
             # Clear batch results
                                                                                                                                             batch_results.clear(,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
 
             # Force garbage collection
                                                                                                                                             gc.collect(,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
 
             # Check memory growth
                                                                                                                                             current_memory = process.memory_info().rss
@@ -433,6 +479,7 @@ class TestCompletePokerWorkflows:
             # Memory shouldn't grow excessively
                                                                                                                                             assert memory_growth < 200,
                                                                                                                                                 
+
                                                                                                                                             f"Excessive memory growth: {memory_growth: .1f}MB after batch {batch}"
 
                                                                                                                                             class TestDatabaseIntegrationWorkflows:
@@ -442,19 +489,23 @@ class TestCompletePokerWorkflows:
                                                                                                                                                     """Test complete decision tracking from analysis to storage."""
                                                                                                                                                     with tempfile.NamedTemporaryFile(suffix = '.db',
                                                                                                                                                         
+
                                                                                                                                                     delete = False) as tmp:
                                                                                                                                                         temp_db_path = tmp.name
 
                                                                                                                                                         try:
                                                                                                                                                             with patch('poker_init.DB_FILE',
                                                                                                                                                                 
+
                                                                                                                                                             temp_db_path):
                                                                                                                                                                 from poker_init import initialise_db_if_needed,
                                                                                                                                                                     
+
                                                                                                                                                                 open_db
 
                                                                                                                                                                 initialise_db_if_needed(,
-                                                                                                                                                                    )
+                                                                                                                                                                    
+                                                                                                                                                                )
 
                 # Simulate multiple poker decisions
                                                                                                                                                                 decisions_made = []
@@ -464,25 +515,31 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                     hole = [
                                                                                                                                                                     Card(random.choice(poker_modules.RANK_ORDER),
                                                                                                                                                                         
+
                                                                                                                                                                     random.choice(list(Suit))),
                                                                                                                                                                         
 
                                                                                                                                                                     Card(random.choice(poker_modules.RANK_ORDER),
                                                                                                                                                                         
+
                                                                                                                                                                     random.choice(list(Suit)),
-                                                                                                                                                                        )
+                                                                                                                                                                        
+                                                                                                                                                                    )
                                                                                                                                                                     ]
 
                     # Ensure unique cards
                                                                                                                                                                     while hole[0] == hole[1]:
                                                                                                                                                                         hole[1] = Card(random.choice(poker_modules.RANK_ORDER),
                                                                                                                                                                             
+
                                                                                                                                                                         random.choice(list(Suit)),
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
 
                                                                                                                                                                         analysis = analyse_hand(
                                                                                                                                                                         hole = hole,
                                                                                                                                                                             
+
                                                                                                                                                                         board=[],
                                                                                                                                                                             
 
@@ -491,69 +548,94 @@ class TestCompletePokerWorkflows:
 
                                                                                                                                                                         stack_bb = 50,
                                                                                                                                                                             
+
                                                                                                                                                                         pot = 10.0,
                                                                                                                                                                             
+
                                                                                                                                                                         to_call = 2.0,
                                                                                                                                                                             
+
                                                                                                                                                                         num_players = 6
                                                                                                                                                                         )
 
                     # Store decision in database
                                                                                                                                                                         db = open_db(,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
                                                                                                                                                                         hand_str = to_two_card_str(hole,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
 
                                                                                                                                                                         cursor = db.execute(
                                                                                                                                                                         """INSERT INTO decisions
                                                                                                                                                                         (hand,
                                                                                                                                                                             
+
                                                                                                                                                                         position,
                                                                                                                                                                             
+
                                                                                                                                                                         decision,
                                                                                                                                                                             
+
                                                                                                                                                                         pot,
                                                                                                                                                                             
+
                                                                                                                                                                         to_call,
                                                                                                                                                                             
+
                                                                                                                                                                         spr,
                                                                                                                                                                             
+
                                                                                                                                                                         board_texture)
                                                                                                                                                                         VALUES (?,
                                                                                                                                                                             
+
                                                                                                                                                                         ?,
                                                                                                                                                                             
+
                                                                                                                                                                         ?,
                                                                                                                                                                             
+
                                                                                                                                                                         ?,
                                                                                                                                                                             
+
                                                                                                                                                                         ?,
                                                                                                                                                                             
+
                                                                                                                                                                         ?,
                                                                                                                                                                             
+
                                                                                                                                                                         ?)""",
                                                                                                                                                                             
 
                                                                                                                                                                         (hand_str,
                                                                                                                                                                             
+
                                                                                                                                                                         analysis.decision,
                                                                                                                                                                             
+
                                                                                                                                                                         'BTN',
                                                                                                                                                                             
+
                                                                                                                                                                         10.0,
                                                                                                                                                                             
+
                                                                                                                                                                         2.0,
                                                                                                                                                                             
+
                                                                                                                                                                         analysis.spr,
                                                                                                                                                                             
+
                                                                                                                                                                         analysis.board_texture)
                                                                                                                                                                         )
 
                                                                                                                                                                         decision_id = cursor.lastrowid
                                                                                                                                                                         db.commit(,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
                                                                                                                                                                         db.close(,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
 
                                                                                                                                                                         decisions_made.append({
                                                                                                                                                                         'id': decision_id,
@@ -570,93 +652,118 @@ class TestCompletePokerWorkflows:
 
                 # Verify all decisions were stored
                                                                                                                                                                         db = open_db(,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
                                                                                                                                                                         cursor = db.execute('SELECT COUNT(*) FROM decisions',
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
                                                                                                                                                                         stored_count = cursor.fetchone()[0]
                                                                                                                                                                         db.close(,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
 
                                                                                                                                                                         assert stored_count >= len(decisions_made,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
 
                 # Verify decision consistency
                                                                                                                                                                         for decision in decisions_made:
                                                                                                                                                                             assert decision['decision'] in ['FOLD',
                                                                                                                                                                                 
+
                                                                                                                                                                             'CALL',
                                                                                                                                                                                 
+
                                                                                                                                                                             'RAISE',
                                                                                                                                                                                 
+
                                                                                                                                                                             'CHECK']
                                                                                                                                                                             assert 0 <= decision['equity'] <= 1
 
                                                                                                                                                                         finally:
                                                                                                                                                                             if os.path.exists(temp_db_path):
                                                                                                                                                                                 os.unlink(temp_db_path,
-                                                                                                                                                                                    )
+                                                                                                                                                                                    
+                                                                                                                                                                                )
 
                                                                                                                                                                                 def test_session_statistics_workflow(self):
                                                                                                                                                                                     """Test session statistics calculation workflow."""
                                                                                                                                                                                     with tempfile.NamedTemporaryFile(suffix = '.db',
                                                                                                                                                                                         
+
                                                                                                                                                                                     delete = False) as tmp:
                                                                                                                                                                                         temp_db_path = tmp.name
 
                                                                                                                                                                                         try:
                                                                                                                                                                                             with patch('poker_init.DB_FILE',
                                                                                                                                                                                                 
+
                                                                                                                                                                                             temp_db_path):
                                                                                                                                                                                                 from poker_init import initialise_db_if_needed,
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 open_db
 
                                                                                                                                                                                                 initialise_db_if_needed(,
-                                                                                                                                                                                                    )
+                                                                                                                                                                                                    
+                                                                                                                                                                                                )
                                                                                                                                                                                                 db = open_db(,
-                                                                                                                                                                                                    )
+                                                                                                                                                                                                    
+                                                                                                                                                                                                )
 
                 # Insert test session data
                                                                                                                                                                                                 session_decisions = [
                                                                                                                                                                                                 ('RAISE',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'BTN',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'PREMIUM'),
                                                                                                                                                                                                     
 
                                                                                                                                                                                                 ('CALL',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'CO',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'STRONG'),
                                                                                                                                                                                                     
 
                                                                                                                                                                                                 ('FOLD',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'UTG',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'WEAK'),
                                                                                                                                                                                                     
 
                                                                                                                                                                                                 ('RAISE',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'BTN',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'STRONG'),
                                                                                                                                                                                                     
 
                                                                                                                                                                                                 ('FOLD',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'SB',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'MARGINAL'),
                                                                                                                                                                                                     
 
                                                                                                                                                                                                 ('CALL',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'BB',
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 'MEDIUM'),
                                                                                                                                                                                                     
 
@@ -664,58 +771,74 @@ class TestCompletePokerWorkflows:
 
                                                                                                                                                                                                 for decision,
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 position,
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 tier in session_decisions:
                                                                                                                                                                                                     db.execute(
                                                                                                                                                                                                     "INSERT INTO decisions (decision,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     position,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     hand_tier) VALUES (?,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     ?,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     ?)",
                                                                                                                                                                                                         
 
                                                                                                                                                                                                     (decision,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     position,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     tier)
                                                                                                                                                                                                     )
 
                                                                                                                                                                                                     db.commit(,
-                                                                                                                                                                                                        )
+                                                                                                                                                                                                        
+                                                                                                                                                                                                    )
 
                 # Calculate session statistics
                                                                                                                                                                                                     cursor = db.execute(
                                                                                                                                                                                                     "SELECT decision,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     COUNT(*) FROM decisions GROUP BY decision"
                                                                                                                                                                                                     )
                                                                                                                                                                                                     decision_stats = dict(cursor.fetchall(),
-                                                                                                                                                                                                        )
+                                                                                                                                                                                                        
+                                                                                                                                                                                                    )
 
                                                                                                                                                                                                     cursor = db.execute(
                                                                                                                                                                                                     "SELECT position,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     COUNT(*) FROM decisions GROUP BY position"
                                                                                                                                                                                                     )
                                                                                                                                                                                                     position_stats = dict(cursor.fetchall(),
-                                                                                                                                                                                                        )
+                                                                                                                                                                                                        
+                                                                                                                                                                                                    )
 
                                                                                                                                                                                                     cursor = db.execute(
                                                                                                                                                                                                     "SELECT hand_tier,
                                                                                                                                                                                                         
+
                                                                                                                                                                                                     COUNT(*) FROM decisions GROUP BY hand_tier"
                                                                                                                                                                                                     )
                                                                                                                                                                                                     tier_stats = dict(cursor.fetchall(),
-                                                                                                                                                                                                        )
+                                                                                                                                                                                                        
+                                                                                                                                                                                                    )
 
                                                                                                                                                                                                     db.close(,
-                                                                                                                                                                                                        )
+                                                                                                                                                                                                        
+                                                                                                                                                                                                    )
 
                 # Verify statistics
                                                                                                                                                                                                     assert decision_stats['FOLD'] == 2
@@ -731,7 +854,8 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                 finally:
                                                                                                                                                                                                     if os.path.exists(temp_db_path):
                                                                                                                                                                                                         os.unlink(temp_db_path,
-                                                                                                                                                                                                            )
+                                                                                                                                                                                                            
+                                                                                                                                                                                                        )
 
                                                                                                                                                                                                         class TestPerformanceIntegrationValidation:
                                                                                                                                                                                                             """Test performance characteristics of integrated system."""
@@ -744,21 +868,25 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                                 scenarios = [
                                                                                                                                                                                                                 {'name': 'Simple Pre - flop',
                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                 'board_size': 0},
                                                                                                                                                                                                                     
 
                                                                                                                                                                                                                 {'name': 'Flop Analysis',
                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                 'board_size': 3},
                                                                                                                                                                                                                     
 
                                                                                                                                                                                                                 {'name': 'Turn Analysis',
                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                 'board_size': 4},
                                                                                                                                                                                                                     
 
                                                                                                                                                                                                                 {'name': 'River Analysis',
                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                 'board_size': 5},
                                                                                                                                                                                                                     
 
@@ -770,67 +898,83 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                                     for _ in range(100):
                 # Generate scenario
                                                                                                                                                                                                                         deck = list(poker_modules.FULL_DECK,
-                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                        )
                                                                                                                                                                                                                         random.shuffle(deck,
-                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                        )
                                                                                                                                                                                                                         hole = deck[: 2]
                                                                                                                                                                                                                         board = deck[2: 2 + scenario['board_size']]
 
                 # Time the complete analysis
                                                                                                                                                                                                                         start_time = time.perf_counter(,
-                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                        )
 
                                                                                                                                                                                                                         analysis = analyse_hand(
                                                                                                                                                                                                                         hole = hole,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         board = board,
                                                                                                                                                                                                                             
 
                                                                                                                                                                                                                         position = Position.BTN,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         stack_bb = 50,
                                                                                                                                                                                                                             
 
                                                                                                                                                                                                                         pot = 20.0,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         to_call = 5.0,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         num_players = 6
                                                                                                                                                                                                                         )
 
                                                                                                                                                                                                                         end_time = time.perf_counter(,
-                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                        )
                                                                                                                                                                                                                         times.append(end_time - start_time,
-                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                        )
 
                 # Validate result
                                                                                                                                                                                                                         assert hasattr(analysis,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         'decision')
                                                                                                                                                                                                                         assert 0 <= analysis.equity <= 1
 
             # Performance assertions
                                                                                                                                                                                                                         avg_time = sum(times) / len(times,
-                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                        )
                                                                                                                                                                                                                         max_time = max(times,
-                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                        )
 
                                                                                                                                                                                                                         print(f"{scenario['name']}: avg={avg_time * 1000: .2f}ms,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         max={max_time * 1000: .2f}ms")
 
-            # Performance thresholds (adjust based on requirements, ,)
+            # Performance thresholds (adjust based on requirements, , ,)
                                                                                                                                                                                                                         if scenario['board_size'] == 0:  # Pre - flop should be fast
                                                                                                                                                                                                                         assert avg_time < 0.1,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         f'Pre - flop analysis too slow: {avg_time: .3f}s'
                                                                                                                                                                                                                     else:  # Post - flop includes equity calculation
                                                                                                                                                                                                                     assert avg_time < 2.0,
                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                     f'Post - flop analysis too slow: {avg_time: .3f}s'
 
                                                                                                                                                                                                                     assert max_time < 5.0,
                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                     f'Worst case too slow: {max_time: .3f}s'
 
                                                                                                                                                                                                                     def test_scalability_with_player_count(self):
@@ -839,50 +983,67 @@ class TestCompletePokerWorkflows:
 
                                                                                                                                                                                                                         hole = [Card('A',
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Suit.SPADE),
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Card('K',
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Suit.HEART)]
                                                                                                                                                                                                                         board = [Card('Q',
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Suit.DIAMOND),
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Card('J',
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Suit.CLUB),
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Card('T',
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         Suit.SPADE)]
 
                                                                                                                                                                                                                         for num_players in [2,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         4,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         6,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         8,
                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                         9]:
                                                                                                                                                                                                                             times = []
 
                                                                                                                                                                                                                             for _ in range(20):  # Fewer iterations for equity calculations
                                                                                                                                                                                                                             start_time = time.perf_counter(,
-                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                            )
 
                                                                                                                                                                                                                             analysis = analyse_hand(
                                                                                                                                                                                                                             hole = hole,
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             board = board,
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             position = Position.BTN,
                                                                                                                                                                                                                                 
 
                                                                                                                                                                                                                             stack_bb = 50,
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             pot = 30.0,
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             to_call = 10.0,
                                                                                                                                                                                                                                 
 
@@ -890,21 +1051,26 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                                             )
 
                                                                                                                                                                                                                             end_time = time.perf_counter(,
-                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                            )
                                                                                                                                                                                                                             times.append(end_time - start_time,
-                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                            )
 
                 # Validate equity decreases with more players
                                                                                                                                                                                                                             assert 0 <= analysis.equity <= 1
 
                                                                                                                                                                                                                             avg_time = sum(times) / len(times,
-                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                            )
                                                                                                                                                                                                                             print(f'{num_players} players: avg={avg_time: .3f}s',
-                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                            )
 
             # Should scale reasonably with player count
                                                                                                                                                                                                                             assert avg_time < 10.0,
                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                             f"Analysis with {num_players} players too slow: {avg_time: .3f}s"
 
                                                                                                                                                                                                                             class TestErrorRecoveryIntegration:
@@ -914,37 +1080,47 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                                                     """Test recovery from partial system failures."""
                                                                                                                                                                                                                                     hole = [Card('K',
                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                     Suit.SPADE),
                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                     Card('Q',
                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                     Suit.HEART)]
 
         # Test with mocked component failures
                                                                                                                                                                                                                                     with patch('poker_modules.calculate_equity_monte_carlo',
                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                     side_effect = Exception('Equity failed')):
                                                                                                                                                                                                                                         try:
                                                                                                                                                                                                                                             analysis = analyse_hand(
                                                                                                                                                                                                                                             hole = hole,
                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                             board=[],
                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                             position = Position.CO,
                                                                                                                                                                                                                                                 
 
                                                                                                                                                                                                                                             stack_bb = 50,
                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                             pot = 15.0,
                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                             to_call = 5.0,
                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                             num_players = 6
                                                                                                                                                                                                                                             )
 
                 # Should still provide some analysis even with equity failure
                                                                                                                                                                                                                                             assert hasattr(analysis,
                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                             'decision')
                 # Equity might be default value or None
 
@@ -958,24 +1134,31 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                                                                 corrupted_scenarios = [
                                                                                                                                                                                                                                                 {'hole': [None,
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 Card('K',
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 Suit.HEART)],
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 'should_fail': True},
                                                                                                                                                                                                                                                     
 
                                                                                                                                                                                                                                                 {'hole': [],
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 'should_fail': True},
                                                                                                                                                                                                                                                     
 
                                                                                                                                                                                                                                                 {'hole': [Card('A',
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 Suit.SPADE)] * 3,
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                 'should_fail': True},
                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                     # Too many cards
                                                                                                                                                                                                                                                 ]
 
@@ -984,17 +1167,22 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                                                                         analysis = analyse_hand(
                                                                                                                                                                                                                                                         hole = scenario['hole'],
                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                         board=[],
                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                         position = Position.BTN,
                                                                                                                                                                                                                                                             
 
                                                                                                                                                                                                                                                         stack_bb = 50,
                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                         pot = 10.0,
                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                         to_call = 2.0,
                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                         num_players = 6
                                                                                                                                                                                                                                                         )
 
@@ -1002,12 +1190,15 @@ class TestCompletePokerWorkflows:
                     # If it doesn't fail, result should still be reasonable
                                                                                                                                                                                                                                                             assert hasattr(analysis,
                                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                                             'decision')
 
                                                                                                                                                                                                                                                         except (ValueError,
                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                         TypeError,
                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                         AttributeError):
                 # Expected for corrupted data
                                                                                                                                                                                                                                                             if scenario['should_fail']:
@@ -1015,12 +1206,16 @@ class TestCompletePokerWorkflows:
                                                                                                                                                                                                                                                             else:
                                                                                                                                                                                                                                                                 assert False,
                                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                                 'Unexpected failure for valid data'
 
                                                                                                                                                                                                                                                                 if __name__ == '__main__':
                                                                                                                                                                                                                                                                     print("Comprehensive Integration Tests for Poker Assistant",
-                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                                                     print("Run with: python -m pytest comprehensive_integration_tests.py -v",
-                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                                                     print("These tests validate complete system integration and real - world workflows",
-                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                    )

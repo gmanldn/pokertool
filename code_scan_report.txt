@@ -8,15 +8,17 @@ Issues found: 0
 
 FIX STATISTICS:
 ----------------------------------------
-  docstrings          :  11 files
-  imports             :   3 files
-  indentation         :  20 files
-  line_length         :  19 files
-  poker_specific      :   4 files
+  docstrings          :  19 files
+  imports             :  15 files
+  indentation         :  25 files
+  line_length         :  24 files
+  naming              :   3 files
+  poker_specific      :   9 files
   python2to3          :   1 files
-  quotes              :   3 files
+  quotes              :  13 files
   trailing            :  28 files
-  whitespace          :  28 files
+  typos               :   1 files
+  whitespace          :  27 files
 
 FILES FIXED:
 ----------------------------------------
@@ -29,23 +31,23 @@ FILES FIXED:
   ✓ /Users/georgeridout/Documents/github/pokertool/poker_screen_scraper.py
   ✓ /Users/georgeridout/Documents/github/pokertool/poker_tablediagram.py
   ✓ /Users/georgeridout/Documents/github/pokertool/security_validation_tests.py
+  ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/api.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/core.py
+  ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/database.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/error_handling.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py
+  ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/scrape.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/storage.py
+  ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/threading.py
   ✓ /Users/georgeridout/Documents/github/pokertool/start.py
   ✓ /Users/georgeridout/Documents/github/pokertool/test_poker_gui_enhanced.py
   ✓ /Users/georgeridout/Documents/github/pokertool/test_screen_scraper.py
+  ✓ /Users/georgeridout/Documents/github/pokertool/tests/test_comprehensive_features.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tests/test_poker.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/tools/gui_integration_script.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/tools/gui_integration_tests.py
+  ✓ /Users/georgeridout/Documents/github/pokertool/tests/test_security_features.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tools/hotfix_pokertool.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/tools/poker_gui_autopilot.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/tools/poker_gui_enhanced.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/tools/poker_gui_original.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tools/poker_main.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tools/saniitise_python_files.py
 

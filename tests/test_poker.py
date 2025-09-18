@@ -8,7 +8,7 @@ def test_package_imports():
         """TODO: Add docstring."""
         try:
             from pokertool.core import analyse_hand  # type: ignore
-            assert callable(analyse_hand)
+            assert callable(analyse_hand,)
         except Exception:
             # Core may not expose yet; that's okay for smoke
             assert True
