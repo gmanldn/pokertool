@@ -1,447 +1,943 @@
+"""
+Enhanced Poker Assistant GUI
+Enterprise-grade poker application with visual card selection,
+clear table visualization, and optimized for live game entry.
+"""
+
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import messagebox, ttk, scrolledtext
-import time
-from typing import Optional, List, Dict, Any
+from tkinter import ttk, messagebox, font
+import json
+import sqlite3
+from datetime import datetime
+from typing import List, Optional, Dict, Set, Tuple
+from dataclasses import dataclass
+from pathlib import Path
+import threading
 
+# Import error handling functions from the existing module
 from .error_handling import sanitize_input, log, run_safely, retry_on_failure, CircuitBreaker
 from .storage import get_secure_db, SecurityError
 
-class SecureGUI:
-    """Enhanced GUI with security features and better user experience."""
+# Try to import poker modules
+try:
+    from .core import analyse_hand, Card, Suit, Position, GameState, HandAnalysisResult
+    MODULES_LOADED = True
+except ImportError as e:
+    print(f'Warning: Some modules not loaded: {e}')
+    MODULES_LOADED = False
+
+    # Fallback definitions
+    from enum import Enum
+
+    class Suit(Enum):
+        spades = 's'
+        hearts = 'h'
+        diamonds = 'd'
+        clubs = 'c'
+
+    class Position(Enum):
+        UNDER_THE_GUN = 'UTG'
+        UNDER_THE_GUN_PLUS_1 = 'UTG+1'
+        MIDDLE_POSITION = 'MP'
+        CUTOFF = 'CO'
+        BUTTON = 'BTN'
+        SMALL_BLIND = 'SB'
+        BIG_BLIND = 'BB'
+
+    class Card:
+        def __init__(self, rank: str, suit: Suit):
+            self.rank = rank
+            self.suit = suit.value if hasattr(suit, 'value') else suit
+        
+        def __str__(self):
+            return f"{self.rank}{self.suit}"
+
+# Color scheme
+COLORS = {
+    'bg_dark': '#1a1f2e',
+    'bg_medium': '#2a3142',
+    'bg_light': '#3a4152',
+    'accent_primary': '#4a9eff',
+    'accent_success': '#4ade80',
+    'accent_warning': '#fbbf24',
+    'accent_danger': '#ef4444',
+    'text_primary': '#ffffff',
+    'text_secondary': '#94a3b8',
+    'table_felt': '#0d3a26',
+    'table_border': '#2a7f5f',
+    'dealer_button': '#FFD700',
+    'small_blind': '#FFA500',
+    'big_blind': '#DC143C',
+    'card_red': '#DC143C',
+    'card_black': '#000000',
+    'card_bg': '#ffffff',
+    'card_selected': '#4a9eff',
+    'card_hover': '#e0e7ff'
+}
+
+# Font sizes
+FONTS = {
+    'title': ('Arial', 24, 'bold'),
+    'heading': ('Arial', 18, 'bold'),
+    'subheading': ('Arial', 14, 'bold'),
+    'body': ('Arial', 12),
+    'card': ('Arial', 20, 'bold'),
+    'button': ('Arial', 14, 'bold'),
+    'analysis': ('Consolas', 14)
+}
+
+class VisualCard(tk.Frame):
+    """A visual representation of a playing card that can be clicked."""
+
+    def __init__(self, parent, rank: str, suit: Suit, callback=None):
+        super().__init__(parent, bg=COLORS['card_bg'], relief=tk.RAISED, bd=2)
+        
+        self.rank = rank
+        self.suit = suit
+        self.callback = callback
+        self.selected = False
+        
+        # Determine card color
+        suit_color = COLORS['card_red'] if suit in [Suit.hearts, Suit.diamonds] else COLORS['card_black']
+        
+        # Suit symbols
+        suit_symbols = {
+            Suit.spades: '♠',
+            Suit.hearts: '♥',
+            Suit.diamonds: '♦',
+            Suit.clubs: '♣'
+        }
+        
+        # Create card display
+        self.label = tk.Label(
+            self,
+            text=f"{rank}\n{suit_symbols[suit]}",
+            font=FONTS['card'],
+            fg=suit_color,
+            bg=COLORS['card_bg'],
+            width=4,
+            height=3
+        )
+        self.label.pack(expand=True, fill='both')
+        
+        # Bind events
+        self.bind('<Button-1>', self._on_click)
+        self.label.bind('<Button-1>', self._on_click)
+        self.bind('<Enter>', self._on_enter)
+        self.label.bind('<Enter>', self._on_enter)
+        self.bind('<Leave>', self._on_leave)
+        self.label.bind('<Leave>', self._on_leave)
+    
+    def _on_click(self, event):
+        """Handle card click."""
+        if self.callback:
+            self.callback(self)
+    
+    def _on_enter(self, event):
+        """Handle mouse enter."""
+        if not self.selected:
+            self.configure(bg=COLORS['card_hover'])
+            self.label.configure(bg=COLORS['card_hover'])
+    
+    def _on_leave(self, event):
+        """Handle mouse leave."""
+        if not self.selected:
+            self.configure(bg=COLORS['card_bg'])
+            self.label.configure(bg=COLORS['card_bg'])
+    
+    def set_selected(self, selected: bool):
+        """Set card selection state."""
+        self.selected = selected
+        if selected:
+            self.configure(bg=COLORS['card_selected'], relief=tk.SUNKEN)
+            self.label.configure(bg=COLORS['card_selected'], fg=COLORS['text_primary'])
+        else:
+            suit_color = COLORS['card_red'] if self.suit in [Suit.hearts, Suit.diamonds] else COLORS['card_black']
+            self.configure(bg=COLORS['card_bg'], relief=tk.RAISED)
+            self.label.configure(bg=COLORS['card_bg'], fg=suit_color)
+    
+    def set_disabled(self, disabled: bool):
+        """Set card disabled state."""
+        if disabled:
+            self.configure(bg=COLORS['bg_light'])
+            self.label.configure(bg=COLORS['bg_light'], fg=COLORS['text_secondary'])
+        else:
+            self.set_selected(self.selected)
+
+class CardSelectionPanel(tk.Frame):
+    """Panel for visual card selection."""
+    
+    def __init__(self, parent, on_card_selected=None):
+        super().__init__(parent, bg=COLORS['bg_medium'])
+        
+        self.on_card_selected = on_card_selected
+        self.cards: Dict[str, VisualCard] = {}
+        self.selected_cards: List[VisualCard] = []
+        
+        self._build_ui()
+    
+    def _build_ui(self):
+        """Build the card selection grid."""
+        # Title
+        title = tk.Label(
+            self,
+            text='Select Cards',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        title.pack(pady=10)
+        
+        # Card grid frame
+        grid_frame = tk.Frame(self, bg=COLORS['bg_medium'])
+        grid_frame.pack(padx=10, pady=10)
+        
+        # Create cards in rank order
+        ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
+        suits = [Suit.spades, Suit.hearts, Suit.diamonds, Suit.clubs]
+        
+        for row, rank in enumerate(ranks):
+            for col, suit in enumerate(suits):
+                card = VisualCard(grid_frame, rank, suit, self._on_card_click)
+                card.grid(row=row, column=col, padx=2, pady=2)
+                card_key = f'{rank}{suit.value}'
+                self.cards[card_key] = card
+    
+    def _on_card_click(self, card: VisualCard):
+        """Handle card selection."""
+        if card.selected:
+            # Deselect
+            card.set_selected(False)
+            self.selected_cards.remove(card)
+        else:
+            # Select (max 7 cards)
+            if len(self.selected_cards) < 7:
+                card.set_selected(True)
+                self.selected_cards.append(card)
+                
+                if self.on_card_selected:
+                    self.on_card_selected(card)
+            else:
+                messagebox.showwarning('Card Limit', 'Maximum 7 cards can be selected (2 hole + 5 board)')
+    
+    def get_selected_cards(self) -> List[Tuple[str, Suit]]:
+        """Get list of selected cards."""
+        return [(card.rank, card.suit) for card in self.selected_cards]
+    
+    def clear_selection(self):
+        """Clear all selected cards."""
+        for card in self.selected_cards:
+            card.set_selected(False)
+        self.selected_cards.clear()
+    
+    def set_cards_disabled(self, card_strs: List[str], disabled: bool):
+        """Disable/enable specific cards."""
+        for card_str in card_strs:
+            if card_str in self.cards:
+                self.cards[card_str].set_disabled(disabled)
+
+@dataclass
+class PlayerInfo:
+    """Information about a player at the table."""
+    seat: int
+    is_active: bool
+    stack: float
+    bet: float
+    cards: Optional[List[Card]] = None
+    is_hero: bool = False
+    is_dealer: bool = False
+    is_sb: bool = False
+    is_bb: bool = False
+    has_acted: bool = False
+
+class TableVisualization(tk.Canvas):
+    """Enhanced poker table visualization."""
+    
+    def __init__(self, parent, width=800, height=500):
+        super().__init__(
+            parent,
+            width=width,
+            height=height,
+            bg=COLORS['bg_dark'],
+            highlightthickness=0
+        )
+        
+        self.players: Dict[int, PlayerInfo] = {}
+        self.pot_size = 0.0
+        self.board_cards: List[Card] = []
+        
+        # Seat positions for 9-max table (normalized 0-1)
+        self.seat_positions = {
+            1: (0.5, 0.85),   # Bottom center (usually hero)
+            2: (0.25, 0.82),  # Bottom left
+            3: (0.08, 0.65),  # Left
+            4: (0.08, 0.35),  # Left top
+            5: (0.25, 0.18),  # Top left
+            6: (0.5, 0.15),   # Top center
+            7: (0.75, 0.18),  # Top right
+            8: (0.92, 0.35),  # Right top
+            9: (0.92, 0.65),  # Right
+        }
+        
+        self.bind('<Configure>', self._on_resize)
+        self._draw_table()
+    
+    def _on_resize(self, event):
+        """Handle canvas resize."""
+        self._draw_table()
+    
+    def _draw_table(self):
+        """Draw the complete table."""
+        self.delete('all')
+        
+        w = self.winfo_width()
+        h = self.winfo_height()
+        
+        if w <= 1 or h <= 1:
+            self.after(100, self._draw_table)
+            return
+        
+        # Draw table oval
+        margin = 60
+        self.create_oval(
+            margin, margin, w - margin, h - margin,
+            fill=COLORS['table_felt'],
+            outline=COLORS['table_border'],
+            width=4
+        )
+        
+        # Draw pot area
+        self._draw_pot(w // 2, h // 2)
+        
+        # Draw board cards
+        self._draw_board(w // 2, h // 2)
+        
+        # Draw players
+        for seat, player in self.players.items():
+            self._draw_player(seat, player, w, h)
+        
+        # Draw dealer button
+        self._draw_dealer_button(w, h)
+    
+    def _draw_player(self, seat: int, player: PlayerInfo, canvas_w: int, canvas_h: int):
+        """Draw a player at their seat."""
+        if seat not in self.seat_positions:
+            return
+        
+        x_ratio, y_ratio = self.seat_positions[seat]
+        x = int(canvas_w * x_ratio)
+        y = int(canvas_h * y_ratio)
+        
+        # Player circle color
+        if player.is_hero:
+            fill_color = COLORS['accent_primary']
+        elif player.is_active:
+            fill_color = COLORS['accent_success']
+        else:
+            fill_color = COLORS['bg_light']
+        
+        # Draw player circle
+        radius = 35
+        self.create_oval(
+            x - radius, y - radius, x + radius, y + radius,
+            fill=fill_color,
+            outline=COLORS['text_primary'],
+            width=2
+        )
+        
+        # Player label
+        label = f'Seat {seat}'
+        if player.is_hero:
+            label = 'HERO'
+        
+        self.create_text(
+            x, y - 10,
+            text=label,
+            font=FONTS['subheading'],
+            fill=COLORS['text_primary']
+        )
+        
+        # Stack size
+        self.create_text(
+            x, y + 10,
+            text=f'${player.stack:.0f}',
+            font=FONTS['body'],
+            fill=COLORS['text_primary']
+        )
+        
+        # Current bet
+        if player.bet > 0:
+            bet_y = y + radius + 20
+            self.create_oval(
+                x - 20, bet_y - 10, x + 20, bet_y + 10,
+                fill=COLORS['accent_warning'],
+                outline=COLORS['text_primary']
+            )
+            self.create_text(
+                x, bet_y,
+                text=f'${player.bet:.0f}',
+                font=('Arial', 10, 'bold'),
+                fill=COLORS['bg_dark']
+            )
+    
+    def _draw_dealer_button(self, canvas_w: int, canvas_h: int):
+        """Draw the dealer button."""
+        dealer_seat = None
+        for seat, player in self.players.items():
+            if player.is_dealer:
+                dealer_seat = seat
+                break
+        
+        if dealer_seat and dealer_seat in self.seat_positions:
+            x_ratio, y_ratio = self.seat_positions[dealer_seat]
+            x = int(canvas_w * x_ratio)
+            y = int(canvas_h * y_ratio)
+            
+            # Position button offset from player
+            offset_x = 50 if x_ratio < 0.5 else -50
+            offset_y = 50 if y_ratio < 0.5 else -50
+            
+            button_x = x + offset_x
+            button_y = y + offset_y
+            
+            # Draw button
+            self.create_oval(
+                button_x - 15, button_y - 15,
+                button_x + 15, button_y + 15,
+                fill=COLORS['dealer_button'],
+                outline=COLORS['bg_dark'],
+                width=2
+            )
+            self.create_text(
+                button_x, button_y,
+                text='D',
+                font=FONTS['subheading'],
+                fill=COLORS['bg_dark']
+            )
+    
+    def _draw_pot(self, center_x: int, center_y: int):
+        """Draw the pot in the center."""
+        if self.pot_size > 0:
+            self.create_oval(
+                center_x - 40, center_y - 20,
+                center_x + 40, center_y + 20,
+                fill=COLORS['accent_warning'],
+                outline=COLORS['text_primary'],
+                width=2
+            )
+            self.create_text(
+                center_x, center_y,
+                text=f'POT: ${self.pot_size:.0f}',
+                font=FONTS['subheading'],
+                fill=COLORS['bg_dark']
+            )
+    
+    def _draw_board(self, center_x: int, center_y: int):
+        """Draw the board cards."""
+        if not self.board_cards:
+            return
+        
+        card_width = 50
+        card_height = 70
+        spacing = 10
+        total_width = len(self.board_cards) * card_width + (len(self.board_cards) - 1) * spacing
+        start_x = center_x - total_width // 2
+        
+        for i, card in enumerate(self.board_cards):
+            x = start_x + i * (card_width + spacing)
+            y = center_y + 60
+            
+            # Draw card
+            self.create_rectangle(
+                x, y, x + card_width, y + card_height,
+                fill=COLORS['card_bg'],
+                outline=COLORS['text_primary'],
+                width=2
+            )
+            
+            # Card text
+            suit_symbols = {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}
+            suit_color = COLORS['card_red'] if card.suit in ['h', 'd'] else COLORS['card_black']
+            
+            self.create_text(
+                x + card_width // 2,
+                y + card_height // 2,
+                text=f"{card.rank}\n{suit_symbols.get(card.suit, '?')}",
+                font=FONTS['card'],
+                fill=suit_color
+            )
+    
+    def update_table(self, players: Dict[int, PlayerInfo], pot: float, board: List[Card]):
+        """Update table state and redraw."""
+        self.players = players
+        self.pot_size = pot
+        self.board_cards = board
+        self._draw_table()
+
+class EnhancedPokerAssistant(tk.Tk):
+    """Enhanced Poker Assistant with visual card selection and clear table view."""
     
     def __init__(self):
-        self.root = tk.Tk()
-        self.secure_db = get_secure_db()
-        self.circuit_breaker = CircuitBreaker()
-        self.session_id: Optional[str] = None
-        self.analysis_count = 0
-        self.setup_ui()
+        super().__init__()
         
-    def setup_ui(self) -> None:
-        """Set up the user interface with security enhancements."""
-        self.root.title('PokerTool - Enhanced Security Version')
-        self.root.geometry('800x600')
-        self.root.minsize(600, 400)
+        self.title('🎰 Poker Assistant - Enhanced Edition')
+        self.geometry('1400x900')
+        self.minsize(1200, 800)
+        self.configure(bg=COLORS['bg_dark'])
         
-        # Create main frame
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        # State
+        self.hole_cards: List[Card] = []
+        self.board_cards: List[Card] = []
+        self.selected_cards: List[Tuple[str, Suit]] = []
+        self.players: Dict[int, PlayerInfo] = self._init_players()
+        self.secure_db = None
         
-        # Configure grid weights
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(4, weight=1)
+        # Setup
+        self._setup_styles()
+        self._build_ui()
+        self._init_database()
+    
+    def _init_players(self) -> Dict[int, PlayerInfo]:
+        """Initialize default player configuration."""
+        players = {}
+        for seat in range(1, 10):
+            players[seat] = PlayerInfo(
+                seat=seat,
+                is_active=(seat <= 6),  # Default 6 players
+                stack=100.0,
+                bet=0.0,
+                is_hero=(seat == 1),
+                is_dealer=(seat == 3)
+            )
+        return players
+    
+    def _setup_styles(self):
+        """Configure ttk styles."""
+        style = ttk.Style()
+        style.theme_use('clam')
         
-        # Input section
-        self.create_input_section(main_frame)
+        # Configure styles for different elements
+        style.configure('Title.TLabel', font=FONTS['title'], background=COLORS['bg_dark'], foreground=COLORS['text_primary'])
+        style.configure('Heading.TLabel', font=FONTS['heading'], background=COLORS['bg_dark'], foreground=COLORS['text_primary'])
+        style.configure('Body.TLabel', font=FONTS['body'], background=COLORS['bg_dark'], foreground=COLORS['text_secondary'])
+        style.configure('Action.TButton', font=FONTS['button'])
+    
+    def _build_ui(self):
+        """Build the main UI."""
+        # Main container
+        main_container = tk.Frame(self, bg=COLORS['bg_dark'])
+        main_container.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Top section - Table visualization
+        table_frame = tk.Frame(main_container, bg=COLORS['bg_dark'])
+        table_frame.pack(fill='both', expand=True)
+        
+        self.table_viz = TableVisualization(table_frame, width=1200, height=400)
+        self.table_viz.pack(fill='both', expand=True)
+        
+        # Bottom section - Controls
+        controls_frame = tk.Frame(main_container, bg=COLORS['bg_dark'])
+        controls_frame.pack(fill='both', expand=True, pady=(10, 0))
+        
+        # Left - Card selection
+        card_frame = tk.Frame(controls_frame, bg=COLORS['bg_medium'], relief=tk.RAISED, bd=2)
+        card_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
+        
+        self.card_selector = CardSelectionPanel(card_frame, self._on_card_selected)
+        self.card_selector.pack(fill='both', expand=True)
+        
+        # Right - Game controls and analysis
+        right_frame = tk.Frame(controls_frame, bg=COLORS['bg_dark'])
+        right_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
+        
+        # Game controls
+        self._build_game_controls(right_frame)
         
         # Analysis output
-        self.create_output_section(main_frame)
-        
-        # History section
-        self.create_history_section(main_frame)
-        
-        # Status bar
-        self.create_status_bar()
-        
-        # Menu bar
-        self.create_menu_bar()
-        
-        # Initialize session
-        self.start_new_session()
-        
-    def create_input_section(self, parent: ttk.Frame) -> None:
-        """Create the input section with validation."""
-        input_frame = ttk.LabelFrame(parent, text="Hand Analysis", padding="10")
-        input_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
-        input_frame.columnconfigure(1, weight=1)
-        
-        # Hand input
-        ttk.Label(input_frame, text='Hand (e.g., AsKh):').grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
-        self.hand_var = tk.StringVar()
-        self.hand_entry = ttk.Entry(input_frame, textvariable=self.hand_var, width=30)
-        self.hand_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 10))
-        self.hand_entry.bind('<KeyRelease>', self._validate_hand_input)
-        
-        # Board input
-        ttk.Label(input_frame, text='Board (e.g., 7d8d9c):').grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
-        self.board_var = tk.StringVar()
-        self.board_entry = ttk.Entry(input_frame, textvariable=self.board_var, width=30)
-        self.board_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 10), pady=(5, 0))
-        self.board_entry.bind('<KeyRelease>', self._validate_board_input)
-        
-        # Buttons
-        button_frame = ttk.Frame(input_frame)
-        button_frame.grid(row=2, column=0, columnspan=2, pady=(10, 0))
-        
-        self.analyze_btn = ttk.Button(button_frame, text='Analyze Hand', command=self.analyze_hand)
-        self.analyze_btn.pack(side=tk.LEFT, padx=(0, 10))
-        
-        self.save_btn = ttk.Button(button_frame, text='Save Analysis', command=self.save_analysis, state='disabled')
-        self.save_btn.pack(side=tk.LEFT, padx=(0, 10))
-        
-        self.clear_btn = ttk.Button(button_frame, text='Clear', command=self.clear_inputs)
-        self.clear_btn.pack(side=tk.LEFT)
-        
-    def create_output_section(self, parent: ttk.Frame) -> None:
-        """Create the analysis output section."""
-        output_frame = ttk.LabelFrame(parent, text="Analysis Result", padding="10")
-        output_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
-        output_frame.columnconfigure(0, weight=1)
-        output_frame.rowconfigure(0, weight=1)
-        
-        self.output_text = scrolledtext.ScrolledText(
-            output_frame, 
-            height=10, 
-            wrap=tk.WORD,
-            state=tk.DISABLED
+        self._build_analysis_panel(right_frame)
+    
+    def _build_game_controls(self, parent):
+        """Build game control panel."""
+        control_frame = tk.LabelFrame(
+            parent,
+            text='Game Controls',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            relief=tk.RAISED,
+            bd=2
         )
-        self.output_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        control_frame.pack(fill='x', pady=(0, 10))
         
-    def create_history_section(self, parent: ttk.Frame) -> None:
-        """Create the hand history section."""
-        history_frame = ttk.LabelFrame(parent, text="Recent Analyses", padding="10")
-        history_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
-        history_frame.columnconfigure(0, weight=1)
-        history_frame.rowconfigure(0, weight=1)
+        # Player controls
+        player_frame = tk.Frame(control_frame, bg=COLORS['bg_medium'])
+        player_frame.pack(fill='x', padx=10, pady=10)
         
-        # Treeview for history
-        columns = ('Time', 'Hand', 'Board', 'Result')
-        self.history_tree = ttk.Treeview(history_frame, columns=columns, show='headings', height=8)
+        tk.Label(
+            player_frame,
+            text='Active Players:',
+            font=FONTS['subheading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        ).pack(side='left', padx=(0, 10))
         
-        for col in columns:
-            self.history_tree.heading(col, text=col)
-            self.history_tree.column(col, width=150)
-        
-        # Scrollbar for treeview
-        scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.history_tree.yview)
-        self.history_tree.configure(yscrollcommand=scrollbar.set)
-        
-        self.history_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        
-        # History control buttons
-        history_btn_frame = ttk.Frame(history_frame)
-        history_btn_frame.grid(row=1, column=0, columnspan=2, pady=(10, 0))
-        
-        ttk.Button(history_btn_frame, text='Refresh History', command=self.load_history).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(history_btn_frame, text='Export History', command=self.export_history).pack(side=tk.LEFT)
-        
-    def create_status_bar(self) -> None:
-        """Create status bar for user feedback."""
-        self.status_var = tk.StringVar()
-        self.status_var.set('Ready - Session not started')
-        
-        status_frame = ttk.Frame(self.root)
-        status_frame.grid(row=1, column=0, sticky=(tk.W, tk.E))
-        status_frame.columnconfigure(0, weight=1)
-        
-        ttk.Label(status_frame, textvariable=self.status_var, relief=tk.SUNKEN).grid(row=0, column=0, sticky=(tk.W, tk.E))
-        
-        # Analysis counter
-        self.counter_var = tk.StringVar()
-        self.counter_var.set('Analyses: 0')
-        ttk.Label(status_frame, textvariable=self.counter_var, relief=tk.SUNKEN).grid(row=0, column=1, padx=(5, 0))
-        
-    def create_menu_bar(self) -> None:
-        """Create application menu bar."""
-        menubar = tk.Menu(self.root)
-        self.root.config(menu=menubar)
-        
-        # File menu
-        file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="New Session", command=self.start_new_session)
-        file_menu.add_command(label="Backup Database", command=self.backup_database)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
-        
-        # Tools menu
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Screen Scraper", command=self.launch_scraper)
-        tools_menu.add_command(label="Database Cleanup", command=self.cleanup_database)
-        
-        # Help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=self.show_about)
-        
-    def _validate_hand_input(self, event=None) -> None:
-        """Validate hand input in real-time."""
-        hand = self.hand_var.get()
-        if hand and len(hand) >= 2:
-            try:
-                sanitized = sanitize_input(hand, max_length=50)
-                if sanitized != hand:
-                    self.hand_var.set(sanitized)
-                    self.update_status("Hand input was sanitized", "warning")
-            except ValueError as e:
-                self.update_status(f"Invalid hand input: {e}", "error")
-                
-    def _validate_board_input(self, event=None) -> None:
-        """Validate board input in real-time."""
-        board = self.board_var.get()
-        if board:
-            try:
-                sanitized = sanitize_input(board, max_length=50)
-                if sanitized != board:
-                    self.board_var.set(sanitized)
-                    self.update_status("Board input was sanitized", "warning")
-            except ValueError as e:
-                self.update_status(f"Invalid board input: {e}", "error")
-                
-    @retry_on_failure(max_retries=3)
-    def analyze_hand(self) -> None:
-        """Analyze the poker hand with security and error handling."""
-        hand = self.hand_var.get().strip()
-        board = self.board_var.get().strip() or None
-        
-        if not hand:
-            messagebox.showwarning("Input Required", "Please enter a hand to analyze")
-            return
-            
-        try:
-            # Use circuit breaker for analysis
-            result = self.circuit_breaker.call(self._safe_analyse, hand, board)
-            
-            # Display result
-            self.output_text.config(state=tk.NORMAL)
-            self.output_text.delete(1.0, tk.END)
-            self.output_text.insert(tk.END, result)
-            self.output_text.config(state=tk.DISABLED)
-            
-            # Enable save button
-            self.save_btn.config(state='normal')
-            self.current_analysis = {
-                'hand': hand,
-                'board': board,
-                'result': result,
-                'timestamp': time.time()
-            }
-            
-            self.analysis_count += 1
-            self.counter_var.set(f'Analyses: {self.analysis_count}')
-            self.update_status("Analysis completed successfully", "success")
-            
-        except SecurityError as e:
-            messagebox.showerror("Security Error", f"Security violation detected: {e}")
-            log.warning("Security violation in GUI: %s", e)
-        except Exception as e:
-            messagebox.showerror("Analysis Error", f"Analysis failed: {e}")
-            self.update_status(f"Analysis failed: {e}", "error")
-            
-    def _safe_analyse(self, hand: str, board: Optional[str]) -> str:
-        """Safely analyze hand with input validation."""
-        try:
-            # Sanitize inputs
-            hand = sanitize_input(hand, max_length=50)
-            if board:
-                board = sanitize_input(board, max_length=50)
-                
-            # Try to import and use the core analysis function
-            try:
-                from .core import analyse_hand
-                result = analyse_hand(hand, board)
-                return str(result)
-            except ImportError:
-                # Fallback analysis if core module isn't available
-                return f'[STUB] Analysis for hand={hand}, board={board}\n\nThis is a placeholder analysis.\nThe actual poker analysis engine is not yet implemented.'
-                
-        except Exception as e:
-            raise Exception(f"Analysis error: {e}") from e
-            
-    def save_analysis(self) -> None:
-        """Save the current analysis to the secure database."""
-        if not hasattr(self, 'current_analysis'):
-            messagebox.showwarning("Nothing to Save", "No analysis to save")
-            return
-            
-        try:
-            analysis = self.current_analysis
-            record_id = self.secure_db.save_hand_analysis(
-                hand=analysis['hand'],
-                board=analysis['board'],
-                result=analysis['result'],
-                session_id=self.session_id
+        # Player toggles
+        for seat in range(1, 10):
+            var = tk.BooleanVar(value=seat <= 6)
+            cb = tk.Checkbutton(
+                player_frame,
+                text=f'{seat}',
+                variable=var,
+                font=FONTS['body'],
+                bg=COLORS['bg_medium'],
+                fg=COLORS['text_primary'],
+                selectcolor=COLORS['bg_light'],
+                command=lambda s=seat, v=var: self._toggle_player(s, v.get())
             )
-            
-            messagebox.showinfo("Saved", f"Analysis saved with ID: {record_id}")
-            self.save_btn.config(state='disabled')
-            self.load_history()  # Refresh history
-            self.update_status("Analysis saved to database", "success")
-            
-        except Exception as e:
-            messagebox.showerror("Save Error", f"Failed to save analysis: {e}")
-            self.update_status(f"Save failed: {e}", "error")
-            
-    def clear_inputs(self) -> None:
-        """Clear all input fields and output."""
-        self.hand_var.set('')
-        self.board_var.set('')
-        self.output_text.config(state=tk.NORMAL)
-        self.output_text.delete(1.0, tk.END)
-        self.output_text.config(state=tk.DISABLED)
-        self.save_btn.config(state='disabled')
-        self.update_status("Inputs cleared", "info")
+            cb.pack(side='left', padx=2)
         
-    def load_history(self) -> None:
-        """Load recent hand history from database."""
-        try:
-            hands = self.secure_db.get_recent_hands(limit=50)
-            
-            # Clear existing items
-            for item in self.history_tree.get_children():
-                self.history_tree.delete(item)
-                
-            # Add new items
-            for hand in hands:
-                timestamp = hand.get('timestamp', 'Unknown')
-                if isinstance(timestamp, str) and timestamp != 'Unknown':
-                    # Parse timestamp if it's a string
-                    try:
-                        import datetime
-                        dt = datetime.datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-                        display_time = dt.strftime('%H:%M:%S')
-                    except:
-                        display_time = timestamp[:8] if len(timestamp) > 8 else timestamp
-                else:
-                    display_time = 'Unknown'
-                    
-                self.history_tree.insert('', 'end', values=(
-                    display_time,
-                    hand.get('hand_text', 'N/A'),
-                    hand.get('board_text', 'N/A') or '-',
-                    (hand.get('analysis_result', 'N/A') or 'N/A')[:50] + ('...' if len(str(hand.get('analysis_result', ''))) > 50 else '')
-                ))
-                
-            self.update_status(f"Loaded {len(hands)} recent analyses", "info")
-            
-        except Exception as e:
-            messagebox.showerror("Load Error", f"Failed to load history: {e}")
-            
-    def start_new_session(self) -> None:
-        """Start a new game session."""
-        try:
-            self.session_id = self.secure_db.create_session(
-                notes=f"GUI session started at {time.strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-            self.analysis_count = 0
-            self.counter_var.set('Analyses: 0')
-            self.update_status(f"New session started: {self.session_id[:8]}", "success")
-            self.load_history()
-        except Exception as e:
-            messagebox.showerror("Session Error", f"Failed to start session: {e}")
-            
-    def backup_database(self) -> None:
-        """Create a database backup."""
-        try:
-            backup_path = self.secure_db.backup_database()
-            messagebox.showinfo("Backup Created", f"Database backed up to:\n{backup_path}")
-            self.update_status(f"Database backed up", "success")
-        except Exception as e:
-            messagebox.showerror("Backup Error", f"Failed to backup database: {e}")
-            
-    def cleanup_database(self) -> None:
-        """Clean up old database records."""
-        result = messagebox.askyesno(
-            "Cleanup Database", 
-            "This will remove old records (older than 30 days).\nContinue?"
+        # Dealer position
+        dealer_frame = tk.Frame(control_frame, bg=COLORS['bg_medium'])
+        dealer_frame.pack(fill='x', padx=10, pady=10)
+        
+        tk.Label(
+            dealer_frame,
+            text='Dealer Position:',
+            font=FONTS['subheading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        ).pack(side='left', padx=(0, 10))
+        
+        self.dealer_var = tk.IntVar(value=3)
+        dealer_spin = tk.Spinbox(
+            dealer_frame,
+            from_=1,
+            to=9,
+            textvariable=self.dealer_var,
+            width=5,
+            font=FONTS['body'],
+            command=self._update_dealer
         )
-        if result:
-            try:
-                deleted_count = self.secure_db.cleanup_old_data()
-                messagebox.showinfo("Cleanup Complete", f"Removed {deleted_count} old records")
-                self.load_history()  # Refresh history
-                self.update_status(f"Cleaned up {deleted_count} old records", "success")
-            except Exception as e:
-                messagebox.showerror("Cleanup Error", f"Failed to cleanup database: {e}")
-                
-    def launch_scraper(self) -> None:
-        """Launch the screen scraper (placeholder)."""
-        try:
-            from . import scrape
-            result = scrape.run_screen_scraper()
-            messagebox.showinfo('Screen Scraper', f'Scraper result: {result}')
-        except ImportError:
-            messagebox.showinfo('Screen Scraper', 'Screen scraper module not available')
-        except Exception as e:
-            messagebox.showerror('Screen Scraper Error', f'Scraper failed: {e}')
-            
-    def export_history(self) -> None:
-        """Export analysis history to file."""
-        try:
-            import csv
-            from tkinter import filedialog
-            
-            filename = filedialog.asksaveasfilename(
-                defaultextension=".csv",
-                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-            )
-            
-            if filename:
-                hands = self.secure_db.get_recent_hands(limit=1000)
-                with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-                    writer = csv.writer(csvfile)
-                    writer.writerow(['Timestamp', 'Hand', 'Board', 'Analysis Result'])
-                    
-                    for hand in hands:
-                        writer.writerow([
-                            hand.get('timestamp', ''),
-                            hand.get('hand_text', ''),
-                            hand.get('board_text', '') or '',
-                            hand.get('analysis_result', '') or ''
-                        ])
-                        
-                messagebox.showinfo("Export Complete", f"History exported to {filename}")
-                self.update_status(f"History exported to file", "success")
-                
-        except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export history: {e}")
-            
-    def show_about(self) -> None:
-        """Show about dialog."""
-        about_text = """PokerTool Enhanced Security Version
+        dealer_spin.pack(side='left')
         
-Version: 21.0.0
-Features:
-• Secure input validation
-• SQL injection prevention
-• Rate limiting protection
-• Automatic error recovery
-• Comprehensive logging
-• Database backup & cleanup
-
-Built with security and reliability in mind."""
+        # Stakes
+        stakes_frame = tk.Frame(control_frame, bg=COLORS['bg_medium'])
+        stakes_frame.pack(fill='x', padx=10, pady=10)
         
-        messagebox.showinfo("About PokerTool", about_text)
+        tk.Label(
+            stakes_frame,
+            text='Pot Size: $',
+            font=FONTS['subheading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        ).pack(side='left')
         
-    def update_status(self, message: str, level: str = "info") -> None:
-        """Update status bar with colored message."""
-        timestamp = time.strftime('%H:%M:%S')
-        status_message = f"[{timestamp}] {message}"
-        self.status_var.set(status_message)
+        self.pot_var = tk.StringVar(value='0')
+        pot_entry = tk.Entry(stakes_frame, textvariable=self.pot_var, width=10, font=FONTS['body'])
+        pot_entry.pack(side='left', padx=5)
         
-        # Log the status update
-        if level == "error":
-            log.error("GUI Status: %s", message)
-        elif level == "warning":
-            log.warning("GUI Status: %s", message)
+        tk.Label(
+            stakes_frame,
+            text='To Call: $',
+            font=FONTS['subheading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        ).pack(side='left', padx=(20, 0))
+        
+        self.call_var = tk.StringVar(value='0')
+        call_entry = tk.Entry(stakes_frame, textvariable=self.call_var, width=10, font=FONTS['body'])
+        call_entry.pack(side='left', padx=5)
+        
+        # Action buttons
+        action_frame = tk.Frame(control_frame, bg=COLORS['bg_medium'])
+        action_frame.pack(fill='x', padx=10, pady=10)
+        
+        ttk.Button(
+            action_frame,
+            text='ANALYZE HAND',
+            style='Action.TButton',
+            command=self._analyze_hand
+        ).pack(side='left', padx=5)
+        
+        ttk.Button(
+            action_frame,
+            text='CLEAR CARDS',
+            style='Action.TButton',
+            command=self._clear_cards
+        ).pack(side='left', padx=5)
+        
+        ttk.Button(
+            action_frame,
+            text='UPDATE TABLE',
+            style='Action.TButton',
+            command=self._update_table
+        ).pack(side='left', padx=5)
+    
+    def _build_analysis_panel(self, parent):
+        """Build analysis output panel."""
+        analysis_frame = tk.LabelFrame(
+            parent,
+            text='Analysis',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            relief=tk.RAISED,
+            bd=2
+        )
+        analysis_frame.pack(fill='both', expand=True)
+        
+        # Analysis text
+        self.analysis_text = tk.Text(
+            analysis_frame,
+            font=FONTS['analysis'],
+            bg=COLORS['bg_light'],
+            fg=COLORS['text_primary'],
+            wrap='word',
+            height=10
+        )
+        self.analysis_text.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Configure text tags for colored output
+        self.analysis_text.tag_configure('success', foreground=COLORS['accent_success'])
+        self.analysis_text.tag_configure('warning', foreground=COLORS['accent_warning'])
+        self.analysis_text.tag_configure('danger', foreground=COLORS['accent_danger'])
+        self.analysis_text.tag_configure('info', foreground=COLORS['accent_primary'])
+    
+    def _on_card_selected(self, card: VisualCard):
+        """Handle card selection from visual selector."""
+        self.selected_cards = self.card_selector.get_selected_cards()
+        self._update_card_assignment()
+    
+    def _update_card_assignment(self):
+        """Update hole and board card assignments."""
+        if len(self.selected_cards) >= 2:
+            # First 2 cards are hole cards
+            self.hole_cards = self.selected_cards[:2]
+            # Remaining are board cards
+            self.board_cards = self.selected_cards[2:7]
+        elif len(self.selected_cards) == 1:
+            self.hole_cards = self.selected_cards[:1]
+            self.board_cards = []
         else:
-            log.info("GUI Status: %s", message)
+            self.hole_cards = []
+            self.board_cards = []
+        
+        # Update display
+        self._update_table()
+    
+    def _toggle_player(self, seat: int, active: bool):
+        """Toggle player active status."""
+        if seat in self.players:
+            self.players[seat].is_active = active
+            self._update_table()
+    
+    def _update_dealer(self):
+        """Update dealer position."""
+        dealer_seat = self.dealer_var.get()
+        for player in self.players.values():
+            player.is_dealer = (player.seat == dealer_seat)
+        
+        # Update blinds
+        self._update_blinds()
+        self._update_table()
+    
+    def _update_blinds(self):
+        """Update small and big blind positions."""
+        # Clear existing blinds
+        for player in self.players.values():
+            player.is_sb = False
+            player.is_bb = False
+        
+        # Get active seats
+        active_seats = sorted([s for s, p in self.players.items() if p.is_active])
+        if len(active_seats) < 2:
+            return
+        
+        dealer_seat = self.dealer_var.get()
+        
+        # Find dealer index
+        if dealer_seat in active_seats:
+            dealer_idx = active_seats.index(dealer_seat)
+        else:
+            # Find next active seat after dealer
+            dealer_idx = 0
+            for i, seat in enumerate(active_seats):
+                if seat > dealer_seat:
+                    dealer_idx = i
+                    break
+        
+        # Set blinds
+        sb_idx = (dealer_idx + 1) % len(active_seats)
+        bb_idx = (dealer_idx + 2) % len(active_seats)
+        
+        self.players[active_seats[sb_idx]].is_sb = True
+        self.players[active_seats[bb_idx]].is_bb = True
+    
+    def _update_table(self):
+        """Update table visualization."""
+        # Convert selected cards to Card objects if modules are loaded
+        board_cards = []
+        if MODULES_LOADED and self.board_cards:
+            for rank, suit in self.board_cards:
+                try:
+                    card = Card(rank, suit)
+                    board_cards.append(card)
+                except Exception:
+                    pass
+        
+        # Update pot and bets
+        try:
+            pot = float(self.pot_var.get())
+        except Exception:
+            pot = 0.0
+        
+        try:
+            to_call = float(self.call_var.get())
+        except Exception:
+            to_call = 0.0
+        
+        # Update player bets
+        for player in self.players.values():
+            if player.is_bb:
+                player.bet = to_call if to_call > 0 else 2.0
+            elif player.is_sb:
+                player.bet = to_call / 2 if to_call > 0 else 1.0
+            else:
+                player.bet = 0.0
+        
+        self.table_viz.update_table(self.players, pot, board_cards)
+    
+    def _analyze_hand(self):
+        """Analyze the current hand."""
+        self.analysis_text.delete('1.0', tk.END)
+        
+        if not MODULES_LOADED:
+            self.analysis_text.insert('1.0', "Analysis modules not loaded.\n", 'danger')
+            return
+        
+        if len(self.hole_cards) < 2:
+            self.analysis_text.insert('1.0', "Please select 2 hole cards.\n", 'warning')
+            return
+        
+        try:
+            # Convert cards
+            hole = []
+            for rank, suit in self.hole_cards:
+                hole.append(Card(rank, suit))
             
-    def run(self) -> None:
-        """Start the GUI main loop."""
-        self.root.mainloop()
+            board = []
+            for rank, suit in self.board_cards:
+                board.append(Card(rank, suit))
+            
+            # Get position
+            position = self._calculate_position()
+            
+            # Get pot and to_call
+            pot = float(self.pot_var.get()) if self.pot_var.get() else 0.0
+            to_call = float(self.call_var.get()) if self.call_var.get() else 0.0
+            
+            # Analyze
+            result = analyse_hand(hole, board, position, pot, to_call)
+            
+            # Display results
+            self._display_analysis(result, hole, board, position, pot, to_call)
+            
+        except Exception as e:
+            self.analysis_text.insert('1.0', f"Analysis error: {str(e)}\n", 'danger')
+    
+    def _calculate_position(self) -> Optional[Position]:
+        """Calculate hero's position based on dealer."""
+        if not MODULES_LOADED:
+            return None
+        
+        hero_seat = 1  # Hero is always seat 1
+        dealer_seat = self.dealer_var.get()
+        active_seats = sorted([s for s, p in self.players.items() if p.is_active])
+        
+        if hero_seat not in active_seats:
+            return Position.UNDER_THE_GUN
+        
+        # Calculate position relative to dealer
+        hero_idx = active_seats.index(hero_seat)
+        dealer_idx = active_seats.index(dealer_seat) if dealer_seat in active_seats else 0
+        
+        # Distance from dealer
+        distance = (hero_idx - dealer_idx) % len(active_seats)
+        num_players = len(active_seats)
+        
+        # Map distance to position
+        if distance == 1:
+            return Position.SMALL_BLIND
+        elif distance == 2:
+            return Position.BIG_BLIND
+        elif distance == 0:
+            return Position.BUTTON
+        elif distance == num_players - 1:
+            return Position.CUTOFF
+        elif distance <= num_players // 2:
+            return Position.UNDER_THE_GUN
+        else:
+            return Position.MIDDLE_POSITION
+    
+    def _display_analysis(self, result, hole, board, position, pot, to_call):
+        """Display analysis results."""
+        self.analysis_text.insert('1.0', '═' * 50 + "\n", 'info')
+        self.analysis_text.insert('end', "HAND ANALYSIS RESULTS\n", 'info')
+        self.analysis_text.insert('end', '═' * 50 + "\n\n", 'info')
+        
+        # Hand info
+        hole_str = f'{hole[0]} {hole[1]}'
+        self.analysis_text.insert('end', f"Your Hand: {hole_str}\n")
+        
+        if board:
+            board_str = ' '.join(str(c) for c in board)
+            self.analysis_text.insert('end', f"Board: {board_str}\n")
+        
+        self.analysis_text.insert('end', f"Position: {position.name if position else 'Unknown'}\n")
+        self.analysis_text.insert('end', f"Pot: ${pot:.2f}\n")
+        self.analysis_text.insert('end', f"To Call: ${to_call:.2f}\n\n")
+        
+        # Decision
+        if hasattr(result, 'decision'):
+            decision_color = 'success' if 'RAISE' in result.decision or 'CALL' in result.decision else 'warning'
+            self.analysis_text.insert('end', f"RECOMMENDATION: {result.decision}\n", decision_color)
+        
+        # Additional info
+        if hasattr(result, 'equity'):
+            self.analysis_text.insert('end', f"Equity: {result.equity:.1f}%\n")
+        
+        if hasattr(result, 'pot_odds'):
+            self.analysis_text.insert('end', f"Pot Odds: {result.pot_odds:.1f}%\n")
+        
+        if hasattr(result, 'hand_strength'):
+            self.analysis_text.insert('end', f"Hand Strength: {result.hand_strength}\n")
+    
+    def _clear_cards(self):
+        """Clear all selected cards."""
+        self.card_selector.clear_selection()
+        self.hole_cards = []
+        self.board_cards = []
+        self._update_table()
+        self.analysis_text.delete('1.0', tk.END)
+    
+    def _init_database(self):
+        """Initialize database connection."""
+        try:
+            self.secure_db = get_secure_db()
+        except Exception as e:
+            print(f'Database initialization failed: {e}')
+            self.secure_db = None
+
+# Alias the new GUI class for compatibility
+SecureGUI = EnhancedPokerAssistant
 
 def main() -> int:
-    """Main GUI entry point with enhanced security."""
+    """Main GUI entry point."""
     def create_and_run_gui():
-        gui = SecureGUI()
-        gui.run()
+        gui = EnhancedPokerAssistant()
+        gui.mainloop()
         return 0
     
     return run_safely(create_and_run_gui)
@@ -450,43 +946,6 @@ def main() -> int:
 def run() -> int:
     """Legacy entry point."""
     return main()
-
-# Legacy functions for backward compatibility
-def _safe_analyse(hand: str, board: str | None) -> str:
-    """Legacy function - use SecureGUI instead."""
-    try:
-        hand = sanitize_input(hand, max_length=50)
-        if board:
-            board = sanitize_input(board, max_length=50)
-            
-        try:
-            from .core import analyse_hand
-            result = analyse_hand(hand, board)
-            return str(result)
-        except ImportError:
-            return f'[stub] analysed hand={hand!r} board={board!r}'
-    except Exception as e:
-        return f'[error] {e}'
-
-def _on_analyse(hand_var: tk.StringVar, board_var: tk.StringVar, output: tk.Text) -> None:
-    """Legacy function - use SecureGUI instead."""
-    hand = hand_var.get().strip()
-    board = board_var.get().strip() or None
-    try:
-        res = _safe_analyse(hand, board)
-        output.delete('1.0', tk.END)
-        output.insert(tk.END, res)
-    except Exception as e:
-        messagebox.showerror('PokerTool', f"Analysis failed: \n{e}")
-
-def _on_scrape() -> None:
-    """Legacy function - use SecureGUI instead."""
-    try:
-        from . import scrape
-        res = scrape.run_screen_scraper()
-        messagebox.showinfo('Screen Scraper', str(res))
-    except Exception as e:
-        messagebox.showerror('Screen Scraper', f"Scraper failed: \n{e}")
 
 if __name__ == '__main__':
     raise SystemExit(main())
