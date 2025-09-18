@@ -3,52 +3,41 @@ POKERTOOL CODE SCAN REPORT
 ======================================================================
 
 Repository: /Users/georgeridout/Documents/github/pokertool
-Files fixed: 35
+Files fixed: 28
 Issues found: 0
 
 FIX STATISTICS:
 ----------------------------------------
-  comparison          :   1 files
-  docstrings          :  22 files
-  exceptions          :   6 files
-  imports             :  30 files
-  indentation         :  29 files
-  line_length         :  21 files
-  naming              :   2 files
-  poker_specific      :  15 files
-  python2to3          :   2 files
-  quotes              :  30 files
-  trailing            :  29 files
-  typos               :   3 files
-  whitespace          :  25 files
+  docstrings          :  11 files
+  imports             :   3 files
+  indentation         :  20 files
+  line_length         :  19 files
+  poker_specific      :   4 files
+  python2to3          :   1 files
+  quotes              :   3 files
+  trailing            :  28 files
+  whitespace          :  28 files
 
 FILES FIXED:
 ----------------------------------------
   ✓ /Users/georgeridout/Documents/github/pokertool/apply_headers.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/autoconfirm.py
   ✓ /Users/georgeridout/Documents/github/pokertool/comprehensive_integration_tests.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/enhanced_poker_test_main.py
   ✓ /Users/georgeridout/Documents/github/pokertool/final_test_validation.py
   ✓ /Users/georgeridout/Documents/github/pokertool/logger.py
   ✓ /Users/georgeridout/Documents/github/pokertool/poker_imports.py
   ✓ /Users/georgeridout/Documents/github/pokertool/poker_scraper_setup.py
   ✓ /Users/georgeridout/Documents/github/pokertool/poker_screen_scraper.py
   ✓ /Users/georgeridout/Documents/github/pokertool/poker_tablediagram.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/poker_test.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/repair_startup_v2.py
   ✓ /Users/georgeridout/Documents/github/pokertool/security_validation_tests.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/__init__.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/core.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/error_handling.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/scrape.py
   ✓ /Users/georgeridout/Documents/github/pokertool/src/pokertool/storage.py
   ✓ /Users/georgeridout/Documents/github/pokertool/start.py
   ✓ /Users/georgeridout/Documents/github/pokertool/test_poker_gui_enhanced.py
   ✓ /Users/georgeridout/Documents/github/pokertool/test_screen_scraper.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tests/test_poker.py
-  ✓ /Users/georgeridout/Documents/github/pokertool/tools/__init__.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tools/gui_integration_script.py
   ✓ /Users/georgeridout/Documents/github/pokertool/tools/gui_integration_tests.py

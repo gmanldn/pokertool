@@ -1324,3 +1324,3120 @@ RESOURCE USAGE:
   System CPU time: 0.032s
 
 --------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:49:46.197899
+SESSION ID: 20250918_004946
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: --help
+====================================================================================================
+
+[2025-09-18 00:49:46.199293] [INFO] APPLICATION STARTUP
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py",
+    "--help"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 14224.00 MB
+  User CPU time: 0.059s
+  System CPU time: 0.024s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:49:46.569034] [DEBUG] Scanner help detected
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _detect_scanner_flags()
+  Line 67: logger.debug('Scanner help detected', help=help_text)
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  supported = {'path': True, 'dry_run': True, 'no_backup': True}
+  res = CompletedProcess(args=['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--help'], returncode=0, stdout="usage: code_scan.py [-h] [--path PATH] [--no-backup] [--dry-run]\n\nSelf-contained Python code scanner and fixer for pokertool\n\noptions:\n  -h, --help   show this help message and exit\n  --path PATH  Path to repository (default: current directory)\n  --no-backup  Don't create backup files\n  --dry-run    Preview changes without... (truncated)
+  help_text = "usage: code_scan.py [-h] [--path PATH] [--no-backup] [--dry-run]\n\nSelf-contained Python code scanner and fixer for pokertool\n\noptions:\n  -h, --help   show this help message and exit\n  --path PATH  Path to repository (default: current directory)\n  --no-backup  Don't create backup files\n  --dry-run    Preview changes without applying them\n\nExamples:\n  python code_scan.py                    # Scan current directory\n  python code_scan.py --path ../pokertool  # Scan specific directory\n ... (truncated)
+  ht = "usage: code_scan.py [h] [path PATH] [nobackup] [dryrun]\n\nSelfcontained Python code scanner and fixer for pokertool\n\noptions:\n  h, help   show this help message and exit\n  path PATH  Path to repository (default: current directory)\n  nobackup  Don't create backup files\n  dryrun    Preview changes without applying them\n\nExamples:\n  python code_scan.py                    # Scan current directory\n  python code_scan.py path ../pokertool  # Scan specific directory\n  python code_scan.py no... (truncated)
+
+ADDITIONAL DATA:
+  "usage: code_scan.py [-h] [--path PATH] [--no-backup] [--dry-run]\n\nSelf-contained Python code scanner and fixer for pokertool\n\noptions:\n  -h, --help   show this help message and exit\n  --path PATH  Path to repository (default: current directory)\n  --no-backup  Don't create backup files\n  --dry-run    Preview changes without applying them\n\nExamples:\n  python code_scan.py                    # Scan current directory\n  python code_scan.py --path ../pokertool  # Scan specific directory\n  python code_scan.py --no-backup        # Don't create backup files\n  python code_scan.py --dry-run          # Preview changes without applying\n        \n"
+
+RESOURCE USAGE:
+  Memory (RSS): 14224.00 MB
+  User CPU time: 0.060s
+  System CPU time: 0.026s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:49:46.569585] [INFO] Running code_scan.py
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 139: logger.info('Running code_scan.py', command=_log_cmd(args))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  flags = {'path': True, 'dry_run': True, 'no_backup': True}
+  args = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--path', '/Users/georgeridout/Documents/github/pokertool']
+  used_any = True
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/code_scan.py --path /Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 14224.00 MB
+  User CPU time: 0.060s
+  System CPU time: 0.026s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:49:49.370806] [INFO] Starting poker tool application
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = ['--help']
+  a = '--help'
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 14224.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.028s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:49:49.371524] [DEBUG] Test debug message
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = ['--help']
+  a = '--help'
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 14224.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.028s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:49:49.372151] [INFO] Launching poker_go.py
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = ['--help']
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py', '--help']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py --help"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 14228.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.028s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:49:49.426103] [INFO] Application shutdown
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = ['--help']
+  a = '--help'
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 14284.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.031s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:49:49.426823] [INFO] Performing cleanup
+Session: 20250918_004946
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 14292.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.031s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:53:10.158196
+SESSION ID: 20250918_005310
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:53:10.158722] [INFO] APPLICATION STARTUP
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 14208.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.160141] [INFO] Skipping preflight code scan due to START_NO_SCAN=1
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 113: logger.info("Skipping preflight code scan due to START_NO_SCAN=1")
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+
+RESOURCE USAGE:
+  Memory (RSS): 14208.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.160282] [INFO] Starting poker tool application
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 14208.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.160456] [DEBUG] Test debug message
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 14208.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.160741] [INFO] Launching poker_go.py
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 14208.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:53:10.229217
+SESSION ID: 20250918_005310
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:53:10.229777] [INFO] APPLICATION STARTUP
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: initialize_logging()
+  Line 22: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python",
+    "PYTHONPATH": "/Users/georgeridout/Documents/github/pokertool"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.231074] [INFO] Starting poker tool application
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 174: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.231211] [DEBUG] Test debug message
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 176: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.231470] [INFO] Starting main poker application
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 104: logger.info('Starting main poker application')
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.231711] [INFO] Found main application script
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 118: logger.info('Found main application script', script=str(main_script))
+
+LOCAL VARIABLES:
+  possible_mains = [PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py')]
+  main_script = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py')
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.232054] [INFO] Launching main application
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 120: logger.info('Launching main application', command=_log_cmd(cmd))
+
+LOCAL VARIABLES:
+  possible_mains = [PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py')]
+  main_script = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py']
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.273431] [INFO] Application shutdown normally
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 182: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.274072] [INFO] Performing cleanup
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 33: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13248.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.283966] [INFO] Application shutdown
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 14208.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:10.284667] [INFO] Performing cleanup
+Session: 20250918_005310
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 14208.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:53:48.132152
+SESSION ID: 20250918_005348
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:53:48.132721] [INFO] APPLICATION STARTUP
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13676.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.134207] [INFO] Skipping preflight code scan due to START_NO_SCAN=1
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 113: logger.info("Skipping preflight code scan due to START_NO_SCAN=1")
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+
+RESOURCE USAGE:
+  Memory (RSS): 13676.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.134349] [INFO] Starting poker tool application
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 13676.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.134523] [DEBUG] Test debug message
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13676.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.134812] [INFO] Launching poker_go.py
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 13676.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:53:48.202538
+SESSION ID: 20250918_005348
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:53:48.202796] [INFO] APPLICATION STARTUP
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: initialize_logging()
+  Line 22: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python",
+    "PYTHONPATH": "/Users/georgeridout/Documents/github/pokertool"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.049s
+  System CPU time: 0.016s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.203979] [INFO] Starting poker tool application
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 174: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.049s
+  System CPU time: 0.016s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.204150] [DEBUG] Test debug message
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 176: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.204348] [INFO] Starting main poker application
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 104: logger.info('Starting main poker application')
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.204562] [INFO] Found main application script
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 118: logger.info('Found main application script', script=str(main_script))
+
+LOCAL VARIABLES:
+  possible_mains = [PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py')]
+  main_script = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py')
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.204728] [INFO] Launching main application
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 120: logger.info('Launching main application', command=_log_cmd(cmd))
+
+LOCAL VARIABLES:
+  possible_mains = [PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py')]
+  main_script = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py']
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.017s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.254600] [INFO] Application shutdown normally
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 182: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.255219] [INFO] Performing cleanup
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 33: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13508.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.265984] [INFO] Application shutdown
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 13676.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:53:48.266663] [INFO] Performing cleanup
+Session: 20250918_005348
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13676.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:54:33.056711
+SESSION ID: 20250918_005433
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:54:33.057368] [INFO] APPLICATION STARTUP
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13360.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.058715] [INFO] Skipping preflight code scan due to START_NO_SCAN=1
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 113: logger.info("Skipping preflight code scan due to START_NO_SCAN=1")
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+
+RESOURCE USAGE:
+  Memory (RSS): 13360.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.058845] [INFO] Starting poker tool application
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 13360.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.059043] [DEBUG] Test debug message
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13360.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.059307] [INFO] Launching poker_go.py
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 13360.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:54:33.130103
+SESSION ID: 20250918_005433
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:54:33.130746] [INFO] APPLICATION STARTUP
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: initialize_logging()
+  Line 26: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool/src",
+    "/Users/georgeridout/Documents/github/pokertool/tools",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python",
+    "PYTHONPATH": "/Users/georgeridout/Documents/github/pokertool"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.132099] [INFO] Starting poker tool application
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 178: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.132241] [DEBUG] Test debug message
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 180: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.132399] [INFO] Starting main poker application
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 108: logger.info('Starting main poker application')
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.132590] [INFO] Found main application script
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 122: logger.info('Found main application script', script=str(main_script))
+
+LOCAL VARIABLES:
+  possible_mains = [PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py')]
+  main_script = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py')
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.132752] [INFO] Launching main application
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 124: logger.info('Launching main application', command=_log_cmd(cmd))
+
+LOCAL VARIABLES:
+  possible_mains = [PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py'), PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/enhanced_poker_gui.py')]
+  main_script = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py']
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.183552] [INFO] Application shutdown normally
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 186: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.184174] [INFO] Performing cleanup
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 37: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13080.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.197421] [INFO] Application shutdown
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 13360.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:54:33.198101] [INFO] Performing cleanup
+Session: 20250918_005433
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13360.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:55:04.880589
+SESSION ID: 20250918_005504
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:55:04.881555] [INFO] APPLICATION STARTUP
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13404.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.882983] [INFO] Skipping preflight code scan due to START_NO_SCAN=1
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 113: logger.info("Skipping preflight code scan due to START_NO_SCAN=1")
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+
+RESOURCE USAGE:
+  Memory (RSS): 13404.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.883125] [INFO] Starting poker tool application
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 13404.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.883315] [DEBUG] Test debug message
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13404.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.883590] [INFO] Launching poker_go.py
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 13404.00 MB
+  User CPU time: 0.050s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:55:04.956324
+SESSION ID: 20250918_005504
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:55:04.957012] [INFO] APPLICATION STARTUP
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: initialize_logging()
+  Line 26: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool/src",
+    "/Users/georgeridout/Documents/github/pokertool/tools",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python",
+    "PYTHONPATH": "/Users/georgeridout/Documents/github/pokertool"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13284.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.958481] [INFO] Starting poker tool application
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 191: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+
+RESOURCE USAGE:
+  Memory (RSS): 13284.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.958627] [DEBUG] Test debug message
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 193: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13284.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.958784] [INFO] Starting main poker application
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 108: logger.info('Starting main poker application')
+
+RESOURCE USAGE:
+  Memory (RSS): 13284.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.963158] [INFO] Found pokertool.cli module, launching directly
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 113: logger.info('Found pokertool.cli module, launching directly')
+
+LOCAL VARIABLES:
+  cli_main = <function main at 0x1109b2480>
+
+RESOURCE USAGE:
+  Memory (RSS): 13648.00 MB
+  User CPU time: 0.056s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.969611] [INFO] Application shutdown normally
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 199: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 14092.00 MB
+  User CPU time: 0.060s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.969861] [INFO] Performing cleanup
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 37: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 14092.00 MB
+  User CPU time: 0.060s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.978799] [INFO] Application shutdown
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 13404.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:04.979490] [INFO] Performing cleanup
+Session: 20250918_005504
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13404.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:55:45.563687
+SESSION ID: 20250918_005545
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:55:45.564435] [INFO] APPLICATION STARTUP
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13592.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.565779] [INFO] Skipping preflight code scan due to START_NO_SCAN=1
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 113: logger.info("Skipping preflight code scan due to START_NO_SCAN=1")
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+
+RESOURCE USAGE:
+  Memory (RSS): 13592.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.565921] [INFO] Starting poker tool application
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 13592.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.566169] [DEBUG] Test debug message
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13592.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.566448] [INFO] Launching poker_go.py
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 13592.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:55:45.638077
+SESSION ID: 20250918_005545
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 00:55:45.638788] [INFO] APPLICATION STARTUP
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: initialize_logging()
+  Line 26: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool/src",
+    "/Users/georgeridout/Documents/github/pokertool/tools",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python",
+    "PYTHONPATH": "/Users/georgeridout/Documents/github/pokertool"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13340.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.640244] [INFO] Starting poker tool application
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 191: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+
+RESOURCE USAGE:
+  Memory (RSS): 13340.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.018s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.640387] [DEBUG] Test debug message
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 193: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13340.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.640537] [INFO] Starting main poker application
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 108: logger.info('Starting main poker application')
+
+RESOURCE USAGE:
+  Memory (RSS): 13340.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.643664] [INFO] Found pokertool.cli module, launching directly
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 113: logger.info('Found pokertool.cli module, launching directly')
+
+LOCAL VARIABLES:
+  cli_main = <function main at 0x103c4e520>
+
+RESOURCE USAGE:
+  Memory (RSS): 13724.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.653138] [INFO] Application shutdown normally
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 199: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 15076.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.653379] [INFO] Performing cleanup
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 37: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 15084.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.661945] [INFO] Application shutdown
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 13592.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:45.662593] [INFO] Performing cleanup
+Session: 20250918_005545
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13592.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:55:55.502201
+SESSION ID: 20250918_005555
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: -- scrape
+====================================================================================================
+
+[2025-09-18 00:55:55.502989] [INFO] APPLICATION STARTUP
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py",
+    "--",
+    "scrape"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13476.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.504410] [INFO] Skipping preflight code scan due to START_NO_SCAN=1
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 113: logger.info("Skipping preflight code scan due to START_NO_SCAN=1")
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+
+RESOURCE USAGE:
+  Memory (RSS): 13476.00 MB
+  User CPU time: 0.051s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.504554] [INFO] Starting poker tool application
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = ['scrape']
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = ['scrape']
+  a = '--'
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 13476.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.504720] [DEBUG] Test debug message
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = ['scrape']
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = ['scrape']
+  a = '--'
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13476.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.504999] [INFO] Launching poker_go.py
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = ['scrape']
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py', 'scrape']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py scrape"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 13476.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 00:55:55.576537
+SESSION ID: 20250918_005555
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+Arguments: scrape
+====================================================================================================
+
+[2025-09-18 00:55:55.577312] [INFO] APPLICATION STARTUP
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: initialize_logging()
+  Line 26: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py",
+    "scrape"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool/src",
+    "/Users/georgeridout/Documents/github/pokertool/tools",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.0",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-2daedbd0ea.sock",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-bc50339c1c8083a3.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/422804ca2b62ed1d70887e0783fe61f8/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "START_NO_SCAN": "1",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python",
+    "PYTHONPATH": "/Users/georgeridout/Documents/github/pokertool"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13304.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.578760] [INFO] Starting poker tool application
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 191: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = ['scrape']
+  a = 'scrape'
+
+RESOURCE USAGE:
+  Memory (RSS): 13304.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.578909] [DEBUG] Test debug message
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 193: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = ['scrape']
+  a = 'scrape'
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13304.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.579075] [INFO] Starting main poker application
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 108: logger.info('Starting main poker application')
+
+RESOURCE USAGE:
+  Memory (RSS): 13304.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.019s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.582254] [INFO] Found pokertool.cli module, launching directly
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 113: logger.info('Found pokertool.cli module, launching directly')
+
+LOCAL VARIABLES:
+  cli_main = <function main at 0x110322520>
+
+RESOURCE USAGE:
+  Memory (RSS): 13680.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.020s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.588949] [INFO] Application shutdown normally
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 199: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = ['scrape']
+  a = 'scrape'
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 0
+
+ADDITIONAL DATA:
+  0
+
+RESOURCE USAGE:
+  Memory (RSS): 14112.00 MB
+  User CPU time: 0.059s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.589185] [INFO] Performing cleanup
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 37: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 14112.00 MB
+  User CPU time: 0.059s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.598592] [INFO] Application shutdown
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = ['scrape']
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = ['scrape']
+  a = '--'
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 0
+
+ADDITIONAL DATA:
+  0
+
+RESOURCE USAGE:
+  Memory (RSS): 13476.00 MB
+  User CPU time: 0.052s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-18 00:55:55.599317] [INFO] Performing cleanup
+Session: 20250918_005555
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 13476.00 MB
+  User CPU time: 0.053s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------

@@ -62,9 +62,30 @@ python3 poker_gui_enhanced.py
 
 ## Requirements
 
-- Python 3.7 or higher
+### Core Application
+- Python 3.10 or higher
 - tkinter (usually included with Python)
-- No additional packages required
+- No additional packages required for basic functionality
+
+### Optional Features
+Additional features require optional dependencies:
+
+#### Screen Scraper
+```bash
+pip install -e ".[scraper]"
+```
+Includes: requests, beautifulsoup4
+
+#### REST API Server
+```bash
+pip install -e ".[api]"
+```
+Includes: fastapi, uvicorn, pydantic, slowapi, redis, pyjwt, python-multipart
+
+#### All Features
+```bash
+pip install -e ".[scraper,api]"
+```
 
 ## Features
 

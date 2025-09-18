@@ -16,7 +16,7 @@ Thumbs.db
 .idea/
 .vscode/
 # Python
-__pycache__/
+*__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
@@ -141,3 +141,4 @@ __pycache__/
 *.sqlite
 *.sqlite3
 backup_*/\n
+.DS_Store
