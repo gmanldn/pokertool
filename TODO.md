@@ -15,13 +15,13 @@ MACHINE-READABLE-HEADER-END -->
 |----------|-------|------------|-----------|
 | CRITICAL | 8     | 16%        | 8/8 (100%) |
 | HIGH     | 15    | 30%        | 6/15 (40.0%) |
-| MEDIUM   | 18    | 36%        | 1/18 (5.6%) |
+| MEDIUM   | 18    | 36%        | 2/18 (11.1%) |
 | LOW      | 9     | 18%        | 0/9 (0%) |
 
-**TOTAL PROGRESS: 15 out of 50 tasks completed (30%)**
+**TOTAL PROGRESS: 16 out of 50 tasks completed (32%)**
 **CRITICAL TASKS: 8 out of 8 completed (100%)**
 **HIGH PRIORITY TASKS: 6 out of 15 completed (40.0%)**
-**MEDIUM PRIORITY TASKS: 1 out of 18 completed (5.6%)**
+**MEDIUM PRIORITY TASKS: 2 out of 18 completed (11.1%)**
 
 ---
 
@@ -413,16 +413,17 @@ MACHINE-READABLE-HEADER-END -->
 
 ### 29. Game Selection Tool
 - **ID**: GAME-001
-- **Status**: TODO
+- **Status**: COMPLETED
 - **Estimated Hours**: 16
 - **Dependencies**: STATS-001
 - **Description**: Optimal game selection
 - **Subtasks**:
-  - [ ] Create table scanner
-  - [ ] Add profitability calculator
-  - [ ] Implement player pool analysis
-  - [ ] Add seat selection advisor
-  - [ ] Create table ratings
+  - [x] Create table scanner
+  - [x] Add profitability calculator
+  - [x] Implement player pool analysis
+  - [x] Add seat selection advisor
+  - [x] Create table ratings
+- **Completion Notes**: Implemented comprehensive game selection system including TableScanner class for monitoring table activity, ProfitabilityCalculator with expected hourly calculations based on opponent skill levels, PlayerPoolAnalyzer for classifying pool types and exploitability, SeatSelector for optimal position selection based on opponent positioning, and GameSelectionEngine that combines all components to provide complete table ratings. System supports multiple game types, real-time table analysis, player database integration, and comprehensive scoring with detailed reasoning for recommendations.
 
 ### 30. Variance Calculator
 - **ID**: VAR-001
