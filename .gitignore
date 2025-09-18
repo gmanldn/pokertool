@@ -142,3 +142,4 @@ __pycache__/
 *.sqlite3
 backup_*/\n
 .DS_Store
+.DS_Store
