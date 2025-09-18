@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional, Union, Callable
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 import asyncio
-import jwt
 from functools import wraps
 
 # Try to import FastAPI dependencies
@@ -31,6 +30,7 @@ try:
     from slowapi.errors import RateLimitExceeded
     from slowapi.middleware import SlowAPIMiddleware
     import redis.asyncio as redis
+    import jwt
     FASTAPI_AVAILABLE = True
 except ImportError:
     FastAPI = None
