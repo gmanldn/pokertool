@@ -26,16 +26,16 @@ class TestPokerScreenScraper:
 
     def setup_method(self):
         """Setup for each test."""
-        self.scraper = PokerScreenScraper(PokerSite.GENERIC, ,)
+        self.scraper = PokerScreenScraper(PokerSite.GENERIC, , ,)
 
-        @patch('mss.mss', ,)
+        @patch('mss.mss', , ,)
         def test_capture_table(self, mock_mss):
             """Test table capture."""
         # Mock screenshot
-            mock_screenshot = MagicMock(, ,)
-            mock_screenshot.__array__ = lambda: np.zeros((768, 1024, 4), dtype = np.uint8, ,)
+            mock_screenshot = MagicMock(, , ,)
+            mock_screenshot.__array__ = lambda: np.zeros((768, 1024, 4), dtype = np.uint8, , ,)
 
-            mock_mss_instance = MagicMock(, ,)
+            mock_mss_instance = MagicMock(, , ,)
             mock_mss_instance.monitors = [None, {'top': 0, 'left': 0, 'width': 1024, 'height': 768}]
             mock_mss_instance.grab.return_value = mock_screenshot
             mock_mss.return_value = mock_mss_instance
@@ -43,7 +43,7 @@ class TestPokerScreenScraper:
             self.scraper.sct = mock_mss_instance
 
         # Capture table
-            img = self.scraper.capture_table(, ,)
+            img = self.scraper.capture_table(, , ,)
 
             assert img is not None
             assert img.shape == (768, 1024, 3)  # Converted from BGRA to BGR
@@ -55,7 +55,7 @@ class TestPokerScreenScraper:
 
                 with patch.object(self.scraper.text_recognizer, 'extract_number', 
                 return_value = 150.75):
-                    pot_size = self.scraper.extract_pot_size(test_img, ,)
+                    pot_size = self.scraper.extract_pot_size(test_img, , ,)
                     assert pot_size == 150.75
 
                     def test_extract_hero_cards(self):
@@ -63,12 +63,12 @@ class TestPokerScreenScraper:
                         test_img = np.ones((768, 1024, 3), dtype = np.uint8) * 255
 
         # Mock card recognition
-                        card1 = Card('A', Suit.SPADE, ,)
-                        card2 = Card('K', Suit.HEART, ,)
+                        card1 = Card('A', Suit.SPADE, , ,)
+                        card2 = Card('K', Suit.HEART, , ,)
 
                         with patch.object(self.scraper.card_recognizer, 'recognize_card', 
                         side_effect=[card1, card2]):
-                            cards = self.scraper.extract_hero_cards(test_img, ,)
+                            cards = self.scraper.extract_hero_cards(test_img, , ,)
 
                             assert len(cards) == 2
                             assert cards[0] == card1
@@ -101,27 +101,27 @@ class TestPokerScreenScraper:
                                     return_value = True):
                                         with patch.object(self.scraper.text_recognizer, 
                                         'extract_number', return_value = 1000.0):
-                                            seats = self.scraper.extract_seat_info(test_img, ,)
+                                            seats = self.scraper.extract_seat_info(test_img, , ,)
 
                                             assert len(seats) == 9  # 9 - max table
-                                            assert all(seat.is_active for seat in seats, ,)
-                                            assert all(seat.stack_size == 1000.0 for seat in seats,
-                                                )
+                                            assert all(seat.is_active for seat in seats, , ,)
+                                            assert all(seat.stack_size == 1000.0 for seat in seats, 
+                                            )
 
                                             def test_is_card_present(self):
                                                 """Test card presence detection."""
         # Empty image - no card
-                                                empty_img = np.zeros((96, 71, 3), dtype = np.uint8,
-                                                    )
-                                                assert not self.scraper._is_card_present(empty_img,
-                                                    )
+                                                empty_img = np.zeros((96, 71, 3), dtype = np.uint8, 
+                                                )
+                                                assert not self.scraper._is_card_present(empty_img, 
+                                                )
 
         # High contrast image - card present
                                                 card_img = np.random.randint(0, 255, (96, 71, 3), 
                                                 dtype = np.uint8)
         # This might or might not detect a card based on std deviation
-                                                result = self.scraper._is_card_present(card_img, ,)
-                                                assert isinstance(result, bool, ,)
+                                                result = self.scraper._is_card_present(card_img, , ,)
+                                                assert isinstance(result, bool, , ,)
 
                                                 def test_is_seat_active(self):
                                                     """Test seat activity detection."""
@@ -129,7 +129,8 @@ class TestPokerScreenScraper:
                                                     empty_seat = np.zeros((60, 100, 3), 
                                                     dtype = np.uint8)
                                                     assert not self.scraper._is_seat_active(empty_seat,
-                                                        )
+                                                        
+                                                    )
 
         # Active seat with text
                                                     active_seat = np.ones((60, 100, 3), 
@@ -137,7 +138,8 @@ class TestPokerScreenScraper:
         # Add some black text
                                                     active_seat[20: 40, 10: 90] = 0
                                                     assert self.scraper._is_seat_active(active_seat,
-                                                        )
+                                                        
+                                                    )
 
                                                     @patch.object(PokerScreenScraper, 
                                                     'capture_table')
@@ -150,7 +152,7 @@ class TestPokerScreenScraper:
                                                     @patch.object(PokerScreenScraper, 
                                                     'extract_seat_info')
                                                     def test_analyze_table(self, mock_seats, 
-                                                        """TODO: Add docstring."""
+                                                    """TODO: Add docstring."""
                                                     mock_board, mock_hero, mock_pot, 
                                                     mock_capture):
                                                         """Test complete table analysis."""
@@ -169,7 +171,7 @@ class TestPokerScreenScraper:
                                                         mock_seats.return_value = [seat1, seat2]
 
         # Analyze
-                                                        state = self.scraper.analyze_table(, ,)
+                                                        state = self.scraper.analyze_table(, , ,)
 
                                                         assert state.pot_size == 100.0
                                                         assert len(state.hero_cards) == 2
@@ -178,17 +180,19 @@ class TestPokerScreenScraper:
 
                                                         def test_assign_positions(self):
                                                             """Test position assignment to seats."""
-                                                            state = TableState(, ,)
+                                                            state = TableState(, , ,)
                                                             state.dealer_seat = 1
 
         # Create 6 active seats
                                                             for i in range(1, 7):
                                                                 seat = SeatInfo(i, is_active = True,
-                                                                    )
-                                                                state.seats.append(seat, ,)
+                                                                    
+                                                                )
+                                                                state.seats.append(seat, , ,)
 
                                                                 self.scraper._assign_positions(state,
-                                                                    )
+                                                                    
+                                                                )
 
         # Check positions are assigned
                                                                 positions_assigned = [s.position for s in state.seats if s.position]
@@ -202,74 +206,89 @@ class TestPokerScreenScraper:
                                                                     """Test starting and stopping continuous capture."""
         # Start capture
                                                                     self.scraper.start_continuous_capture(interval = 0.1,
-                                                                        )
+                                                                        
+                                                                    )
                                                                     assert self.scraper.capture_thread is not None
                                                                     assert self.scraper.capture_thread.is_alive(,
-                                                                        )
+                                                                        
+                                                                    )
 
         # Stop capture
                                                                     self.scraper.stop_continuous_capture(,
-                                                                        )
+                                                                        
+                                                                    )
                                                                     assert self.scraper.stop_event.is_set(,
-                                                                        )
+                                                                        
+                                                                    )
 
         # Wait for thread to stop
-                                                                    time.sleep(0.2, ,)
+                                                                    time.sleep(0.2, , ,)
                                                                     assert not self.scraper.capture_thread.is_alive(,
-                                                                        )
+                                                                        
+                                                                    )
 
                                                                     def test_has_significant_change(self):
                                                                         """Test detection of significant state changes."""
         # No previous state
-                                                                        state1 = TableState(, ,)
+                                                                        state1 = TableState(, , ,)
                                                                         assert self.scraper._has_significant_change(state1,
-                                                                            )
+                                                                            
+                                                                        )
 
         # Set last state
                                                                         self.scraper.last_state = state1
 
         # Same state - no change
-                                                                        state2 = TableState(, ,)
+                                                                        state2 = TableState(, , ,)
                                                                         assert not self.scraper._has_significant_change(state2,
-                                                                            )
+                                                                            
+                                                                        )
 
         # Stage change
-                                                                        state3 = TableState(, ,)
+                                                                        state3 = TableState(, , ,)
                                                                         state3.stage = 'flop'
                                                                         assert self.scraper._has_significant_change(state3,
-                                                                            )
+                                                                            
+                                                                        )
 
         # Pot change
-                                                                        state4 = TableState(, ,)
+                                                                        state4 = TableState(, , ,)
                                                                         state4.pot_size = 100.0
                                                                         assert self.scraper._has_significant_change(state4,
-                                                                            )
+                                                                            
+                                                                        )
 
                                                                         def test_calibrate(self):
                                                                             """Test calibration process."""
                                                                             test_img = np.ones((768,
                                                                                 
+
                                                                             1024, 3), 
                                                                             dtype = np.uint8) * 255
 
         # Mock successful detection
                                                                             with patch.object(self.scraper,
                                                                                 
+
                                                                             'extract_pot_size', 
                                                                             return_value = 0.0):
                                                                                 with patch.object(self.scraper,
                                                                                     
+
                                                                                 'extract_seat_info') as mock_seats:
                 # Return 6 active seats
                                                                                     active_seats = [SeatInfo(i,
                                                                                         
+
                                                                                     is_active = True) for i in range(1,
                                                                                         
+
                                                                                     7)]
                                                                                     mock_seats.return_value = active_seats
 
                                                                                     result = self.scraper.calibrate(test_img,
-                                                                                        )
+                                                                                        
+                                                                                    )
                                                                                     assert result is True
                                                                                     assert self.scraper.calibrated is True
 
@@ -277,15 +296,18 @@ class TestPokerScreenScraper:
                                                                                         """Test debug image saving."""
                                                                                         test_img = np.ones((768,
                                                                                             
+
                                                                                         1024, 3), 
                                                                                         dtype = np.uint8) * 255
 
                                                                                         with patch('cv2.imwrite') as mock_write:
                                                                                             self.scraper.save_debug_image(test_img,
                                                                                                 
+
                                                                                             'test_debug.png')
                                                                                             mock_write.assert_called_once(,
-                                                                                                )
+                                                                                                
+                                                                                            )
 
             # Check that regions are drawn
                                                                                             args = mock_write.call_args[0]
@@ -298,31 +320,39 @@ class TestPokerScreenScraper:
                                                                                                 def setup_method(self):
                                                                                                     """Setup for each test."""
                                                                                                     self.scraper = Mock(spec = PokerScreenScraper,
-                                                                                                        )
+                                                                                                        
+                                                                                                    )
                                                                                                     self.bridge = ScreenScraperBridge(self.scraper,
-                                                                                                        )
+                                                                                                        
+                                                                                                    )
 
                                                                                                     def test_register_callback(self):
                                                                                                         """Test callback registration."""
                                                                                                         callback = Mock(,
-                                                                                                            )
+                                                                                                            
+                                                                                                        )
                                                                                                         self.bridge.register_callback(callback,
-                                                                                                            )
+                                                                                                            
+                                                                                                        )
                                                                                                         assert callback in self.bridge.callbacks
 
                                                                                                         def test_convert_to_game_state(self):
                                                                                                             """Test conversion from table state to game state."""
         # Create table state
                                                                                                             table_state = TableState(,
-                                                                                                                )
+                                                                                                                
+                                                                                                            )
                                                                                                             table_state.pot_size = 100.0
                                                                                                             table_state.current_bet = 10.0
                                                                                                             table_state.hero_cards = [Card('A',
                                                                                                                 
+
                                                                                                             Suit.SPADE),
                                                                                                                 
+
                                                                                                             Card('K',
                                                                                                                 
+
                                                                                                             Suit.HEART)]
                                                                                                             table_state.board_cards = []
                                                                                                             table_state.active_players = 6
@@ -332,15 +362,18 @@ class TestPokerScreenScraper:
         # Add hero seat with position
                                                                                                             hero_seat = SeatInfo(1,
                                                                                                                 
+
                                                                                                             is_active = True,
                                                                                                                 
+
                                                                                                             is_hero = True)
                                                                                                             hero_seat.position = Position.BTN
                                                                                                             table_state.seats = [hero_seat]
 
         # Convert
                                                                                                             game_state = self.bridge.convert_to_game_state(table_state,
-                                                                                                                )
+                                                                                                                
+                                                                                                            )
 
                                                                                                             assert game_state['hole_cards'] == table_state.hero_cards
                                                                                                             assert game_state['board_cards'] == []
@@ -353,22 +386,27 @@ class TestPokerScreenScraper:
                                                                                                                 """Test processing table state updates."""
         # Create callback
                                                                                                                 callback = Mock(,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
                                                                                                                 self.bridge.register_callback(callback,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
 
         # Create table state
                                                                                                                 table_state = TableState(,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
                                                                                                                 table_state.pot_size = 50.0
 
         # Process update
                                                                                                                 self.bridge.process_update(table_state,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
 
         # Verify callback was called
                                                                                                                 callback.assert_called_once(,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
                                                                                                                 args = callback.call_args[0]
                                                                                                                 assert args[0]['pot'] == 50.0
 
@@ -378,7 +416,8 @@ class TestPokerScreenScraper:
                                                                                                                     def test_get_generic_config(self):
                                                                                                                         """Test getting generic configuration."""
                                                                                                                         config = TableConfig.get_config(PokerSite.GENERIC,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
 
                                                                                                                         assert 'window_title_pattern' in config
                                                                                                                         assert 'table_size' in config
@@ -393,7 +432,8 @@ class TestPokerScreenScraper:
                                                                                                                         def test_get_pokerstars_config(self):
                                                                                                                             """Test getting PokerStars configuration."""
                                                                                                                             config = TableConfig.get_config(PokerSite.POKERSTARS,
-                                                                                                                                )
+                                                                                                                                
+                                                                                                                            )
 
                                                                                                                             assert config['window_title_pattern'] == r'.*PokerStars.*'
                                                                                                                             assert 'regions' in config
@@ -407,79 +447,104 @@ class TestPokerScreenScraper:
                                                                                                                                 """Integration tests for the complete system."""
 
                                                                                                                                 @patch('mss.mss',
-                                                                                                                                    )
+                                                                                                                                    
+                                                                                                                                )
                                                                                                                                 def test_full_scraping_workflow(self,
                                                                                                                                     
                                                                                                                                     """TODO: Add docstring."""
+
+                                                                                                                                """TODO: Add docstring."""
                                                                                                                                 mock_mss):
                                                                                                                                     """Test complete scraping workflow from capture to game state."""
         # Setup mock screenshot
                                                                                                                                     mock_screenshot = MagicMock(,
-                                                                                                                                        )
+                                                                                                                                        
+                                                                                                                                    )
                                                                                                                                     mock_screenshot.__array__ = lambda: np.ones((768,
                                                                                                                                         
+
                                                                                                                                     1024,
                                                                                                                                         
+
                                                                                                                                     4),
                                                                                                                                         
+
                                                                                                                                     dtype = np.uint8) * 255
 
                                                                                                                                     mock_mss_instance = MagicMock(,
-                                                                                                                                        )
+                                                                                                                                        
+                                                                                                                                    )
                                                                                                                                     mock_mss_instance.monitors = [None,
                                                                                                                                         
+
                                                                                                                                     {'top': 0,
                                                                                                                                         
+
                                                                                                                                     'left': 0,
                                                                                                                                         
+
                                                                                                                                     'width': 1024,
                                                                                                                                         
+
                                                                                                                                     'height': 768}]
                                                                                                                                     mock_mss_instance.grab.return_value = mock_screenshot
                                                                                                                                     mock_mss.return_value = mock_mss_instance
 
         # Create scraper and bridge
                                                                                                                                     scraper = PokerScreenScraper(PokerSite.GENERIC,
-                                                                                                                                        )
+                                                                                                                                        
+                                                                                                                                    )
                                                                                                                                     scraper.sct = mock_mss_instance
                                                                                                                                     bridge = ScreenScraperBridge(scraper,
-                                                                                                                                        )
+                                                                                                                                        
+                                                                                                                                    )
 
         # Setup callback
                                                                                                                                     callback_results = []
                                                                                                                                     bridge.register_callback(lambda x: callback_results.append(x),
-                                                                                                                                        )
+                                                                                                                                        
+                                                                                                                                    )
 
         # Mock recognition functions
                                                                                                                                     with patch.object(scraper.text_recognizer,
                                                                                                                                         
+
                                                                                                                                     'extract_number',
                                                                                                                                         
+
                                                                                                                                     return_value = 100.0):
                                                                                                                                         with patch.object(scraper.card_recognizer,
                                                                                                                                             
+
                                                                                                                                         'recognize_card',
                                                                                                                                             
 
                                                                                                                                         side_effect=[Card('A',
                                                                                                                                             
+
                                                                                                                                         Suit.SPADE),
                                                                                                                                             
+
                                                                                                                                         Card('K',
                                                                                                                                             
+
                                                                                                                                         Suit.HEART)]):
                                                                                                                                             with patch.object(scraper,
                                                                                                                                                 
+
                                                                                                                                             '_is_seat_active',
                                                                                                                                                 
+
                                                                                                                                             return_value = True):
                     # Analyze table
                                                                                                                                                 state = scraper.analyze_table(,
-                                                                                                                                                    )
+                                                                                                                                                    
+                                                                                                                                                )
 
                     # Process through bridge
                                                                                                                                                 bridge.process_update(state,
-                                                                                                                                                    )
+                                                                                                                                                    
+                                                                                                                                                )
 
                     # Verify callback received correct data
                                                                                                                                                 assert len(callback_results) == 1
@@ -493,48 +558,60 @@ class TestPokerScreenScraper:
                                                                                                                                                     def test_capture_speed(self):
                                                                                                                                                         """Test that capture is fast enough for real - time use."""
                                                                                                                                                         scraper = PokerScreenScraper(PokerSite.GENERIC,
-                                                                                                                                                            )
+                                                                                                                                                            
+                                                                                                                                                        )
 
         # Create test image
                                                                                                                                                         test_img = np.ones((768,
                                                                                                                                                             
+
                                                                                                                                                         1024,
                                                                                                                                                             
+
                                                                                                                                                         3),
                                                                                                                                                             
+
                                                                                                                                                         dtype = np.uint8) * 255
 
         # Time multiple captures
                                                                                                                                                         start_time = time.time(,
-                                                                                                                                                            )
+                                                                                                                                                            
+                                                                                                                                                        )
                                                                                                                                                         for _ in range(10):
                                                                                                                                                             with patch.object(scraper,
                                                                                                                                                                 
+
                                                                                                                                                             'capture_table',
                                                                                                                                                                 
+
                                                                                                                                                             return_value = test_img):
                                                                                                                                                                 scraper.analyze_table(test_img,
-                                                                                                                                                                    )
+                                                                                                                                                                    
+                                                                                                                                                                )
 
                                                                                                                                                                 elapsed = time.time() - start_time
                                                                                                                                                                 avg_time = elapsed / 10
 
-        # Should be fast enough for real - time (< 100ms per capture, ,)
+        # Should be fast enough for real - time (< 100ms per capture, , ,)
                                                                                                                                                                 assert avg_time < 0.1,
                                                                                                                                                                     
+
                                                                                                                                                                 f'Analysis too slow: {avg_time: .3f}s per capture'
 
                                                                                                                                                                 def test_memory_usage(self):
                                                                                                                                                                     """Test that memory usage is reasonable."""
                                                                                                                                                                     scraper = PokerScreenScraper(PokerSite.GENERIC,
-                                                                                                                                                                        )
+                                                                                                                                                                        
+                                                                                                                                                                    )
 
         # Simulate many captures
                                                                                                                                                                     for _ in range(100):
                                                                                                                                                                         state = TableState(,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
                                                                                                                                                                         scraper.state_history.append(state,
-                                                                                                                                                                            )
+                                                                                                                                                                            
+                                                                                                                                                                        )
 
         # History should be limited
                                                                                                                                                                         assert len(scraper.state_history) <= 100
@@ -542,17 +619,22 @@ class TestPokerScreenScraper:
                                                                                                                                                                         def test_suite():
                                                                                                                                                                             """Run all tests and report results."""
                                                                                                                                                                             print('='*60,
-                                                                                                                                                                                )
+                                                                                                                                                                                
+                                                                                                                                                                            )
                                                                                                                                                                             print('POKER SCREEN SCRAPER - TEST SUITE',
-                                                                                                                                                                                )
+                                                                                                                                                                                
+                                                                                                                                                                            )
                                                                                                                                                                             print('='*60,
-                                                                                                                                                                                )
+                                                                                                                                                                                
+                                                                                                                                                                            )
 
     # Run pytest
                                                                                                                                                                             pytest.main([__file__,
                                                                                                                                                                                 
+
                                                                                                                                                                             '-v'])
 
                                                                                                                                                                             if __name__ == '__main__':
                                                                                                                                                                                 test_suite(,
-                                                                                                                                                                                    )
+                                                                                                                                                                                    
+                                                                                                                                                                                )

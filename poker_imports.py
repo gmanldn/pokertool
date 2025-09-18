@@ -46,42 +46,44 @@ class ImportValidator:
                     return all_valid
 
                     def validate_module(self, module_name: str, 
-                        """TODO: Add docstring."""
+                    """TODO: Add docstring."""
                     required_classes: List[str]) -> bool:
                         """Validate a specific module has required classes"""
                         try:
-                            module = importlib.import_module(module_name, ,)
+                            module = importlib.import_module(module_name, , ,)
 
                             missing = []
                             for class_name in required_classes:
                                 if not hasattr(module, class_name):
-                                    missing.append(class_name, ,)
+                                    missing.append(class_name, , ,)
                                 else:
                     # Check for required methods
                                     if class_name in self.REQUIRED_METHODS:
-                                        cls = getattr(module, class_name, ,)
+                                        cls = getattr(module, class_name, , ,)
                                         for method in self.REQUIRED_METHODS[class_name]:
                                             if not hasattr(cls, method):
-                                                missing.append(f'{class_name}.{method}', ,)
+                                                missing.append(f'{class_name}.{method}', , ,)
 
                                                 if missing:
                                                     self.errors.append(f"{module_name}: Missing {', 
-                                                    '.join(missing)}", ,)
+                                                    '.join(missing)}", , ,)
                                                     return False
 
                                                     return True
 
                                                 except ImportError as e:
                                                     self.errors.append(f'{module_name}: Import failed - {e}',
-                                                        )
+                                                        
+                                                    )
                                                     return False
                                                 except Exception as e:
                                                     self.errors.append(f'{module_name}: Validation error - {e}',
-                                                        )
+                                                        
+                                                    )
                                                     return False
 
                                                     def safe_import(module_name: str, 
-                                                        """TODO: Add docstring."""
+                                                    """TODO: Add docstring."""
                                                     class_name: str = None, 
                                                     fallback = None) -> Optional[Any]:
                                                         """
@@ -100,44 +102,53 @@ class ImportValidator:
                                                                 try:
         # Add current directory to path if needed
                                                                     current_dir = os.path.dirname(os.path.abspath(__file__),
-                                                                        )
+                                                                        
+                                                                    )
                                                                     if current_dir not in sys.path:
                                                                         sys.path.insert(0, 
                                                                         current_dir)
 
         # Try to import the module
                                                                         module = importlib.import_module(module_name,
-                                                                            )
+                                                                            
+                                                                        )
 
                                                                         if class_name:
                                                                             if hasattr(module, 
                                                                             class_name):
                                                                                 return getattr(module,
                                                                                     
+
                                                                                 class_name)
                                                                             else:
                                                                                 print(f'Warning: {class_name} not found in {module_name}',
-                                                                                    )
+                                                                                    
+                                                                                )
                                                                                 return fallback
 
                                                                                 return module
 
                                                                             except ImportError as e:
                                                                                 print(f'Warning: Could not import {module_name}: {e}',
-                                                                                    )
+                                                                                    
+                                                                                )
                                                                                 if fallback is not None:
                                                                                     print(f'  Using fallback for {class_name or module_name}',
-                                                                                        )
+                                                                                        
+                                                                                    )
                                                                                     return fallback
                                                                                     return None
                                                                                 except Exception as e:
                                                                                     print(f'Error importing {module_name}: {e}',
-                                                                                        )
+                                                                                        
+                                                                                    )
                                                                                     return fallback if fallback is not None else None
 
                                                                                     def verify_poker_modules() -> Tuple[bool,
                                                                                         
                                                                                         """TODO: Add docstring."""
+
+                                                                                    """TODO: Add docstring."""
                                                                                     List[str]]:
                                                                                         """
                                                                                         Verify all required poker modules are properly importable
@@ -145,41 +156,49 @@ class ImportValidator:
                                                                                         Returns:
                                                                                             Tuple of (success: bool,
                                                                                                 
+
                                                                                             missing_components: List[str])
                                                                                             """
                                                                                             required_imports = [
                                                                                             ('poker_modules',
                                                                                                 
+
                                                                                             'Card'),
                                                                                                 
 
                                                                                             ('poker_modules',
                                                                                                 
+
                                                                                             'Suit'),
                                                                                                 
 
                                                                                             ('poker_modules',
                                                                                                 
+
                                                                                             'Rank'),
                                                                                                 
 
                                                                                             ('poker_modules',
                                                                                                 
+
                                                                                             'Position'),
                                                                                                 
 
                                                                                             ('poker_modules',
                                                                                                 
+
                                                                                             'HandAnalysis'),
                                                                                                 
 
                                                                                             ('poker_modules',
                                                                                                 
+
                                                                                             'HandRanking'),
                                                                                                 
 
                                                                                             ('poker_modules',
                                                                                                 
+
                                                                                             'PokerCard'),
                                                                                                 
 
@@ -188,32 +207,42 @@ class ImportValidator:
                                                                                             missing = []
                                                                                             for module,
                                                                                                 
+
                                                                                             cls in required_imports:
                                                                                                 result = safe_import(module,
                                                                                                     
+
                                                                                                 cls)
                                                                                                 if result is None:
                                                                                                     missing.append(f'{module}.{cls}',
-                                                                                                        )
+                                                                                                        
+                                                                                                    )
 
                                                                                                     if missing:
                                                                                                         print(f"Missing components: {',
                                                                                                             
+
                                                                                                         '.join(missing)}",
-                                                                                                            )
+                                                                                                            
+                                                                                                        )
                                                                                                         return False,
                                                                                                             
+
                                                                                                         missing
 
                                                                                                         print('✅ All poker modules verified successfully',
-                                                                                                            )
+                                                                                                            
+                                                                                                        )
                                                                                                         return True,
                                                                                                             
+
                                                                                                         []
 
                                                                                                         def create_minimal_fallbacks() -> Dict[str,
                                                                                                             
                                                                                                             """TODO: Add docstring."""
+
+                                                                                                        """TODO: Add docstring."""
                                                                                                         Any]:
                                                                                                             """Create minimal fallback classes for critical components"""
 
@@ -223,6 +252,7 @@ class ImportValidator:
     # Minimal Card implementation
                                                                                                             Card = namedtuple('Card',
                                                                                                                 
+
                                                                                                             'rank suit')
 
     # Minimal Suit enum
@@ -282,8 +312,11 @@ class ImportValidator:
                                                                                                                                     def analyze_hand(self,
                                                                                                                                         
                                                                                                                                         """TODO: Add docstring."""
+
+                                                                                                                                    """TODO: Add docstring."""
                                                                                                                                     hole_cards,
                                                                                                                                         
+
                                                                                                                                     community_cards = None):
                                                                                                                                         """TODO: Add docstring."""
                                                                                                                                         return {
@@ -306,6 +339,7 @@ class ImportValidator:
                                                                                                                                             """TODO: Add docstring."""
                                                                                                                                             return {'total_hands': len(self.hand_history),
                                                                                                                                                 
+
                                                                                                                                             'message': 'Fallback mode'}
 
     # Minimal PokerCard class
@@ -313,8 +347,10 @@ class ImportValidator:
                                                                                                                                                 """TODO: Add class docstring."""
                                                                                                                                                 def __init__(self,
                                                                                                                                                     
+
                                                                                                                                                 rank,
                                                                                                                                                     
+
                                                                                                                                                 suit):
                                                                                                                                                     self.rank = rank
                                                                                                                                                     self.suit = suit
@@ -326,6 +362,8 @@ class ImportValidator:
                                                                                                                                                         def from_string(cls,
                                                                                                                                                             
                                                                                                                                                             """TODO: Add docstring."""
+
+                                                                                                                                                        """TODO: Add docstring."""
                                                                                                                                                         card_str):
                                                                                                                                                             """TODO: Add docstring."""
             # Simple parsing
@@ -334,6 +372,7 @@ class ImportValidator:
                                                                                                                                                                 suit = card_str[-1]
                                                                                                                                                                 return cls(rank,
                                                                                                                                                                     
+
                                                                                                                                                                 suit)
                                                                                                                                                                 return None
 
@@ -369,40 +408,51 @@ class ImportValidator:
                                                                                                                                                                         Returns:
                                                                                                                                                                             True if repair was successful,
                                                                                                                                                                                 
+
                                                                                                                                                                             False otherwise
                                                                                                                                                                             """
                                                                                                                                                                             try:
         # Check if file exists
                                                                                                                                                                                 if not os.path.exists(module_path):
                                                                                                                                                                                     print(f'Creating new {module_path}...',
-                                                                                                                                                                                        )
+                                                                                                                                                                                        
+                                                                                                                                                                                    )
                                                                                                                                                                                     create_new_poker_modules(module_path,
-                                                                                                                                                                                        )
+                                                                                                                                                                                        
+                                                                                                                                                                                    )
                                                                                                                                                                                     return True
 
         # Try to import and check what's missing
                                                                                                                                                                                     validator = ImportValidator(,
-                                                                                                                                                                                        )
+                                                                                                                                                                                        
+                                                                                                                                                                                    )
                                                                                                                                                                                     if validator.validate_module('poker_modules',
                                                                                                                                                                                         
+
                                                                                                                                                                                     validator.REQUIRED_CLASSES['poker_modules']):
                                                                                                                                                                                         print('✅ poker_modules.py is already valid',
-                                                                                                                                                                                            )
+                                                                                                                                                                                            
+                                                                                                                                                                                        )
                                                                                                                                                                                         return True
 
                                                                                                                                                                                         print(f'🔧 Repairing {module_path}...',
-                                                                                                                                                                                            )
+                                                                                                                                                                                            
+                                                                                                                                                                                        )
                                                                                                                                                                                         print(f"  Issues found: {',
                                                                                                                                                                                             
+
                                                                                                                                                                                         '.join(validator.errors)}",
-                                                                                                                                                                                            )
+                                                                                                                                                                                            
+                                                                                                                                                                                        )
 
         # Read existing content
                                                                                                                                                                                         with open(module_path,
                                                                                                                                                                                             
+
                                                                                                                                                                                         'r') as f:
                                                                                                                                                                                             existing_content = f.read(,
-                                                                                                                                                                                                )
+                                                                                                                                                                                                
+                                                                                                                                                                                            )
 
         # Check what's already there
                                                                                                                                                                                             has_imports = 'from enum import Enum' in existing_content
@@ -420,8 +470,10 @@ class ImportValidator:
                                                                                                                                                                                                 from dataclasses import dataclass
                                                                                                                                                                                                 from typing import List,
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 Dict,
                                                                                                                                                                                                     
+
                                                                                                                                                                                                 Optional
                                                                                                                                                                                                 from collections import namedtuple
                                                                                                                                                                                                 import itertools
@@ -453,8 +505,11 @@ class ImportValidator:
                                                                                                                                                                                                                     def analyze_hand(self,
                                                                                                                                                                                                                         
                                                                                                                                                                                                                         """TODO: Add docstring."""
+
+                                                                                                                                                                                                                    """TODO: Add docstring."""
                                                                                                                                                                                                                     hole_cards,
                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                     community_cards = None):
                                                                                                                                                                                                                         """TODO: Add docstring."""
                                                                                                                                                                                                                         return {
@@ -485,22 +540,28 @@ class ImportValidator:
                                                                                                                                                                                                                             if repair_content:
                                                                                                                                                                                                                                 with open(module_path,
                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                 'a') as f:
                                                                                                                                                                                                                                     f.write('\n# === AUTO - REPAIR SECTION ===\n',
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     f.write('\n'.join(repair_content),
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     print(f'✅ Added {len(repair_content)} missing components',
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     return True
 
                                                                                                                                                                                                                                     return False
 
                                                                                                                                                                                                                                 except Exception as e:
                                                                                                                                                                                                                                     print(f'❌ Failed to repair {module_path}: {e}',
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     traceback.print_exc(,
-                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                     return False
 
                                                                                                                                                                                                                                     def create_new_poker_modules(filepath: str):
@@ -514,14 +575,17 @@ class ImportValidator:
                                                                                                                                                                                                                                         from dataclasses import dataclass
                                                                                                                                                                                                                                         from typing import List,
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         Dict,
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         Optional
                                                                                                                                                                                                                                         from collections import namedtuple
 
 # Card as namedtuple for backward compatibility
                                                                                                                                                                                                                                         Card = namedtuple('Card',
                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                         'rank suit')
 
                                                                                                                                                                                                                                         class Suit(Enum):
@@ -586,11 +650,14 @@ class ImportValidator:
                                                                                                                                                                                                                                                                 def from_string(cls,
                                                                                                                                                                                                                                                                     
                                                                                                                                                                                                                                                                     """TODO: Add docstring."""
+
+                                                                                                                                                                                                                                                                """TODO: Add docstring."""
                                                                                                                                                                                                                                                                 card_str):
                                                                                                                                                                                                                                                                     """TODO: Add docstring."""
         # Basic parsing
                                                                                                                                                                                                                                                                     return cls(Rank.ACE,
                                                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                                                     Suit.spades)  # Placeholder
 
                                                                                                                                                                                                                                                                     class HandAnalysis:
@@ -601,8 +668,11 @@ class ImportValidator:
                                                                                                                                                                                                                                                                             def analyze_hand(self,
                                                                                                                                                                                                                                                                                 
                                                                                                                                                                                                                                                                                 """TODO: Add docstring."""
+
+                                                                                                                                                                                                                                                                            """TODO: Add docstring."""
                                                                                                                                                                                                                                                                             hole_cards,
                                                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                                                             community_cards = None):
                                                                                                                                                                                                                                                                                 """TODO: Add docstring."""
                                                                                                                                                                                                                                                                                 return {
@@ -636,29 +706,37 @@ class ImportValidator:
 
                                                                                                                                                                                                                                                                                     with open(filepath,
                                                                                                                                                                                                                                                                                         
+
                                                                                                                                                                                                                                                                                     'w') as f:
                                                                                                                                                                                                                                                                                         f.write(minimal_code,
-                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                        )
                                                                                                                                                                                                                                                                                         print(f'✅ Created minimal {filepath}',
-                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                        )
 
                                                                                                                                                                                                                                                                                         def safe_launch_with_fallbacks():
                                                                                                                                                                                                                                                                                             """Launch poker assistant with automatic fallback handling"""
 
                                                                                                                                                                                                                                                                                             print('🔍 Checking poker modules integrity...',
-                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                            )
 
     # First, try to verify existing modules
                                                                                                                                                                                                                                                                                             success,
                                                                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                                                                             missing = verify_poker_modules(,
-                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                            )
 
                                                                                                                                                                                                                                                                                             if not success:
                                                                                                                                                                                                                                                                                                 print(f'⚠️  Found {len(missing)} missing components',
-                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                                 print('🔧 Attempting automatic repair...',
-                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                )
 
         # Try to repair
                                                                                                                                                                                                                                                                                                 if repair_poker_modules():
@@ -668,34 +746,44 @@ class ImportValidator:
 
                                                                                                                                                                                                                                                                                                         success,
                                                                                                                                                                                                                                                                                                             
+
                                                                                                                                                                                                                                                                                                         missing = verify_poker_modules(,
-                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                        )
 
                                                                                                                                                                                                                                                                                                         if success:
                                                                                                                                                                                                                                                                                                             print('✅ Modules repaired successfully!',
-                                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                            )
                                                                                                                                                                                                                                                                                                         else:
                                                                                                                                                                                                                                                                                                             print('⚠️  Using fallback implementations',
-                                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                            )
                 # Load fallbacks
                                                                                                                                                                                                                                                                                                             fallbacks = create_minimal_fallbacks(,
-                                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                            )
 
                 # Inject fallbacks into sys.modules
                                                                                                                                                                                                                                                                                                             import types
                                                                                                                                                                                                                                                                                                             poker_modules = types.ModuleType('poker_modules',
-                                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                            )
                                                                                                                                                                                                                                                                                                             for name,
                                                                                                                                                                                                                                                                                                                 
+
                                                                                                                                                                                                                                                                                                             obj in fallbacks.items():
                                                                                                                                                                                                                                                                                                                 setattr(poker_modules,
                                                                                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                                                                                 name,
                                                                                                                                                                                                                                                                                                                     
+
                                                                                                                                                                                                                                                                                                                 obj)
                                                                                                                                                                                                                                                                                                                 sys.modules['poker_modules'] = poker_modules
                                                                                                                                                                                                                                                                                                                 print('✅ Fallback modules loaded',
-                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                )
 
                                                                                                                                                                                                                                                                                                                 return success
 
@@ -703,34 +791,46 @@ class ImportValidator:
                                                                                                                                                                                                                                                                                                                     """Test the import validation and repair functionality"""
 
                                                                                                                                                                                                                                                                                                                     print('='*60,
-                                                                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                                                                                                     print('Poker Modules Import Validator',
-                                                                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                                                                                                     print('='*60,
-                                                                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                    )
 
     # Run validation
                                                                                                                                                                                                                                                                                                                     validator = ImportValidator(,
-                                                                                                                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                    )
                                                                                                                                                                                                                                                                                                                     if validator.validate_all():
                                                                                                                                                                                                                                                                                                                         print("\n✅ All modules are valid and ready!",
-                                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                        )
                                                                                                                                                                                                                                                                                                                     else:
                                                                                                                                                                                                                                                                                                                         print("\n❌ Validation failed: ",
-                                                                                                                                                                                                                                                                                                                            )
+                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                        )
                                                                                                                                                                                                                                                                                                                         for error in validator.errors:
                                                                                                                                                                                                                                                                                                                             print(f'  - {error}',
-                                                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                            )
 
                                                                                                                                                                                                                                                                                                                             print("\n🔧 Attempting repairs...",
-                                                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                            )
                                                                                                                                                                                                                                                                                                                             if repair_poker_modules():
                                                                                                                                                                                                                                                                                                                                 print("✅ Repairs completed. Please restart the application.",
-                                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                                                             else:
                                                                                                                                                                                                                                                                                                                                 print('❌ Could not repair automatically.',
-                                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                                                                 print('💡 Using fallback mode...',
-                                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                )
                                                                                                                                                                                                                                                                                                                                 safe_launch_with_fallbacks(,
-                                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                )

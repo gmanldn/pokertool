@@ -12,7 +12,6 @@ __all__ = [
     'parse_card', 'analyse_hand', 'HandAnalysisResult', 
 ]
 
-
 class Rank(Enum):
     """Enum representing poker card ranks."""
     TWO = 2
@@ -28,7 +27,7 @@ class Rank(Enum):
     QUEEN = 12
     KING = 13
     ACE = 14
-    
+
     @property
     def sym(self) -> str:
         """Return the symbol representation of the rank."""
@@ -43,19 +42,17 @@ class Rank(Enum):
         """Return the numeric value of the rank."""
         return int(self.value)
 
-
 class Suit(Enum):
     """Enum representing poker card suits."""
     spades = 's'
     hearts = 'h'
     diamonds = 'd'
     clubs = 'c'
-    
+
     @property
     def glyph(self) -> str:
         """Return the Unicode glyph for the suit."""
         return {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}[self.value]
-
 
 class Position(Enum):
     """Enum representing poker table positions."""
@@ -63,7 +60,7 @@ class Position(Enum):
     MIDDLE = auto()
     LATE = auto()
     BLINDS = auto()
-    
+
     @property
     def category(self) -> str:
         """Return the category name of the position."""
@@ -78,26 +75,24 @@ class Position(Enum):
         """Return True if this is a late position."""
         return self is Position.LATE
 
-
 @dataclass(frozen=True)
 class Card:
     """Represents a playing card with rank and suit."""
     rank: Rank
     suit: Suit
-    
+
     def __str__(self) -> str:
         return f'{self.rank.sym}{self.suit.value}'
     
     def __repr__(self) -> str:
         return f'Card({self.rank.name}, {self.suit.name})'
 
-
 def parse_card(s: str) -> Card:
-    """Parse a card string like 'As' or 'Td' into a Card object."""
+    """Parse a card string like "As" or "Td" into a Card object."""
     s = s.strip().upper()
     rank_map: Dict[str, Rank] = {
         '2': Rank.TWO, '3': Rank.THREE, '4': Rank.FOUR, '5': Rank.FIVE, 
-        '6': Rank.SIX, '7': Rank.SEVEN, '8': Rank.EIGHT, '9': Rank.NINE,
+        '6': Rank.SIX, '7': Rank.SEVEN, '8': Rank.EIGHT, '9': Rank.NINE, 
         'T': Rank.TEN, 'J': Rank.JACK, 'Q': Rank.QUEEN, 'K': Rank.KING, 
         'A': Rank.ACE
     }
@@ -105,10 +100,9 @@ def parse_card(s: str) -> Card:
         's': Suit.spades, 'h': Suit.hearts, 
         'd': Suit.diamonds, 'c': Suit.clubs
     }
-    if len(s) != 2 or s[0] not in rank_map or s[1] not in suit_map:
-        raise ValueError(f'Bad card "{s}". Use like "As", "Td", "9c".')
-    return Card(rank_map[s[0]], suit_map[s[1]])
-
+    if len(s) != 2 or s[0] not in rank_map or s[1].lower() not in suit_map:
+        raise ValueError(f"Bad card '{s}'. Use like 'As', 'Td', '9c'.")
+    return Card(rank_map[s[0]], suit_map[s[1].lower()])
 
 @dataclass
 class HandAnalysisResult:
@@ -116,7 +110,6 @@ class HandAnalysisResult:
     strength: float
     advice: str
     details: dict
-
 
 def analyse_hand(
     hole_cards: Iterable[Card], 

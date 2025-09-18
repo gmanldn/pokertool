@@ -4441,3 +4441,246 @@ RESOURCE USAGE:
   System CPU time: 0.021s
 
 --------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-18 02:56:40.974144
+SESSION ID: 20250918_025640
+Python Version: 3.13.1 (v3.13.1:06714517797, Dec  3 2024, 14:00:22) [Clang 15.0.0 (clang-1500.3.9.4)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: None
+====================================================================================================
+
+[2025-09-18 02:56:40.978558] [INFO] APPLICATION STARTUP
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 39: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'TMPDIR': '/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/', '__CFBundleIdentifier': 'com.apple.Terminal', 'XPC_FLAGS': '0x0', 'TERM': 'xterm-256color', 'SSH_AUTH_SOCK': '/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners', 'XPC_SERVICE_NAME': '0', 'TERM_PROGRAM': 'Apple_Terminal', 'TERM_PROGRAM_VERSION': '455.1', 'TERM_SESSION_ID': '9486D907-9CFE-4A50-9217-924E02669F07', 'SHELL': '/bin/zsh', 'HOME': '/Users/georgeridout', 'LOGNAME': 'georgeridout', 'USER': 'georgeridout', 'PATH': '/Users/ge... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python313.zip",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/lib-dynload",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages"
+  ]
+  {
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CFBundleIdentifier": "com.apple.Terminal",
+    "XPC_FLAGS": "0x0",
+    "TERM": "xterm-256color",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "XPC_SERVICE_NAME": "0",
+    "TERM_PROGRAM": "Apple_Terminal",
+    "TERM_PROGRAM_VERSION": "455.1",
+    "TERM_SESSION_ID": "9486D907-9CFE-4A50-9217-924E02669F07",
+    "SHELL": "/bin/zsh",
+    "HOME": "/Users/georgeridout",
+    "LOGNAME": "georgeridout",
+    "USER": "georgeridout",
+    "PATH": "/Users/georgeridout/.local/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "LANG": "en_GB.UTF-8",
+    "_": "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 16276.00 MB
+  User CPU time: 0.061s
+  System CPU time: 0.023s
+
+--------------------------------------------------------------------------------
+[2025-09-18 02:56:41.080697] [DEBUG] Scanner help detected
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _detect_scanner_flags()
+  Line 67: logger.debug('Scanner help detected', help=help_text)
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  supported = {'path': True, 'dry_run': True, 'no_backup': True}
+  res = CompletedProcess(args=['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--help'], returncode=0, stdout="usage: code_scan.py [-h] [--path PATH] [--no-backup] [--dry-run]\n\nSelf-contained Python code scanner and fixer for pokertool\n\noptions:\n  -h, --help   show this help message and exit\n  --path PATH  Path to repository (default: current directory)\n  --no-backup  Don't create backup files\n  --dry-run    Previe... (truncated)
+  help_text = "usage: code_scan.py [-h] [--path PATH] [--no-backup] [--dry-run]\n\nSelf-contained Python code scanner and fixer for pokertool\n\noptions:\n  -h, --help   show this help message and exit\n  --path PATH  Path to repository (default: current directory)\n  --no-backup  Don't create backup files\n  --dry-run    Preview changes without applying them\n\nExamples:\n  python code_scan.py                    # Scan current directory\n  python code_scan.py --path ../pokertool  # Scan specific directory\n ... (truncated)
+  ht = "usage: code_scan.py [h] [path PATH] [nobackup] [dryrun]\n\nSelfcontained Python code scanner and fixer for pokertool\n\noptions:\n  h, help   show this help message and exit\n  path PATH  Path to repository (default: current directory)\n  nobackup  Don't create backup files\n  dryrun    Preview changes without applying them\n\nExamples:\n  python code_scan.py                    # Scan current directory\n  python code_scan.py path ../pokertool  # Scan specific directory\n  python code_scan.py no... (truncated)
+
+ADDITIONAL DATA:
+  "usage: code_scan.py [-h] [--path PATH] [--no-backup] [--dry-run]\n\nSelf-contained Python code scanner and fixer for pokertool\n\noptions:\n  -h, --help   show this help message and exit\n  --path PATH  Path to repository (default: current directory)\n  --no-backup  Don't create backup files\n  --dry-run    Preview changes without applying them\n\nExamples:\n  python code_scan.py                    # Scan current directory\n  python code_scan.py --path ../pokertool  # Scan specific directory\n  python code_scan.py --no-backup        # Don't create backup files\n  python code_scan.py --dry-run          # Preview changes without applying\n        \n"
+
+RESOURCE USAGE:
+  Memory (RSS): 16316.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.025s
+
+--------------------------------------------------------------------------------
+[2025-09-18 02:56:41.081241] [INFO] Running code_scan.py
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 139: logger.info('Running code_scan.py', command=_log_cmd(args))
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+  flags = {'path': True, 'dry_run': True, 'no_backup': True}
+  args = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/code_scan.py', '--path', '/Users/georgeridout/Documents/github/pokertool']
+  used_any = True
+
+ADDITIONAL DATA:
+  "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3 /Users/georgeridout/Documents/github/pokertool/code_scan.py --path /Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 16348.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.025s
+
+--------------------------------------------------------------------------------
+[2025-09-18 02:56:44.252642] [INFO] Starting poker tool application
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 192: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 16352.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.026s
+
+--------------------------------------------------------------------------------
+[2025-09-18 02:56:44.253696] [DEBUG] Test debug message
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 194: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 16364.00 MB
+  User CPU time: 0.062s
+  System CPU time: 0.027s
+
+--------------------------------------------------------------------------------
+[2025-09-18 02:56:44.254130] [INFO] Launching poker_go.py
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 161: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+  env = {'TMPDIR': '/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/', '__CFBundleIdentifier': 'com.apple.Terminal', 'XPC_FLAGS': '0x0', 'TERM': 'xterm-256color', 'SSH_AUTH_SOCK': '/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners', 'XPC_SERVICE_NAME': '0', 'TERM_PROGRAM': 'Apple_Terminal', 'TERM_PROGRAM_VERSION': '455.1', 'TERM_SESSION_ID': '9486D907-9CFE-4A50-9217-924E02669F07', 'SHELL': '/bin/zsh', 'HOME': '/Users/georgeridout', 'LOGNAME': 'georgeridout', 'USER': 'georgeridout', 'PATH': '/Users/ge... (truncated)
+
+ADDITIONAL DATA:
+  "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3 /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 16376.00 MB
+  User CPU time: 0.063s
+  System CPU time: 0.027s
+
+--------------------------------------------------------------------------------
+[2025-09-18 02:56:44.306100] [INFO] Application shutdown
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 200: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 1
+
+ADDITIONAL DATA:
+  1
+
+RESOURCE USAGE:
+  Memory (RSS): 16384.00 MB
+  User CPU time: 0.063s
+  System CPU time: 0.028s
+
+--------------------------------------------------------------------------------
+[2025-09-18 02:56:44.306776] [INFO] Performing cleanup
+Session: 20250918_025640
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 45: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 16396.00 MB
+  User CPU time: 0.063s
+  System CPU time: 0.029s
+
+--------------------------------------------------------------------------------

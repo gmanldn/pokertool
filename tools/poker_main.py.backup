@@ -7,7 +7,7 @@ from pokertool.cli import main as _cli_main  # type: ignore
 
 def main() -> int:
     """TODO: Add docstring."""
-    return _cli_main(['gui'],)
+    return _cli_main(['gui'], ,)
 
     if __name__ == '__main__':
-        raise SystemExit(main(),)
+        raise SystemExit(main(), ,)

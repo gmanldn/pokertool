@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Comprehensive unit tests for new PokerTool features.
 Tests for SCRP-001, DB-001, PERF-001, and API-001 implementations.
@@ -20,9 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
 try:
     from pokertool.scrape import ScraperManager, get_scraper_status, run_screen_scraper
-    from pokertool.database import (
-        ProductionDatabase, DatabaseConfig, DatabaseType, migrate_to_production
-    )
+    from pokertool.database import ProductionDatabase, DatabaseConfig, DatabaseType, migrate_to_production
     from pokertool.threading import (
         PokerThreadPool, ThreadPoolConfig, TaskPriority, TaskResult,
         ThreadSafeCounter, ThreadSafeDict, TaskQueue, get_thread_pool
@@ -32,7 +31,7 @@ try:
     )
     MODULES_AVAILABLE = True
 except ImportError as e:
-    print(f'Some modules not available for testing: {e}')
+    print(f"Some modules not available for testing: {e}")
     MODULES_AVAILABLE = False
 
 
@@ -42,7 +41,7 @@ class TestScraperIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         if not MODULES_AVAILABLE:
-            self.skipTest('Required modules not available')
+            self.skipTest("Required modules not available")
     
     def test_scraper_manager_initialization(self):
         """Test scraper manager initialization."""
@@ -102,7 +101,7 @@ class TestDatabaseMigration(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         if not MODULES_AVAILABLE:
-            self.skipTest('Required modules not available')
+            self.skipTest("Required modules not available")
     
     def test_database_config_from_env(self):
         """Test database configuration from environment variables."""
@@ -149,10 +148,10 @@ class TestDatabaseMigration(unittest.TestCase):
         db = ProductionDatabase(config)
         
         result_id = db.save_hand_analysis(
-            hand='AsKh',
-            board='7d8d9c',
-            result='Test result',
-            metadata={'test': 'data'}
+            hand="AsKh",
+            board="7d 8d 9c",
+            result="Test result",
+            metadata={"test": "data"}
         )
         
         self.assertIsInstance(result_id, int)
@@ -164,8 +163,8 @@ class TestDatabaseMigration(unittest.TestCase):
         db = ProductionDatabase(config)
         
         # Add test data
-        db.save_hand_analysis('AsKh', '7d8d9c', 'Test 1')
-        db.save_hand_analysis('KdQh', 'TcJcQs', 'Test 2')
+        db.save_hand_analysis("AsKh", "7d 8d 9c", "Test 1")
+        db.save_hand_analysis("KdQh", "Tc Jc Qs", "Test 2")
         
         hands = db.get_recent_hands(limit=10)
         self.assertEqual(len(hands), 2)
@@ -188,7 +187,7 @@ class TestThreadingFeatures(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         if not MODULES_AVAILABLE:
-            self.skipTest('Required modules not available')
+            self.skipTest("Required modules not available")
     
     def test_thread_safe_counter(self):
         """Test ThreadSafeCounter implementation."""
@@ -209,43 +208,43 @@ class TestThreadingFeatures(unittest.TestCase):
         safe_dict = ThreadSafeDict()
         
         # Test basic operations
-        safe_dict.set('key1', 'value1')
-        self.assertEqual(safe_dict.get('key1'), 'value1')
-        self.assertIsNone(safe_dict.get('nonexistent'))
+        safe_dict.set("key1", "value1")
+        self.assertEqual(safe_dict.get("key1"), "value1")
+        self.assertIsNone(safe_dict.get("nonexistent"))
         
         # Test deletion
-        self.assertTrue(safe_dict.delete('key1'))
-        self.assertFalse(safe_dict.delete('key1'))  # Already deleted
+        self.assertTrue(safe_dict.delete("key1"))
+        self.assertFalse(safe_dict.delete("key1"))  # Already deleted
         
         # Test other operations
-        safe_dict.set('key2', 'value2')
-        safe_dict.set('key3', 'value3')
+        safe_dict.set("key2", "value2")
+        safe_dict.set("key3", "value3")
         self.assertEqual(len(safe_dict), 2)
-        self.assertIn('key2', safe_dict.keys())
-        self.assertIn('value3', safe_dict.values())
+        self.assertIn("key2", safe_dict.keys())
+        self.assertIn("value3", safe_dict.values())
     
     def test_task_queue_priority(self):
         """Test priority-based task queue."""
         task_queue = TaskQueue()
         
         # Add tasks with different priorities
-        task_queue.put('low', TaskPriority.LOW)
-        task_queue.put('high', TaskPriority.HIGH)
-        task_queue.put('normal', TaskPriority.NORMAL)
-        task_queue.put('critical', TaskPriority.CRITICAL)
+        task_queue.put("low", TaskPriority.LOW)
+        task_queue.put("high", TaskPriority.HIGH)
+        task_queue.put("normal", TaskPriority.NORMAL)
+        task_queue.put("critical", TaskPriority.CRITICAL)
         
         # Should get items in priority order
-        self.assertEqual(task_queue.get(timeout=0.1), 'critical')
-        self.assertEqual(task_queue.get(timeout=0.1), 'high')
-        self.assertEqual(task_queue.get(timeout=0.1), 'normal')
-        self.assertEqual(task_queue.get(timeout=0.1), 'low')
+        self.assertEqual(task_queue.get(timeout=0.1), "critical")
+        self.assertEqual(task_queue.get(timeout=0.1), "high")
+        self.assertEqual(task_queue.get(timeout=0.1), "normal")
+        self.assertEqual(task_queue.get(timeout=0.1), "low")
     
     def test_thread_pool_config(self):
         """Test thread pool configuration."""
         config = ThreadPoolConfig()
         self.assertIsNotNone(config.max_workers)
         self.assertGreater(config.max_workers, 0)
-        self.assertEqual(config.thread_name_prefix, 'PokerTool')
+        self.assertEqual(config.thread_name_prefix, "PokerTool")
     
     def test_poker_thread_pool_initialization(self):
         """Test PokerThreadPool initialization."""
@@ -271,7 +270,6 @@ class TestThreadingFeatures(unittest.TestCase):
         
         try:
             def test_function(x):
-                """Test function."""
                 return x * 2
             
             task_id = pool.submit_priority_task(test_function, 5, priority=TaskPriority.HIGH)
@@ -290,7 +288,6 @@ class TestThreadingFeatures(unittest.TestCase):
         
         try:
             def test_function(x, y):
-                """Test function."""
                 return x + y
             
             future = pool.submit_thread_task(test_function, 3, y=4)
@@ -314,26 +311,26 @@ class TestAPIFeatures(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         if not MODULES_AVAILABLE:
-            self.skipTest('Required modules not available')
+            self.skipTest("Required modules not available")
     
     def test_user_role_enum(self):
         """Test UserRole enum."""
-        self.assertEqual(UserRole.ADMIN.value, 'admin')
-        self.assertEqual(UserRole.USER.value, 'user')
-        self.assertEqual(UserRole.PREMIUM.value, 'premium')
-        self.assertEqual(UserRole.GUEST.value, 'guest')
+        self.assertEqual(UserRole.ADMIN.value, "admin")
+        self.assertEqual(UserRole.USER.value, "user")
+        self.assertEqual(UserRole.PREMIUM.value, "premium")
+        self.assertEqual(UserRole.GUEST.value, "guest")
     
     def test_api_user_dataclass(self):
         """Test APIUser dataclass."""
         user = APIUser(
-            user_id='test123',
-            username='testuser',
-            email='test@example.com',
+            user_id="test123",
+            username="testuser",
+            email="test@example.com",
             role=UserRole.USER
         )
         
-        self.assertEqual(user.user_id, 'test123')
-        self.assertEqual(user.username, 'testuser')
+        self.assertEqual(user.user_id, "test123")
+        self.assertEqual(user.username, "testuser")
         self.assertEqual(user.role, UserRole.USER)
         self.assertTrue(user.is_active)
     
@@ -351,14 +348,14 @@ class TestAPIFeatures(unittest.TestCase):
         auth_service = AuthenticationService()
         
         user = auth_service.create_user(
-            username='newuser',
-            email='new@example.com',
-            password='password123',
+            username="newuser",
+            email="new@example.com",
+            password="password123",
             role=UserRole.USER
         )
         
-        self.assertEqual(user.username, 'newuser')
-        self.assertEqual(user.email, 'new@example.com')
+        self.assertEqual(user.username, "newuser")
+        self.assertEqual(user.email, "new@example.com")
         self.assertEqual(user.role, UserRole.USER)
         self.assertIn(user.user_id, auth_service.users)
     
@@ -367,17 +364,16 @@ class TestAPIFeatures(unittest.TestCase):
         auth_service = AuthenticationService()
         
         # Create first user
-        auth_service.create_user('testuser', 'test@example.com', 'password')
+        auth_service.create_user("testuser", "test@example.com", "password")
         
         # Try to create duplicate username
-        # Should raise HTTPException, but we'll catch any exception
-        with self.assertRaises(Exception):
-            auth_service.create_user('testuser', 'different@example.com', 'password')
+        with self.assertRaises(Exception):  # Should raise HTTPException, but we'll catch any exception
+            auth_service.create_user("testuser", "different@example.com", "password")
     
     def test_authentication_service_token_creation(self):
         """Test JWT token creation."""
         auth_service = AuthenticationService()
-        user = auth_service.create_user('testuser', 'test@example.com', 'password')
+        user = auth_service.create_user("testuser", "test@example.com", "password")
         
         token = auth_service.create_access_token(user)
         self.assertIsInstance(token, str)
@@ -386,7 +382,7 @@ class TestAPIFeatures(unittest.TestCase):
     def test_authentication_service_token_verification(self):
         """Test JWT token verification."""
         auth_service = AuthenticationService()
-        user = auth_service.create_user('testuser', 'test@example.com', 'password')
+        user = auth_service.create_user("testuser", "test@example.com", "password")
         
         token = auth_service.create_access_token(user)
         verified_user = auth_service.verify_token(token)
@@ -413,7 +409,7 @@ class TestIntegrationScenarios(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         if not MODULES_AVAILABLE:
-            self.skipTest('Required modules not available')
+            self.skipTest("Required modules not available")
     
     def test_database_with_threading(self):
         """Test database operations with threading."""
@@ -423,12 +419,11 @@ class TestIntegrationScenarios(unittest.TestCase):
         
         try:
             def save_hand_task(hand_num):
-                """Save hand task."""
                 return db.save_hand_analysis(
-                    hand='AsKh',
-                    board='7d8d9c',
-                    result=f'Analysis {hand_num}',
-                    metadata={'thread_test': True, 'hand_num': hand_num}
+                    hand="AsKh",
+                    board="7d 8d 9c",
+                    result=f"Analysis {hand_num}",
+                    metadata={"thread_test": True, "hand_num": hand_num}
                 )
             
             # Submit multiple tasks
@@ -449,7 +444,7 @@ class TestIntegrationScenarios(unittest.TestCase):
             # Verify all records were saved
             hands = db.get_recent_hands(limit=10)
             self.assertEqual(len(hands), 5)
-        
+            
         finally:
             thread_pool.shutdown(wait=False)
     
@@ -464,7 +459,6 @@ class TestIntegrationScenarios(unittest.TestCase):
         test_state = {}
         
         def test_callback(game_state):
-            """Test callback."""
             test_state.update(game_state)
             callback_called.set()
         
@@ -473,8 +467,8 @@ class TestIntegrationScenarios(unittest.TestCase):
         
         # Simulate state update
         mock_state = {
-            'hole_cards': ["As", "Kh"],
-            'board_cards': ["7d", "8d", "9c"],
+            'hole_cards': ['As', 'Kh'],
+            'board_cards': ['7d', '8d', '9c'],
             'pot': 100.0,
             'stage': 'flop'
         }
@@ -492,7 +486,7 @@ class TestErrorHandling(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         if not MODULES_AVAILABLE:
-            self.skipTest('Required modules not available')
+            self.skipTest("Required modules not available")
     
     def test_thread_pool_task_error_handling(self):
         """Test error handling in thread pool tasks."""
@@ -501,16 +495,15 @@ class TestErrorHandling(unittest.TestCase):
         
         try:
             def failing_task():
-                """Failing task."""
-                raise ValueError('Test error')
+                raise ValueError("Test error")
             
             task_id = pool.submit_priority_task(failing_task, priority=TaskPriority.NORMAL)
             result = pool.get_task_result(task_id, timeout=5.0)
             
             self.assertIsNotNone(result.error)
             self.assertIsInstance(result.error, ValueError)
-            self.assertEqual(str(result.error), 'Test error')
-        
+            self.assertEqual(str(result.error), "Test error")
+            
         finally:
             pool.shutdown(wait=False)
     
@@ -528,8 +521,8 @@ class TestErrorHandling(unittest.TestCase):
                 # This should handle the error gracefully
                 with self.assertRaises((PermissionError, Exception)):
                     db = ProductionDatabase(config)
-                    db.save_hand_analysis('AsKh', None, 'Test')
-            
+                    db.save_hand_analysis("AsKh", None, "Test")
+                    
             finally:
                 # Restore permissions for cleanup
                 os.chmod(temp_dir, 0o755)
@@ -541,7 +534,7 @@ class TestPerformanceScenarios(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         if not MODULES_AVAILABLE:
-            self.skipTest('Required modules not available')
+            self.skipTest("Required modules not available")
     
     def test_thread_pool_concurrent_tasks(self):
         """Test thread pool with many concurrent tasks."""
@@ -550,7 +543,6 @@ class TestPerformanceScenarios(unittest.TestCase):
         
         try:
             def compute_task(n):
-                """Compute task."""
                 # Simulate some work
                 total = 0
                 for i in range(n):
@@ -580,7 +572,7 @@ class TestPerformanceScenarios(unittest.TestCase):
             
             # Should complete reasonably quickly with multiple threads
             self.assertLess(execution_time, 5.0)
-        
+            
         finally:
             pool.shutdown(wait=False)
     
@@ -594,10 +586,10 @@ class TestPerformanceScenarios(unittest.TestCase):
         
         for i in range(100):
             db.save_hand_analysis(
-                hand='AsKh',
-                board='7d8d9c',
-                result=f'Batch analysis {i}',
-                metadata={'batch': True, 'index': i}
+                hand="AsKh",
+                board="7d 8d 9c",
+                result=f"Batch analysis {i}",
+                metadata={"batch": True, "index": i}
             )
         
         batch_time = time.time() - start_time
@@ -640,27 +632,27 @@ if __name__ == '__main__':
         
         # Print summary
         print(f"\n{'='*60}")
-        print('Comprehensive Test Summary:')
-        print(f'Tests run: {result.testsRun}')
-        print(f'Failures: {len(result.failures)}')
-        print(f'Errors: {len(result.errors)}')
+        print(f"Comprehensive Test Summary:")
+        print(f"Tests run: {result.testsRun}")
+        print(f"Failures: {len(result.failures)}")
+        print(f"Errors: {len(result.errors)}")
         
         if result.testsRun > 0:
             success_rate = ((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100)
-            print(f'Success rate: {success_rate:.1f}%')
+            print(f"Success rate: {success_rate:.1f}%")
         
         print(f"{'='*60}")
         
         # Exit with error code if tests failed
         if result.failures or result.errors:
-            print('Some tests failed! ❌')
+            print("Some tests failed! ❌")
             for failure in result.failures:
-                print(f'FAILURE: {failure[0]}')
+                print(f"FAILURE: {failure[0]}")
             for error in result.errors:
-                print(f'ERROR: {error[0]}')
+                print(f"ERROR: {error[0]}")
             sys.exit(1)
         else:
-            print('All comprehensive tests passed! ✅')
+            print("All comprehensive tests passed! ✅")
             sys.exit(0)
     else:
         print("Required modules not available - skipping comprehensive tests")

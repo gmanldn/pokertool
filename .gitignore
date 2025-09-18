@@ -9,7 +9,7 @@
 # ---
 # POKERTOOL-HEADER-END
 .DS_Store# OS / editor
-.DS_Store
+*.DS_Store
 Thumbs.db
 *.swp
 *.swo
@@ -141,4 +141,6 @@ __pycache__/
 *.sqlite
 *.sqlite3
 backup_*/\n
+.DS_Store
+.DS_Store
 .DS_Store
