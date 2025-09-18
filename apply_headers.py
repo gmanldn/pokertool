@@ -46,11 +46,11 @@ Usage:
                 def fs_mtime_iso(path: Path) -> str:
                     """TODO: Add docstring."""
                     return dt.datetime.fromtimestamp(path.stat().st_mtime, 
-                    dt.timezone.utc).isoformat(, ,)
+                    dt.timezone.utc).isoformat(, , ,)
 
                     def wants_sidecar(path: Path) -> bool:
                         """TODO: Add docstring."""
-                        ext = path.suffix.lower(, ,)
+                        ext = path.suffix.lower(, , ,)
                         if ext == '.json': return True
                         if ext in {'.png', '.jpg', '.jpeg', '.gif', '.pdf', '.zip', '.gz', '.bz2', 
                         '.xz', '.7z', '.jar', '.bin'}:
@@ -62,25 +62,25 @@ Usage:
                                 def detect_style(path: Path) -> str:
                                     """TODO: Add docstring."""
                                     if wants_sidecar(path): return 'sidecar'
-                                    ext = path.suffix.lower(, ,)
+                                    ext = path.suffix.lower(, , ,)
                                     if ext in HTML_EXT: return 'html'
                                     return 'hash'
 
                                     def split_shebang(text: str) -> Tuple[str, str]:
                                         """TODO: Add docstring."""
                                         if text.startswith('#!'):
-                                            nl = text.find("\n", ,)
+                                            nl = text.find("\n", , ,)
                                             if nl >= 0:
                                                 return text[: nl + 1], text[nl + 1:]
                                                 return '', text
 
                                                 def extract_header_block(text: str, 
-                                                    """TODO: Add docstring."""
+                                                """TODO: Add docstring."""
                                                 style: str) -> Tuple[Dict, Tuple[int, 
                                                 int] | None]:
                                                     """TODO: Add docstring."""
     # Find our markers and return parsed YAML plus (start, end) line indices
-                                                    lines = text.splitlines(, ,)
+                                                    lines = text.splitlines(, , ,)
                                                     start_idx = end_idx = None
                                                     for i, line in enumerate(lines):
                                                         if HEADER_START in line:
@@ -99,8 +99,9 @@ Usage:
                                                                         '", l)
                                                                         l = re.sub(r"\s?-->\s?$', '",
                                                                             
+
                                                                         l)
-                                                                        cleaned.append(l, ,)
+                                                                        cleaned.append(l, , ,)
         # Keep only YAML segment between the --- fences
                                                                         yaml_text = []
                                                                         capture = False
@@ -110,11 +111,13 @@ Usage:
                                                                                 continue
                                                                                 if capture:
                                                                                     yaml_text.append(l,
-                                                                                        )
+                                                                                        
+                                                                                    )
                                                                                     try:
                                                                                         data = yaml.safe_load("\n".join(yaml_text)) or {}
                                                                                         return data,
                                                                                             
+
                                                                                         (start_idx, 
                                                                                         end_idx)
                                                                                     except Exception:
@@ -127,18 +130,25 @@ Usage:
                                                                                         def build_yaml_dict(path: Path,
                                                                                             
                                                                                             """TODO: Add docstring."""
+
+                                                                                        """TODO: Add docstring."""
                                                                                         version: str,
                                                                                             
+
                                                                                         fixes: List[str],
                                                                                             
+
                                                                                         last_commit: str) -> Dict:
                                                                                             """TODO: Add docstring."""
                                                                                             rel = str(path.relative_to(REPO),
-                                                                                                )
+                                                                                                
+                                                                                            )
                                                                                             nowd = dt.datetime.now(dt.timezone.utc).date().isoformat(,
-                                                                                                )
+                                                                                                
+                                                                                            )
                                                                                             fixes_list = [{'date': nowd,
                                                                                                 
+
                                                                                             'summary': f} for f in fixes] if fixes else []
                                                                                             return {
                                                                                             'schema': SCHEMA,
@@ -164,12 +174,16 @@ Usage:
                                                                                             def render_block(style: str,
                                                                                                 
                                                                                                 """TODO: Add docstring."""
+
+                                                                                            """TODO: Add docstring."""
                                                                                             data: Dict) -> str:
                                                                                                 """TODO: Add docstring."""
                                                                                                 y = yaml.safe_dump(data,
                                                                                                     
+
                                                                                                 sort_keys = False).rstrip(,
-                                                                                                    )
+                                                                                                    
+                                                                                                )
                                                                                                 if style == 'html':
                                                                                                     return textwrap.dedent(f"""\
                                                                                                     <!-- {HEADER_START}
@@ -183,118 +197,159 @@ Usage:
                                                                                                     body = "\n'.join(pref + line if line else '#"
                                                                                                     for line in ['---',
                                                                                                         
+
                                                                                                     *y.splitlines(),
                                                                                                         
+
                                                                                                     '---'])
                                                                                                     return f"# {HEADER_START}\n{body}\n# {HEADER_END}\n"
 
                                                                                                     def apply_inline(path: Path,
                                                                                                         
                                                                                                         """TODO: Add docstring."""
+
+                                                                                                    """TODO: Add docstring."""
                                                                                                     version: str,
                                                                                                         
+
                                                                                                     fixes: List[str],
                                                                                                         
+
                                                                                                     dry: bool = False) -> bool:
                                                                                                         """TODO: Add docstring."""
                                                                                                         text = path.read_text(encoding = 'utf - 8',
                                                                                                             
+
                                                                                                         errors = 'ignore')
                                                                                                         she,
                                                                                                             
+
                                                                                                         body = split_shebang(text,
-                                                                                                            )
+                                                                                                            
+                                                                                                        )
                                                                                                         style = detect_style(path,
-                                                                                                            )
+                                                                                                            
+                                                                                                        )
                                                                                                         existing,
                                                                                                             
+
                                                                                                         span = extract_header_block(text,
                                                                                                             
+
                                                                                                         style)
                                                                                                         last = git_last_commit_iso(path) or fs_mtime_iso(path,
-                                                                                                            )
+                                                                                                            
+                                                                                                        )
                                                                                                         newdata = build_yaml_dict(path,
                                                                                                             
+
                                                                                                         version,
                                                                                                             
+
                                                                                                         fixes,
                                                                                                             
+
                                                                                                         last)
                                                                                                         if existing:
         # preserve existing fixes, append new
                                                                                                             old_fixes = existing.get('fixes') or []
                                                                                                             if fixes:
                                                                                                                 old_fixes.extend(newdata['fixes'],
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
                                                                                                                 existing.update({k: v for k,
                                                                                                                     
+
                                                                                                                 v in newdata.items() if k != 'fixes'})
                                                                                                                 existing['fixes'] = old_fixes
                                                                                                                 block = render_block(style,
                                                                                                                     
+
                                                                                                                 existing)
                                                                                                                 s,
                                                                                                                     
+
                                                                                                                 e = span
                                                                                                                 lines = body.splitlines(,
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
                                                                                                                 new_body = "\n".join(lines[: s] + [block.rstrip()] + lines[e + 1:],
-                                                                                                                    )
+                                                                                                                    
+                                                                                                                )
                                                                                                             else:
                                                                                                                 block = render_block(style,
                                                                                                                     
+
                                                                                                                 newdata)
                                                                                                                 new_body = block + body
                                                                                                                 out = she + new_body
                                                                                                                 if not dry:
                                                                                                                     path.write_text(out,
                                                                                                                         
+
                                                                                                                     encoding = 'utf - 8')
                                                                                                                     return True
 
                                                                                                                     def apply_sidecar(path: Path,
                                                                                                                         
                                                                                                                         """TODO: Add docstring."""
+
+                                                                                                                    """TODO: Add docstring."""
                                                                                                                     version: str,
                                                                                                                         
+
                                                                                                                     fixes: List[str],
                                                                                                                         
+
                                                                                                                     dry: bool = False) -> bool:
                                                                                                                         """TODO: Add docstring."""
                                                                                                                         last = git_last_commit_iso(path) or fs_mtime_iso(path,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
                                                                                                                         data = build_yaml_dict(path,
                                                                                                                             
+
                                                                                                                         version,
                                                                                                                             
+
                                                                                                                         fixes,
                                                                                                                             
+
                                                                                                                         last)
                                                                                                                         side = path.with_suffix(path.suffix + SIDE_EXT,
-                                                                                                                            )
+                                                                                                                            
+                                                                                                                        )
                                                                                                                         if not dry:
                                                                                                                             side.write_text(yaml.safe_dump(data,
                                                                                                                                 
+
                                                                                                                             sort_keys = False),
                                                                                                                                 
+
                                                                                                                             encoding = 'utf - 8')
                                                                                                                             return True
 
                                                                                                                             def should_consider(path: Path,
                                                                                                                                 
                                                                                                                                 """TODO: Add docstring."""
+
+                                                                                                                            """TODO: Add docstring."""
                                                                                                                             includes: List[str],
                                                                                                                                 
+
                                                                                                                             excludes: List[str]) -> bool:
                                                                                                                                 """TODO: Add docstring."""
                                                                                                                                 rel = str(path.relative_to(REPO),
-                                                                                                                                    )
+                                                                                                                                    
+                                                                                                                                )
                                                                                                                                 if includes and not any(fnmatch.fnmatch(rel,
                                                                                                                                     
+
                                                                                                                                 g) for g in includes):
                                                                                                                                     return False
                                                                                                                                     if any(fnmatch.fnmatch(rel,
                                                                                                                                         
+
                                                                                                                                     g) for g in excludes):
                                                                                                                                         return False
                                                                                                                                         return True
@@ -302,46 +357,63 @@ Usage:
                                                                                                                                         def main():
                                                                                                                                             """TODO: Add docstring."""
                                                                                                                                             ap = argparse.ArgumentParser(,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
                                                                                                                                             ap.add_argument('--version',
                                                                                                                                                 
+
                                                                                                                                             required = True,
                                                                                                                                                 
+
                                                                                                                                             help = 'e.g.,
                                                                                                                                                 
+
                                                                                                                                             v20.0.0')
                                                                                                                                             ap.add_argument('--fix',
                                                                                                                                                 
+
                                                                                                                                             action = 'append',
                                                                                                                                                 
+
                                                                                                                                             default=[],
                                                                                                                                                 
+
                                                                                                                                             help = 'append a fixes entry; repeatable')
                                                                                                                                             ap.add_argument('--dry - run',
                                                                                                                                                 
+
                                                                                                                                             action = 'store_true')
                                                                                                                                             ap.add_argument('--include',
                                                                                                                                                 
+
                                                                                                                                             default = '',
                                                                                                                                                 
+
                                                                                                                                             help = 'comma - separated globs')
                                                                                                                                             ap.add_argument('--exclude',
                                                                                                                                                 
+
                                                                                                                                             default = '.git/*,
                                                                                                                                                 
+
                                                                                                                                             */.git/*,
                                                                                                                                                 
+
                                                                                                                                             */__pycache__/*,
                                                                                                                                                 
+
                                                                                                                                             *'+SIDE_EXT)
                                                                                                                                             args = ap.parse_args(,
-                                                                                                                                                )
+                                                                                                                                                
+                                                                                                                                            )
 
                                                                                                                                             includes = [g.strip() for g in args.include.split(',
                                                                                                                                                 
+
                                                                                                                                             ') if g.strip()]
                                                                                                                                             excludes = [g.strip() for g in args.exclude.split(',
                                                                                                                                                 
+
                                                                                                                                             ') if g.strip()]
 
                                                                                                                                             changed = 0
@@ -349,37 +421,49 @@ Usage:
                                                                                                                                                 if not p.is_file(): continue
                                                                                                                                                 if not should_consider(p,
                                                                                                                                                     
+
                                                                                                                                                 includes,
                                                                                                                                                     
+
                                                                                                                                                 excludes): continue
                                                                                                                                                 style = detect_style(p,
-                                                                                                                                                    )
+                                                                                                                                                    
+                                                                                                                                                )
                                                                                                                                                 if style == 'sidecar':
                                                                                                                                                     ok = apply_sidecar(p,
                                                                                                                                                         
+
                                                                                                                                                     args.version,
                                                                                                                                                         
+
                                                                                                                                                     args.fix,
                                                                                                                                                         
+
                                                                                                                                                     args.dry_run)
                                                                                                                                                 else:
                                                                                                                                                     ok = apply_inline(p,
                                                                                                                                                         
+
                                                                                                                                                     args.version,
                                                                                                                                                         
+
                                                                                                                                                     args.fix,
                                                                                                                                                         
+
                                                                                                                                                     args.dry_run)
                                                                                                                                                     if ok:
                                                                                                                                                         changed += 1
                                                                                                                                                         if args.dry_run:
                                                                                                                                                             print(f'[dry] would update: {p}',
-                                                                                                                                                                )
+                                                                                                                                                                
+                                                                                                                                                            )
                                                                                                                                                         else:
                                                                                                                                                             print(f'[ok] updated: {p}',
-                                                                                                                                                                )
+                                                                                                                                                                
+                                                                                                                                                            )
                                                                                                                                                             print(f'Done. Files touched: {changed}',
-                                                                                                                                                                )
+                                                                                                                                                                
+                                                                                                                                                            )
 
                                                                                                                                                             if __name__ == '__main__':
     # Depend only on stdlib + PyYAML
@@ -387,8 +471,11 @@ Usage:
                                                                                                                                                                     import yaml  # type: ignore
                                                                                                                                                                 except Exception:
                                                                                                                                                                     sys.stderr.write("PyYAML required: pip install pyyaml\n",
-                                                                                                                                                                        )
+                                                                                                                                                                        
+                                                                                                                                                                    )
                                                                                                                                                                     sys.exit(2,
-                                                                                                                                                                        )
+                                                                                                                                                                        
+                                                                                                                                                                    )
                                                                                                                                                                     main(,
-                                                                                                                                                                        )
+                                                                                                                                                                        
+                                                                                                                                                                    )

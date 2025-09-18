@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Sequence
 import os
 import sys
+
 import atexit
 import shlex
 import subprocess
@@ -16,39 +17,37 @@ try:
     from logger import logger, log_exceptions, setup_global_exception_handler
 except Exception as e:
     print('[start.py] WARN: failed to import logger.py: ', e, file=sys.stderr)
-    def _noop(*_a, **_k): 
+    def _noop(*_a, **_k):
         pass
-    
+
     class _FakeLogger:
         """Fake logger for when real logger fails to import."""
         info = warning = error = critical = debug = staticmethod(_noop)
-    
-    logger = _FakeLogger()
-    
-    def log_exceptions(fn): 
-        return fn
-    
-    def setup_global_exception_handler(): 
-        pass
 
+    logger = _FakeLogger()
+
+    def log_exceptions(fn):
+        """TODO: Add docstring."""
+        return fn
+
+    def setup_global_exception_handler():
+        """TODO: Add docstring."""
+        pass
 
 def initialize_logging() -> None:
     """Initialize logging system."""
     setup_global_exception_handler()
     safe_env = {k: v for k, v in os.environ.items() if 'TOKEN' not in k and 'KEY' not in k}
-    logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+    logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(), 
                 python_path=list(sys.path), environment_vars=safe_env)
-
 
 def cleanup() -> None:
     """Cleanup function called on exit."""
     logger.info('Performing cleanup')
 
-
 def _log_cmd(args: list[str]) -> str:
     """Log command with proper shell escaping."""
     return ' '.join(shlex.quote(a) for a in args)
-
 
 def _detect_scanner_flags(python: str, script: Path) -> dict[str, bool]:
     """
@@ -57,7 +56,7 @@ def _detect_scanner_flags(python: str, script: Path) -> dict[str, bool]:
     """
     supported = {'path': False, 'dry_run': False, 'no_backup': False}
     try:
-        res = subprocess.run([python, str(script), '--help'],
+        res = subprocess.run([python, str(script), '--help'], 
                            cwd=str(ROOT), capture_output=True, text=True)
         help_text = (res.stdout or '') + (res.stderr or '')
         ht = help_text.replace('-', '')
@@ -68,7 +67,6 @@ def _detect_scanner_flags(python: str, script: Path) -> dict[str, bool]:
     except Exception as e:
         logger.warning('Failed to probe code_scan.py --help', exception=e)
     return supported
-
 
 def _internal_quick_syntax_scan(scan_path: Path) -> int:
     """
@@ -91,26 +89,25 @@ def _internal_quick_syntax_scan(scan_path: Path) -> int:
             errors += 1
             logger.error('Syntax error', file=str(p), exception=e)
             traceback.print_exc()
-    
+
     if errors:
         logger.warning('Internal syntax scan found errors', count=errors)
         return 1
     logger.info('Internal syntax scan passed (no errors)')
     return 0
 
-
 def run_code_scan(python: str, scan_path: Path) -> int:
     """
     Try to run ./code_scan.py. Auto-detect flags. If not present or failing,
     fallback to internal scan.
     Env overrides:
-        START_NO_SCAN=1        -> skip
-        START_SCAN_DRY_RUN=1   -> try dry-run if supported
-        START_NO_BACKUP=1      -> try no-backup if supported
+        START_NO_SCAN = 1        -> skip
+        START_SCAN_DRY_RUN = 1   -> try dry-run if supported
+        START_NO_BACKUP = 1      -> try no-backup if supported
         START_SCAN_PATH=...    -> override path
     """
     if os.environ.get('START_NO_SCAN') == '1':
-        logger.info("Skipping preflight code scan due to START_NO_SCAN=1")
+        logger.info("Skipping preflight code scan due to START_NO_SCAN = 1")
         return 0
 
     script = ROOT / 'code_scan.py'
@@ -144,10 +141,9 @@ def run_code_scan(python: str, scan_path: Path) -> int:
         return _internal_quick_syntax_scan(scan_path)
     return 0
 
-
 def launch_poker_go(python: str, passthrough_args: Sequence[str]) -> int:
     """
-    Launch tools/poker_go.py with cwd=repo root and PYTHONPATH including repo root
+    Launch tools/poker_go.py with cwd = repo root and PYTHONPATH including repo root
     so 'from logger import ...' resolves when script lives under tools/.
     """
     poker_go = ROOT / 'tools' / 'poker_go.py'
@@ -161,7 +157,6 @@ def launch_poker_go(python: str, passthrough_args: Sequence[str]) -> int:
     logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
     completed = subprocess.run(cmd, cwd=str(ROOT), env=env)
     return int(completed.returncode)
-
 
 @log_exceptions
 def main(argv: Sequence[str] | None = None) -> int:
@@ -199,7 +194,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     logger.info('Application shutdown', returncode=app_rc)
     return app_rc
-
 
 if __name__ == '__main__':
     atexit.register(cleanup)
