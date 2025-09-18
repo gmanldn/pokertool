@@ -22,6 +22,11 @@ def _configure_logging() -> None:
 _configure_logging()
 log = logging.getLogger('pokertool')
 
+
+class SecurityError(Exception):
+    """Raised when a security violation is detected."""
+    pass
+
 def sanitize_input(input_str: str, max_length: int = 1000, allowed_chars: str = None) -> str:
     """
     Sanitize user input to prevent injection attacks.

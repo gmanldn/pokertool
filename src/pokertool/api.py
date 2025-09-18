@@ -191,11 +191,25 @@ class AuthenticationService:
         )
         self.users['admin'] = admin_user
 
+        # Create demo user for frontend testing
+        demo_user = APIUser(
+            user_id='demo_user',
+            username='demo_user',
+            email='demo@pokertool.com',
+            role=UserRole.USER,
+            rate_limit_override=100
+        )
+        self.users['demo_user'] = demo_user
+
         # Create admin token
         admin_token = self.create_access_token(admin_user)
         self.sessions[admin_token] = admin_user.user_id
 
-        logger.info('Default admin user created')
+        # Create demo token for frontend testing
+        demo_token = 'demo_token'
+        self.sessions[demo_token] = demo_user.user_id
+
+        logger.info('Default admin and demo users created')
 
     def create_user(self, username: str, email: str, password: str, role: UserRole = UserRole.USER) -> APIUser:
         """Create a new user."""
@@ -278,16 +292,18 @@ class AuthenticationService:
         return None
 
 class ConnectionManager:
-    """WebSocket connection manager."""
+    """WebSocket connection manager with optimized cleanup."""
 
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
         self.user_connections: Dict[str, List[str]] = {}  # user_id -> connection_ids
+        self.connection_timestamps: Dict[str, float] = {}  # connection_id -> last_activity
 
     async def connect(self, websocket: WebSocket, connection_id: str, user_id: str):
         """Accept new WebSocket connection."""
         await websocket.accept()
         self.active_connections[connection_id] = websocket
+        self.connection_timestamps[connection_id] = time.time()
 
         if user_id not in self.user_connections:
             self.user_connections[user_id] = []
@@ -299,6 +315,9 @@ class ConnectionManager:
         """Remove WebSocket connection."""
         if connection_id in self.active_connections:
             del self.active_connections[connection_id]
+        
+        if connection_id in self.connection_timestamps:
+            del self.connection_timestamps[connection_id]
 
         if user_id in self.user_connections:
             if connection_id in self.user_connections[user_id]:
@@ -311,9 +330,15 @@ class ConnectionManager:
     async def send_personal_message(self, message: Dict[str, Any], connection_id: str):
         """Send message to specific connection."""
         if connection_id in self.active_connections:
-            websocket = self.active_connections[connection_id]
-            if WebSocketState and websocket.client_state == WebSocketState.CONNECTED:
-                await websocket.send_json(message)
+            try:
+                websocket = self.active_connections[connection_id]
+                if WebSocketState and websocket.client_state == WebSocketState.CONNECTED:
+                    await websocket.send_json(message)
+                    self.connection_timestamps[connection_id] = time.time()
+                else:
+                    await self._cleanup_connection(connection_id)
+            except Exception:
+                await self._cleanup_connection(connection_id)
 
     async def send_to_user(self, message: Dict[str, Any], user_id: str):
         """Send message to all connections of a user."""
@@ -324,10 +349,11 @@ class ConnectionManager:
     async def broadcast(self, message: Dict[str, Any]):
         """Broadcast message to all connections."""
         disconnected = []
-        for connection_id, websocket in self.active_connections.items():
+        for connection_id, websocket in list(self.active_connections.items()):
             try:
                 if WebSocketState and websocket.client_state == WebSocketState.CONNECTED:
                     await websocket.send_json(message)
+                    self.connection_timestamps[connection_id] = time.time()
                 else:
                     disconnected.append(connection_id)
             except Exception:
@@ -335,44 +361,133 @@ class ConnectionManager:
 
         # Clean up disconnected connections
         for connection_id in disconnected:
-            # Find user_id for cleanup
-            user_id = None
-            for uid, conn_ids in self.user_connections.items():
-                if connection_id in conn_ids:
-                    user_id = uid
-                    break
-            if user_id:
-                self.disconnect(connection_id, user_id)
+            await self._cleanup_connection(connection_id)
+
+    async def cleanup_inactive(self, timeout: int = 1800):
+        """Clean up inactive connections (30 minutes default)."""
+        current_time = time.time()
+        inactive_connections = [
+            conn_id for conn_id, last_activity in self.connection_timestamps.items()
+            if current_time - last_activity > timeout
+        ]
+        
+        for connection_id in inactive_connections:
+            await self._cleanup_connection(connection_id)
+        
+        if inactive_connections:
+            logger.info(f"Cleaned up {len(inactive_connections)} inactive WebSocket connections")
+
+    async def _cleanup_connection(self, connection_id: str):
+        """Internal method to clean up a single connection."""
+        # Find user_id for cleanup
+        user_id = None
+        for uid, conn_ids in self.user_connections.items():
+            if connection_id in conn_ids:
+                user_id = uid
+                break
+        
+        if user_id:
+            self.disconnect(connection_id, user_id)
+
+class APIServices:
+    """Container for API services with dependency injection."""
+    
+    def __init__(self):
+        self.auth_service = AuthenticationService()
+        self.connection_manager = ConnectionManager()
+        self.db = get_production_db()
+        self.thread_pool = get_thread_pool()
+        
+        # Setup rate limiter with fallback
+        try:
+            self.limiter = Limiter(key_func=get_remote_address, storage_url=RATE_LIMIT_STORAGE_URL)
+        except Exception:
+            self.limiter = Limiter(key_func=get_remote_address)
+        
+        # Cache for frequently accessed data
+        self._user_cache = {}
+        self._cache_ttl = 300  # 5 minutes
+
+    def get_cached_user(self, token: str) -> Optional[APIUser]:
+        """Get user with caching to reduce database lookups."""
+        cache_key = hashlib.sha256(token.encode()).hexdigest()[:16]
+        
+        if cache_key in self._user_cache:
+            cached_user, timestamp = self._user_cache[cache_key]
+            if time.time() - timestamp < self._cache_ttl:
+                return cached_user
+            del self._user_cache[cache_key]
+        
+        user = self.auth_service.verify_token(token)
+        if user:
+            self._user_cache[cache_key] = (user, time.time())
+        
+        return user
+
+    def cleanup_cache(self):
+        """Clean expired cache entries."""
+        current_time = time.time()
+        expired_keys = [
+            key for key, (_, timestamp) in self._user_cache.items()
+            if current_time - timestamp > self._cache_ttl
+        ]
+        for key in expired_keys:
+            del self._user_cache[key]
+
 
 class PokerToolAPI:
-    """Main API application."""
+    """Main API application with optimized architecture."""
 
-    def __init__(self):
+    def __init__(self, services: APIServices = None):
         if not FASTAPI_AVAILABLE:
             raise RuntimeError("FastAPI dependencies not available. Install fastapi, slowapi, redis, etc.")
 
+        self.services = services or APIServices()
+        
         self.app = FastAPI(
             title='PokerTool API',
             description='RESTful API for poker analysis and screen scraping',
             version='1.0.0'
         )
 
-        self.auth_service = AuthenticationService()
-        self.connection_manager = ConnectionManager()
-        self.db = get_production_db()
-        self.thread_pool = get_thread_pool()
-
-        # Rate limiting
-        try:
-            self.limiter = Limiter(key_func=get_remote_address, storage_url=RATE_LIMIT_STORAGE_URL)
-        except Exception:
-            # Fallback to memory storage
-            self.limiter = Limiter(key_func=get_remote_address)
-
         self._setup_middleware()
         self._setup_routes()
+        self._setup_background_tasks()
 
-        logger.info('PokerTool API initialized')
+        logger.info('PokerTool API initialized with optimized architecture')
+
+    def _setup_background_tasks(self):
+        """Setup background cleanup tasks."""
+        import asyncio
+        from contextlib import asynccontextmanager
+
+        @asynccontextmanager
+        async def lifespan(app: FastAPI):
+            # Startup
+            cleanup_task = asyncio.create_task(self._periodic_cleanup())
+            yield
+            # Shutdown
+            cleanup_task.cancel()
+            try:
+                await cleanup_task
+            except asyncio.CancelledError:
+                pass
+
+        self.app.router.lifespan_context = lifespan
+
+    async def _periodic_cleanup(self):
+        """Periodic cleanup task for caches and connections."""
+        while True:
+            try:
+                await asyncio.sleep(300)  # Run every 5 minutes
+                self.services.cleanup_cache()
+                # Cleanup inactive WebSocket connections
+                await self.services.connection_manager.cleanup_inactive()
+                logger.debug("Performed periodic cleanup")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Cleanup task error: {e}")
 
     def _setup_middleware(self):
         """Setup API middleware."""
@@ -399,7 +514,7 @@ class PokerToolAPI:
         security = HTTPBearer()
 
         async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> APIUser:
-            user = self.auth_service.verify_token(credentials.credentials)
+            user = self.services.get_cached_user(credentials.credentials)
             if not user:
                 raise HTTPException(status_code=401, detail='Invalid or expired token')
             return user
@@ -416,13 +531,13 @@ class PokerToolAPI:
 
         # Authentication endpoints
         @self.app.post('/auth/token', response_model=Token)
-        @self.limiter.limit('10/minute')
+        @self.services.limiter.limit('10/minute')
         async def login(request, username: str, password: str):
-            user = self.auth_service.get_user_by_credentials(username, password)
+            user = self.services.auth_service.get_user_by_credentials(username, password)
             if not user:
                 raise HTTPException(status_code=401, detail='Invalid credentials')
 
-            token = self.auth_service.create_access_token(user)
+            token = self.services.auth_service.create_access_token(user)
             return Token(
                 access_token=token,
                 token_type='bearer',
@@ -431,9 +546,9 @@ class PokerToolAPI:
             )
 
         @self.app.post('/auth/register', response_model=Dict[str, str])
-        @self.limiter.limit('5/minute')
+        @self.services.limiter.limit('5/minute')
         async def register(request, user_data: UserCreate):
-            user = self.auth_service.create_user(
+            user = self.services.auth_service.create_user(
                 username=user_data.username,
                 email=user_data.email,
                 password=user_data.password,
@@ -443,7 +558,7 @@ class PokerToolAPI:
 
         # Hand analysis endpoints
         @self.app.post('/analyze/hand', response_model=HandAnalysisResponse)
-        @self.limiter.limit('100/minute')
+        @self.services.limiter.limit('100/minute')
         async def analyze_hand(request, analysis_request: HandAnalysisRequest, 
                               user: APIUser = Depends(get_current_user)):
 
@@ -470,7 +585,7 @@ class PokerToolAPI:
                     'api_version': '1.0.0'
                 }
 
-                self.db.save_hand_analysis(
+                self.services.db.save_hand_analysis(
                     hand=analysis_request.hand,
                     board=analysis_request.board,
                     result=str(result),
@@ -486,7 +601,7 @@ class PokerToolAPI:
                 )
 
                 # Notify via WebSocket
-                await self.connection_manager.send_to_user({
+                await self.services.connection_manager.send_to_user({
                     'type': 'hand_analysis',
                     'data': response.dict()
                 }, user.user_id)
@@ -504,7 +619,7 @@ class PokerToolAPI:
             return ScraperStatus(**status)
 
         @self.app.post('/scraper/start')
-        @self.limiter.limit('10/minute')
+        @self.services.limiter.limit('10/minute')
         async def start_scraper(request, site: str = 'GENERIC', continuous: bool = True, 
                                user: APIUser = Depends(get_current_user)):
             if user.role not in [UserRole.PREMIUM, UserRole.ADMIN]:
@@ -520,15 +635,15 @@ class PokerToolAPI:
 
         # Database endpoints
         @self.app.get('/hands/recent')
-        @self.limiter.limit('50/minute')
+        @self.services.limiter.limit('50/minute')
         async def get_recent_hands(limit: int = 10, offset: int = 0, 
                                   user: APIUser = Depends(get_current_user)):
-            hands = self.db.get_recent_hands(limit=min(limit, 100), offset=offset)
+            hands = self.services.db.get_recent_hands(limit=min(limit, 100), offset=offset)
             return {'hands': hands, 'count': len(hands)}
 
         @self.app.get('/stats/database', response_model=DatabaseStats)
         async def database_stats(user: APIUser = Depends(get_current_user)):
-            stats = self.db.get_database_stats()
+            stats = self.services.db.get_database_stats()
             return DatabaseStats(
                 database_type=stats['database_type'],
                 total_hands=stats.get('activity', {}).get('total_hands', 0),
@@ -548,25 +663,25 @@ class PokerToolAPI:
                         'is_active': u.is_active,
                         'last_active': u.last_active.isoformat()
                     }
-                    for u in self.auth_service.users.values()
+                    for u in self.services.auth_service.users.values()
                 ]
             }
 
         @self.app.get('/admin/system/stats')
         async def system_stats(admin_user: APIUser = Depends(get_admin_user)):
-            thread_stats = self.thread_pool.get_stats()
-            db_stats = self.db.get_database_stats()
+            thread_stats = self.services.thread_pool.get_stats()
+            db_stats = self.services.db.get_database_stats()
 
             return {
                 'threading': thread_stats,
                 'database': db_stats,
                 'websockets': {
-                    'active_connections': len(self.connection_manager.active_connections),
-                    'users_connected': len(self.connection_manager.user_connections)
+                    'active_connections': len(self.services.connection_manager.active_connections),
+                    'users_connected': len(self.services.connection_manager.user_connections)
                 },
                 'api': {
-                    'total_users': len(self.auth_service.users),
-                    'active_sessions': len(self.auth_service.sessions)
+                    'total_users': len(self.services.auth_service.users),
+                    'active_sessions': len(self.services.auth_service.sessions)
                 }
             }
 
@@ -574,7 +689,7 @@ class PokerToolAPI:
         @self.app.websocket('/ws/{user_id}')
         async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
             # Verify token
-            user = self.auth_service.verify_token(token)
+            user = self.services.auth_service.verify_token(token)
             if not user or user.user_id != user_id:
                 await websocket.close(code=1008, reason='Invalid token')
                 return
@@ -582,10 +697,10 @@ class PokerToolAPI:
             connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
 
             try:
-                await self.connection_manager.connect(websocket, connection_id, user_id)
+                await self.services.connection_manager.connect(websocket, connection_id, user_id)
 
                 # Send welcome message
-                await self.connection_manager.send_personal_message({
+                await self.services.connection_manager.send_personal_message({
                     'type': 'welcome',
                     'message': f'Connected as {user.username}',
                     'connection_id': connection_id
@@ -598,7 +713,7 @@ class PokerToolAPI:
                         message = await websocket.receive_json()
 
                         # Echo back for now (could handle commands)
-                        await self.connection_manager.send_personal_message({
+                        await self.services.connection_manager.send_personal_message({
                             'type': 'echo',
                             'data': message,
                             'timestamp': datetime.utcnow().isoformat()
@@ -611,7 +726,7 @@ class PokerToolAPI:
                         break
 
             finally:
-                self.connection_manager.disconnect(connection_id, user_id)
+                self.services.connection_manager.disconnect(connection_id, user_id)
 
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None

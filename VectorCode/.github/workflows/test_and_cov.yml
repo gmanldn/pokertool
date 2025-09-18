@@ -1,0 +1,73 @@
+name: Test and Coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12, 3.13]
+        os: [ubuntu-latest, macos-latest, macos-14, ubuntu-24.04-arm]
+        exclude:
+          - os: macos-14
+            python-version: 3.13
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      COREDUMPY_DUMP_DIR: ${{ github.workspace }}/coredumpy_data
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup pdm
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Configure pdm to use uv
+        run: pdm config use_uv true
+
+      - name: install pdm and dependencies
+        run: make deps
+
+      - name: Set custom HF cache directory
+        run: |
+          export HF_HOME="$GITHUB_WORKSPACE/hf_cache"
+          export SENTENCE_TRANSFORMERS_HOME="$HF_HOME"
+          mkdir -p "$HF_HOME"
+          [ -z "$(ls "$HF_HOME")" ] || rm "${HF_HOME:?}/*" -rf && true
+
+      - name: run tests 
+        run: pdm run pytest --enable-coredumpy --coredumpy-dir ${{ env.COREDUMPY_DUMP_DIR }}
+
+      - name: run coverage
+        run: |
+          pdm run coverage run -m pytest
+          pdm run coverage report -m
+          pdm run coverage xml -i
+
+      - name: static analysis by basedpyright
+        run: pdm run basedpyright
+
+      - name: upload coverage reports to codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.codecov_token }}
+
+      - name: Upload coredumpy data if applicable
+        uses: gaogaotiantian/upload-coredumpy@v0.2
+        if: failure()
+        with:
+          name: coredumpy_data_${{ matrix.os }}_${{ matrix.python-version }}
+          path: ${{ env.COREDUMPY_DUMP_DIR }}
+          retention-days: 7

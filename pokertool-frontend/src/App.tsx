@@ -62,7 +62,7 @@ function App() {
   );
 
   // WebSocket connection for real-time updates
-  const { connected, messages, sendMessage } = useWebSocket('ws://localhost:8000/ws');
+  const { connected, messages, sendMessage } = useWebSocket('http://localhost:8000');
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
