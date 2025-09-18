@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Grid,
@@ -8,9 +8,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Avatar,
   IconButton,
-  Tooltip,
   LinearProgress,
   useTheme,
   useMediaQuery,
@@ -20,7 +18,6 @@ import {
   Stop,
   Refresh,
   Fullscreen,
-  Settings,
   Casino,
 } from '@mui/icons-material';
 
