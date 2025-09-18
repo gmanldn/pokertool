@@ -9,7 +9,7 @@ def main() -> int:
         from pokertool.gui import main as gui_main  # type: ignore
     except Exception:
         from pokertool.gui import run as gui_main  # type: ignore
-        return gui_main(,)
+        return gui_main(, ,)
 
         if __name__ == '__main__':
-            raise SystemExit(main(),)
+            raise SystemExit(main(), ,)
