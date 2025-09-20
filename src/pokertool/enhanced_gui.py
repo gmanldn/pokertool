@@ -21,9 +21,9 @@ import webbrowser
 try:
     from .gui import EnhancedPokerAssistant, VisualCard, CardSelectionPanel, TableVisualization
     from .core import analyse_hand, Card, Suit, Position, HandAnalysisResult
-    from .gto_solver import GTOSolver
-    from .ml_opponent_modeling import OpponentModeler
-    from .multi_table_support import MultiTableManager
+    from .gto_solver import GTOSolver, get_gto_solver
+    from .ml_opponent_modeling import OpponentModelingSystem, get_opponent_modeling_system
+    from .multi_table_support import TableManager, get_table_manager
     from .error_handling import sanitize_input, log, run_safely
     from .storage import get_secure_db
     GUI_MODULES_LOADED = True
@@ -396,9 +396,9 @@ class IntegratedPokerAssistant(tk.Tk):
                 log("Screen scraper initialized")
             
             if GUI_MODULES_LOADED:
-                self.gto_solver = GTOSolver()
-                self.opponent_modeler = OpponentModeler()
-                self.multi_table_manager = MultiTableManager()
+                self.gto_solver = get_gto_solver()
+                self.opponent_modeler = get_opponent_modeling_system()
+                self.multi_table_manager = get_table_manager()
                 log("Core modules initialized")
                 
         except Exception as e:

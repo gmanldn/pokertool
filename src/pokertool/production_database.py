@@ -51,8 +51,15 @@ except ImportError:
     QueuePool = None
     SQLALCHEMY_AVAILABLE = True
 
-from .storage import get_secure_db, SecurityError
-from .error_handling import retry_on_failure
+try:
+    from .storage import get_secure_db, SecurityError
+except ImportError:
+    from pokertool.storage import get_secure_db, SecurityError
+
+try:
+    from .error_handling import retry_on_failure
+except ImportError:
+    from pokertool.error_handling import retry_on_failure
 
 logger = logging.getLogger(__name__)
 

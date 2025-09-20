@@ -1174,9 +1174,9 @@ def _generate_table_recommendations(table_type: str, avg_vpip: float, avg_aggres
 
 if __name__ == '__main__':
     # Test ML opponent modeling
-    print("Testing ML Opponent Modeling System...")
-    print(f"Scikit-learn available: {ML_SKLEARN_AVAILABLE}")
-    print(f"TensorFlow available: {ML_DEEP_AVAILABLE}")
+    logger.info("Testing ML Opponent Modeling System...")
+    logger.info(f"Scikit-learn available: {ML_SKLEARN_AVAILABLE}")
+    logger.info(f"TensorFlow available: {ML_DEEP_AVAILABLE}")
     
     # Initialize system
     system = get_opponent_modeling_system()
@@ -1206,10 +1206,10 @@ if __name__ == '__main__':
     }
     
     prediction = predict_opponent_action('test_player_1', game_context)
-    print(f"Prediction: {prediction.predicted_action.value} (confidence: {prediction.confidence:.2f})")
+    logger.info(f"Prediction: {prediction.predicted_action.value} (confidence: {prediction.confidence:.2f})")
     
     # Test system stats
     stats = system.get_system_stats()
-    print(f"System stats: {stats}")
+    logger.info(f"System stats: {stats}")
     
-    print("ML Opponent Modeling test completed!")
+    logger.info("ML Opponent Modeling test completed!")

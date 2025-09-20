@@ -69,10 +69,10 @@ class Position(Enum):
     BB = "BB"
     
     # General categories for backward compatibility
-    EARLY = auto()
-    MIDDLE = auto()
-    LATE = auto()
-    BLINDS = auto()
+    EARLY = 1000
+    MIDDLE = 2000
+    LATE = 3000
+    BLINDS = 4000
 
     def category(self) -> str:
         """Return the category name of the position."""

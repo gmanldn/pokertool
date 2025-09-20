@@ -393,42 +393,42 @@ if __name__ == '__main__':
     for result in sample_results:
         calc.add_session(result, buy_in=100, session_length=2.0)
     
-    print("Variance Calculator Test Results:")
+    logger.info("Variance Calculator Test Results:")
     
     # Basic statistics
     basic_stats = calc.calculate_basic_statistics()
-    print(f"Total sessions: {basic_stats['count']}")
-    print(f"Total P&L: ${basic_stats['total_profit_loss']:.2f}")
-    print(f"Average result: ${basic_stats['mean']:.2f}")
-    print(f"Standard deviation: ${basic_stats['std_deviation']:.2f}")
-    print(f"Win rate: {basic_stats['win_rate']:.2%}")
+    logger.info(f"Total sessions: {basic_stats['count']}")
+    logger.info(f"Total P&L: ${basic_stats['total_profit_loss']:.2f}")
+    logger.info(f"Average result: ${basic_stats['mean']:.2f}")
+    logger.info(f"Standard deviation: ${basic_stats['std_deviation']:.2f}")
+    logger.info(f"Win rate: {basic_stats['win_rate']:.2%}")
     
     # Confidence intervals
     confidence_intervals = calc.calculate_confidence_intervals()
-    print(f"\nConfidence Intervals:")
+    logger.info("Confidence Intervals:")
     for level, (lower, upper) in confidence_intervals.items():
-        print(f"{level}: ${lower:.2f} to ${upper:.2f}")
+        logger.info(f"{level}: ${lower:.2f} to ${upper:.2f}")
     
     # Downswing simulation
     downswings = calc.simulate_downswing(1000)
-    print(f"\nSimulated Downswings (1000 sessions):")
+    logger.info("Simulated Downswings (1000 sessions):")
     for percentile, amount in downswings.items():
-        print(f"{percentile}: ${amount:.2f}")
+        logger.info(f"{percentile}: ${amount:.2f}")
     
     # Risk of ruin
     risk_of_ruin = calc.calculate_risk_of_ruin(1000, 0, 1000)
-    print(f"\nRisk of ruin (1000 sessions, $1000 bankroll): {risk_of_ruin:.2%}")
+    logger.info(f"Risk of ruin (1000 sessions, $1000 bankroll): {risk_of_ruin:.2%}")
     
     # Monte Carlo projection
     monte_carlo = calc.monte_carlo_bankroll_projection(1000, 500, 1000)
-    print(f"\nMonte Carlo Projection (500 sessions):")
-    print(f"Expected final bankroll: ${monte_carlo['expected_final_bankroll']:.2f}")
-    print(f"Probability of profit: {monte_carlo['probability_of_profit']:.2%}")
+    logger.info("Monte Carlo Projection (500 sessions):")
+    logger.info(f"Expected final bankroll: ${monte_carlo['expected_final_bankroll']:.2f}")
+    logger.info(f"Probability of profit: {monte_carlo['probability_of_profit']:.2%}")
     
     # Comprehensive report
     report = calc.generate_comprehensive_report(bankroll=1000)
-    print(f"\nComprehensive Report Generated:")
-    print(f"ROI: {report.roi:.2%}")
-    print(f"Risk of Ruin: {report.risk_of_ruin:.2%}")
+    logger.info("Comprehensive Report Generated:")
+    logger.info(f"ROI: {report.roi:.2%}")
+    logger.info(f"Risk of Ruin: {report.risk_of_ruin:.2%}")
     
-    print("\nVariance calculator test completed!")
+    logger.info("Variance calculator test completed!")

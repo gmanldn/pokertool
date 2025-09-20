@@ -549,27 +549,27 @@ if __name__ == '__main__':
     # Analyze tournament spot
     analysis = analyzer.analyze_tournament_spot(tournament_state, payout_structure, "player1")
     
-    print("Tournament Analysis Results:")
-    print(f"Hero stack: {analysis['hero_stack']} chips ({analysis['effective_stack_bb']:.1f} BB)")
-    print(f"M-ratio: {analysis['m_ratio']:.1f}")
-    print(f"Tournament phase: {analysis['tournament_phase']}")
-    print(f"ICM equity: ${analysis['icm_equity']:.2f} ({analysis['icm_equity_percentage']:.1f}%)")
-    print(f"Bubble factor: {analysis['bubble_factor']:.2f}")
-    print(f"Push range: {analysis['push_range_percentage']:.1f}% of hands")
+    logger.info("Tournament Analysis Results:")
+    logger.info(f"Hero stack: {analysis['hero_stack']} chips ({analysis['effective_stack_bb']:.1f} BB)")
+    logger.info(f"M-ratio: {analysis['m_ratio']:.1f}")
+    logger.info(f"Tournament phase: {analysis['tournament_phase']}")
+    logger.info(f"ICM equity: ${analysis['icm_equity']:.2f} ({analysis['icm_equity_percentage']:.1f}%)")
+    logger.info(f"Bubble factor: {analysis['bubble_factor']:.2f}")
+    logger.info(f"Push range: {analysis['push_range_percentage']:.1f}% of hands")
     
     strategy = analysis['strategy_recommendation']
-    print(f"\nStrategy: {strategy['playing_style']}")
-    print(f"Aggression level: {strategy['aggression_level']:.1f}/1.0")
-    print(f"Key focuses: {', '.join(strategy['key_focuses'])}")
+    logger.info(f"Strategy: {strategy['playing_style']}")
+    logger.info(f"Aggression level: {strategy['aggression_level']:.1f}/1.0")
+    logger.info(f"Key focuses: {', '.join(strategy['key_focuses'])}")
     if strategy['warnings']:
-        print(f"Warnings: {', '.join(strategy['warnings'])}")
+        logger.info(f"Warnings: {', '.join(strategy['warnings'])}")
     
     # Test ICM calculation
     stacks = [p.chips for p in players]
     icm_equities = calculate_icm_equity(stacks, payouts)
-    print(f"\nICM Equities:")
+    logger.info("ICM Equities:")
     for i, equity in enumerate(icm_equities):
-        print(f"Player {i+1}: ${equity:.2f}")
+        logger.info(f"Player {i+1}: ${equity:.2f}")
     
     # Test push/fold chart generation
     push_fold_chart = analyzer.generate_push_fold_chart(
@@ -577,8 +577,8 @@ if __name__ == '__main__':
         positions=[1, 3, 6, 9],
         bubble_factor=2.0
     )
-    print(f"\nPush/Fold Chart (Bubble Factor 2.0):")
+    logger.info("Push/Fold Chart (Bubble Factor 2.0):")
     for stack, ranges in push_fold_chart.items():
-        print(f"{stack}: {ranges}")
+        logger.info(f"{stack}: {ranges}")
     
-    print("\nTournament support system test completed!")
+    logger.info("Tournament support system test completed!")
