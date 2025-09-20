@@ -142,7 +142,7 @@ class Strategy:
         """Get the most frequent action."""
         if not self.actions:
             return None
-        return max(self.actions, key=self.actions.get)
+        return max(self.actions.keys(), key=self.actions.get)
     
     def is_pure_strategy(self, threshold: float = 0.95) -> bool:
         """Check if this is essentially a pure strategy."""

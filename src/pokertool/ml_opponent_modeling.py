@@ -545,17 +545,17 @@ class NeuralNetworkOpponentModel(OpponentModel):
         
         input_dim = len(self.feature_engineering.feature_names)
         
-        self.model = models.Sequential([
-            layers.Dense(128, activation='relu', input_shape=(input_dim,)),
-            layers.Dropout(0.3),
-            layers.Dense(64, activation='relu'),
-            layers.Dropout(0.2),
-            layers.Dense(32, activation='relu'),
-            layers.Dense(len(Action), activation='softmax')  # Output for each action
+        self.model = tf.keras.models.Sequential([
+            tf.keras.layers.Dense(128, activation='relu', input_shape=(input_dim,)),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(32, activation='relu'),
+            tf.keras.layers.Dense(len(Action), activation='softmax')  # Output for each action
         ])
         
         self.model.compile(
-            optimizer=optimizers.Adam(learning_rate=0.001),
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
             loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
@@ -604,7 +604,7 @@ class NeuralNetworkOpponentModel(OpponentModel):
             )
             
             # Callbacks
-            early_stopping = callbacks.EarlyStopping(
+            early_stopping = tf.keras.callbacks.EarlyStopping(
                 patience=10, restore_best_weights=True
             )
             

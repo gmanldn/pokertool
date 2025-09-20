@@ -74,7 +74,6 @@ class Position(Enum):
     LATE = auto()
     BLINDS = auto()
 
-    @property
     def category(self) -> str:
         """Return the category name of the position."""
         late_positions = {Position.CO, Position.BTN}
@@ -142,16 +141,44 @@ def analyse_hand(
     if len(hc) < 2:
         return HandAnalysisResult(0.0, 'fold', {'error': 'need 2 hole cards'})
     
-    ranks = sorted([int(c.rank.value) for c in hc[:2]], reverse=True)
-    pair = ranks[0] == ranks[1]
+    # Combine hole cards and board cards for full analysis
+    all_cards = hc[:2]
+    if board_cards:
+        all_cards.extend(list(board_cards))
     
-    # Calculate strength on a scale of 0-10
-    if pair:
-        # Pocket pairs: AA=9.5, KK=9.0, QQ=8.5, JJ=8.0, etc.
-        strength = 5.0 + (ranks[0] - 2) * 0.5
+    # Count rank occurrences
+    rank_counts = {}
+    for card in all_cards:
+        rank_val = int(card.rank.value)
+        rank_counts[rank_val] = rank_counts.get(rank_val, 0) + 1
+    
+    # Sort by count and rank
+    pairs = sorted([rank for rank, count in rank_counts.items() if count >= 2], reverse=True)
+    
+    hole_ranks = sorted([int(c.rank.value) for c in hc[:2]], reverse=True)
+    pocket_pair = hole_ranks[0] == hole_ranks[1]
+    
+    # Determine hand type and strength
+    if len(pairs) >= 2:
+        # Two pair or better
+        strength = 8.5 + (pairs[0] + pairs[1]) / 28.0  # Two pair strength > 8.0
+        hand_type = 'TWO_PAIR'
+    elif len(pairs) == 1:
+        # One pair
+        if pocket_pair:
+            # Pocket pairs: AA=9.5, KK=9.0, QQ=8.5, JJ=8.0, etc.
+            strength = 5.0 + (pairs[0] - 2) * 0.5
+        else:
+            # Paired with board
+            strength = 6.0 + (pairs[0] - 2) * 0.2
+        hand_type = 'ONE_PAIR'
     else:
-        # Non-pairs: base on high card + kicker
-        strength = (ranks[0] + ranks[1] * 0.5) / 3.0
+        # High card only
+        strength = (hole_ranks[0] + hole_ranks[1] * 0.5) / 3.0
+        hand_type = 'HIGH_CARD'
+    
+    # Cap strength at 10.0
+    strength = min(strength, 10.0)
     
     # Determine advice based on strength
     if strength >= 8.0:
@@ -165,7 +192,7 @@ def analyse_hand(
     position_category = None
     if position:
         try:
-            position_category = position.category
+            position_category = position.category()
         except AttributeError:
             position_category = getattr(position, 'value', str(position))
     
@@ -173,7 +200,9 @@ def analyse_hand(
         strength=strength, 
         advice=advice, 
         details={
-            'ONE_PAIR': pair, 
+            'ONE_PAIR': len(pairs) >= 1, 
+            'TWO_PAIR': len(pairs) >= 2,
+            'hand_type': hand_type,
             'position': position_category
         }
     )
