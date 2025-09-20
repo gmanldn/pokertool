@@ -37378,3 +37378,3186 @@ RESOURCE USAGE:
   System CPU time: 1.020s
 
 --------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-20 06:15:10.464949
+SESSION ID: 20250920_061510
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: start.py
+Arguments: None
+====================================================================================================
+
+[2025-09-20 06:15:10.465429] [INFO] APPLICATION STARTUP
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: initialize_logging()
+  Line 41: logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(),
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "start.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages",
+    "/Users/georgeridout/Documents/github/pokertool/src"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github/pokertool",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.1",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-3aa9e8c729f89554.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-81eaa9718d.sock",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/d410872cae8e05bfec698ad59e1dc8bf/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 14812.00 MB
+  User CPU time: 0.110s
+  System CPU time: 0.051s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.472911] [WARNING] code_scan.py not found; using internal quick syntax scan
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: run_code_scan()
+  Line 115: logger.warning("code_scan.py not found; using internal quick syntax scan")
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+
+RESOURCE USAGE:
+  Memory (RSS): 14812.00 MB
+  User CPU time: 0.111s
+  System CPU time: 0.052s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.480653] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/poker_tablediagram.py')
+  parts = {'github', 'poker_tablediagram.py', 'georgeridout', 'Users', '/', 'pokertool', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/poker_tablediagram.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 15560.00 MB
+  User CPU time: 0.115s
+  System CPU time: 0.054s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.484193] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/autoconfirm.py')
+  parts = {'github', 'georgeridout', 'autoconfirm.py', 'Users', '/', 'pokertool', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/autoconfirm.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 15560.00 MB
+  User CPU time: 0.116s
+  System CPU time: 0.056s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.485673] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/poker_test.py')
+  parts = {'poker_test.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/poker_test.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 15560.00 MB
+  User CPU time: 0.116s
+  System CPU time: 0.057s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.490139] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/test_onnx_fix.py')
+  parts = {'github', 'georgeridout', 'test_onnx_fix.py', 'Users', '/', 'pokertool', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/test_onnx_fix.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 15960.00 MB
+  User CPU time: 0.119s
+  System CPU time: 0.059s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.501191] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/test_poker_gui_enhanced.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'test_poker_gui_enhanced.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/test_poker_gui_enhanced.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 16936.00 MB
+  User CPU time: 0.125s
+  System CPU time: 0.062s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.506558] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/logger.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'Documents', 'logger.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/logger.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 17180.00 MB
+  User CPU time: 0.129s
+  System CPU time: 0.063s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.510058] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/start.py')
+  parts = {'start.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/start.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 17444.00 MB
+  User CPU time: 0.131s
+  System CPU time: 0.064s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.514026] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/fix_onnx_error.py')
+  parts = {'fix_onnx_error.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/fix_onnx_error.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 17656.00 MB
+  User CPU time: 0.134s
+  System CPU time: 0.065s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.518683] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/poker_scraper_setup.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'poker_scraper_setup.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/poker_scraper_setup.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 18408.00 MB
+  User CPU time: 0.137s
+  System CPU time: 0.067s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.523730] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/test_screen_scraper.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'test_screen_scraper.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/test_screen_scraper.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 19268.00 MB
+  User CPU time: 0.141s
+  System CPU time: 0.068s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.530632] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/vectorcode_integration.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'vectorcode_integration.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/vectorcode_integration.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 19668.00 MB
+  User CPU time: 0.146s
+  System CPU time: 0.069s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.536679] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/security_validation_tests.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'security_validation_tests.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/security_validation_tests.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 19860.00 MB
+  User CPU time: 0.150s
+  System CPU time: 0.071s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.540596] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/poker_imports.py')
+  parts = {'poker_imports.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/poker_imports.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20152.00 MB
+  User CPU time: 0.152s
+  System CPU time: 0.072s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.547767] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/final_test_validation.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'final_test_validation.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/final_test_validation.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20764.00 MB
+  User CPU time: 0.157s
+  System CPU time: 0.074s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.552513] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/test_gui_fix.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'test_gui_fix.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/test_gui_fix.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20864.00 MB
+  User CPU time: 0.159s
+  System CPU time: 0.075s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.556562] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/apply_headers.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'apply_headers.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/apply_headers.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20968.00 MB
+  User CPU time: 0.162s
+  System CPU time: 0.076s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.559957] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/saniitise_python_files.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'saniitise_python_files.py', 'tools', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tools/saniitise_python_files.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20976.00 MB
+  User CPU time: 0.163s
+  System CPU time: 0.078s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.560992] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/__init__.py')
+  parts = {'github', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'tools', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tools/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20976.00 MB
+  User CPU time: 0.163s
+  System CPU time: 0.078s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.562348] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/verify_build.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'verify_build.py', 'tools', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tools/verify_build.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20976.00 MB
+  User CPU time: 0.164s
+  System CPU time: 0.079s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.564101] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py')
+  parts = {'github', 'georgeridout', 'poker_main.py', 'Users', '/', 'pokertool', 'tools', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tools/poker_main.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20976.00 MB
+  User CPU time: 0.164s
+  System CPU time: 0.080s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.566779] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'poker_go.py', 'tools', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20976.00 MB
+  User CPU time: 0.166s
+  System CPU time: 0.081s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.569115] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/hotfix_pokertool.py')
+  parts = {'hotfix_pokertool.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'tools', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tools/hotfix_pokertool.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 20976.00 MB
+  User CPU time: 0.167s
+  System CPU time: 0.082s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.581168] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tests/test_comprehensive_ml_gto.py')
+  parts = {'github', 'test_comprehensive_ml_gto.py', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tests/test_comprehensive_ml_gto.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 21272.00 MB
+  User CPU time: 0.173s
+  System CPU time: 0.084s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.585686] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tests/test_security_features.py')
+  parts = {'github', 'test_security_features.py', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tests/test_security_features.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 21372.00 MB
+  User CPU time: 0.177s
+  System CPU time: 0.084s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.591776] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tests/test_comprehensive_features.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_comprehensive_features.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tests/test_comprehensive_features.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 21688.00 MB
+  User CPU time: 0.182s
+  System CPU time: 0.086s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.599011] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tests/test_comprehensive_system.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_comprehensive_system.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tests/test_comprehensive_system.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 22288.00 MB
+  User CPU time: 0.187s
+  System CPU time: 0.087s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.612858] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tests/test_advanced_features.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_advanced_features.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tests/test_advanced_features.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 24404.00 MB
+  User CPU time: 0.198s
+  System CPU time: 0.090s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.615864] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tests/test_advanced_features_complete.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_advanced_features_complete.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tests/test_advanced_features_complete.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 24404.00 MB
+  User CPU time: 0.200s
+  System CPU time: 0.090s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.616735] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/tests/test_poker.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_poker.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/tests/test_poker.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 24404.00 MB
+  User CPU time: 0.200s
+  System CPU time: 0.091s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.619478] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/conftest.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'conftest.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/conftest.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 24812.00 MB
+  User CPU time: 0.201s
+  System CPU time: 0.092s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.624807] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_common.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'test_common.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_common.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 25576.00 MB
+  User CPU time: 0.205s
+  System CPU time: 0.093s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.629942] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_chunking.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_chunking.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_chunking.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 25628.00 MB
+  User CPU time: 0.208s
+  System CPU time: 0.094s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.630780] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/__init__.py')
+  parts = {'github', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 25628.00 MB
+  User CPU time: 0.208s
+  System CPU time: 0.095s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.636732] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_cli_utils.py')
+  parts = {'github', 'test_cli_utils.py', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_cli_utils.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26524.00 MB
+  User CPU time: 0.212s
+  System CPU time: 0.096s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.642234] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_lsp.py')
+  parts = {'github', 'test_lsp.py', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_lsp.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26604.00 MB
+  User CPU time: 0.216s
+  System CPU time: 0.097s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.648385] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_mcp.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'test_mcp.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_mcp.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26864.00 MB
+  User CPU time: 0.220s
+  System CPU time: 0.099s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.653168] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_main.py')
+  parts = {'test_main.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/test_main.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.223s
+  System CPU time: 0.100s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.656706] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_ls.py')
+  parts = {'test_ls.py', 'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_ls.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.225s
+  System CPU time: 0.101s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.658492] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_prompts.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'test_prompts.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_prompts.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.226s
+  System CPU time: 0.102s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.660858] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_chunks.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_chunks.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_chunks.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.227s
+  System CPU time: 0.103s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.663045] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_update.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'test_update.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_update.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.228s
+  System CPU time: 0.104s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.665358] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_clean.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_clean.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_clean.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.229s
+  System CPU time: 0.105s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.667285] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_check.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'test_check.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_check.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.229s
+  System CPU time: 0.106s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.668876] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_drop.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents', 'test_drop.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_drop.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 26992.00 MB
+  User CPU time: 0.230s
+  System CPU time: 0.106s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.678929] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_vectorise.py')
+  parts = {'github', 'test_vectorise.py', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_vectorise.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 27760.00 MB
+  User CPU time: 0.238s
+  System CPU time: 0.108s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.687541] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_init.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'test_init.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/test_init.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28316.00 MB
+  User CPU time: 0.244s
+  System CPU time: 0.110s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.689616] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/files/test_files_ls.py')
+  parts = {'files', 'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents', 'test_files_ls.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/files/test_files_ls.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28316.00 MB
+  User CPU time: 0.245s
+  System CPU time: 0.111s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.691983] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/files/test_files_rm.py')
+  parts = {'files', 'github', 'subcommands', 'georgeridout', 'test_files_rm.py', 'Users', '/', 'pokertool', 'tests', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/files/test_files_rm.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28316.00 MB
+  User CPU time: 0.246s
+  System CPU time: 0.112s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.693729] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/files/test_files.py')
+  parts = {'files', 'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'test_files.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/files/test_files.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28316.00 MB
+  User CPU time: 0.247s
+  System CPU time: 0.112s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.698306] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/query/test_reranker.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'query', 'test_reranker.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/query/test_reranker.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28316.00 MB
+  User CPU time: 0.249s
+  System CPU time: 0.114s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.705020] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/query/test_query.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'query', 'test_query.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/query/test_query.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28552.00 MB
+  User CPU time: 0.254s
+  System CPU time: 0.115s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.706517] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/query/test_types.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'tests', 'query', 'test_types.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/tests/subcommands/query/test_types.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28552.00 MB
+  User CPU time: 0.255s
+  System CPU time: 0.116s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.713185] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/cli_utils.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'cli_utils.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/cli_utils.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28752.00 MB
+  User CPU time: 0.259s
+  System CPU time: 0.118s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.716789] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/chunking.py')
+  parts = {'github', 'chunking.py', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/chunking.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28752.00 MB
+  User CPU time: 0.262s
+  System CPU time: 0.118s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.719856] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/lsp_main.py')
+  parts = {'github', 'lsp_main.py', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/lsp_main.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28796.00 MB
+  User CPU time: 0.264s
+  System CPU time: 0.119s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.721089] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/__init__.py')
+  parts = {'github', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28796.00 MB
+  User CPU time: 0.264s
+  System CPU time: 0.120s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.722687] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/debugging.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'debugging.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/debugging.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28796.00 MB
+  User CPU time: 0.265s
+  System CPU time: 0.120s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.727258] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/mcp_main.py')
+  parts = {'mcp_main.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/mcp_main.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28832.00 MB
+  User CPU time: 0.267s
+  System CPU time: 0.122s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.731530] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/common.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents', 'common.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/common.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28832.00 MB
+  User CPU time: 0.270s
+  System CPU time: 0.123s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.733181] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/main.py')
+  parts = {'github', 'georgeridout', 'main.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/main.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28864.00 MB
+  User CPU time: 0.271s
+  System CPU time: 0.123s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.735073] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/update.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'update.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/update.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28864.00 MB
+  User CPU time: 0.272s
+  System CPU time: 0.124s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.736375] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/clean.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'clean.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/clean.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28864.00 MB
+  User CPU time: 0.273s
+  System CPU time: 0.125s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.737548] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/check.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents', 'check.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/check.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28864.00 MB
+  User CPU time: 0.273s
+  System CPU time: 0.126s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.738754] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/__init__.py')
+  parts = {'github', 'subcommands', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28864.00 MB
+  User CPU time: 0.273s
+  System CPU time: 0.126s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.743477] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/vectorise.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents', 'vectorise.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/vectorise.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28876.00 MB
+  User CPU time: 0.276s
+  System CPU time: 0.128s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.745688] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/ls.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'ls.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/ls.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.277s
+  System CPU time: 0.129s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.747618] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/prompt.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'prompt.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/prompt.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.278s
+  System CPU time: 0.130s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.751110] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/init.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'init.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/init.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.280s
+  System CPU time: 0.131s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.752804] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/chunks.py')
+  parts = {'chunks.py', 'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/chunks.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.281s
+  System CPU time: 0.132s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.754412] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/drop.py')
+  parts = {'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents', 'drop.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/drop.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.281s
+  System CPU time: 0.133s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.755738] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/files/__init__.py')
+  parts = {'files', 'github', 'subcommands', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/files/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.282s
+  System CPU time: 0.133s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.756828] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/files/ls.py')
+  parts = {'files', 'github', 'subcommands', 'georgeridout', 'ls.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/files/ls.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.282s
+  System CPU time: 0.134s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.757956] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/files/rm.py')
+  parts = {'files', 'github', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'rm.py', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/files/rm.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.283s
+  System CPU time: 0.134s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.760889] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/__init__.py')
+  parts = {'github', 'subcommands', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'query', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.284s
+  System CPU time: 0.135s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.762288] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/types.py')
+  parts = {'github', 'types.py', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'query', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/types.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.285s
+  System CPU time: 0.136s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.763987] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/__init__.py')
+  parts = {'reranker', 'github', 'subcommands', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'query', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.286s
+  System CPU time: 0.137s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.764976] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/naive.py')
+  parts = {'reranker', 'github', 'naive.py', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'query', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/naive.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.286s
+  System CPU time: 0.137s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.766110] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/cross_encoder.py')
+  parts = {'reranker', 'github', 'subcommands', 'georgeridout', 'cross_encoder.py', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'query', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/cross_encoder.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.287s
+  System CPU time: 0.138s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:10.767385] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/base.py')
+  parts = {'reranker', 'github', 'base.py', 'subcommands', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'vectorcode', 'query', 'VectorCode', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/VectorCode/src/vectorcode/subcommands/query/reranker/base.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 28884.00 MB
+  User CPU time: 0.287s
+  System CPU time: 0.138s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:11.481568] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/pokertool-frontend/node_modules/flatted/python/flatted.py')
+  parts = {'github', 'python', 'georgeridout', 'pokertool-frontend', 'flatted', 'Users', '/', 'pokertool', 'flatted.py', 'Documents', 'node_modules'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/pokertool-frontend/node_modules/flatted/python/flatted.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 34020.00 MB
+  User CPU time: 0.520s
+  System CPU time: 0.602s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.044744] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/pokertool-frontend/node_modules/shell-quote/print.py')
+  parts = {'github', 'shell-quote', 'georgeridout', 'pokertool-frontend', 'print.py', 'Users', '/', 'pokertool', 'Documents', 'node_modules'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/pokertool-frontend/node_modules/shell-quote/print.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.668s
+  System CPU time: 1.002s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.231551] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/ml_opponent_modeling.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'ml_opponent_modeling.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/ml_opponent_modeling.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.724s
+  System CPU time: 1.131s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.236151] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/bankroll_management.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents', 'bankroll_management.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/bankroll_management.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.728s
+  System CPU time: 1.132s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.240502] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/compliance.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents', 'compliance.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/compliance.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.731s
+  System CPU time: 1.133s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.244577] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/database.py')
+  parts = {'github', 'database.py', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/database.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.733s
+  System CPU time: 1.134s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.252036] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gto_solver.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'gto_solver.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/gto_solver.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.740s
+  System CPU time: 1.135s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.259341] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/game_selection.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents', 'game_selection.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/game_selection.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.745s
+  System CPU time: 1.136s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.260630] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/__init__.py')
+  parts = {'github', 'georgeridout', '__init__.py', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/__init__.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.745s
+  System CPU time: 1.137s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.265764] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/production_database.py')
+  parts = {'production_database.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/production_database.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.749s
+  System CPU time: 1.138s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.267682] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/core.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'core.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/core.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.750s
+  System CPU time: 1.138s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.276171] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/multi_table_support.py')
+  parts = {'github', 'georgeridout', 'multi_table_support.py', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/multi_table_support.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.757s
+  System CPU time: 1.139s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.282398] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/threading.py')
+  parts = {'github', 'threading.py', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/threading.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.762s
+  System CPU time: 1.141s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.284848] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/error_handling.py')
+  parts = {'github', 'error_handling.py', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/error_handling.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.764s
+  System CPU time: 1.141s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.290729] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/api.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'api.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/api.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.769s
+  System CPU time: 1.142s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.297551] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/hud_overlay.py')
+  parts = {'hud_overlay.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/hud_overlay.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.773s
+  System CPU time: 1.143s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.299512] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'cli.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.773s
+  System CPU time: 1.144s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.303848] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/ocr_recognition.py')
+  parts = {'ocr_recognition.py', 'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/ocr_recognition.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.777s
+  System CPU time: 1.145s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.307132] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/storage.py')
+  parts = {'github', 'georgeridout', 'storage.py', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/storage.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.779s
+  System CPU time: 1.146s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.311697] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/tournament_support.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents', 'tournament_support.py'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/tournament_support.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.782s
+  System CPU time: 1.147s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.318212] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/variance_calculator.py')
+  parts = {'github', 'variance_calculator.py', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/variance_calculator.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.785s
+  System CPU time: 1.147s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.324729] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'gui.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/gui.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.790s
+  System CPU time: 1.148s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.329742] [DEBUG] Syntax OK
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 87: logger.debug('Syntax OK', file=str(p))
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/scrape.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'scrape.py', 'Documents'}
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/Documents/github/pokertool/src/pokertool/scrape.py"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.794s
+  System CPU time: 1.149s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.334035] [INFO] Internal syntax scan passed (no errors)
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: _internal_quick_syntax_scan()
+  Line 96: logger.info('Internal syntax scan passed (no errors)')
+
+LOCAL VARIABLES:
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  py_compile = <module 'py_compile' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/py_compile.py'>
+  traceback = <module 'traceback' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py'>
+  errors = 0
+  p = PosixPath('/Users/georgeridout/Documents/github/pokertool/src/pokertool/scrape.py')
+  parts = {'github', 'georgeridout', 'Users', '/', 'pokertool', 'src', 'scrape.py', 'Documents'}
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.798s
+  System CPU time: 1.150s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.334295] [INFO] Starting poker tool application
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 187: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.798s
+  System CPU time: 1.150s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.334448] [DEBUG] Test debug message
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 189: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.798s
+  System CPU time: 1.150s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.334756] [INFO] Launching poker_go.py
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: launch_poker_go()
+  Line 157: logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  passthrough_args = []
+  poker_go = PosixPath('/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py')
+  cmd = ['/Users/georgeridout/.venvs/whisper/bin/python', '/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py']
+  env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  "/Users/georgeridout/.venvs/whisper/bin/python /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  "/Users/georgeridout/Documents/github/pokertool"
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.798s
+  System CPU time: 1.150s
+
+--------------------------------------------------------------------------------
+
+====================================================================================================
+SESSION STARTED: 2025-09-20 06:15:12.413887
+SESSION ID: 20250920_061512
+Python Version: 3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 16.0.0 (clang-1600.0.26.6)]
+Platform: darwin
+Working Directory: /Users/georgeridout/Documents/github/pokertool
+Script: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+Arguments: None
+====================================================================================================
+
+[2025-09-20 06:15:12.414171] [INFO] APPLICATION STARTUP
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: initialize_logging()
+  Line 26: logger.info(
+
+LOCAL VARIABLES:
+  safe_env = {'MallocNanoZone': '0', 'USER': 'georgeridout', 'COMMAND_MODE': 'unix2003', '__CFBundleIdentifier': 'com.microsoft.VSCode', 'PATH': '/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/... (truncated)
+
+ADDITIONAL DATA:
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools/poker_go.py"
+  ]
+  "/Users/georgeridout/Documents/github/pokertool"
+  [
+    "/Users/georgeridout/Documents/github/pokertool/tools",
+    "/Users/georgeridout/Documents/github/pokertool",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python311.zip",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11",
+    "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload",
+    "/Users/georgeridout/.venvs/whisper/lib/python3.11/site-packages",
+    "/Users/georgeridout/Documents/github/pokertool/src"
+  ]
+  {
+    "MallocNanoZone": "0",
+    "USER": "georgeridout",
+    "COMMAND_MODE": "unix2003",
+    "__CFBundleIdentifier": "com.microsoft.VSCode",
+    "PATH": "/Users/georgeridout/.venvs/whisper/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/usr/local/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/georgeridout/.local/bin:/Users/georgeridout/.nvm/versions/node/v24.7.0/bin:/opt/homebrew/anaconda3/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/scripts/noConfigScripts:/Users/georgeridout/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand",
+    "LOGNAME": "georgeridout",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.TRlGWiq2RW/Listeners",
+    "HOME": "/Users/georgeridout",
+    "SHELL": "/bin/zsh",
+    "TMPDIR": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0:2",
+    "XPC_SERVICE_NAME": "0",
+    "XPC_FLAGS": "0x0",
+    "ORIGINAL_XDG_CURRENT_DESKTOP": "undefined",
+    "SHLVL": "1",
+    "PWD": "/Users/georgeridout/Documents/github/pokertool",
+    "OLDPWD": "/Users/georgeridout/Documents/github/pokertool",
+    "HOMEBREW_PREFIX": "/usr/local",
+    "HOMEBREW_CELLAR": "/usr/local/Cellar",
+    "HOMEBREW_REPOSITORY": "/usr/local/Homebrew",
+    "INFOPATH": "/usr/local/share/info:/usr/local/share/info:",
+    "NVM_DIR": "/Users/georgeridout/.nvm",
+    "NVM_CD_FLAGS": "-q",
+    "NVM_BIN": "/Users/georgeridout/.nvm/versions/node/v24.7.0/bin",
+    "NVM_INC": "/Users/georgeridout/.nvm/versions/node/v24.7.0/include/node",
+    "CLINE_ACTIVE": "true",
+    "TERM_PROGRAM": "vscode",
+    "TERM_PROGRAM_VERSION": "1.104.1",
+    "LANG": "en_US.UTF-8",
+    "COLORTERM": "truecolor",
+    "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+    "VSCODE_DEBUGPY_ADAPTER_ENDPOINTS": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/.noConfigDebugAdapterEndpoints/endpoint-3aa9e8c729f89554.txt",
+    "BUNDLED_DEBUGPY_PATH": "/Users/georgeridout/.vscode/extensions/ms-python.debugpy-2025.10.0-darwin-x64/bundled/libs/debugpy",
+    "GIT_ASKPASS": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
+    "VSCODE_GIT_IPC_HANDLE": "/var/folders/kq/1ykb9_kx7wj0ydfvclg5gb3r0000gn/T/vscode-git-81eaa9718d.sock",
+    "PYTHONSTARTUP": "/Users/georgeridout/Library/Application Support/Code/User/workspaceStorage/d410872cae8e05bfec698ad59e1dc8bf/ms-python.python/pythonrc.py",
+    "PYTHON_BASIC_REPL": "1",
+    "VSCODE_INJECTION": "1",
+    "ZDOTDIR": "/Users/georgeridout",
+    "USER_ZDOTDIR": "/Users/georgeridout",
+    "TERM": "xterm-256color",
+    "VSCODE_PROFILE_INITIALIZED": "1",
+    "VSCODE_PYTHON_AUTOACTIVATE_GUARD": "1",
+    "VIRTUAL_ENV": "/Users/georgeridout/.venvs/whisper",
+    "PS1": "(whisper) %n@%m %1~ %# ",
+    "VIRTUAL_ENV_PROMPT": "(whisper) ",
+    "_": "/Users/georgeridout/.venvs/whisper/bin/python",
+    "PYTHONPATH": "/Users/georgeridout/Documents/github/pokertool"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13916.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.415560] [WARNING] Importing code_scan failed; falling back to subprocess
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: run_code_scan()
+  Line 84: logger.warning("Importing code_scan failed; falling back to subprocess",
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  quick = True
+  auto_fix = True
+  e = ModuleNotFoundError("No module named 'code_scan'")
+
+ADDITIONAL DATA:
+  "No module named 'code_scan'"
+
+RESOURCE USAGE:
+  Memory (RSS): 13916.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.415761] [WARNING] code_scan.py not found; skipping preflight scan
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: run_code_scan()
+  Line 90: logger.warning('code_scan.py not found; skipping preflight scan')
+
+LOCAL VARIABLES:
+  python = '/Users/georgeridout/.venvs/whisper/bin/python'
+  quick = True
+  auto_fix = True
+  script = PosixPath('/Users/georgeridout/Documents/github/pokertool/code_scan.py')
+
+RESOURCE USAGE:
+  Memory (RSS): 13916.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.415902] [INFO] Starting poker tool application
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 193: logger.info('Starting poker tool application')
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 0
+
+RESOURCE USAGE:
+  Memory (RSS): 13916.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.416033] [DEBUG] Test debug message
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 195: logger.debug('Test debug message', test_data=test_value)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+
+ADDITIONAL DATA:
+  {
+    "cards": [
+      "As",
+      "Kh"
+    ],
+    "position": "BTN"
+  }
+
+RESOURCE USAGE:
+  Memory (RSS): 13916.00 MB
+  User CPU time: 0.054s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.416189] [INFO] Starting main poker application
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 109: logger.info('Starting main poker application')
+
+RESOURCE USAGE:
+  Memory (RSS): 13916.00 MB
+  User CPU time: 0.055s
+  System CPU time: 0.021s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.421940] [INFO] Found pokertool.cli module, launching directly
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: launch_main_application()
+  Line 116: logger.info('Found pokertool.cli module, launching directly')
+
+LOCAL VARIABLES:
+  cli_module = <module 'pokertool.cli' from '/Users/georgeridout/Documents/github/pokertool/src/pokertool/cli.py'>
+
+RESOURCE USAGE:
+  Memory (RSS): 14564.00 MB
+  User CPU time: 0.059s
+  System CPU time: 0.022s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.433395] [INFO] Application shutdown normally
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 201: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = True
+  auto_fix = True
+  quick = True
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 0
+
+ADDITIONAL DATA:
+  0
+
+RESOURCE USAGE:
+  Memory (RSS): 16852.00 MB
+  User CPU time: 0.068s
+  System CPU time: 0.025s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.433675] [INFO] Performing cleanup
+Session: 20250920_061512
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 36: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 16860.00 MB
+  User CPU time: 0.068s
+  System CPU time: 0.025s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.444560] [INFO] Application shutdown
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 195: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 0
+
+ADDITIONAL DATA:
+  0
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.799s
+  System CPU time: 1.153s
+
+--------------------------------------------------------------------------------
+[2025-09-20 06:15:12.445391] [INFO] Performing cleanup
+Session: 20250920_061510
+Thread: MainThread (ID: 140704503954240)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 46: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 44320.00 MB
+  User CPU time: 0.799s
+  System CPU time: 1.153s
+
+--------------------------------------------------------------------------------
