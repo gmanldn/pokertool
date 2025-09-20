@@ -491,7 +491,7 @@ class ProductionDatabase:
                     if part.startswith('Strength: '):
                         try:
                             strength = float(part.replace('Strength: ', ''))
-                        except:
+                        except (ValueError, TypeError):
                             pass
                     elif part.startswith('Advice: '):
                         advice = part.replace('Advice: ', '')
@@ -528,7 +528,7 @@ class ProductionDatabase:
         try:
             cursor.execute("SELECT COUNT(*) FROM opponent_data")
             total_records = cursor.fetchone()[0]
-        except:
+        except (sqlite3.Error, sqlite3.OperationalError):
             return 0  # Table doesn't exist
         
         cursor.execute("""
@@ -572,7 +572,7 @@ class ProductionDatabase:
         try:
             cursor.execute("SELECT COUNT(*) FROM scraper_captures")
             total_records = cursor.fetchone()[0]
-        except:
+        except (sqlite3.Error, sqlite3.OperationalError):
             return 0
         
         cursor.execute("""
@@ -775,7 +775,7 @@ class ProductionDatabase:
                 fetch=True
             )
             stats['database_size'] = size_result[0][0] if size_result else 'Unknown'
-        except:
+        except Exception:
             stats['database_size'] = 'Unknown'
         
         return stats

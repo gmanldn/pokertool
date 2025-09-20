@@ -715,7 +715,7 @@ class TableManager:
                 # Remove currency symbols
                 bb_str = ''.join(c for c in bb_str if c.isdigit() or c == '.')
                 return float(bb_str)
-        except:
+        except (ValueError, IndexError, AttributeError):
             pass
         return 1.0  # Default
     

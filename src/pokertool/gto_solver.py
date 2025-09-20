@@ -277,7 +277,7 @@ class EquityCalculator:
         for card in cards:
             try:
                 parsed_cards.append(parse_card(card))
-            except:
+            except (ValueError, TypeError, AttributeError):
                 continue
         
         if len(parsed_cards) < 5:
