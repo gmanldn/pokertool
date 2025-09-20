@@ -5,6 +5,14 @@ from __future__ import annotations
 
 import argparse
 import sys
+import logging
+
+# Set up basic logging for CLI
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 def main(argv=None):
     """Main CLI entry point."""
@@ -23,12 +31,12 @@ def main(argv=None):
             import tkinter
             tkinter._test()  # Basic tkinter test
         except Exception as e:
-            print(f'[error] GUI not available: {e}', file=sys.stderr)
-            print('[info] Tkinter is not available on this system.', file=sys.stderr)
-            print('[info] On macOS, you may need to install tkinter with:', file=sys.stderr)
-            print('[info]   brew install python-tk', file=sys.stderr)
-            print('[info] Or use Anaconda/Miniconda which includes tkinter.', file=sys.stderr)
-            print('[info] Falling back to test mode...', file=sys.stderr)
+            logger.error(f'GUI not available: {e}')
+            logger.info('Tkinter is not available on this system.')
+            logger.info('On macOS, you may need to install tkinter with:')
+            logger.info('  brew install python-tk')
+            logger.info('Or use Anaconda/Miniconda which includes tkinter.')
+            logger.info('Falling back to test mode...')
             return run_test_mode()
         
         # Import GUI only after tkinter check passes
@@ -39,17 +47,17 @@ def main(argv=None):
             # Fallback if gui exposes a function named run() instead
             return getattr(gui, 'run')()
         except Exception as e:
-            print(f'[error] GUI startup failed: {e}', file=sys.stderr)
+            logger.error(f'GUI startup failed: {e}')
             return 1
     
     elif args.cmd == 'scrape':
         try:
             from pokertool import scrape
             result = scrape.run_screen_scraper()
-            print(result)
+            logger.info(result)
             return 0
         except Exception as e:
-            print(f'[error] Scraper failed: {e}', file=sys.stderr)
+            logger.error(f'Scraper failed: {e}')
             return 1
 
     elif args.cmd == 'test':
@@ -59,42 +67,42 @@ def main(argv=None):
 
 def run_test_mode():
     """Run basic functionality tests without GUI."""
-    print('🧪 PokerTool - Test Mode')
-    print('=' * 40)
+    logger.info('🧪 PokerTool - Test Mode')
+    logger.info('=' * 40)
     
     # Test basic imports
-    print('Testing core imports...')
+    logger.info('Testing core imports...')
     try:
         from pokertool import core
-        print('✅ Core module imported successfully')
+        logger.info('✅ Core module imported successfully')
     except Exception as e:
-        print(f'❌ Core module import failed: {e}')
+        logger.error(f'❌ Core module import failed: {e}')
     
     # Test database functionality
-    print('Testing database functionality...')
+    logger.info('Testing database functionality...')
     try:
         import sqlite3
         conn = sqlite3.connect(':memory:')
         conn.execute('CREATE TABLE test (id INTEGER)')
         conn.close()
-        print('✅ Database functionality working')
+        logger.info('✅ Database functionality working')
     except Exception as e:
-        print(f'❌ Database test failed: {e}')
+        logger.error(f'❌ Database test failed: {e}')
     
     # Test basic poker logic if available
-    print('Testing poker analysis...')
+    logger.info('Testing poker analysis...')
     try:
         from pokertool.core import analyse_hand, parse_card, Position
         # Run a basic test
         hole_cards = [parse_card('As'), parse_card('Ah')]
         result = analyse_hand(hole_cards, position=Position.BTN, pot=100, to_call=10)
-        print(f'✅ Poker analysis working: {type(result).__name__}')
+        logger.info(f'✅ Poker analysis working: {type(result).__name__}')
     except Exception as e:
-        print(f'❌ Poker analysis failed: {e}')
+        logger.error(f'❌ Poker analysis failed: {e}')
     
-    print('=' * 40)
-    print('Test mode completed. Use "pokertool gui" to launch GUI (if tkinter is available).')
-    print('Use "pokertool scrape" for headless screen scraping functionality.')
+    logger.info('=' * 40)
+    logger.info('Test mode completed. Use "pokertool gui" to launch GUI (if tkinter is available).')
+    logger.info('Use "pokertool scrape" for headless screen scraping functionality.')
     
     return 0
 

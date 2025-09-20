@@ -601,7 +601,7 @@ def implement_anti_detection() -> Dict[str, Any]:
         # Network request timing simulation
         def add_network_delay():
             # Simulate network latency
-            delay = random.exponential(0.1)  # Exponential distribution
+            delay = random.expovariate(1/0.1)  # Exponential distribution with mean 0.1
             time.sleep(min(delay, 1.0))  # Cap at 1 second
             return delay
         

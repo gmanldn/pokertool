@@ -48,19 +48,37 @@ def sanitize_input(input_str: str, max_length: int = 1000, allowed_chars: str = 
     if len(input_str) > max_length:
         raise ValueError(f'Input too long: {len(input_str)} > {max_length}')
 
+    original_input = input_str
+
+    # List of dangerous SQL keywords and patterns to remove
+    dangerous_patterns = [
+        'DROP TABLE', 'DELETE FROM', 'INSERT INTO', 'UPDATE SET', 
+        'CREATE TABLE', 'ALTER TABLE', 'TRUNCATE', 'EXEC', 'EXECUTE',
+        'UNION SELECT', 'SCRIPT', '<SCRIPT', '</SCRIPT>', 
+        'JAVASCRIPT:', 'VBSCRIPT:', 'ONLOAD', 'ONERROR'
+    ]
+    
+    # Remove dangerous patterns (case insensitive)
+    sanitized = original_input
+    for pattern in dangerous_patterns:
+        sanitized = sanitized.replace(pattern.upper(), '')
+        sanitized = sanitized.replace(pattern.lower(), '')
+        sanitized = sanitized.replace(pattern, '')
+
     if allowed_chars is None:
         # Allow alphanumeric, spaces, and common poker symbols
         allowed_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ♠♥♦♣AKQJT98765432-_"
 
-    # Create set for faster lookup
+    # Create set for faster lookup and filter individual characters
     allowed_set = set(allowed_chars)
-    sanitized = ''.join(c for c in input_str if c in allowed_set)
+    char_filtered = ''.join(c for c in sanitized if c in allowed_set)
 
-    if sanitized != input_str:
-        log.warning('Input was sanitized, removed characters: %s', 
-                   set(input_str) - set(sanitized))
+    if char_filtered != original_input:
+        removed_chars = set(original_input) - set(char_filtered)
+        if removed_chars:
+            log.warning('Input was sanitized, removed characters: %s', removed_chars)
 
-    return sanitized
+    return char_filtered.strip()
 
 def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0):
     """

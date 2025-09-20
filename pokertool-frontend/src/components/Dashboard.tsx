@@ -62,7 +62,6 @@ interface SessionStats {
 export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const [stats, setStats] = useState<SessionStats>({
     handsPlayed: 0,

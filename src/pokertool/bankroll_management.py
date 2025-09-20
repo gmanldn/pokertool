@@ -593,24 +593,24 @@ if __name__ == '__main__':
     
     # Test statistics
     stats = manager.calculate_statistics()
-    print(f"Bankroll Statistics:")
-    print(f"Current bankroll: ${manager.get_current_snapshot().total_bankroll:.2f}")
-    print(f"Sessions played: {stats['sessions_played']}")
-    print(f"Win rate: {stats['win_rate']:.2%}")
-    print(f"ROI: {stats['roi']:.2%}")
-    print(f"Hourly rate: ${stats['hourly_rate']:.2f}")
+    logger.info("Bankroll Statistics:")
+    logger.info(f"Current bankroll: ${manager.get_current_snapshot().total_bankroll:.2f}")
+    logger.info(f"Sessions played: {stats['sessions_played']}")
+    logger.info(f"Win rate: {stats['win_rate']:.2%}")
+    logger.info(f"ROI: {stats['roi']:.2%}")
+    logger.info(f"Hourly rate: ${stats['hourly_rate']:.2f}")
     
     # Test Kelly recommendation
     kelly_rec = manager.get_kelly_recommendation(10.0)  # $10 buy-in game
-    print(f"\nKelly Recommendation for $10 game:")
-    print(f"Kelly fraction: {kelly_rec['kelly_fraction']:.3f}")
-    print(f"Max buy-in: ${kelly_rec['max_buy_in']:.2f}")
-    print(f"Recommendation: {kelly_rec['recommendation']}")
+    logger.info("Kelly Recommendation for $10 game:")
+    logger.info(f"Kelly fraction: {kelly_rec['kelly_fraction']:.3f}")
+    logger.info(f"Max buy-in: ${kelly_rec['max_buy_in']:.2f}")
+    logger.info(f"Recommendation: {kelly_rec['recommendation']}")
     
     # Test alerts
     alerts = manager.check_alerts()
-    print(f"\nAlerts: {len(alerts)}")
+    logger.info(f"Alerts: {len(alerts)}")
     for alert in alerts:
-        print(f"- {alert['type']}: {alert['message']}")
+        logger.info(f"- {alert['type']}: {alert['message']}")
     
-    print("Bankroll management system test completed!")
+    logger.info("Bankroll management system test completed!")

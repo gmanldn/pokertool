@@ -17,9 +17,20 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 
-from .core import Card, Rank, Suit, parse_card
-from .threading import get_thread_pool, TaskPriority, cpu_intensive
-from .error_handling import retry_on_failure
+try:
+    from .core import Card, Rank, Suit, parse_card
+except ImportError:
+    from pokertool.core import Card, Rank, Suit, parse_card
+
+try:
+    from .threading import get_thread_pool, TaskPriority, cpu_intensive
+except ImportError:
+    from pokertool.threading import get_thread_pool, TaskPriority, cpu_intensive
+
+try:
+    from .error_handling import retry_on_failure
+except ImportError:
+    from pokertool.error_handling import retry_on_failure
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +153,7 @@ class Strategy:
         """Get the most frequent action."""
         if not self.actions:
             return None
-        return max(self.actions, key=self.actions.get)
+        return max(self.actions.keys(), key=self.actions.get)
     
     def is_pure_strategy(self, threshold: float = 0.95) -> bool:
         """Check if this is essentially a pure strategy."""
@@ -169,7 +180,6 @@ class EquityCalculator:
     def __init__(self):
         self.cache = {}
     
-    @cpu_intensive
     def calculate_equity(self, hands: List[str], board: List[str] = None, iterations: int = 100000) -> List[float]:
         """
         Calculate equity for multiple hands against each other.

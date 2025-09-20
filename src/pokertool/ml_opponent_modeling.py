@@ -70,11 +70,30 @@ except ImportError:
     tf = None
     torch = None
 
-from .core import Card, parse_card, analyse_hand
-from .gto_solver import Action, Street, Strategy
-from .threading import get_thread_pool, TaskPriority, cpu_intensive
-from .error_handling import retry_on_failure
-from .database import get_production_db
+try:
+    from .core import Card, parse_card, analyse_hand
+except ImportError:
+    from pokertool.core import Card, parse_card, analyse_hand
+
+try:
+    from .gto_solver import Action, Street, Strategy
+except ImportError:
+    from pokertool.gto_solver import Action, Street, Strategy
+
+try:
+    from .threading import get_thread_pool, TaskPriority, cpu_intensive
+except ImportError:
+    from pokertool.threading import get_thread_pool, TaskPriority, cpu_intensive
+
+try:
+    from .error_handling import retry_on_failure
+except ImportError:
+    from pokertool.error_handling import retry_on_failure
+
+try:
+    from .database import get_production_db
+except ImportError:
+    from pokertool.database import get_production_db
 
 logger = logging.getLogger(__name__)
 
@@ -545,17 +564,17 @@ class NeuralNetworkOpponentModel(OpponentModel):
         
         input_dim = len(self.feature_engineering.feature_names)
         
-        self.model = models.Sequential([
-            layers.Dense(128, activation='relu', input_shape=(input_dim,)),
-            layers.Dropout(0.3),
-            layers.Dense(64, activation='relu'),
-            layers.Dropout(0.2),
-            layers.Dense(32, activation='relu'),
-            layers.Dense(len(Action), activation='softmax')  # Output for each action
+        self.model = tf.keras.models.Sequential([
+            tf.keras.layers.Dense(128, activation='relu', input_shape=(input_dim,)),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(32, activation='relu'),
+            tf.keras.layers.Dense(len(Action), activation='softmax')  # Output for each action
         ])
         
         self.model.compile(
-            optimizer=optimizers.Adam(learning_rate=0.001),
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
             loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
@@ -604,7 +623,7 @@ class NeuralNetworkOpponentModel(OpponentModel):
             )
             
             # Callbacks
-            early_stopping = callbacks.EarlyStopping(
+            early_stopping = tf.keras.callbacks.EarlyStopping(
                 patience=10, restore_best_weights=True
             )
             
@@ -1155,9 +1174,9 @@ def _generate_table_recommendations(table_type: str, avg_vpip: float, avg_aggres
 
 if __name__ == '__main__':
     # Test ML opponent modeling
-    print("Testing ML Opponent Modeling System...")
-    print(f"Scikit-learn available: {ML_SKLEARN_AVAILABLE}")
-    print(f"TensorFlow available: {ML_DEEP_AVAILABLE}")
+    logger.info("Testing ML Opponent Modeling System...")
+    logger.info(f"Scikit-learn available: {ML_SKLEARN_AVAILABLE}")
+    logger.info(f"TensorFlow available: {ML_DEEP_AVAILABLE}")
     
     # Initialize system
     system = get_opponent_modeling_system()
@@ -1187,10 +1206,10 @@ if __name__ == '__main__':
     }
     
     prediction = predict_opponent_action('test_player_1', game_context)
-    print(f"Prediction: {prediction.predicted_action.value} (confidence: {prediction.confidence:.2f})")
+    logger.info(f"Prediction: {prediction.predicted_action.value} (confidence: {prediction.confidence:.2f})")
     
     # Test system stats
     stats = system.get_system_stats()
-    print(f"System stats: {stats}")
+    logger.info(f"System stats: {stats}")
     
-    print("ML Opponent Modeling test completed!")
+    logger.info("ML Opponent Modeling test completed!")
