@@ -582,8 +582,7 @@ class PokerConcurrencyManager:
                     return gto_solver.solve(
                         game_state, 
                         standard_ranges,
-                        iterations=1000,  # Reduced iterations for parallel processing
-                        tolerance=0.01
+                        max_iterations=1000  # Reduced iterations for parallel processing
                     )
                 except Exception as e:
                     logger.error(f"GTO solving failed: {e}")

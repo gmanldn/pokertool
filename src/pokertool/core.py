@@ -56,6 +56,19 @@ class Suit(Enum):
 
 class Position(Enum):
     """Enum representing poker table positions."""
+    # Specific positions
+    UTG = "UTG"
+    UTG1 = "UTG+1" 
+    UTG2 = "UTG+2"
+    MP = "MP"
+    MP1 = "MP+1"
+    MP2 = "MP+2"
+    CO = "CO"
+    BTN = "BTN"
+    SB = "SB" 
+    BB = "BB"
+    
+    # General categories for backward compatibility
     EARLY = auto()
     MIDDLE = auto()
     LATE = auto()
@@ -64,16 +77,22 @@ class Position(Enum):
     @property
     def category(self) -> str:
         """Return the category name of the position."""
-        return {
-            Position.EARLY: 'early', 
-            Position.MIDDLE: 'middle', 
-            Position.LATE: 'late', 
-            Position.BLINDS: 'blinds', 
-        }[self]
+        late_positions = {Position.CO, Position.BTN}
+        early_positions = {Position.UTG, Position.UTG1, Position.UTG2}
+        blind_positions = {Position.SB, Position.BB}
+        
+        if self in late_positions or self is Position.LATE:
+            return 'Late'
+        elif self in early_positions or self is Position.EARLY:
+            return 'Early'
+        elif self in blind_positions or self is Position.BLINDS:
+            return 'Blinds'
+        else:
+            return 'Middle'
     
     def is_late(self) -> bool:
         """Return True if this is a late position."""
-        return self is Position.LATE
+        return self in {Position.CO, Position.BTN, Position.LATE}
 
 @dataclass(frozen=True)
 class Card:
