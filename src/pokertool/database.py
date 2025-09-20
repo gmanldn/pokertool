@@ -29,8 +29,15 @@ except ImportError:
     RealDictCursor = None
 
 # Import existing secure database for fallback
-from .storage import SecureDatabase, SecurityError
-from .error_handling import retry_on_failure, db_guard
+try:
+    from .storage import SecureDatabase, SecurityError
+except ImportError:
+    from pokertool.storage import SecureDatabase, SecurityError
+
+try:
+    from .error_handling import retry_on_failure, db_guard
+except ImportError:
+    from pokertool.error_handling import retry_on_failure, db_guard
 
 logger = logging.getLogger(__name__)
 

@@ -70,11 +70,30 @@ except ImportError:
     tf = None
     torch = None
 
-from .core import Card, parse_card, analyse_hand
-from .gto_solver import Action, Street, Strategy
-from .threading import get_thread_pool, TaskPriority, cpu_intensive
-from .error_handling import retry_on_failure
-from .database import get_production_db
+try:
+    from .core import Card, parse_card, analyse_hand
+except ImportError:
+    from pokertool.core import Card, parse_card, analyse_hand
+
+try:
+    from .gto_solver import Action, Street, Strategy
+except ImportError:
+    from pokertool.gto_solver import Action, Street, Strategy
+
+try:
+    from .threading import get_thread_pool, TaskPriority, cpu_intensive
+except ImportError:
+    from pokertool.threading import get_thread_pool, TaskPriority, cpu_intensive
+
+try:
+    from .error_handling import retry_on_failure
+except ImportError:
+    from pokertool.error_handling import retry_on_failure
+
+try:
+    from .database import get_production_db
+except ImportError:
+    from pokertool.database import get_production_db
 
 logger = logging.getLogger(__name__)
 

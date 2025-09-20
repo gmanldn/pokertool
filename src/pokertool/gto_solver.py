@@ -17,9 +17,20 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 
-from .core import Card, Rank, Suit, parse_card
-from .threading import get_thread_pool, TaskPriority, cpu_intensive
-from .error_handling import retry_on_failure
+try:
+    from .core import Card, Rank, Suit, parse_card
+except ImportError:
+    from pokertool.core import Card, Rank, Suit, parse_card
+
+try:
+    from .threading import get_thread_pool, TaskPriority, cpu_intensive
+except ImportError:
+    from pokertool.threading import get_thread_pool, TaskPriority, cpu_intensive
+
+try:
+    from .error_handling import retry_on_failure
+except ImportError:
+    from pokertool.error_handling import retry_on_failure
 
 logger = logging.getLogger(__name__)
 

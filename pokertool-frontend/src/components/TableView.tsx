@@ -48,7 +48,7 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  const [tables, setTables] = useState<TableData[]>([
+  const [tables] = useState<TableData[]>([
     {
       tableId: 'table-1',
       tableName: 'High Stakes 1',
