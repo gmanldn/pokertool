@@ -1,0 +1,43 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Local data / artifacts
+*.db
+*.sqlite
+*.sqlite3
+backup_*/
+
+# Bytecode in tools/tests as well
+tools/**/__pycache__/
+tests/**/__pycache__/
+
+# Project specific
+.pokertool_state.json
+*.backup
+*.pokerheader.yml

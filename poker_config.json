@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "database": {
+    "enabled": true,
+    "file": "poker_decisions.db"
+  },
+  "gui": {
+    "enhanced_mode": true,
+    "visual_card_selection": true,
+    "table_visualization": true,
+    "theme": "professional",
+    "window_size": {
+      "width": 1400,
+      "height": 900,
+      "min_width": 1200,
+      "min_height": 800
+    },
+    "fonts": {
+      "scale": 1.0,
+      "family": "Arial"
+    },
+    "colors": {
+      "theme": "dark",
+      "accent": "#4a9eff"
+    }
+  },
+  "analysis": {
+    "auto_save": true,
+    "show_statistics": true,
+    "cache_enabled": true
+  },
+  "features": {
+    "enhanced_cards": true,
+    "position_hints": true,
+    "quick_hands": true
+  }
+}
