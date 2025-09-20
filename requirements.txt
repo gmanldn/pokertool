@@ -15,6 +15,13 @@
 numpy>=1.24.0
 Pillow>=10.0.0
 
+# Machine Learning dependencies
+scikit-learn>=1.3.0
+pandas>=2.0.0
+joblib>=1.3.0
+tensorflow>=2.13.0
+torch>=2.0.0
+
 # Screen scraping and computer vision
 opencv-python>=4.8.0
 opencv-contrib-python>=4.8.0
@@ -24,6 +31,8 @@ mss>=9.0.0
 # Testing and development
 pytest>=7.0.0
 pytest-cov>=4.0.0
+pytest-asyncio>=0.21.0
+pytest-benchmark>=4.0.0
 psutil>=5.9.0
 
 # Performance monitoring

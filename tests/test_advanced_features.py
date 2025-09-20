@@ -1253,7 +1253,7 @@ class TestStatsDashboard(unittest.TestCase):
         self.dashboard = StatsDashboard()
         
         # Add sample sessions
-        base_time = time.time() - (30 * 24 * 3600)  # 30 days ago
+        base_time = time.time() - (29 * 24 * 3600)  # 29 days ago
         for i in range(10):
             self.dashboard.add_session({
                 'timestamp': base_time + (i * 24 * 3600),  # One session per day

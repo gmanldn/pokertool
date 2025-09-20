@@ -44,10 +44,10 @@ class Rank(Enum):
 
 class Suit(Enum):
     """Enum representing poker card suits."""
-    spades = 's'
-    hearts = 'h'
-    diamonds = 'd'
-    clubs = 'c'
+    SPADES = 's'
+    HEARTS = 'h'
+    DIAMONDS = 'd'
+    CLUBS = 'c'
 
     @property
     def glyph(self) -> str:
@@ -116,8 +116,8 @@ def parse_card(s: str) -> Card:
         'A': Rank.ACE
     }
     suit_map = {
-        's': Suit.spades, 'h': Suit.hearts, 
-        'd': Suit.diamonds, 'c': Suit.clubs
+        's': Suit.SPADES, 'h': Suit.HEARTS, 
+        'd': Suit.DIAMONDS, 'c': Suit.CLUBS
     }
     if len(s) != 2 or s[0] not in rank_map or s[1].lower() not in suit_map:
         raise ValueError(f"Bad card '{s}'. Use like 'As', 'Td', '9c'.")
@@ -145,18 +145,35 @@ def analyse_hand(
     ranks = sorted([int(c.rank.value) for c in hc[:2]], reverse=True)
     pair = ranks[0] == ranks[1]
     
-    if pair and ranks[0] >= Rank.JACK.value:
-        advice = 'raise'
-    elif min(ranks) < 7:
-        advice = 'fold'
+    # Calculate strength on a scale of 0-10
+    if pair:
+        # Pocket pairs: AA=9.5, KK=9.0, QQ=8.5, JJ=8.0, etc.
+        strength = 5.0 + (ranks[0] - 2) * 0.5
     else:
+        # Non-pairs: base on high card + kicker
+        strength = (ranks[0] + ranks[1] * 0.5) / 3.0
+    
+    # Determine advice based on strength
+    if strength >= 8.0:
+        advice = 'raise'
+    elif strength >= 6.0:
         advice = 'call'
+    else:
+        advice = 'fold'
+    
+    # Get position category properly
+    position_category = None
+    if position:
+        try:
+            position_category = position.category
+        except AttributeError:
+            position_category = getattr(position, 'value', str(position))
     
     return HandAnalysisResult(
-        strength=sum(ranks)/28.0, 
+        strength=strength, 
         advice=advice, 
         details={
             'ONE_PAIR': pair, 
-            'position': getattr(position, 'category', None)
+            'position': position_category
         }
     )

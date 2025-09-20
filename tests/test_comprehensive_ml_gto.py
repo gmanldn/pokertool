@@ -729,8 +729,19 @@ class TestErrorHandling(unittest.TestCase):
         """Test ML system edge cases."""
         system = OpponentModelingSystem()
         
+        # Create a test hand history for this test
+        test_hand_history = HandHistory(
+            hand_id='edge_test',
+            player_id='unknown_player',
+            position='BTN',
+            board=['Ah', 'Kc', 'Qh'],
+            actions=[('preflop', Action.RAISE, 3)],
+            pot_size=15,
+            stack_size=100
+        )
+        
         # Test prediction for unknown player
-        prediction = system.predict_opponent_action('unknown_player', self.hand_history, {})
+        prediction = system.predict_opponent_action('unknown_player', test_hand_history, {})
         self.assertEqual(prediction.player_id, 'unknown_player')
         self.assertEqual(prediction.predicted_action, Action.FOLD)
         self.assertEqual(prediction.confidence, 0.0)

@@ -169,7 +169,6 @@ class EquityCalculator:
     def __init__(self):
         self.cache = {}
     
-    @cpu_intensive
     def calculate_equity(self, hands: List[str], board: List[str] = None, iterations: int = 100000) -> List[float]:
         """
         Calculate equity for multiple hands against each other.
