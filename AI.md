@@ -1,8 +1,8 @@
 # PokerTool Application State & Evolution
 
 ## Document Metadata
-- **Last Updated**: 2025-09-20T07:57:00Z
-- **Version**: 2.1.0
+- **Last Updated**: 2025-09-20T07:22:05Z
+- **Version**: 2.2.1
 - **Purpose**: Machine-readable canonical application state and change log
 - **Status**: Active Development
 
