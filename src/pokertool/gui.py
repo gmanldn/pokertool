@@ -31,7 +31,7 @@ except ImportError:
 
 # Try to import poker modules
 try:
-    from .core import analyse_hand, Card, Suit, Position, GameState, HandAnalysisResult
+    from .core import analyse_hand, Card, Suit, Position, HandAnalysisResult
     MODULES_LOADED = True
 except ImportError as e:
     print(f'Warning: Some modules not loaded: {e}')
@@ -112,14 +112,14 @@ class VisualCard(tk.Frame):
         self.selected = False
 
         # Determine card color
-        suit_color = COLORS['card_red'] if suit in [Suit.hearts, Suit.diamonds] else COLORS['card_black']
+        suit_color = COLORS['card_red'] if suit in [Suit.HEARTS, Suit.DIAMONDS] else COLORS['card_black']
 
         # Suit symbols
         suit_symbols = {
-            Suit.spades: '♠',
-            Suit.hearts: '♥',
-            Suit.diamonds: '♦',
-            Suit.clubs: '♣'
+            Suit.SPADES: '♠',
+            Suit.HEARTS: '♥',
+            Suit.DIAMONDS: '♦',
+            Suit.CLUBS: '♣'
         }
 
         # Create card display
@@ -166,7 +166,7 @@ class VisualCard(tk.Frame):
             self.configure(bg=COLORS['card_selected'], relief=tk.SUNKEN)
             self.label.configure(bg=COLORS['card_selected'], fg=COLORS['text_primary'])
         else:
-            suit_color = COLORS['card_red'] if self.suit in [Suit.hearts, Suit.diamonds] else COLORS['card_black']
+            suit_color = COLORS['card_red'] if self.suit in [Suit.HEARTS, Suit.DIAMONDS] else COLORS['card_black']
             self.configure(bg=COLORS['card_bg'], relief=tk.RAISED)
             self.label.configure(bg=COLORS['card_bg'], fg=suit_color)
 
@@ -208,7 +208,7 @@ class CardSelectionPanel(tk.Frame):
 
         # Create cards in rank order
         ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
-        suits = [Suit.spades, Suit.hearts, Suit.diamonds, Suit.clubs]
+        suits = [Suit.SPADES, Suit.HEARTS, Suit.DIAMONDS, Suit.CLUBS]
 
         for row, rank in enumerate(ranks):
             for col, suit in enumerate(suits):
