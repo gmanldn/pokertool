@@ -1,45 +1,11 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: pokertool/.gitignore
-# version: '20'
-# last_commit: '2025-09-15T01:14:45.672969+00:00'
-# fixes: []
-# ---
-# POKERTOOL-HEADER-END
-.DS_Store# OS / editor
-*.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.idea/
-.vscode/
-# Python
-*__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pdb
-*.egg-info/
-.eggs/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-# Local data / artifacts
-*.db
-*.sqlite
-*.sqlite3
-backup_*/
-# Bytecode in tools/tests as well
-tools/**/__pycache__/
-tests/**/__pycache__/# OS / editor
+# OS / editor
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 .idea/
 .vscode/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -51,96 +17,27 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
 # Local data / artifacts
 *.db
 *.sqlite
 *.sqlite3
 backup_*/
+
 # Bytecode in tools/tests as well
 tools/**/__pycache__/
 tests/**/__pycache__/
-.DS_Store
-.DS_Store.pokerheader.yml
-.DS_Store
+
+# Project specific
 .pokertool_state.json
-# OS / editor
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.idea/
-.vscode/
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pdb
-*.egg-info/
-.eggs/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# Local data / artifacts
-*.db
-*.sqlite
-*.sqlite3
-backup_*/
-.DS_Store
-.github/workflows/ci.yml
-.DS_Store
-tools/.DS_Store
-# OS / editor
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.idea/
-.vscode/
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pdb
-*.egg-info/
-.eggs/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# Local data / artifacts
-*.db
-*.sqlite
-*.sqlite3
-backup_*/\n# OS / editor
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.idea/
-.vscode/
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pdb
-*.egg-info/
-.eggs/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# Local data / artifacts
-*.db
-*.sqlite
-*.sqlite3
-backup_*/\n
-.DS_Store
-.DS_Store
-.DS_Store
+*.backup
+*.pokerheader.yml

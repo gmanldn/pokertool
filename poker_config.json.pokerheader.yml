@@ -1,6 +1,0 @@
-schema: pokerheader.v1
-project: pokertool
-file: pokertool/poker_config.json
-version: '20'
-last_commit: '2025-09-14T23:35:15.340066+00:00'
-fixes: []
