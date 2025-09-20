@@ -13,15 +13,38 @@ from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-import keyboard
-import pyautogui
+# Optional hotkey and automation dependencies
+try:
+    import keyboard
+    KEYBOARD_AVAILABLE = True
+except ImportError:
+    KEYBOARD_AVAILABLE = False
+    keyboard = None
+
+try:
+    import pyautogui
+    AUTOMATION_AVAILABLE = True
+except ImportError:
+    AUTOMATION_AVAILABLE = False
+    pyautogui = None
 from collections import defaultdict
 
 from .core import Card, parse_card
 from .threading import get_thread_pool, TaskPriority
 from .error_handling import retry_on_failure
 from .hud_overlay import HUDOverlay
-from .scrape import PokerScraper
+# Import scraper functionality
+try:
+    from poker_screen_scraper import PokerScreenScraper as PokerScraper
+except ImportError:
+    # Fallback if module not available
+    class PokerScraper:
+        def __init__(self):
+            pass
+        def scrape_table(self, window_handle):
+            return {}
+        def execute_action(self, window_handle, action):
+            pass
 from .gto_solver import GameState, Strategy, get_gto_solver
 from .ml_opponent_modeling import get_opponent_modeling_system
 
@@ -561,7 +584,10 @@ class TableManager:
     def _tile_tables(self, layout: TableLayout):
         """Tile tables in a grid layout."""
         # Get screen dimensions
-        screen_width, screen_height = pyautogui.size()
+        if AUTOMATION_AVAILABLE:
+            screen_width, screen_height = pyautogui.size()
+        else:
+            screen_width, screen_height = 1920, 1080  # Default fallback
         
         # Apply margins
         margins = self.settings['screen_margins']
@@ -697,7 +723,7 @@ class TableManager:
         """Register a hotkey action."""
         self.hotkeys[hotkey.name] = hotkey
         
-        if self.global_hotkeys_enabled and hotkey.enabled:
+        if self.global_hotkeys_enabled and hotkey.enabled and KEYBOARD_AVAILABLE:
             keyboard.add_hotkey(hotkey.key_combination, 
                               lambda h=hotkey: self._handle_hotkey(h))
     
@@ -716,6 +742,10 @@ class TableManager:
     
     def _enable_hotkeys(self):
         """Enable all registered hotkeys."""
+        if not KEYBOARD_AVAILABLE:
+            logger.warning("Keyboard library not available - hotkeys disabled")
+            return
+            
         for hotkey in self.hotkeys.values():
             if hotkey.enabled:
                 keyboard.add_hotkey(hotkey.key_combination,
@@ -723,7 +753,8 @@ class TableManager:
     
     def _disable_hotkeys(self):
         """Disable all hotkeys."""
-        keyboard.unhook_all()
+        if KEYBOARD_AVAILABLE:
+            keyboard.unhook_all()
     
     def execute_action_current_table(self, action: str):
         """Execute action on current table."""
