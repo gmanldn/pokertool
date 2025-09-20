@@ -323,9 +323,5 @@ def initialise_db_if_needed(db_path: str = DEFAULT_DB) -> str:
 
 
 if __name__ == '__main__':
-    if os.environ.get('POKER_AUTOCONFIRM', '1') in {'1', 'True', 'true'}:
-        init_db()
-    else:
-        ans = input('Initialize database now? (y/n): ').strip().lower()
-        if ans.startswith('y'):
-            init_db()
+    # Auto-initialize database without prompting
+    init_db()
