@@ -1,22 +1,13 @@
 {
-  "embedding_function": "DefaultEmbeddingFunction",
-  "embedding_params": {},
-  "chunk_size": 1500,
-  "overlap_ratio": 0.1,
-  "query_multiplier": 5,
-  "reranker": "NaiveReranker",
-  "db_url": "http://127.0.0.1:8000",
-  "db_path": "/Users/georgeridout/.local/share/vectorcode/chromadb/",
-  "hnsw": {
-    "hnsw:M": 16
-  },
-  "filetype_map": {
-    "python": ["^py$", "^pyi$"],
-    "typescript": ["^ts$", "^tsx$"],
-    "javascript": ["^js$", "^jsx$"]
-  },
-  "chunk_filters": {
-    "python": ["^[^a-zA-Z0-9]+$"],
-    "*": ["^\\s*$", "^[^a-zA-Z0-9]+$"]
+  "embedding_function": "default",
+  "chunk_size": 1000,
+  "chunk_overlap": 200,
+  "embedding_model": "all-MiniLM-L6-v2",
+  "onnx_providers": [
+    "CPUExecutionProvider"
+  ],
+  "environment": {
+    "OMP_NUM_THREADS": "1",
+    "ONNXRUNTIME_PROVIDERS": "CPUExecutionProvider"
   }
 }
