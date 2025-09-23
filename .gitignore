@@ -37,7 +37,24 @@ backup_*/
 tools/**/__pycache__/
 tests/**/__pycache__/
 
+# Node.js dependencies
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.log
+
+# IDE/Editor files (covered above but being explicit)
+.vscode/
+.idea/
+
 # Project specific
 .pokertool_state.json
 *.backup
 *.pokerheader.yml
+
+# Temporary and cache files
+*.tmp
+*.temp
+.cache/
