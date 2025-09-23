@@ -48,10 +48,22 @@
      542 VectorCode/tests/test_lsp.py
      323 VectorCode/tests/test_main.py
      429 VectorCode/tests/test_mcp.py
+     519 all_tests.py
      270 apply_headers.py
        6 autoconfirm.py
+     145 backups/develop_20250922_053042/backups/develop_20250922_053042/update-v24.py
+     203 backups/develop_20250922_053042/git_commit_develop.py
+     286 backups/develop_20250922_053042/git_commit_main.py
+     506 backups/develop_20250922_053042/tests/test_git_automation.py
+     145 backups/develop_20250922_053042/update-v24.py
+     261 backups/develop_20250922_053042/update_version_25.py
+    1145 evals/diff-edits/dashboard/app.py
+     183 evals/diff-edits/dashboard/pages/02_Bad_Cases.py
+      51 evals/diff-edits/dashboard/utils.py
      381 final_test_validation.py
      324 fix_onnx_error.py
+     203 git_commit_develop.py
+     286 git_commit_main.py
      237 launch_pokertool.py
      288 logger.py
      502 poker_imports.py
@@ -85,6 +97,11 @@
      732 src/pokertool/threading.py
      584 src/pokertool/tournament_support.py
      434 src/pokertool/variance_calculator.py
+       9 src/test/e2e/fixtures/workspace_2/providers/anthropic.py
+      10 src/test/e2e/fixtures/workspace_2/providers/google.py
+       9 src/test/e2e/fixtures/workspace_2/providers/openai.py
+      22 src/test/e2e/fixtures/workspace_2/providers/openrouter.py
+      16 src/test/e2e/fixtures/workspace_2/providers/xai.py
      200 start.py
      217 test_gui_fix.py
      200 test_onnx_fix.py
@@ -95,6 +112,7 @@
      667 tests/test_comprehensive_features.py
      787 tests/test_comprehensive_ml_gto.py
      465 tests/test_comprehensive_system.py
+     506 tests/test_git_automation.py
       14 tests/test_poker.py
      565 tests/test_security_features.py
        0 tools/__init__.py
@@ -103,6 +121,11 @@
       13 tools/poker_main.py
       64 tools/saniitise_python_files.py
       12 tools/verify_build.py
+     145 update-v24 2.py
+     145 update-v24.py
+     172 update_v24_2.py
+     261 update_version_25.py
+     359 v22_update_script.py
      465 vectorcode_integration.py
      291 venv/lib/python3.11/site-packages/PIL/AvifImagePlugin.py
      122 venv/lib/python3.11/site-packages/PIL/BdfFontFile.py
@@ -9207,4 +9230,4 @@
      141 venv/lib/python3.11/site-packages/wrapt/patches.py
       98 venv/lib/python3.11/site-packages/wrapt/weakrefs.py
      821 venv/lib/python3.11/site-packages/wrapt/wrappers.py
- 3760982 total
+ 3766569 total
