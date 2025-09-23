@@ -1,60 +1,115 @@
-# OS / editor
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.idea/
-.vscode/
+# PokerTool - Comprehensive .gitignore
 
-# Python
+# POKERTOOL-SPECIFIC FILES
+_backup_*/
+build_reports/
+.pokertool_state.json
+poker_decisions.db.backup*
+*.db.backup*
+*.db-journal
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# PYTHON
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.pdb
-*.egg-info/
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
 .eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.tox/
+.nox/
+.cache
+nosetests.xml
+*.py,cover
+.hypothesis/
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
+cover/
+*.log
+.pybuilder/
+target/
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+.python-version
 
-# Virtual environments
-venv/
-.venv/
+# ENVIRONMENTS
+.env
+.venv
 env/
-.env/
+venv/
 ENV/
 env.bak/
 venv.bak/
 
-# Local data / artifacts
-*.db
-*.sqlite
-*.sqlite3
-backup_*/
-
-# Bytecode in tools/tests as well
-tools/**/__pycache__/
-tests/**/__pycache__/
-
-# Node.js dependencies
-node_modules/
-
-# Build artifacts
-build/
-dist/
-*.log
-
-# IDE/Editor files (covered above but being explicit)
+# IDES AND EDITORS
 .vscode/
+*.code-workspace
 .idea/
+*.iml
+*.ipr
+*.iws
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
 
-# Project specific
-.pokertool_state.json
-*.backup
-*.pokerheader.yml
-
-# Temporary and cache files
+# OPERATING SYSTEMS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+.Spotlight-V100
+.Trashes
+._*
+Thumbs.db
+ehthumbs.db
 *.tmp
 *.temp
-.cache/
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# TEMPORARY AND LOG FILES
+*.log
+logs/
+log/
+*.tmp
+*.temp
+.tmp/
+temp/
+tmp/
+*.bak
+*.backup
+*.old
+
+# SECURITY
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+secrets.json
+private_key*
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
