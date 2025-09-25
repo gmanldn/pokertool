@@ -1,0 +1,235 @@
+{
+  "update_version_25.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/update_version_25.py",
+    "decision": "update",
+    "reasons": [
+      "Filename matches update pattern",
+      "Contains update/migration text hints"
+    ]
+  },
+  "update-v24.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/update-v24.py",
+    "decision": "update",
+    "reasons": [
+      "Filename matches update pattern"
+    ]
+  },
+  "poker_tablediagram.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/poker_tablediagram.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "autoconfirm.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/autoconfirm.py",
+    "decision": "permanent",
+    "reasons": [
+      "Defaulted to permanent (no update signals)"
+    ]
+  },
+  "poker_test.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/poker_test.py",
+    "decision": "permanent",
+    "reasons": [
+      "Defaulted to permanent (no update signals)"
+    ]
+  },
+  "v22_update_script.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/v22_update_script.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "test_onnx_fix.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/test_onnx_fix.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "update-v24 2.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/update-v24 2.py",
+    "decision": "update",
+    "reasons": [
+      "Filename matches update pattern"
+    ]
+  },
+  "update_v24_2.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/update_v24_2.py",
+    "decision": "update",
+    "reasons": [
+      "Filename matches update pattern"
+    ]
+  },
+  "test_poker_gui_enhanced.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/test_poker_gui_enhanced.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "py_lines.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/py_lines.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "launch_pokertool.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/launch_pokertool.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "logger.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/logger.py",
+    "decision": "permanent",
+    "reasons": [
+      "Defaulted to permanent (no update signals)"
+    ]
+  },
+  "screen_scraper_enhanced.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/screen_scraper_enhanced.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "start.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/start.py",
+    "decision": "permanent",
+    "reasons": [
+      "Known core filename"
+    ]
+  },
+  "fix_onnx_error.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/fix_onnx_error.py",
+    "decision": "update",
+    "reasons": [
+      "Filename matches update pattern"
+    ]
+  },
+  "poker_scraper_setup.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/poker_scraper_setup.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "test_screen_scraper.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/test_screen_scraper.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "vectorcode_integration.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/vectorcode_integration.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "security_validation_tests.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/security_validation_tests.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "poker_screen_scraper.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/poker_screen_scraper.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "git_commit_main.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/git_commit_main.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "poker_imports.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/poker_imports.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "enhanced_tests.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/enhanced_tests.py",
+    "decision": "permanent",
+    "reasons": [
+      "Defaulted to permanent (no update signals)"
+    ]
+  },
+  "final_test_validation.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/final_test_validation.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "all_tests.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/all_tests.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "update_documentation_script.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/update_documentation_script.py",
+    "decision": "update",
+    "reasons": [
+      "Filename matches update pattern",
+      "Contains update/migration text hints"
+    ]
+  },
+  "improvement_script_1.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/improvement_script_1.py",
+    "decision": "permanent",
+    "reasons": [
+      "Defaulted to permanent (no update signals)"
+    ]
+  },
+  "test_gui_fix.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/test_gui_fix.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "apply_headers.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/apply_headers.py",
+    "decision": "update",
+    "reasons": [
+      "Filename matches update pattern"
+    ]
+  },
+  "deploy_enhancements.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/deploy_enhancements.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "git_commit_develop.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/git_commit_develop.py",
+    "decision": "update",
+    "reasons": [
+      "Has __main__ entrypoint (likely standalone)"
+    ]
+  },
+  "classify_and_move_updates.py": {
+    "path": "/Users/georgeridout/Documents/github/pokertool/classify_and_move_updates.py",
+    "decision": "update",
+    "reasons": [
+      "Contains update/migration text hints"
+    ]
+  }
+}

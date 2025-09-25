@@ -1,15 +1,3 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: .gitignore
-# version: v20.0.0
-# last_commit: '2025-09-23T16:22:24+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
 # PokerTool - Comprehensive .gitignore
 
 # POKERTOOL-SPECIFIC FILES
@@ -25,7 +13,7 @@ coverage.xml
 *.cover
 
 # PYTHON
-__pycache__/
+*__pycache__/*
 *.py[cod]
 *$py.class
 *.so
@@ -96,7 +84,6 @@ ehthumbs.db
 *.tmp
 *.temp
 Desktop.ini
-$RECYCLE.BIN/
 *.lnk
 
 # TEMPORARY AND LOG FILES
