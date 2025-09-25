@@ -1,0 +1,8 @@
+schema: pokerheader.v1
+project: pokertool
+file: build_reports/report_Improvement1.py_20250915T020550Z.json
+version: v20.0.0
+last_commit: '2025-09-23T16:22:24+01:00'
+fixes:
+- date: '2025-09-25'
+  summary: Enhanced enterprise documentation and comprehensive unit tests added

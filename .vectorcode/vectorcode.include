@@ -1,0 +1,87 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: .vectorcode/vectorcode.include
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
+# Include main pokertool Python source files
+src/pokertool/*.py
+
+# Include all test files for comprehensive coverage
+tests/test_*.py
+tests/specs/*.py
+
+# Include key application entry points
+launch_pokertool.py
+start.py
+poker_imports.py
+poker_screen_scraper.py
+poker_tablediagram.py
+
+# Include build and maintenance tools
+tools/poker_main.py
+tools/verify_build.py
+apply_headers.py
+update_documentation_script.py
+git_commit_main.py
+git_commit_develop.py
+
+# Include main documentation
+README.md
+docs/*.md
+AI.md
+CONTRIBUTING.md
+COMPREHENSIVE_FEATURE_LIST.md
+
+# Include key configuration files
+pyproject.toml
+requirements.txt
+requirements_scraper.txt
+poker_config.json
+onnx_workaround_config.json
+tsconfig.json
+package.json
+biome.jsonc
+
+# Include security and compliance
+src/pokertool/compliance.py
+src/pokertool/error_handling.py
+security_validation_tests.py
+
+# Include main frontend components (not node_modules)
+pokertool-frontend/src/App.tsx
+pokertool-frontend/src/index.tsx
+pokertool-frontend/src/components/*.tsx
+pokertool-frontend/src/services/*
+pokertool-frontend/package.json
+webview-ui/src/*.ts
+webview-ui/src/*.tsx
+
+# Include API and database modules
+src/pokertool/api.py
+src/pokertool/database.py
+src/pokertool/production_database.py
+
+# Include ML and advanced features
+src/pokertool/ml_opponent_modeling.py
+src/pokertool/gto_solver.py
+src/pokertool/variance_calculator.py
+
+# Integration files
+vectorcode_integration.py
+
+# Exclude patterns (for completeness)
+!**/node_modules/**
+!**/__pycache__/**
+!**/.git/**
+!**/venv/**
+!**/.venv/**
+!**/.DS_Store
+!**/build/**
+!**/dist/**
