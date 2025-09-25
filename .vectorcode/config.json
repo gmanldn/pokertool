@@ -1,7 +1,7 @@
 {
   "embedding_function": "default",
-  "chunk_size": 1000,
-  "chunk_overlap": 200,
+  "chunk_size": 1500,
+  "chunk_overlap": 300,
   "embedding_model": "all-MiniLM-L6-v2",
   "onnx_providers": [
     "CPUExecutionProvider"
@@ -9,5 +9,12 @@
   "environment": {
     "OMP_NUM_THREADS": "1",
     "ONNXRUNTIME_PROVIDERS": "CPUExecutionProvider"
+  },
+  "version": "20.0.0",
+  "last_updated": "2025-09-25",
+  "optimization_notes": {
+    "chunk_size": "Increased to 1500 for better context preservation in enterprise code",
+    "chunk_overlap": "Increased to 300 for improved continuity across chunks",
+    "performance": "Optimized for accuracy over speed in production environment"
   }
 }

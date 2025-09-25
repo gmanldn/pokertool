@@ -1,3 +1,15 @@
+        <!-- POKERTOOL-HEADER-START
+        ---
+        schema: pokerheader.v1
+project: pokertool
+file: CONTRIBUTING.md
+version: v20.0.0
+last_commit: '2025-09-23T08:41:38+01:00'
+fixes:
+- date: '2025-09-25'
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
+        ---
+        POKERTOOL-HEADER-END -->
 # Contributing to Cline
 
 We're thrilled you're interested in contributing to Cline. Whether you're fixing a bug, adding a feature, or improving our docs, every contribution makes Cline smarter! To keep our community vibrant and welcoming, all members must adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).

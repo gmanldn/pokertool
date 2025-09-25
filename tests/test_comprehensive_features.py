@@ -1,3 +1,15 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: tests/test_comprehensive_features.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 """
 Comprehensive unit tests for new PokerTool features.
 Tests for SCRP-001, DB-001, PERF-001, and API-001 implementations.

@@ -1,3 +1,15 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/core/controller/models/refreshOpenAiModels.ts
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 import { StringArray } from "@shared/proto/cline/common"
 import { OpenAiModelsRequest } from "@shared/proto/cline/models"
 import type { AxiosRequestConfig } from "axios"

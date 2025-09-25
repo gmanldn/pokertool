@@ -1,3 +1,15 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/standalone/protobus-service.ts
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 import { Controller } from "@core/controller"
 import { StreamingResponseHandler } from "@core/controller/grpc-handler"
 import { addProtobusServices } from "@generated/hosts/standalone/protobus-server-setup"

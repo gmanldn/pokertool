@@ -1,3 +1,15 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/hosts/vscode/hostbridge-grpc-handler.ts
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 import { GrpcRequestRegistry } from "@core/controller/grpc-request-registry"
 import { hostServiceHandlers } from "@generated/hosts/vscode/hostbridge-grpc-service-config"
 import { StreamingCallbacks } from "@/hosts/host-provider-types"

@@ -3,16 +3,18 @@ from __future__ import annotations
 
 """
 POKERTOOL-HEADER-START
----
-schema: pokerheader.v1
-project: pokertool
-file: update_v24_2.py
-version: '24.2'
-last_commit: ''
-fixes: []
----
-POKERTOOL-HEADER-END
-"""
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: update_v24_2.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 
 import re
 import subprocess

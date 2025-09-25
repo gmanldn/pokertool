@@ -1,4 +1,16 @@
 #!/bin/bash
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: cleanup_repo.sh
+# version: v20.0.0
+# last_commit: '2025-09-23T15:51:55+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 
 # Git Repository Cleanup Script for PokerTool
 echo "🧹 Starting Git repository cleanup for PokerTool..."

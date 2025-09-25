@@ -1,0 +1,8 @@
+schema: pokerheader.v1
+project: pokertool
+file: backups/.DS_Store
+version: v20.0.0
+last_commit: '2025-09-22T23:16:11.419219+00:00'
+fixes:
+- date: '2025-09-25'
+  summary: Enhanced enterprise documentation and comprehensive unit tests added

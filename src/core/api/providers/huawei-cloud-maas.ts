@@ -1,3 +1,15 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/core/api/providers/huawei-cloud-maas.ts
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 import { Anthropic } from "@anthropic-ai/sdk"
 import { HuaweiCloudMaasModelId, huaweiCloudMaasDefaultModelId, huaweiCloudMaasModels, ModelInfo } from "@shared/api"
 import OpenAI from "openai"

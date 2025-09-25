@@ -2,10 +2,12 @@
 # ---
 # schema: pokerheader.v1
 # project: pokertool
-# file: pokertool/requirements.txt
-# version: '20'
-# last_commit: '2025-09-09T15:38:42+00:00'
-# fixes: []
+# file: requirements.txt
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
 # ---
 # POKERTOOL-HEADER-END
 # Poker Assistant - Python Requirements
