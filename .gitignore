@@ -48,6 +48,7 @@ target/
 profile_default/
 ipython_config.py
 .python-version
+.vectorcode
 
 # ENVIRONMENTS
 .env
