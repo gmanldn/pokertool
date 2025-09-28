@@ -187,6 +187,9 @@ def analyse_hand(
     else:
         # High card only
         strength = (hole_ranks[0] + hole_ranks[1] * 0.5) / 3.0
+        # Ensure high cards are calibrated below 6.0 baseline for weakest hands
+        if strength >= 6.0:
+            strength = 5.9
         hand_type = 'HIGH_CARD'
     
     # Cap strength at 10.0
