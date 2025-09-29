@@ -1,53 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/threading.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 """
-PokerTool Advanced Threading Module
-====================================
-
-Sophisticated thread and process pool management for concurrent operations.
-Implements priority queuing, task scheduling, and resource management for
-optimal performance in multi-core environments.
-
-Module: pokertool.threading
-Version: 20.0.0
-Last Modified: 2025-09-29
-Author: PokerTool Development Team
-License: MIT
-
-Dependencies:
-    - concurrent.futures: Thread and process pools
-    - asyncio: Asynchronous I/O support
-    - threading: Low-level threading primitives
-    - multiprocessing: Process-based parallelism
-
-Threading Features:
-    - Dynamic thread pool sizing
-    - Priority-based task queuing
-    - Deadlock detection
-    - Resource limiting
-    - Task cancellation
-    - Performance metrics
-    - Graceful shutdown
-
-Task Priorities:
-    - CRITICAL: Immediate execution
-    - HIGH: Priority execution
-    - NORMAL: Standard priority
-    - LOW: Background tasks
-
-Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added metrics
-    - v19.0.0 (2025-09-18): Priority queue implementation
-    - v18.0.0 (2025-09-15): Initial threading support
+Multi-threading and Async Support Module
+Provides thread pool management, async operations, and concurrent processing
+for performance-critical operations in the poker tool.
 """
-
-__version__ = '20.0.0'
-__author__ = 'PokerTool Development Team'
-__copyright__ = 'Copyright (c) 2025 PokerTool'
-__license__ = 'MIT'
-__maintainer__ = 'George Ridout'
-__status__ = 'Production'
 
 import asyncio
 import threading

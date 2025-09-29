@@ -1,56 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/database.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 """
-PokerTool Production Database Module
-=====================================
-
-Enterprise-grade database abstraction layer supporting both PostgreSQL
-for production and SQLite for development. Implements connection pooling,
-automatic failover, and comprehensive transaction management.
-
-Module: pokertool.database
-Version: 20.0.0
-Last Modified: 2025-09-29
-Author: PokerTool Development Team
-License: MIT
-
-Dependencies:
-    - psycopg2 >= 2.9.0: PostgreSQL adapter (optional)
-    - psycopg2-pool: Connection pooling
-    - sqlite3: Built-in SQLite support
-
-Database Features:
-    - Dual database support (PostgreSQL/SQLite)
-    - Connection pooling for performance
-    - Automatic retry with exponential backoff
-    - Transaction management with rollback
-    - Query optimization and caching
-    - Migration support
-    - Audit logging
-    - Backup and restore
-
-Configuration:
-    Environment variables:
-    - POKERTOOL_DB_TYPE: 'postgresql' or 'sqlite'
-    - POKERTOOL_DB_HOST: PostgreSQL host
-    - POKERTOOL_DB_PORT: PostgreSQL port
-    - POKERTOOL_DB_NAME: Database name
-    - POKERTOOL_DB_USER: Database user
-    - POKERTOOL_DB_PASSWORD: Database password
-
-Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added connection pooling
-    - v19.0.0 (2025-09-18): PostgreSQL integration
-    - v18.0.0 (2025-09-15): Initial database abstraction
+Production Database Module
+Provides PostgreSQL support with connection pooling for production environments.
+Maintains compatibility with existing SQLite implementation for development.
 """
-
-__version__ = '20.0.0'
-__author__ = 'PokerTool Development Team'
-__copyright__ = 'Copyright (c) 2025 PokerTool'
-__license__ = 'MIT'
-__maintainer__ = 'George Ridout'
-__status__ = 'Production'
 
 import os
 import logging

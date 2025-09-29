@@ -1,56 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/scrape.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 """
-PokerTool Screen Scraping Module
-=================================
-
-Advanced screen scraping and OCR capabilities for monitoring online
-poker tables and extracting game state information in real-time.
-
-Module: pokertool.scrape
-Version: 20.0.0
-Last Modified: 2025-09-29
-Author: PokerTool Development Team
-License: MIT
-
-Dependencies:
-    - requests >= 2.32.0: HTTP client
-    - beautifulsoup4 >= 4.12.0: HTML parsing
-    - Pillow: Image processing
-    - pytesseract: OCR capabilities (optional)
-
-Scraping Features:
-    - Multi-platform screen capture
-    - OCR text recognition
-    - Table layout detection
-    - Real-time tracking
-    - Anti-detection measures
-    - Error recovery
-    - Multiple site support
-
-Supported Sites:
-    - Generic table layout
-    - Custom profiles per site
-    - Configurable detection
-
-IMPORTANT:
-    This module is for educational purposes only.
-    Users must comply with all applicable terms of service
-    and local regulations when using screen scraping features.
-
-Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, improved OCR
-    - v19.0.0 (2025-09-18): Multi-site support
-    - v18.0.0 (2025-09-15): Initial scraping implementation
+Screen scraping integration module.
+Integrates the poker screen scraper with the main pokertool application.
+Now includes OCR-powered card recognition and real-time HUD overlay support.
 """
-
-__version__ = '20.0.0'
-__author__ = 'PokerTool Development Team'
-__copyright__ = 'Copyright (c) 2025 PokerTool'
-__license__ = 'MIT'
-__maintainer__ = 'George Ridout'
-__status__ = 'Beta'
 
 import asyncio
 import logging

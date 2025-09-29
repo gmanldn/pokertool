@@ -1,54 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/gui.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 """
-PokerTool GUI Application
-==========================
-
-Tkinter-based desktop GUI application providing an intuitive interface
-for poker hand analysis and strategic recommendations. Supports both manual
-input and real-time table monitoring.
-
-Module: pokertool.gui
-Version: 20.0.0
-Last Modified: 2025-09-29
-Author: PokerTool Development Team
-License: MIT
-
-Dependencies:
-    - tkinter: Built-in Python GUI framework
-    - PIL/Pillow: Image handling for card graphics
-    - threading: Async UI updates
-
-GUI Components:
-    - Main window with menu bar
-    - Card selection interface
-    - Position selector
-    - Hand analysis display
-    - History viewer
-    - Settings dialog
-    - HUD overlay system
-
-Features:
-    - Drag-and-drop card selection
-    - Real-time strength visualization
-    - Hand history tracking
-    - Customizable themes
-    - Keyboard shortcuts
-    - Export functionality
-
-Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, improved UI
-    - v19.0.0 (2025-09-18): Added dark mode support
-    - v18.0.0 (2025-09-15): Initial GUI implementation
+Enhanced Poker Assistant GUI
+Enterprise-grade poker application with visual card selection, 
+clear table visualization, and optimized for live game entry.
 """
-
-__version__ = '20.0.0'
-__author__ = 'PokerTool Development Team'
-__copyright__ = 'Copyright (c) 2025 PokerTool'
-__license__ = 'MIT'
-__maintainer__ = 'George Ridout'
-__status__ = 'Production'
 
 from __future__ import annotations
 

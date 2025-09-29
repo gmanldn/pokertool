@@ -1,53 +1,21 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/storage.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 """
-PokerTool Secure Storage Module
-================================
-
-Provides secure local storage using SQLite with encryption support,
-input sanitization, and comprehensive security features for protecting
-sensitive poker analysis data.
-
-Module: pokertool.storage
-Version: 20.0.0
-Last Modified: 2025-09-29
-Author: PokerTool Development Team
-License: MIT
-
-Dependencies:
-    - sqlite3: Built-in database support
-    - hashlib: Data integrity verification
-    - json: Data serialization
-    - pathlib: File system operations
-
-Security Features:
-    - Input sanitization
-    - SQL injection prevention
-    - Database encryption (optional)
-    - Size limits and quotas
-    - Audit logging
-    - Secure deletion
-    - Access control
-
-Database Schema:
-    - hands: Store analyzed hands
-    - sessions: Track playing sessions
-    - settings: User preferences
-    - audit_log: Security audit trail
-
-Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added encryption
-    - v19.0.0 (2025-09-18): Security improvements
-    - v18.0.0 (2025-09-15): Initial storage implementation
+Enhanced Storage Module
+Secure database wrapper with SQL injection prevention and access controls.
 """
 
-__version__ = '20.0.0'
-__author__ = 'PokerTool Development Team'
-__copyright__ = 'Copyright (c) 2025 PokerTool'
-__license__ = 'MIT'
-__maintainer__ = 'George Ridout'
-__status__ = 'Production'
+__version__ = '21'
 
 import sqlite3
 import os

@@ -1,58 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-PokerTool Error Handling Module
-================================
-
-Comprehensive error handling, retry logic, and circuit breaker
-implementation for robust fault tolerance and graceful degradation.
-
-Module: pokertool.error_handling
-Version: 20.0.0
-Last Modified: 2025-09-29
-Author: PokerTool Development Team
-License: MIT
-
-Dependencies:
-    - Standard library: functools, time, logging
-    - typing: Type hints
-    - dataclasses: Structured error information
-
-Error Hierarchy:
-    - PokerError: Base exception
-    - DatabaseError: Database operations
-    - NetworkError: Network operations
-    - ValidationError: Input validation
-    - SecurityError: Security violations
-
-Features:
-    - Automatic retry with backoff
-    - Circuit breaker pattern
-    - Error aggregation
-    - Structured logging
-    - Recovery strategies
-    - User-friendly messages
-
-Decorators:
-    - @retry_on_failure: Automatic retry
-    - @circuit_breaker: Circuit breaker
-    - @validate_input: Input validation
-    - @log_errors: Error logging
-
-Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added circuit breaker
-    - v19.0.0 (2025-09-18): Retry logic implementation
-    - v18.0.0 (2025-09-15): Initial error handling
-"""
-
-__version__ = '20.0.0'
-__author__ = 'PokerTool Development Team'
-__copyright__ = 'Copyright (c) 2025 PokerTool'
-__license__ = 'MIT'
-__maintainer__ = 'George Ridout'
-__status__ = 'Production'
-
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/error_handling.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 from __future__ import annotations
 
 """

@@ -1,3 +1,36 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+PokerTool   Init   Module
+===========================
+
+This module provides functionality for   init   operations
+within the PokerTool application ecosystem.
+
+Module: pokertool.__init__
+Version: 20.0.0
+Last Modified: 2025-09-29
+Author: PokerTool Development Team
+License: MIT
+
+Dependencies:
+    - See module imports for specific dependencies
+    - Python 3.10+ required
+
+Change Log:
+    - v20.0.0 (2025-09-29): Enhanced documentation
+    - v19.0.0 (2025-09-18): Bug fixes and improvements
+    - v18.0.0 (2025-09-15): Initial implementation
+"""
+
+__version__ = '20.0.0'
+__author__ = 'PokerTool Development Team'
+__copyright__ = 'Copyright (c) 2025 PokerTool'
+__license__ = 'MIT'
+__maintainer__ = 'George Ridout'
+__status__ = 'Production'
+
 # POKERTOOL-HEADER-START
 # ---
 # schema: pokerheader.v1

@@ -1,47 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-PokerTool Core Module
-=====================
-
-This module provides the foundational data structures and logic for poker hand analysis,
-including card representation, position tracking, and basic hand evaluation algorithms.
-
-Module: pokertool.core
-Version: 20.0.0
-Last Modified: 2025-09-29
-Author: PokerTool Development Team
-License: MIT
-
-Dependencies:
-    - Python 3.10+
-    - Standard library only (enum, dataclasses, typing)
-
-Classes:
-    - Rank: Enumeration of all poker card ranks
-    - Suit: Enumeration of all poker card suits  
-    - Position: Enumeration of poker table positions
-    - Card: Immutable dataclass representing a playing card
-    - HandAnalysisResult: Dataclass containing hand analysis results
-
-Functions:
-    - parse_card: Parse string representation into Card object
-    - analyse_hand: Analyze poker hand strength and provide strategic advice
-
-Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added type hints
-    - v19.0.0 (2025-09-18): Fixed syntax errors
-    - v18.0.0 (2025-09-15): Initial production release
-"""
-
-__version__ = '20.0.0'
-__author__ = 'PokerTool Development Team'
-__copyright__ = 'Copyright (c) 2025 PokerTool'
-__license__ = 'MIT'
-__maintainer__ = 'George Ridout'
-__status__ = 'Production'
-
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/core.py
+# version: v20.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
 from __future__ import annotations
 
 __version__ = '20'
