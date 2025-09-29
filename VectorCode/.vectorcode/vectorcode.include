@@ -1,5 +1,0 @@
-lua/vectorcode/**/*.lua
-src/vectorcode/**/*.py
-plugin/vectorcode.lua
-docs/*.md
-tests/**/*.py
