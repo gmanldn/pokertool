@@ -71,11 +71,11 @@ def check_and_install_dependencies(silent: bool = False):
         ('cv2', 'opencv-python'),
         ('PIL', 'Pillow'),
         ('pytesseract', 'pytesseract'),
+        ('mss', 'mss'),
     ]
     
     # Optional but recommended dependencies
     optional_deps = [
-        ('mss', 'mss'),
     ]
     
     missing_critical = []
