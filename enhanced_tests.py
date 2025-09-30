@@ -414,7 +414,7 @@ class TestTableState:
             hero_cards=sample_cards[:2],
             board_cards=sample_cards[2:5],
             stage="flop",
-            active_players=6
+            active_players=6,
         )
         
         assert state.pot_size == 25.5
