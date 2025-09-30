@@ -416,4 +416,12 @@ class TestTableState:
     
     def test_hash_generation(self, sample_cards):
         """Test hash generation for change detection."""
-        state1 = TableState(pot_size=25.5, hero_cards=sample
+        state1 = TableState(pot_size=25.5, hero_cards=sample_cards[:2])
+        state2 = TableState(pot_size=25.5, hero_cards=sample_cards[:2])
+        state3 = TableState(pot_size=30.0, hero_cards=sample_cards[:2])
+        
+        # Same state should have same hash
+        assert state1.hash_signature == state2.hash_signature
+        
+        # Different state should have different hash
+        assert state1.hash_signature != state3.hash_signature

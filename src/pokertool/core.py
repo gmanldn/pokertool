@@ -42,11 +42,6 @@ __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
 
-from __future__ import annotations
-
-__version__ = '20'
-
-# -*- coding: utf-8 -*-
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Tuple, Dict

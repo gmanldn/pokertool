@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 """
 PokerTool Enhanced Gui Module
 ===============================
@@ -30,8 +32,6 @@ __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
-
-from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk, messagebox, font
