@@ -11,8 +11,13 @@
 #   summary: Enhanced enterprise documentation and comprehensive unit tests added
 # ---
 # POKERTOOL-HEADER-END
+
+# Set NumExpr thread limit to prevent warning
+export NUMEXPR_MAX_THREADS=8
+
 echo "Activating pokertool environment..."
 source "/Users/georgeridout/Documents/github/pokertool/venv/bin/activate"
 echo "Environment activated. ONNX Runtime conflicts resolved."
+echo "NumExpr max threads set to 8."
 echo "You can now run: python start.py"
 exec "$SHELL"

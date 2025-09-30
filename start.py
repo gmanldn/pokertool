@@ -16,6 +16,9 @@ from typing import Sequence
 import os
 import sys
 
+# Set NumExpr thread limit to prevent warning (must be set before NumExpr is imported)
+os.environ.setdefault('NUMEXPR_MAX_THREADS', '8')
+
 import atexit
 import shlex
 import subprocess

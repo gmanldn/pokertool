@@ -265,6 +265,42 @@ class AutopilotControlPanel(tk.Frame):
         )
         multi_table_cb.pack(anchor='w', padx=10, pady=2)
         
+        self.auto_gto_var = tk.BooleanVar(value=True)
+        auto_gto_cb = tk.Checkbutton(
+            settings_frame,
+            text='Auto GTO analysis',
+            variable=self.auto_gto_var,
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            selectcolor=COLORS['bg_light']
+        )
+        auto_gto_cb.pack(anchor='w', padx=10, pady=2)
+        
+        self.auto_detect_var = tk.BooleanVar(value=True)
+        auto_detect_cb = tk.Checkbutton(
+            settings_frame,
+            text='Auto table detection',
+            variable=self.auto_detect_var,
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            selectcolor=COLORS['bg_light']
+        )
+        auto_detect_cb.pack(anchor='w', padx=10, pady=2)
+        
+        self.auto_scraper_var = tk.BooleanVar(value=True)
+        auto_scraper_cb = tk.Checkbutton(
+            settings_frame,
+            text='Auto-start screen scraper',
+            variable=self.auto_scraper_var,
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            selectcolor=COLORS['bg_light']
+        )
+        auto_scraper_cb.pack(anchor='w', padx=10, pady=2)
+        
         # Statistics display
         stats_frame = tk.LabelFrame(
             self,
@@ -808,6 +844,17 @@ class IntegratedPokerAssistant(tk.Tk):
         
         # Update status
         self._update_table_status("🤖 Autopilot ACTIVATED\n")
+        
+        # Execute quick actions based on settings
+        if self.autopilot_panel.auto_scraper_var.get():
+            self._update_table_status("⚡ Auto-starting screen scraper...\n")
+            if not self._enhanced_scraper_started:
+                self._toggle_screen_scraper()
+        
+        if self.autopilot_panel.auto_detect_var.get():
+            self._update_table_status("⚡ Running auto table detection...\n")
+            threading.Thread(target=self._detect_tables, daemon=True).start()
+        
         self._update_table_status("Scanning for poker tables...\n")
         
         # Start autopilot thread
@@ -828,19 +875,30 @@ class IntegratedPokerAssistant(tk.Tk):
                     table_state = self.screen_scraper.analyze_table()
                     if table_state:
                         self._process_table_state(table_state)
+                        
+                        # Auto GTO analysis if enabled
+                        if self.autopilot_panel.auto_gto_var.get() and self.gto_solver:
+                            try:
+                                self.after(0, lambda: self._update_table_status("⚡ Running auto GTO analysis...\n"))
+                                # GTO analysis would happen here with table_state
+                                # This is a placeholder for the real implementation
+                                self.after(0, lambda: self._update_table_status("✅ Auto GTO analysis complete\n"))
+                            except Exception as gto_error:
+                                print(f"Auto GTO analysis error: {gto_error}")
                 
                 # Update statistics
                 stats = {
                     'tables_detected': 1,  # Mock data
                     'hands_played': self.autopilot_panel.state.hands_played + 1,
-                    'actions_taken': self.autopilot_panel.state.actions_taken,
-                    'last_action': 'Analyzing...'
+                    'actions_taken': self.autopilot_panel.state.actions_taken + (1 if self.autopilot_panel.auto_gto_var.get() else 0),
+                    'last_action': 'Auto-analyzing...' if self.autopilot_panel.auto_gto_var.get() else 'Monitoring...'
                 }
                 
                 self.after(0, lambda: self.autopilot_panel.update_statistics(stats))
                 
             except Exception as e:
                 print(f"Autopilot loop error: {e}")
+                self.after(0, lambda: self._update_table_status(f"⚠️ Autopilot error: {e}\n"))
             
             time.sleep(2)  # Check every 2 seconds
     

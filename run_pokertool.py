@@ -4,6 +4,9 @@
 import sys
 import os
 
+# Set NumExpr thread limit to prevent warning
+os.environ['NUMEXPR_MAX_THREADS'] = '8'
+
 # Set environment variable to skip syntax scan
 os.environ['START_NO_SCAN'] = '1'
 
