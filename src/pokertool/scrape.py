@@ -52,12 +52,14 @@ __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Beta'
 
-import asyncio
 import logging
-from typing import Optional, Dict, Any, List, Callable, Tuple
-from threading import Thread, Event
 import time
+from concurrent.futures import Future
+from dataclasses import dataclass
 from pathlib import Path
+from threading import Thread
+from typing import Any, Callable, Dict, Optional, Sequence
+
 import numpy as np
 
 # Import the screen scraper
@@ -88,9 +90,7 @@ try:
     from .ocr_recognition import (
         get_poker_ocr, 
         create_card_regions, 
-        CardRegion, 
-        RecognitionResult,
-        RecognitionMethod,
+        CardRegion,
         OCR_AVAILABLE
     )
 except ImportError as e:
@@ -103,6 +103,77 @@ from .core import analyse_hand, parse_card
 from .threading import get_thread_pool, TaskPriority
 
 logger = logging.getLogger(__name__)
+
+# Recognition bookkeeping ----------------------------------------------------
+
+
+@dataclass
+class RecognitionStats:
+    """Lightweight statistics tracker for OCR recognition quality."""
+
+    total_captures: int = 0
+    successful_recognitions: int = 0
+    failed_recognitions: int = 0
+    avg_confidence: float = 0.0
+
+    def record_capture(self) -> None:
+        self.total_captures += 1
+
+    def record_success(self, confidence: float) -> None:
+        self.successful_recognitions += 1
+        if self.successful_recognitions == 1:
+            self.avg_confidence = confidence
+        else:
+            delta = confidence - self.avg_confidence
+            self.avg_confidence += delta / self.successful_recognitions
+
+    def record_failure(self) -> None:
+        self.failed_recognitions += 1
+
+    def snapshot(self, ocr_enabled: bool) -> Dict[str, Any]:
+        success_rate = (
+            self.successful_recognitions / self.total_captures
+            if self.total_captures
+            else 0.0
+        )
+        return {
+            'total_captures': self.total_captures,
+            'successful_recognitions': self.successful_recognitions,
+            'failed_recognitions': self.failed_recognitions,
+            'avg_confidence': self.avg_confidence,
+            'success_rate': success_rate,
+            'ocr_enabled': ocr_enabled,
+        }
+
+
+class _FallbackScraperBridge:
+    """Minimal bridge used when the native bridge is unavailable (e.g. tests)."""
+
+    def __init__(self, _scraper: Any):
+        self._callbacks: list[Callable[[Dict[str, Any]], None]] = []
+
+    def register_callback(self, callback: Callable[[Dict[str, Any]], None]) -> None:
+        if callback not in self._callbacks:
+            self._callbacks.append(callback)
+
+    def process_update(self, state: Dict[str, Any]) -> None:
+        payload = dict(state) if isinstance(state, dict) else {'raw_state': state}
+        for callback in list(self._callbacks):
+            try:
+                callback(payload)
+            except Exception as exc:
+                logger.error('Fallback bridge callback error: %s', exc)
+
+    @staticmethod
+    def convert_to_game_state(table_state: Any) -> Dict[str, Any]:
+        if isinstance(table_state, dict):
+            return dict(table_state)
+        if hasattr(table_state, 'to_dict'):
+            try:
+                return dict(table_state.to_dict())  # type: ignore[arg-type]
+            except Exception:
+                pass
+        return {'raw_state': table_state}
 
 # Import HUD overlay system
 try:
@@ -123,55 +194,189 @@ class EnhancedScraperManager:
         self.bridge = None
         self.ocr_engine = None
         self.running = False
-        self.callbacks = []
-        self.last_state = None
-        self.card_regions = []
+        self.callbacks: list[Callable[[Dict[str, Any]], None]] = []
+        self.last_state: Optional[Dict[str, Any]] = None
+        self.card_regions: Sequence['CardRegion'] = ()
         self.thread_pool = get_thread_pool()
-        self.recognition_stats = {
-            'total_captures': 0,
-            'successful_recognitions': 0,
-            'failed_recognitions': 0,
-            'avg_confidence': 0.0
-        }
+        self._recognition_stats = RecognitionStats()
+        self._hole_regions: Sequence['CardRegion'] = ()
+        self._board_regions: Sequence['CardRegion'] = ()
+        self._primary_regions: Sequence['CardRegion'] = ()
+        self._betting_regions: Sequence['CardRegion'] = ()
+        self._pending_save: Optional[Future] = None
+        self._current_site: Optional[str] = None
+        self._ocr_requested = False
+        self._last_signature: Optional[tuple] = None
 
     def initialize(self, site: str = 'GENERIC', enable_ocr: bool = True) -> bool:
         """Initialize the enhanced screen scraper with OCR support."""
-        if not SCRAPER_AVAILABLE:
-            logger.error("Screen scraper not available - missing dependencies")
+        if not SCRAPER_AVAILABLE and PokerScreenScraper is None:
+            logger.error('Screen scraper not available - missing dependencies')
             return False
 
-        try:
-            # Convert string to enum
-            poker_site = PokerSite.GENERIC
-            if site.upper() in [s.name for s in PokerSite]:
-                poker_site = PokerSite[site.upper()]
+        normalized_site = site.upper()
+        requested_ocr = bool(enable_ocr and OCR_AVAILABLE)
 
-            self.scraper = PokerScreenScraper(poker_site)
-            self.bridge = ScreenScraperBridge(self.scraper)
-
-            # Register our callback
-            self.bridge.register_callback(self._on_table_update)
-
-            # Initialize OCR if available and enabled
-            if enable_ocr and OCR_AVAILABLE:
-                try:
-                    self.ocr_engine = get_poker_ocr()
-                    self.card_regions = create_card_regions('standard')
-                    logger.info(f"OCR engine initialized with {len(self.card_regions)} regions")
-                except Exception as e:
-                    logger.warning(f"Failed to initialize OCR: {e}")
-                    self.ocr_engine = None
-
-            logger.info(f'Enhanced screen scraper initialized for {poker_site.value}')
+        # If the scraper is already configured for this site, only refresh OCR when needed
+        if self.scraper and self._current_site == normalized_site:
+            if requested_ocr != self._ocr_requested:
+                self._configure_ocr(enable_ocr)
+                self._ocr_requested = requested_ocr
+                self._recognition_stats = RecognitionStats()
+                self._last_signature = None
             return True
 
-        except Exception as e:
-            logger.error(f'Failed to initialize screen scraper: {e}')
+        # Reinitialise underlying scraper state
+        self.stop_continuous_capture()
+        self.scraper = None
+        self.bridge = None
+        self._pending_save = None
+
+        poker_site = None
+        if PokerSite is not None:
+            try:
+                poker_site = PokerSite[normalized_site]
+            except Exception:
+                logger.debug('Unknown poker site "%s", falling back to generic profile', site)
+                poker_site = PokerSite.GENERIC
+        site_label = poker_site.value if poker_site is not None else normalized_site
+
+        try:
+            scraper_target = poker_site if poker_site is not None else normalized_site
+            self.scraper = PokerScreenScraper(scraper_target)
+            bridge_cls = ScreenScraperBridge or _FallbackScraperBridge
+            self.bridge = bridge_cls(self.scraper)
+            self.bridge.register_callback(self._on_table_update)
+
+            self._configure_ocr(enable_ocr)
+            self._recognition_stats = RecognitionStats()
+            self._current_site = normalized_site
+            self._ocr_requested = requested_ocr
+            self._last_signature = None
+            logger.info('Enhanced screen scraper initialized for %s', site_label)
+            return True
+
+        except Exception as exc:
+            logger.error('Failed to initialize screen scraper: %s', exc)
+            self.scraper = None
+            self.bridge = None
             return False
 
     def register_callback(self, callback: Callable[[Dict[str, Any]], None]):
         """Register a callback for table state updates."""
-        self.callbacks.append(callback)
+        if callback not in self.callbacks:
+            self.callbacks.append(callback)
+
+    def _configure_ocr(self, enable_ocr: bool) -> None:
+        """Initialise or disable OCR resources and pre-compute region groups."""
+        self.ocr_engine = None
+        self.card_regions = ()
+        self._hole_regions = ()
+        self._board_regions = ()
+        self._primary_regions = ()
+        self._betting_regions = ()
+
+        if not (enable_ocr and OCR_AVAILABLE):
+            return
+
+        try:
+            engine = get_poker_ocr()
+            regions = tuple(create_card_regions('standard'))
+
+            hole_regions = []
+            board_regions = []
+            betting_regions = []
+            for region in regions:
+                if region.card_type == 'hole':
+                    hole_regions.append(region)
+                elif region.card_type == 'board':
+                    board_regions.append(region)
+                elif region.card_type in {'pot', 'hero_bet'}:
+                    betting_regions.append(region)
+
+            self.ocr_engine = engine
+            self.card_regions = regions
+            self._hole_regions = tuple(hole_regions)
+            self._board_regions = tuple(board_regions)
+            self._primary_regions = self._hole_regions + self._board_regions
+            self._betting_regions = tuple(betting_regions)
+
+            logger.info('OCR engine initialized with %d regions', len(regions))
+
+        except Exception as exc:
+            logger.warning('Failed to initialize OCR: %s', exc)
+            self.ocr_engine = None
+
+    def _strip_table_image(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Return a shallow copy of *state* without the raw table image payload."""
+        if 'table_image' not in state:
+            return dict(state)
+        trimmed = dict(state)
+        trimmed.pop('table_image', None)
+        return trimmed
+
+    def _should_process_update(self, state: Dict[str, Any]) -> bool:
+        """Deduplicate updates by comparing key strategic fields."""
+        signature = (
+            tuple(state.get('hole_cards_ocr') or state.get('hole_cards') or ()),
+            tuple(state.get('board_cards_ocr') or state.get('board_cards') or ()),
+            state.get('stage'),
+            state.get('pot'),
+            state.get('to_call'),
+        )
+        if signature == self._last_signature:
+            return False
+        self._last_signature = signature
+        return True
+
+    def _schedule_state_persistence(self, state: Dict[str, Any]) -> None:
+        """Persist the captured state asynchronously, avoiding duplicate tasks."""
+        if not self.thread_pool:
+            return
+
+        if self._pending_save and not self._pending_save.done():
+            return
+
+        persistable = dict(state)
+        future = self.thread_pool.submit_thread_task(self._save_table_state, persistable)
+        self._pending_save = future
+
+        def _clear(_future: Future) -> None:
+            self._pending_save = None
+
+        future.add_done_callback(_clear)
+
+    @staticmethod
+    def _prepare_image(raw_image: Any) -> Optional[np.ndarray]:
+        """Normalise *raw_image* into an ``np.ndarray`` if possible."""
+        if raw_image is None:
+            return None
+
+        if isinstance(raw_image, np.ndarray):
+            return raw_image
+
+        cv2 = None
+        try:  # pragma: no cover - optional dependency
+            import cv2  # type: ignore
+        except Exception:
+            pass
+
+        if isinstance(raw_image, (str, Path)) and cv2 is not None:
+            return cv2.imread(str(raw_image))
+
+        if hasattr(raw_image, 'read') and cv2 is not None:
+            try:
+                data = raw_image.read()
+            except Exception:
+                data = None
+            if data:
+                buffer = np.frombuffer(data, dtype=np.uint8)
+                return cv2.imdecode(buffer, 1)
+
+        try:
+            return np.asarray(raw_image)
+        except Exception:
+            return None
 
     def _on_table_update(self, game_state: Dict[str, Any]):
         """Handle table state updates with OCR enhancement."""
@@ -181,92 +386,96 @@ class EnhancedScraperManager:
             if enhanced_state:
                 game_state.update(enhanced_state)
 
-        self.last_state = game_state
+        normalized_state = self._strip_table_image(game_state)
+        if not self._should_process_update(normalized_state):
+            self.last_state = normalized_state
+            return
+
+        self.last_state = normalized_state
 
         # Update HUD overlay if running
         if HUD_AVAILABLE and is_hud_running():
             try:
-                update_hud_state(game_state)
+                update_hud_state(normalized_state)
             except Exception as e:
                 logger.error(f'HUD update error: {e}')
 
-        # Save to database
-        self._save_table_state(game_state)
+        # Persist asynchronously to avoid blocking the scraper thread
+        self._schedule_state_persistence(normalized_state)
 
         # Notify all callbacks
         for callback in self.callbacks:
             try:
-                callback(game_state)
+                callback(dict(normalized_state))
             except Exception as e:
                 logger.error(f'Callback error: {e}')
 
     def _enhance_with_ocr(self, game_state: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Enhance game state with OCR-recognized information."""
         try:
-            table_image = game_state.get('table_image')
+            if not self.ocr_engine:
+                return None
+
+            table_image = self._prepare_image(game_state.get('table_image'))
             if table_image is None:
                 return None
 
-            # Convert to numpy array if needed
-            if not isinstance(table_image, np.ndarray):
-                import cv2
-                table_image = cv2.imread(str(table_image)) if isinstance(table_image, str) else table_image
+            enhanced_data: Dict[str, Any] = {}
 
-            enhanced_data = {}
-            recognition_results = []
-
-            # Recognize cards in parallel using thread pool
-            def recognize_region(region: CardRegion) -> Tuple[str, RecognitionResult]:
-                result = self.ocr_engine.recognize_cards(table_image, region)
-                return region.card_type, result
-
-            # Submit recognition tasks
-            futures = []
-            for region in self.card_regions:
-                if region.card_type in ['hole', 'board']:  # Focus on important regions first
-                    future = self.thread_pool.submit_thread_task(recognize_region, region)
-                    futures.append((region.card_type, future))
-
-            # Collect results
-            for region_type, future in futures:
+            for region in self._primary_regions:
                 try:
-                    _, result = future.result(timeout=2.0)
-                    recognition_results.append((region_type, result))
-                    
-                    if result.cards:
-                        enhanced_data[f'{region_type}_cards_ocr'] = result.cards
-                        enhanced_data[f'{region_type}_confidence'] = result.confidence
-                        
-                        # Update stats
-                        self.recognition_stats['successful_recognitions'] += 1
-                        self.recognition_stats['avg_confidence'] = (
-                            (self.recognition_stats['avg_confidence'] * 
-                             (self.recognition_stats['successful_recognitions'] - 1) + 
-                             result.confidence) / self.recognition_stats['successful_recognitions']
-                        )
+                    result = self.ocr_engine.recognize_cards(table_image, region)
+                except Exception as exc:
+                    logger.debug('OCR recognition failed for %s: %s', region.card_type, exc)
+                    self._recognition_stats.record_failure()
+                    continue
+
+                cards = getattr(result, 'cards', None)
+                confidence = float(getattr(result, 'confidence', 0.0) or 0.0)
+
+                if cards:
+                    key_cards = f'{region.card_type}_cards_ocr'
+                    key_conf = f'{region.card_type}_confidence'
+                    existing = enhanced_data.get(key_cards)
+                    if existing:
+                        if isinstance(existing, list):
+                            if isinstance(cards, list):
+                                existing.extend(cards)
+                            else:
+                                existing.append(cards)
+                            enhanced_data[key_cards] = existing
+                        else:
+                            merged = list(existing if isinstance(existing, list) else [existing])
+                            if isinstance(cards, list):
+                                merged.extend(cards)
+                            else:
+                                merged.append(cards)
+                            enhanced_data[key_cards] = merged
                     else:
-                        self.recognition_stats['failed_recognitions'] += 1
-                        
-                except Exception as e:
-                    logger.debug(f'OCR recognition failed for {region_type}: {e}')
-                    self.recognition_stats['failed_recognitions'] += 1
+                        enhanced_data[key_cards] = cards
 
-            self.recognition_stats['total_captures'] += 1
+                    enhanced_data[key_conf] = confidence
+                    self._recognition_stats.record_success(confidence)
+                else:
+                    self._recognition_stats.record_failure()
 
-            # Recognize betting amounts
-            if self.card_regions:
-                betting_regions = [r for r in self.card_regions if r.card_type in ['pot', 'hero_bet']]
-                amounts = self.ocr_engine.recognize_betting_amounts(table_image, betting_regions)
-                enhanced_data.update(amounts)
+            if self._betting_regions and hasattr(self.ocr_engine, 'recognize_betting_amounts'):
+                try:
+                    amounts = self.ocr_engine.recognize_betting_amounts(table_image, list(self._betting_regions))
+                except Exception as exc:
+                    logger.debug('Betting amount recognition failed: %s', exc)
+                else:
+                    if amounts:
+                        enhanced_data.update(amounts)
 
-            # Add OCR metadata
-            enhanced_data['ocr_stats'] = self.recognition_stats.copy()
+            self._recognition_stats.record_capture()
+            enhanced_data['ocr_stats'] = self._recognition_stats.snapshot(self.ocr_engine is not None)
             enhanced_data['ocr_timestamp'] = time.time()
 
             return enhanced_data
 
         except Exception as e:
-            logger.error(f'OCR enhancement failed: {e}')
+            logger.error('OCR enhancement failed: %s', e)
             return None
 
     @retry_on_failure(max_retries=3, delay=1.0)
@@ -397,7 +606,10 @@ class EnhancedScraperManager:
                 if enhanced_data:
                     game_state.update(enhanced_data)
 
-            return game_state
+            normalized_state = self._strip_table_image(game_state)
+            self.last_state = normalized_state
+            self._schedule_state_persistence(normalized_state)
+            return normalized_state
 
         except Exception as e:
             logger.error(f'Single capture failed: {e}')
@@ -409,14 +621,7 @@ class EnhancedScraperManager:
 
     def get_recognition_stats(self) -> Dict[str, Any]:
         """Get OCR recognition statistics."""
-        stats = self.recognition_stats.copy()
-        if stats['total_captures'] > 0:
-            stats['success_rate'] = stats['successful_recognitions'] / stats['total_captures']
-        else:
-            stats['success_rate'] = 0.0
-        
-        stats['ocr_enabled'] = self.ocr_engine is not None
-        return stats
+        return self._recognition_stats.snapshot(self.ocr_engine is not None)
 
     def save_debug_image(self, filename: str = 'debug_table.png') -> bool:
         """Save a debug image of the current table."""
@@ -472,6 +677,13 @@ class EnhancedScraperManager:
 
 # Global enhanced scraper manager instance
 _scraper_manager = EnhancedScraperManager()
+
+# Backwards compatibility -----------------------------------------------------
+
+# Earlier versions exposed a ``ScraperManager`` symbol; keep an alias so
+# existing integrations and historical tests continue to import it without
+# modification.
+ScraperManager = EnhancedScraperManager
 
 def run_screen_scraper(site: str = 'GENERIC', continuous: bool = False, interval: float = 1.0, enable_ocr: bool = True) -> Dict[str, Any]:
     """
@@ -542,177 +754,6 @@ def get_scraper_status() -> Dict[str, Any]:
         'last_state': _scraper_manager.last_state,
         'recognition_stats': _scraper_manager.get_recognition_stats()
     }
-
-def register_table_callback(callback: Callable[[Dict[str, Any]], None]) -> bool:
-    """Register a callback for table state updates."""
-    global _scraper_manager
-
-    try:
-        _scraper_manager.register_callback(callback)
-        return True
-    except Exception as e:
-        logger.error(f'Failed to register callback: {e}')
-        return False
-
-def save_debug_capture(filename: str = 'debug_table.png') -> bool:
-    """Save a debug image of the current table state with OCR regions."""
-    global _scraper_manager
-
-    return _scraper_manager.save_debug_image(filename)
-
-def get_recognition_stats() -> Dict[str, Any]:
-    """Get OCR recognition statistics."""
-    global _scraper_manager
-    
-    return _scraper_manager.get_recognition_stats()
-
-# Async support for API integration
-async def run_screen_scraper_async(site: str = 'GENERIC', enable_ocr: bool = True) -> Dict[str, Any]:
-    """Async version of screen scraper for API integration."""
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, run_screen_scraper, site, False, 1.0, enable_ocr)
-
-# Anti-detection utilities
-def implement_anti_detection() -> Dict[str, Any]:
-    """Implement advanced anti-detection mechanisms for screen scraping."""
-    try:
-        import random
-        import time
-        
-        mechanisms = {}
-        
-        # Random delays between captures
-        def add_random_delay():
-            delay = random.uniform(0.5, 2.0)  # 0.5 to 2 second delay
-            time.sleep(delay)
-            return delay
-        
-        # Simulate human-like mouse movements
-        def simulate_mouse_movement():
-            try:
-                import pyautogui
-                # Get current mouse position
-                current_x, current_y = pyautogui.position()
-                
-                # Small random movement (simulating human jitter)
-                offset_x = random.randint(-10, 10)
-                offset_y = random.randint(-10, 10)
-                
-                new_x = max(0, min(current_x + offset_x, pyautogui.size()[0] - 1))
-                new_y = max(0, min(current_y + offset_y, pyautogui.size()[1] - 1))
-                
-                # Smooth movement
-                pyautogui.moveTo(new_x, new_y, duration=random.uniform(0.1, 0.3))
-                return True
-            except ImportError:
-                logger.warning("pyautogui not available for mouse simulation")
-                return False
-            except Exception as e:
-                logger.debug(f"Mouse simulation failed: {e}")
-                return False
-        
-        # Vary capture intervals
-        def get_varied_interval(base_interval: float = 1.0) -> float:
-            # Add 20% variance to interval
-            variance = base_interval * 0.2
-            return base_interval + random.uniform(-variance, variance)
-        
-        # Process priority simulation (lower CPU usage randomly)
-        def simulate_process_priority():
-            try:
-                import psutil
-                import os
-                
-                current_process = psutil.Process(os.getpid())
-                # Randomly lower priority occasionally
-                if random.random() < 0.1:  # 10% chance
-                    current_process.nice(1)  # Lower priority
-                    time.sleep(random.uniform(0.1, 0.5))
-                    current_process.nice(0)  # Reset to normal
-                return True
-            except ImportError:
-                return False
-            except Exception as e:
-                logger.debug(f"Process priority simulation failed: {e}")
-                return False
-        
-        # Browser fingerprint randomization
-        def randomize_user_agent():
-            user_agents = [
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101'
-            ]
-            return random.choice(user_agents)
-        
-        # Network request timing simulation
-        def add_network_delay():
-            # Simulate network latency
-            delay = random.expovariate(1/0.1)  # Exponential distribution with mean 0.1
-            time.sleep(min(delay, 1.0))  # Cap at 1 second
-            return delay
-        
-        # Test each mechanism
-        mechanisms['random_delays'] = add_random_delay() > 0
-        mechanisms['mouse_movements'] = simulate_mouse_movement()
-        mechanisms['varied_intervals'] = True  # Always available
-        mechanisms['process_priority'] = simulate_process_priority()
-        mechanisms['user_agent_rotation'] = True  # Always available
-        mechanisms['network_simulation'] = add_network_delay() > 0
-        
-        # Store functions for later use
-        global _anti_detection_functions
-        _anti_detection_functions = {
-            'add_delay': add_random_delay,
-            'move_mouse': simulate_mouse_movement,
-            'vary_interval': get_varied_interval,
-            'simulate_priority': simulate_process_priority,
-            'get_user_agent': randomize_user_agent,
-            'network_delay': add_network_delay
-        }
-        
-        # Stealth mode configuration
-        mechanisms['stealth_mode'] = all([
-            mechanisms['random_delays'],
-            mechanisms['varied_intervals'],
-            mechanisms['network_simulation']
-        ])
-        
-        success_count = sum(1 for enabled in mechanisms.values() if enabled)
-        
-        logger.info(f'Anti-detection mechanisms activated: {success_count}/{len(mechanisms)}')
-        return {
-            'status': 'success', 
-            'mechanisms': mechanisms,
-            'success_rate': success_count / len(mechanisms)
-        }
-        
-    except Exception as e:
-        logger.error(f'Failed to implement anti-detection: {e}')
-        return {'status': 'error', 'message': str(e)}
-
-def apply_anti_detection_delay():
-    """Apply anti-detection delay before scraping operations."""
-    try:
-        global _anti_detection_functions
-        if '_anti_detection_functions' in globals():
-            # Random delay
-            _anti_detection_functions['add_delay']()
-            
-            # Occasional mouse movement
-            if random.random() < 0.3:  # 30% chance
-                _anti_detection_functions['move_mouse']()
-            
-            # Network simulation
-            if random.random() < 0.2:  # 20% chance
-                _anti_detection_functions['network_delay']()
-                
-    except Exception as e:
-        logger.debug(f"Anti-detection delay failed: {e}")
-
-# Global storage for anti-detection functions
-_anti_detection_functions = {}
 
 if __name__ == '__main__':
     # Test enhanced scraper functionality
