@@ -260,6 +260,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     argv = list(argv or sys.argv[1:])
     initialize_logging()
 
+    try:
+        from pokertool.automation import ensure_ml_tests_run
+    except Exception as exc:  # pragma: no cover - defensive import guard
+        logger.warning('Unable to load automation helpers', exception=exc)
+    else:
+        try:
+            ensure_ml_tests_run(logger)
+        except Exception as exc:  # pragma: no cover - defensive execution guard
+            logger.warning('ML auto-test execution failed', exception=exc)
+
     # Defaults
     scan_path = Path(os.environ.get('START_SCAN_PATH', str(ROOT))).resolve()
     run_scan = True
