@@ -615,47 +615,57 @@ class IntegratedPokerAssistant(tk.Tk):
         quick_actions_scrollbar.pack(side='right', fill='y')
         quick_actions_canvas.pack(side='left', fill='both', expand=True)
         
-        # Enhanced button styling function
+        # Enhanced button styling function with improved visibility
         def create_action_button(parent, text, icon, command, color, description="", height=3):
             button_frame = tk.Frame(parent, bg=COLORS['bg_medium'])
-            button_frame.pack(fill='x', padx=8, pady=6)
+            button_frame.pack(fill='x', padx=8, pady=8)
             
             button = tk.Button(
                 button_frame,
                 text=f'{icon}  {text}',
-                font=('Arial', 14, 'bold'),
+                font=('Arial', 16, 'bold'),  # Increased from 14 to 16
                 bg=color,
-                fg=COLORS['text_primary'],
+                fg='#FFFFFF',  # Pure white for maximum contrast
                 activebackground=self._brighten_color(color),
-                activeforeground=COLORS['text_primary'],
+                activeforeground='#FFFFFF',
                 relief=tk.RAISED,
-                bd=4,
+                bd=5,  # Increased border
                 height=height,
                 cursor='hand2',
-                command=command
+                command=command,
+                padx=10,
+                pady=8
             )
-            button.pack(fill='x', ipady=5)
+            button.pack(fill='x', ipady=8)  # Increased internal padding
             
-            # Add hover effects
+            # Add hover effects with shadow
             def on_enter(e):
-                button.config(bg=self._brighten_color(color), relief=tk.RIDGE)
+                button.config(
+                    bg=self._brighten_color(color, 0.3),
+                    relief=tk.RIDGE,
+                    bd=6
+                )
             def on_leave(e):
-                button.config(bg=color, relief=tk.RAISED)
+                button.config(
+                    bg=color,
+                    relief=tk.RAISED,
+                    bd=5
+                )
             
             button.bind("<Enter>", on_enter)
             button.bind("<Leave>", on_leave)
             
-            # Add description label if provided
+            # Add description label if provided with improved visibility
             if description:
                 desc_label = tk.Label(
                     button_frame,
                     text=description,
-                    font=('Arial', 9),
+                    font=('Arial', 10, 'italic'),  # Increased from 9 to 10
                     bg=COLORS['bg_medium'],
-                    fg=COLORS['text_secondary'],
-                    wraplength=200
+                    fg='#C8D3E0',  # Lighter color for better visibility
+                    wraplength=220
                 )
-                desc_label.pack(pady=(2, 0))
+                desc_label.pack(pady=(3, 0))
             
             return button
         
