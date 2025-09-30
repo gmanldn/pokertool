@@ -14,7 +14,8 @@
 # Install with: pip install -r requirements.txt
 
 # Core dependencies
-numpy>=1.24.0
+# NOTE: NumPy 1.x is required for compatibility with pytesseract and pandas
+numpy>=1.21.0,<2.0.0
 Pillow>=10.0.0
 
 # Machine Learning dependencies
@@ -25,8 +26,9 @@ tensorflow>=2.13.0
 torch>=2.0.0
 
 # Screen scraping and computer vision
-opencv-python>=4.8.0
-opencv-contrib-python>=4.8.0
+# NOTE: opencv-python 4.9.x is compatible with NumPy 1.x
+opencv-python>=4.8.0,<4.10.0
+opencv-contrib-python>=4.8.0,<4.10.0
 pytesseract>=0.3.10
 mss>=9.0.0
 

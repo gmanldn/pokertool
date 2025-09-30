@@ -19,5 +19,41 @@ echo "Activating pokertool environment..."
 source "/Users/georgeridout/Documents/github/pokertool/venv/bin/activate"
 echo "Environment activated. ONNX Runtime conflicts resolved."
 echo "NumExpr max threads set to 8."
-echo "You can now run: python start.py"
+
+# Check and install critical dependencies upfront
+echo ""
+echo "Checking critical dependencies..."
+python3 -c "
+import subprocess
+import sys
+
+critical_deps = [
+    ('cv2', 'opencv-python'),
+    ('PIL', 'Pillow'),
+    ('pytesseract', 'pytesseract'),
+]
+
+missing = []
+for module_name, package_name in critical_deps:
+    try:
+        __import__(module_name)
+        print(f'✅ {package_name} is available')
+    except ImportError:
+        missing.append(package_name)
+        print(f'❌ {package_name} is MISSING')
+
+if missing:
+    print(f'\n📦 Installing missing dependencies...')
+    for package in missing:
+        try:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
+            print(f'✅ {package} installed')
+        except Exception as e:
+            print(f'⚠️  Failed to install {package}: {e}')
+else:
+    print('\n✅ All critical dependencies are available')
+"
+
+echo ""
+echo "You can now run: python start.py or python run_pokertool.py"
 exec "$SHELL"

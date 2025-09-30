@@ -31,7 +31,7 @@ SRC_DIR = ROOT / 'src'
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-def check_and_install_dependencies():
+def check_and_install_dependencies(silent: bool = False):
     """Check for missing dependencies and install them automatically."""
     # Check NumPy version compatibility first
     needs_numpy_fix = False
@@ -66,6 +66,7 @@ def check_and_install_dependencies():
             print(f"{'='*60}\n")
     
     # Critical dependencies for screen scraping functionality
+    # MUST be installed before application starts
     critical_deps = [
         ('cv2', 'opencv-python'),
         ('PIL', 'Pillow'),
@@ -96,30 +97,43 @@ def check_and_install_dependencies():
     
     # Install missing critical dependencies
     if missing_critical:
-        print(f"\n{'='*60}")
-        print("📦 Installing missing critical dependencies...")
-        print(f"{'='*60}")
+        if not silent:
+            print(f"\n{'='*60}")
+            print("📦 Installing missing critical dependencies...")
+            print(f"{'='*60}")
         for package in missing_critical:
-            print(f"Installing {package}...")
+            if not silent:
+                print(f"Installing {package}...")
             try:
                 subprocess.check_call([
                     sys.executable, '-m', 'pip', 'install', package
                 ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-                print(f"✅ {package} installed successfully")
+                if not silent:
+                    print(f"✅ {package} installed successfully")
             except subprocess.CalledProcessError as e:
                 print(f"⚠️  Failed to install {package}: {e}")
                 print(f"   You may need to install manually: pip install {package}")
     
     # Inform about optional dependencies (but don't auto-install)
-    if missing_optional:
+    if missing_optional and not silent:
         print(f"\n📌 Optional dependencies available for enhanced features:")
         for package in missing_optional:
             print(f"   • {package} - Install with: pip install {package}")
     
-    if missing_critical or missing_optional:
+    if (missing_critical or missing_optional) and not silent:
         print(f"{'='*60}\n")
     
     return len(missing_critical) == 0
+
+# CRITICAL: Check and install dependencies IMMEDIATELY before any other imports
+# This prevents import errors when the application tries to load modules
+print("🔍 Checking critical dependencies before startup...")
+if not check_and_install_dependencies(silent=False):
+    print("⚠️  Some critical dependencies could not be installed automatically.")
+    print("   Please run: pip install opencv-python Pillow pytesseract")
+    print("   Then restart the application.")
+else:
+    print("✅ All critical dependencies are available\n")
 
 # Try to import your logger; if missing, still run with a stub printed by repair script.
 try:
