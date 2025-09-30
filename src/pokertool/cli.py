@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 """
 PokerTool Cli Module
 ======================
@@ -19,7 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation
+    - v28.0.0 (2025-09-29): Enhanced documentation
     - v19.0.0 (2025-09-18): Bug fixes and improvements
     - v18.0.0 (2025-09-15): Initial implementation
 """
@@ -30,8 +32,6 @@ __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
-
-from __future__ import annotations
 
 import argparse
 import sys
@@ -59,7 +59,13 @@ def main(argv=None):
         # Check if tkinter is available before importing GUI
         try:
             import tkinter
-            tkinter._test()  # Basic tkinter test
+            # Silent availability check without showing a demo window
+            root = tkinter.Tk()
+            try:
+                root.withdraw()
+                root.update_idletasks()
+            finally:
+                root.destroy()
         except Exception as e:
             logger.error(f'GUI not available: {e}')
             logger.info('Tkinter is not available on this system.')

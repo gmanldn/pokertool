@@ -3,7 +3,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: apply_headers.py
-# version: v20.0.0
+# version: v28.0.0
 # last_commit: '2025-09-23T08:41:38+01:00'
 # fixes:
 # - date: '2025-09-25'
@@ -18,7 +18,7 @@ __version__ = '20'
 Apply or update machine-readable headers across the repo.
 
 Usage:
-    python3 apply_headers.py --version v20.0.0 \
+    python3 apply_headers.py --version v28.0.0 \
     --fix 'Initial v20 header applied'
 
     Optional:
@@ -238,7 +238,7 @@ def should_consider(path: Path, includes: List[str], excludes: List[str]) -> boo
 def main():
     """Main entry point."""
     ap = argparse.ArgumentParser()
-    ap.add_argument('--version', required=True, help='e.g., v20.0.0')
+    ap.add_argument('--version', required=True, help='e.g., v28.0.0')
     ap.add_argument('--fix', action='append', default=[], 
                     help='append a fixes entry; repeatable')
     ap.add_argument('--dry-run', action='store_true')

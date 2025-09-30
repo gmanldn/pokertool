@@ -344,7 +344,7 @@ enhanced_vectorcode_integration.py
             if headers_script.exists():
                 result = subprocess.run([
                     "python", str(headers_script),
-                    "--version", "v20.0.0",
+                    "--version", "v28.0.0",
                     "--fix", "Enhanced enterprise documentation and comprehensive unit tests added"
                 ], cwd=self.repo_path, capture_output=True, text=True)
                 
@@ -427,7 +427,7 @@ enhanced_vectorcode_integration.py
                 return True
             
             # Create comprehensive commit message
-            commit_message = f"""feat: Enterprise-grade enhancements for PokerTool v20.0.0
+            commit_message = f"""feat: Enterprise-grade enhancements for PokerTool v28.0.0
 
 Applied comprehensive improvements including:
 

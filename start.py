@@ -3,7 +3,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v20.0.0
+# version: v28.0.0
 # last_commit: '2025-09-23T08:41:38+01:00'
 # fixes:
 # - date: '2025-09-25'
@@ -23,6 +23,10 @@ import subprocess
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+SRC_DIR = ROOT / 'src'
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
 # Try to import your logger; if missing, still run with a stub printed by repair script.
 try:
@@ -108,7 +112,7 @@ def _internal_quick_syntax_scan(scan_path: Path) -> int:
     logger.info('Internal syntax scan passed (no errors)')
     return 0
 
-def run_code_scan(python: str, scan_path: Path) -> int:
+def run_code_scan(python: str, scan_path: Path, *, quick: bool = True, auto_fix: bool = True) -> int:
     """
     Try to run ./code_scan.py. Auto-detect flags. If not present or failing,
     fallback to internal scan.
@@ -122,6 +126,65 @@ def run_code_scan(python: str, scan_path: Path) -> int:
         logger.info("Skipping preflight code scan due to START_NO_SCAN = 1")
         return 0
 
+    dry_run_requested = os.environ.get('START_SCAN_DRY_RUN') == '1'
+    no_backup_requested = os.environ.get('START_NO_BACKUP') == '1'
+
+    try:
+        import code_scan  # type: ignore
+
+        if hasattr(code_scan, 'scan_and_fix'):
+            logger.info(
+                'Running code_scan.scan_and_fix via import',
+                quick=quick,
+                auto_fix=auto_fix,
+                dry_run=dry_run_requested,
+                no_backup=no_backup_requested,
+                scan_path=str(scan_path)
+            )
+            kwargs = {
+                'root': ROOT,
+                'quick': quick,
+                'auto_fix': auto_fix,
+            }
+            if scan_path:
+                kwargs['path'] = str(scan_path)
+            if dry_run_requested:
+                kwargs['dry_run'] = True
+            if no_backup_requested:
+                kwargs['no_backup'] = True
+
+            try:
+                result = code_scan.scan_and_fix(**kwargs)  # type: ignore[attr-defined]
+            except TypeError:
+                # Older implementations may not accept optional keywords
+                result = code_scan.scan_and_fix(  # type: ignore[attr-defined]
+                    ROOT,
+                    quick=quick,
+                    auto_fix=auto_fix,
+                )
+            errs = getattr(result, 'errors', None)
+            fixed = getattr(result, 'fixed', None)
+            if errs is not None or fixed is not None:
+                logger.info('Code scan finished', errors=errs, fixed=fixed)
+            return 0
+
+        if hasattr(code_scan, 'main'):
+            args = ['--root', str(ROOT)]
+            if scan_path and scan_path != ROOT:
+                args += ['--path', str(scan_path)]
+            args.append('--autofix' if auto_fix else '--no-autofix')
+            args.append('--quick' if quick else '--full')
+            if dry_run_requested:
+                args.append('--dry-run')
+            if no_backup_requested:
+                args.append('--no-backup')
+
+            logger.info('Running code_scan.main via import', args=args)
+            return int(code_scan.main(args))  # type: ignore[attr-defined]
+
+    except Exception as e:
+        logger.warning('Importing code_scan failed; falling back to subprocess', exception=e)
+
     script = ROOT / 'code_scan.py'
     if not script.exists():
         logger.warning("code_scan.py not found; using internal quick syntax scan")
@@ -129,46 +192,67 @@ def run_code_scan(python: str, scan_path: Path) -> int:
 
     flags = _detect_scanner_flags(python, script)
     args = [python, str(script)]
-    used_any = False
 
-    # Prefer path if supported
     if flags['path']:
         args += ['--path', str(scan_path)]
-        used_any = True
 
-    # Optional flags gated by envs
-    if os.environ.get('START_SCAN_DRY_RUN') == '1' and flags['dry_run']:
+    args.append('--autofix' if auto_fix else '--no-autofix')
+    args.append('--quick' if quick else '--full')
+
+    if dry_run_requested and flags['dry_run']:
         args.append('--dry-run')
-        used_any = True
-    if os.environ.get('START_NO_BACKUP') == '1' and flags['no_backup']:
+    if no_backup_requested and flags['no_backup']:
         args.append('--no-backup')
-        used_any = True
 
-    # If nothing was detected, still try a bare run; if that fails, use internal scan
     logger.info('Running code_scan.py', command=_log_cmd(args))
     completed = subprocess.run(args, cwd=str(ROOT))
     if completed.returncode != 0:
-        logger.warning("code_scan.py non-zero or incompatible; running internal syntax scan",
-                      returncode=completed.returncode)
+        logger.warning(
+            "code_scan.py non-zero or incompatible; running internal syntax scan",
+            returncode=completed.returncode
+        )
         return _internal_quick_syntax_scan(scan_path)
     return 0
 
-def launch_poker_go(python: str, passthrough_args: Sequence[str]) -> int:
-    """
-    Launch tools/poker_go.py with cwd = repo root and PYTHONPATH including repo root
-    so 'from logger import ...' resolves when script lives under tools/.
-    """
-    poker_go = ROOT / 'tools' / 'poker_go.py'
-    if not poker_go.exists():
-        logger.critical('tools/poker_go.py not found', path=str(poker_go))
-        return 2
+def _launch_cli_directly(passthrough_args: Sequence[str]) -> int:
+    """Attempt to launch the PokerTool CLI directly inside the current process."""
+    try:
+        from pokertool import cli as cli_module
+        logger.info('Launching pokertool.cli directly')
+        return int(cli_module.main(list(passthrough_args)))
+    except ImportError as e:
+        logger.warning('Direct CLI import failed; falling back to script discovery', exception=e)
+    except Exception as e:
+        logger.error('pokertool.cli execution error', exception=e)
+        return 1
 
-    cmd = [python, str(poker_go), *passthrough_args]
+    return _launch_via_fallback_scripts(passthrough_args)
+
+
+def _launch_via_fallback_scripts(passthrough_args: Sequence[str]) -> int:
+    """Fallback: try to execute known launcher scripts via subprocess."""
+    candidate_scripts = [
+        ROOT / 'src' / 'pokertool' / 'cli.py',
+        ROOT / 'tools' / 'poker_go.py',
+        ROOT / 'tools' / 'enhanced_poker_gui.py',
+        ROOT / 'launch_pokertool.py',
+    ]
+
     env = os.environ.copy()
-    env['PYTHONPATH'] = f'{str(ROOT)}' + (os.pathsep + env['PYTHONPATH'] if 'PYTHONPATH' in env else '')
-    logger.info('Launching poker_go.py', command=_log_cmd(cmd), PYTHONPATH=env.get('PYTHONPATH'))
-    completed = subprocess.run(cmd, cwd=str(ROOT), env=env)
-    return int(completed.returncode)
+    pythonpath_parts = [str(ROOT), str(SRC_DIR)]
+    if 'PYTHONPATH' in env:
+        pythonpath_parts.append(env['PYTHONPATH'])
+    env['PYTHONPATH'] = os.pathsep.join(pythonpath_parts)
+
+    for script in candidate_scripts:
+        if script.exists():
+            cmd = [sys.executable, str(script), *passthrough_args]
+            logger.info('Launching fallback script', command=_log_cmd(cmd), script=str(script))
+            completed = subprocess.run(cmd, cwd=str(ROOT), env=env)
+            return int(completed.returncode)
+
+    logger.warning('No executable fallback launcher found', candidates=[str(p) for p in candidate_scripts])
+    return 0
 
 @log_exceptions
 def main(argv: Sequence[str] | None = None) -> int:
@@ -176,8 +260,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     argv = list(argv or sys.argv[1:])
     initialize_logging()
 
+    try:
+        from pokertool.automation import ensure_ml_tests_run
+    except Exception as exc:  # pragma: no cover - defensive import guard
+        logger.warning('Unable to load automation helpers', exception=exc)
+    else:
+        try:
+            ensure_ml_tests_run(logger)
+        except Exception as exc:  # pragma: no cover - defensive execution guard
+            logger.warning('ML auto-test execution failed', exception=exc)
+
     # Defaults
     scan_path = Path(os.environ.get('START_SCAN_PATH', str(ROOT))).resolve()
+    run_scan = True
+    quick_scan = True
+    auto_fix = True
     passthrough: list[str] = []
 
     # Minimal passthrough arg split: everything after '--' goes to poker_go.py
@@ -185,21 +282,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         a = argv.pop(0)
         if a == '--scan-path' and argv:
             scan_path = Path(argv.pop(0)).resolve()
+        elif a == '--no-scan':
+            run_scan = False
+        elif a == '--no-fix':
+            auto_fix = False
+        elif a == '--full-scan':
+            quick_scan = False
         elif a == '--':
             passthrough = argv[:]
             break
         else:
             passthrough.append(a)
 
-    rc = run_code_scan(sys.executable, scan_path)
-    if rc != 0:
-        logger.warning('Proceeding despite scan issues', returncode=rc)
+    if run_scan:
+        rc = run_code_scan(sys.executable, scan_path, quick=quick_scan, auto_fix=auto_fix)
+        if rc != 0:
+            logger.warning('Proceeding despite scan issues', returncode=rc)
+    else:
+        logger.info('Skipping preflight scan (requested via flag)')
 
     try:
         logger.info('Starting poker tool application')
         test_value = {'cards': ["As", "Kh"], 'position': 'BTN'}
         logger.debug('Test debug message', test_data=test_value)
-        app_rc = launch_poker_go(sys.executable, passthrough)
+        app_rc = _launch_cli_directly(passthrough)
     except Exception as e:
         logger.critical('Application failed to start', exception=e)
         return 1

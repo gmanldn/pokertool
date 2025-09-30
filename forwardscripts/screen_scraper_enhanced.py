@@ -5,7 +5,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: screen_scraper_enhanced.py
-# version: v20.0.0
+# version: v28.0.0
 # last_updated_utc: '2025-09-23T12:00:00.000000+00:00'
 # applied_improvements:
 # - ScreenScraper_Enhancement_1
@@ -648,8 +648,7 @@ class EnhancedTextRecognizer:
     
     def _extract_numbers_from_text(self, text: str) -> List[float]:
         """Extract all numbers from text."""
-        numbers = []
-        
+        numbers: List[float] = []
         matches = self.number_pattern.findall(text)
         for match in matches:
             try:
@@ -658,19 +657,7 @@ class EnhancedTextRecognizer:
                 numbers.append(float(clean_num))
             except ValueError:
                 continue
-            
-            seat_region = self.config.regions[seat_key]
-            seat_center_x = seat_region.x + seat_region.width // 2
-            seat_center_y = seat_region.y + seat_region.height // 2
-            
-            distance = np.sqrt((x - seat_center_x)**2 + (y - seat_center_y)**2)
-            
-            if distance < min_distance:
-                min_distance = distance
-                closest_seat = seat_num
-        
-        # Only return if reasonably close (within 100 pixels)
-        return closest_seat if min_distance < 100 else None
+        return numbers
     
     def _update_performance_stats(self, processing_time: float, success: bool):
         """Update performance statistics."""
@@ -1034,8 +1021,6 @@ if __name__ == "__main__":
     # Run basic test
     test_screen_scraper()
 
-        
-        return numbers
 
 
 class EnhancedButtonDetector:
@@ -1085,7 +1070,7 @@ class EnhancedButtonDetector:
                             M = cv2.moments(contour)
                             if M["m00"] != 0:
                                 cx = int(M["m10"] / M["m00"])
-                                cy = int M["m01"] / M["m00"])
+                                cy = int(M["m01"] / M["m00"])
                                 return (cx, cy)
             
             return None
@@ -1389,12 +1374,24 @@ class EnhancedPokerScreenScraper:
     def _position_to_seat(self, position: Tuple[int, int]) -> Optional[int]:
         """Convert pixel position to seat number."""
         x, y = position
-        
+
         # Find closest seat region
         min_distance = float('inf')
         closest_seat = None
-        
+
         for seat_num in range(1, 7):
             seat_key = f'seat_{seat_num}'
             if seat_key not in self.config.regions:
-                
+                continue
+            seat_region = self.config.regions[seat_key]
+            seat_center_x = seat_region.x + seat_region.width // 2
+            seat_center_y = seat_region.y + seat_region.height // 2
+
+            distance = np.sqrt((x - seat_center_x)**2 + (y - seat_center_y)**2)
+
+            if distance < min_distance:
+                min_distance = distance
+                closest_seat = seat_num
+
+        # Only return if reasonably close (within 100 pixels)
+        return closest_seat if min_distance < 100 else None

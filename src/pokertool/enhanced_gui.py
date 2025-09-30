@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 """
 PokerTool Enhanced Gui Module
 ===============================
@@ -19,7 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation
+    - v28.0.0 (2025-09-29): Enhanced documentation
     - v19.0.0 (2025-09-18): Bug fixes and improvements
     - v18.0.0 (2025-09-15): Initial implementation
 """
@@ -30,8 +32,6 @@ __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
-
-from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk, messagebox, font
@@ -68,6 +68,14 @@ try:
 except ImportError as e:
     print(f'Warning: Screen scraper not loaded: {e}')
     SCREEN_SCRAPER_LOADED = False
+
+# Import enhanced scraper manager utilities
+try:
+    from .scrape import run_screen_scraper, stop_screen_scraper
+    ENHANCED_SCRAPER_LOADED = True
+except ImportError as e:
+    print(f'Warning: Enhanced screen scraper not loaded: {e}')
+    ENHANCED_SCRAPER_LOADED = False
 
 # Enhanced color scheme with autopilot colors
 COLORS = {
@@ -406,7 +414,8 @@ class IntegratedPokerAssistant(tk.Tk):
         self.gto_solver = None
         self.opponent_modeler = None
         self.multi_table_manager = None
-        
+        self._enhanced_scraper_started = False
+
         # Initialize modules
         self._init_modules()
         self._setup_styles()
@@ -415,6 +424,9 @@ class IntegratedPokerAssistant(tk.Tk):
         
         # Start background services
         self._start_background_services()
+
+        # Ensure graceful shutdown including scraper cleanup
+        self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
     
     def _init_modules(self):
         """Initialize all poker tool modules."""
@@ -850,12 +862,78 @@ class IntegratedPokerAssistant(tk.Tk):
     def _start_background_services(self):
         """Start background monitoring services."""
         try:
-            # Initialize table monitor
+            started_services = []
+
             if self.multi_table_manager:
                 self.multi_table_manager.start_monitoring()
-                log("Background services started")
+                started_services.append('table monitoring')
+
+            if self._start_enhanced_screen_scraper():
+                started_services.append('enhanced screen scraper')
+
+            if started_services:
+                log.info('Background services started: %s', ', '.join(started_services))
+
         except Exception as e:
-            log(f"Background services error: {e}")
+            log.warning('Background services error: %s', e)
+
+    def _start_enhanced_screen_scraper(self) -> bool:
+        """Start the enhanced screen scraper in continuous mode."""
+        if not ENHANCED_SCRAPER_LOADED or self._enhanced_scraper_started:
+            return False
+
+        try:
+            site = getattr(self.autopilot_panel.state, 'site', 'GENERIC')
+            result = run_screen_scraper(
+                site=site,
+                continuous=True,
+                interval=1.0,
+                enable_ocr=True
+            )
+
+            if result.get('status') == 'success':
+                self._enhanced_scraper_started = True
+                status_line = '✅ Enhanced screen scraper running (continuous mode)'
+                if result.get('ocr_enabled'):
+                    status_line += ' with OCR'
+                self._update_table_status(status_line + '\n')
+                log.info('Enhanced screen scraper started automatically (site=%s)', site)
+                return True
+
+            failure_message = result.get('message', 'unknown error')
+            self._update_table_status(f"❌ Enhanced screen scraper failed to start: {failure_message}\n")
+            log.warning('Enhanced screen scraper failed to start: %s', failure_message)
+            return False
+
+        except Exception as e:
+            self._update_table_status(f"❌ Enhanced screen scraper error: {e}\n")
+            log.error('Enhanced screen scraper error: %s', e)
+            return False
+
+    def _stop_enhanced_screen_scraper(self) -> None:
+        """Stop the enhanced screen scraper if it was started."""
+        if not (ENHANCED_SCRAPER_LOADED and self._enhanced_scraper_started):
+            return
+
+        try:
+            stop_screen_scraper()
+            log.info('Enhanced screen scraper stopped')
+        except Exception as e:
+            log.warning('Enhanced screen scraper stop error: %s', e)
+        finally:
+            self._enhanced_scraper_started = False
+
+    def _handle_app_exit(self):
+        """Handle window close events to ensure clean shutdown."""
+        try:
+            if self.autopilot_active:
+                self.autopilot_active = False
+                self._stop_autopilot()
+        except Exception as e:
+            log.warning('Autopilot shutdown error: %s', e)
+        finally:
+            self._stop_enhanced_screen_scraper()
+            self.destroy()
 
 
 # Main application entry point

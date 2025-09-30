@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 """
 PokerTool Error Handling Module
 ================================
@@ -41,7 +43,7 @@ Decorators:
     - @log_errors: Error logging
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added circuit breaker
+    - v28.0.0 (2025-09-29): Enhanced documentation, added circuit breaker
     - v19.0.0 (2025-09-18): Retry logic implementation
     - v18.0.0 (2025-09-15): Initial error handling
 """
@@ -52,8 +54,6 @@ __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
-
-from __future__ import annotations
 
 """
 error_handling.py — centralised error handling & logging (clean version).

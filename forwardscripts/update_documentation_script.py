@@ -4,7 +4,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: update_documentation_script.py
-# version: v20.0.0
+# version: v28.0.0
 # last_commit: '2025-09-23T15:20:12.142288+00:00'
 # fixes:
 # - date: '2025-09-25'
@@ -130,7 +130,7 @@ Functions:
     - analyse_hand: Analyze poker hand strength and provide strategic advice
 
 Change Log:
-    - v20.0.0 ({date}): Enhanced documentation, added type hints
+    - v28.0.0 ({date}): Enhanced documentation, added type hints
     - v19.0.0 (2025-09-18): Fixed syntax errors
     - v18.0.0 (2025-09-15): Initial production release
 """
@@ -184,7 +184,7 @@ Security Features:
     - Circuit breaker pattern
 
 Change Log:
-    - v20.0.0 ({date}): Enhanced documentation, improved security
+    - v28.0.0 ({date}): Enhanced documentation, improved security
     - v19.0.0 (2025-09-18): Fixed JWT import issue
     - v18.0.0 (2025-09-15): Initial API implementation
 """
@@ -235,3 +235,60 @@ Configuration:
     - POKERTOOL_DB_HOST: PostgreSQL host
     - POKERTOOL_DB_PORT: PostgreSQL port
     - POKERTOOL_DB_NAME: Database name
+    - POKERTOOL_DB_USER: Database user
+    - POKERTOOL_DB_PASSWORD: Database password
+    - POKERTOOL_DB_SSLMODE: 'require' or 'disable'
+
+Change Log:
+    - v28.0.0 ({date}): Enhanced documentation and safety notes
+    - v19.0.0 (2025-09-18): Initial production DB abstraction
+"""
+
+__version__ = '20.0.0'
+__author__ = 'PokerTool Development Team'
+__copyright__ = 'Copyright (c) 2025 PokerTool'
+__license__ = 'MIT'
+__maintainer__ = 'George Ridout'
+__status__ = 'Production'
+''',
+
+    }
+
+    # Default minimal header if specific module not listed
+    default_header = '''#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+{module_title}
+{underline}
+
+Auto-generated documentation header for {module_name}.
+
+Module: pokertool.{module_stem}
+Version: 20.0.0
+Last Modified: {date}
+Author: PokerTool Development Team
+License: MIT
+"""
+
+__version__ = '20.0.0'
+__author__ = 'PokerTool Development Team'
+__license__ = 'MIT'
+__maintainer__ = 'George Ridout'
+__status__ = 'Production'
+'''
+
+    date = datetime.now().strftime('%Y-%m-%d')
+    template = headers.get(module_name)
+    if template is None:
+        stem = Path(module_name).stem
+        module_title = f"{stem.replace('_', ' ').title()} Module"
+        underline = '=' * len(module_title)
+        return default_header.format(
+            module_title=module_title,
+            underline=underline,
+            module_name=module_name,
+            module_stem=stem,
+            date=date,
+        )
+    return template.format(date=date)

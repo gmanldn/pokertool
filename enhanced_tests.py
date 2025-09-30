@@ -5,7 +5,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: enhanced_tests.py
-# version: v20.0.0
+# version: v28.0.0
 # last_updated_utc: '2025-09-23T12:00:00.000000+00:00'
 # applied_improvements:
 # - Enhanced_Tests_1
@@ -24,14 +24,18 @@ Comprehensive test suite for the improved GUI and screen scraping functionality.
 
 import pytest
 import numpy as np
-import cv2
 import json
 import time
 import threading
 from unittest.mock import Mock, MagicMock, patch, PropertyMock
 from pathlib import Path
 import tempfile
-import tkinter as tk
+try:
+    import tkinter as tk
+    TK_AVAILABLE = True
+except Exception:  # pragma: no cover - environment-specific
+    tk = None
+    TK_AVAILABLE = False
 from typing import List, Dict, Any, Optional
 
 # Import components to test
@@ -150,14 +154,17 @@ def temp_session_file():
 # ENHANCED GUI TESTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE, reason="Enhanced GUI not available")
+@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE or not TK_AVAILABLE, reason="Enhanced GUI not available")
 class TestEnhancedCardEntry:
     """Test enhanced card entry widget."""
     
     def setup_method(self):
         """Setup for each test method."""
         # Create a temporary root for testing
-        self.root = tk.Tk()
+        try:
+            self.root = tk.Tk()
+        except tk.TclError as exc:
+            pytest.skip(f"Tkinter display not available: {exc}")
         self.root.withdraw()  # Hide the test window
         
         self.callback_called = False
@@ -236,13 +243,16 @@ class TestEnhancedCardEntry:
         assert self.entry.validation_state == ValidationState.VALID
 
 
-@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE, reason="Enhanced GUI not available")
+@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE or not TK_AVAILABLE, reason="Enhanced GUI not available")
 class TestStatusBar:
     """Test status bar component."""
     
     def setup_method(self):
         """Setup for each test method."""
-        self.root = tk.Tk()
+        try:
+            self.root = tk.Tk()
+        except tk.TclError as exc:
+            pytest.skip(f"Tkinter display not available: {exc}")
         self.root.withdraw()
         self.status_bar = StatusBar(self.root)
     
@@ -278,7 +288,7 @@ class TestStatusBar:
         assert 'Permanent message' in self.status_bar.status_label.cget('text')
 
 
-@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE, reason="Enhanced GUI not available")
+@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE or not TK_AVAILABLE, reason="Enhanced GUI not available")
 class TestEnhancedPokerAssistant:
     """Test main enhanced GUI application."""
     
@@ -404,7 +414,7 @@ class TestTableState:
             hero_cards=sample_cards[:2],
             board_cards=sample_cards[2:5],
             stage="flop",
-            active_players=6
+            active_players=6,
         )
         
         assert state.pot_size == 25.5
@@ -416,4 +426,12 @@ class TestTableState:
     
     def test_hash_generation(self, sample_cards):
         """Test hash generation for change detection."""
-        state1 = TableState(pot_size=25.5, hero_cards=sample
+        state1 = TableState(pot_size=25.5, hero_cards=sample_cards[:2])
+        state2 = TableState(pot_size=25.5, hero_cards=sample_cards[:2])
+        state3 = TableState(pot_size=30.0, hero_cards=sample_cards[:2])
+        
+        # Same state should have same hash
+        assert state1.hash_signature == state2.hash_signature
+        
+        # Different state should have different hash
+        assert state1.hash_signature != state3.hash_signature

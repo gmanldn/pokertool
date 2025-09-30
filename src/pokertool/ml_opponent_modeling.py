@@ -19,7 +19,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation
+    - v28.0.0 (2025-09-29): Enhanced documentation
     - v19.0.0 (2025-09-18): Bug fixes and improvements
     - v18.0.0 (2025-09-15): Initial implementation
 """
@@ -52,15 +52,13 @@ def _disable_coreml_provider():
 # Apply the patch
 _disable_coreml_provider()
 
-
-
-import os
 import logging
 import time
 import pickle
 import hashlib
 import json
-from typing import Dict, List, Optional, Tuple, Any, Union
+from collections import deque
+from typing import Any, Deque, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
@@ -164,6 +162,10 @@ class PlayerStats:
     position_stats: Dict[str, Dict[str, float]] = field(default_factory=dict)
     street_stats: Dict[str, Dict[str, float]] = field(default_factory=dict)
     last_updated: float = field(default_factory=time.time)
+    recent_vpip_actions: Deque[bool] = field(default_factory=lambda: deque(maxlen=100))
+    recent_pfr_actions: Deque[bool] = field(default_factory=lambda: deque(maxlen=100))
+    _recent_vpip_true_count: int = field(default=0, repr=False)
+    _recent_pfr_true_count: int = field(default=0, repr=False)
     
     def get_player_type(self) -> PlayerType:
         """Classify player type based on stats."""
@@ -356,17 +358,23 @@ class FeatureEngineering:
         total_actions = len(hand_history.actions)
         if total_actions == 0:
             return 0.0, 0.0, 0.0
-        
-        betting_count = sum(1 for _, action, _ in hand_history.actions 
-                           if action in [Action.BET, Action.RAISE])
-        check_count = sum(1 for _, action, _ in hand_history.actions 
-                         if action == Action.CHECK)
-        fold_count = sum(1 for _, action, _ in hand_history.actions 
-                        if action == Action.FOLD)
-        
-        return (betting_count / total_actions, 
-                check_count / total_actions, 
-                fold_count / total_actions)
+
+        betting_count = 0
+        check_count = 0
+        fold_count = 0
+        for _, action, _ in hand_history.actions:
+            if action in (Action.BET, Action.RAISE):
+                betting_count += 1
+            elif action == Action.CHECK:
+                check_count += 1
+            elif action == Action.FOLD:
+                fold_count += 1
+
+        return (
+            betting_count / total_actions,
+            check_count / total_actions,
+            fold_count / total_actions,
+        )
     
     def _calculate_recent_win_rate(self, player_stats: PlayerStats) -> float:
         """Calculate recent win rate."""
@@ -793,25 +801,42 @@ class OpponentModelingSystem:
         stats.hands_observed += 1
         
         # Update VPIP (voluntarily put money in pot)
-        if any(action in [Action.CALL, Action.BET, Action.RAISE] 
-               for _, action, _ in hand_history.actions):
-            vpip_count = sum(1 for h in self.hand_histories[player_id][-100:]
-                           if any(action in [Action.CALL, Action.BET, Action.RAISE] 
-                                 for _, action, _ in h.actions))
-            stats.vpip = vpip_count / min(len(self.hand_histories[player_id]), 100)
-        
+        vpip_hand = any(
+            action in (Action.CALL, Action.BET, Action.RAISE)
+            for _, action, _ in hand_history.actions
+        )
+        if stats.recent_vpip_actions.maxlen and len(stats.recent_vpip_actions) == stats.recent_vpip_actions.maxlen:
+            removed = stats.recent_vpip_actions.popleft()
+            if removed:
+                stats._recent_vpip_true_count -= 1
+        stats.recent_vpip_actions.append(vpip_hand)
+        if vpip_hand:
+            stats._recent_vpip_true_count += 1
+        stats.vpip = stats._recent_vpip_true_count / max(len(stats.recent_vpip_actions), 1)
+
         # Update PFR (preflop raise)
-        preflop_raises = sum(1 for h in self.hand_histories[player_id][-100:]
-                           if any(street == 'preflop' and action in [Action.BET, Action.RAISE]
-                                 for street, action, _ in h.actions))
-        stats.pfr = preflop_raises / min(len(self.hand_histories[player_id]), 100)
-        
-        # Update aggression factor
-        aggressive_actions = sum(1 for _, action, _ in hand_history.actions
-                               if action in [Action.BET, Action.RAISE])
-        passive_actions = sum(1 for _, action, _ in hand_history.actions
-                            if action in [Action.CALL, Action.CHECK])
-        
+        preflop_raise_hand = any(
+            street == 'preflop' and action in (Action.BET, Action.RAISE)
+            for street, action, _ in hand_history.actions
+        )
+        if stats.recent_pfr_actions.maxlen and len(stats.recent_pfr_actions) == stats.recent_pfr_actions.maxlen:
+            removed = stats.recent_pfr_actions.popleft()
+            if removed:
+                stats._recent_pfr_true_count -= 1
+        stats.recent_pfr_actions.append(preflop_raise_hand)
+        if preflop_raise_hand:
+            stats._recent_pfr_true_count += 1
+        stats.pfr = stats._recent_pfr_true_count / max(len(stats.recent_pfr_actions), 1)
+
+        # Update aggression factor using single pass counts
+        aggressive_actions = 0
+        passive_actions = 0
+        for _, action, _ in hand_history.actions:
+            if action in (Action.BET, Action.RAISE):
+                aggressive_actions += 1
+            elif action in (Action.CALL, Action.CHECK):
+                passive_actions += 1
+
         if passive_actions > 0:
             hand_aggression = aggressive_actions / passive_actions
             # Moving average of aggression factor

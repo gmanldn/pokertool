@@ -40,7 +40,7 @@ Configuration:
     - POKERTOOL_DB_PASSWORD: Database password
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added connection pooling
+    - v28.0.0 (2025-09-29): Enhanced documentation, added connection pooling
     - v19.0.0 (2025-09-18): PostgreSQL integration
     - v18.0.0 (2025-09-15): Initial database abstraction
 """

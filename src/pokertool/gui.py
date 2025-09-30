@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 """
 PokerTool GUI Application
 ==========================
@@ -38,7 +40,7 @@ Features:
     - Export functionality
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, improved UI
+    - v28.0.0 (2025-09-29): Enhanced documentation, improved UI
     - v19.0.0 (2025-09-18): Added dark mode support
     - v18.0.0 (2025-09-15): Initial GUI implementation
 """
@@ -49,8 +51,6 @@ __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
-
-from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk, messagebox, font

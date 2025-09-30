@@ -37,7 +37,7 @@ Task Priorities:
     - LOW: Background tasks
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added metrics
+    - v28.0.0 (2025-09-29): Enhanced documentation, added metrics
     - v19.0.0 (2025-09-18): Priority queue implementation
     - v18.0.0 (2025-09-15): Initial threading support
 """

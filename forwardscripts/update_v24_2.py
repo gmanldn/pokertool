@@ -8,13 +8,14 @@ POKERTOOL-HEADER-START
 # schema: pokerheader.v1
 # project: pokertool
 # file: update_v24_2.py
-# version: v20.0.0
+# version: v28.0.0
 # last_commit: '2025-09-23T08:41:38+01:00'
 # fixes:
 # - date: '2025-09-25'
 #   summary: Enhanced enterprise documentation and comprehensive unit tests added
 # ---
 # POKERTOOL-HEADER-END
+"""
 
 import re
 import subprocess
@@ -48,9 +49,7 @@ def get_git_metadata() -> dict[str, str]:
     }
 
 def extract_existing_header(text: str) -> tuple[str, dict]:
-    """
-    Returns (new_text_without_header, parsed_header_dict or {}).
-    """
+    """Returns (new_text_without_header, parsed_header_dict or {})."""
     start_idx = text.find(HEADER_START)
     end_idx = text.find(HEADER_END)
     if start_idx == -1 or end_idx == -1:
