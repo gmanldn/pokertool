@@ -43,11 +43,11 @@ python3 run_pokertool.py --help
 ## ✅ Test Results
 
 ### Module Import Tests (5/6 Passed)
-- ✅ Core poker logic (src.pokertool.core) v20.0.0
-- ✅ GUI interface (src.pokertool.gui) v20.0.0  
-- ✅ Command-line interface (src.pokertool.cli) v20.0.0
-- ✅ Error handling (src.pokertool.error_handling) v20.0.0
-- ✅ Enhanced GUI (src.pokertool.enhanced_gui) v20.0.0
+- ✅ Core poker logic (src.pokertool.core) v28.0.0
+- ✅ GUI interface (src.pokertool.gui) v28.0.0  
+- ✅ Command-line interface (src.pokertool.cli) v28.0.0
+- ✅ Error handling (src.pokertool.error_handling) v28.0.0
+- ✅ Enhanced GUI (src.pokertool.enhanced_gui) v28.0.0
 - ⚠️ API interface - Requires numpy (optional, not critical)
 
 ### Functionality Tests (All Passed)

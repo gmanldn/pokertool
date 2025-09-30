@@ -37,7 +37,7 @@ Database Schema:
     - audit_log: Security audit trail
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added encryption
+    - v28.0.0 (2025-09-29): Enhanced documentation, added encryption
     - v19.0.0 (2025-09-18): Security improvements
     - v18.0.0 (2025-09-15): Initial storage implementation
 """

@@ -30,7 +30,7 @@ Functions:
     - analyse_hand: Analyze poker hand strength and provide strategic advice
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added type hints
+    - v28.0.0 (2025-09-29): Enhanced documentation, added type hints
     - v19.0.0 (2025-09-18): Fixed syntax errors
     - v18.0.0 (2025-09-15): Initial production release
 """

@@ -4,7 +4,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: update_documentation_script.py
-# version: v20.0.0
+# version: v28.0.0
 # last_commit: '2025-09-23T15:20:12.142288+00:00'
 # fixes:
 # - date: '2025-09-25'
@@ -130,7 +130,7 @@ Functions:
     - analyse_hand: Analyze poker hand strength and provide strategic advice
 
 Change Log:
-    - v20.0.0 ({date}): Enhanced documentation, added type hints
+    - v28.0.0 ({date}): Enhanced documentation, added type hints
     - v19.0.0 (2025-09-18): Fixed syntax errors
     - v18.0.0 (2025-09-15): Initial production release
 """
@@ -184,7 +184,7 @@ Security Features:
     - Circuit breaker pattern
 
 Change Log:
-    - v20.0.0 ({date}): Enhanced documentation, improved security
+    - v28.0.0 ({date}): Enhanced documentation, improved security
     - v19.0.0 (2025-09-18): Fixed JWT import issue
     - v18.0.0 (2025-09-15): Initial API implementation
 """

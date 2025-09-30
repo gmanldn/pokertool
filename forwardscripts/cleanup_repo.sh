@@ -4,7 +4,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: cleanup_repo.sh
-# version: v20.0.0
+# version: v28.0.0
 # last_commit: '2025-09-23T15:51:55+01:00'
 # fixes:
 # - date: '2025-09-25'

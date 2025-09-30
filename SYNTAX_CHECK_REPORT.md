@@ -2,7 +2,7 @@
 
 **Date:** September 29, 2025  
 **Repository:** `/Users/georgeridout/Documents/github/pokertool`  
-**Version:** v20.0.0
+**Version:** v28.0.0
 
 ## Executive Summary
 
@@ -112,7 +112,7 @@
 
 ### ✅ Code Quality
 - Consistent module headers across all files
-- Version synchronization: v20.0.0 throughout
+- Version synchronization: v28.0.0 throughout
 - Comprehensive docstrings with proper formatting
 - Type hints used extensively
 - Enterprise-grade error handling

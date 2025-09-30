@@ -43,7 +43,7 @@ Decorators:
     - @log_errors: Error logging
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, added circuit breaker
+    - v28.0.0 (2025-09-29): Enhanced documentation, added circuit breaker
     - v19.0.0 (2025-09-18): Retry logic implementation
     - v18.0.0 (2025-09-15): Initial error handling
 """

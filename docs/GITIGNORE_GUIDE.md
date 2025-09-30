@@ -1,7 +1,7 @@
 # .gitignore Configuration for PokerTool
 
 **Last Updated:** September 29, 2025  
-**Version:** v20.0.0
+**Version:** v28.0.0
 
 ---
 
@@ -309,6 +309,6 @@ The PokerTool `.gitignore` is configured to:
 
 ---
 
-**Configuration Version:** v20.0.0  
+**Configuration Version:** v28.0.0  
 **Last Updated:** September 29, 2025  
 **Maintained By:** PokerTool Development Team

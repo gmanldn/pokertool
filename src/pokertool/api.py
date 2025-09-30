@@ -39,7 +39,7 @@ Security Features:
     - Circuit breaker pattern
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, improved security
+    - v28.0.0 (2025-09-29): Enhanced documentation, improved security
     - v19.0.0 (2025-09-18): Fixed JWT import issue
     - v18.0.0 (2025-09-15): Initial API implementation
 """

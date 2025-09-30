@@ -40,7 +40,7 @@ Features:
     - Export functionality
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, improved UI
+    - v28.0.0 (2025-09-29): Enhanced documentation, improved UI
     - v19.0.0 (2025-09-18): Added dark mode support
     - v18.0.0 (2025-09-15): Initial GUI implementation
 """

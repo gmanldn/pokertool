@@ -3,7 +3,7 @@
         schema: pokerheader.v1
 project: pokertool
 file: backups/develop_20250922_053042/VERSION_UPDATE_SUMMARY.md
-version: v20.0.0
+version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
 - date: '2025-09-25'

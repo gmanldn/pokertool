@@ -4,7 +4,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: tests/test_core_comprehensive.py
-# version: v20.0.0
+# version: v28.0.0
 # last_commit: '2025-09-25T17:18:44.722149+00:00'
 # fixes:
 # - date: '2025-09-25'

@@ -2,7 +2,7 @@
 
 **Date:** September 29, 2025  
 **Status:** ALL CHECKS PASSED  
-**Version:** v20.0.0
+**Version:** v28.0.0
 
 ---
 
@@ -51,7 +51,7 @@ I have successfully completed a comprehensive syntax check of all Python files i
 
 2. **Code Structure**
    - ✅ Consistent module headers
-   - ✅ Version synchronization (v20.0.0)
+   - ✅ Version synchronization (v28.0.0)
    - ✅ Proper import patterns
    - ✅ Type hints throughout
    - ✅ Comprehensive docstrings
@@ -181,7 +181,7 @@ pokertool/
 Repository: pokertool
 Location: /Users/georgeridout/Documents/github/pokertool
 GitHub: https://github.com/gmanldn/pokertool
-Version: v20.0.0
+Version: v28.0.0
 Status: ✅ PRODUCTION READY
 ```
 

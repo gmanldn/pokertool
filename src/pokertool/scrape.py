@@ -40,7 +40,7 @@ IMPORTANT:
     and local regulations when using screen scraping features.
 
 Change Log:
-    - v20.0.0 (2025-09-29): Enhanced documentation, improved OCR
+    - v28.0.0 (2025-09-29): Enhanced documentation, improved OCR
     - v19.0.0 (2025-09-18): Multi-site support
     - v18.0.0 (2025-09-15): Initial scraping implementation
 """

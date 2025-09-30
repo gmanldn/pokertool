@@ -3,7 +3,7 @@
         schema: pokerheader.v1
 project: pokertool
 file: README.md
-version: v20.0.0
+version: v28.0.0
 last_commit: '2025-09-23T12:55:52+01:00'
 fixes:
 - Merged duplicate root readmes into a single canonical README.md

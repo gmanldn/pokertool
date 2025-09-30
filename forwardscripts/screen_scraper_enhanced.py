@@ -5,7 +5,7 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: screen_scraper_enhanced.py
-# version: v20.0.0
+# version: v28.0.0
 # last_updated_utc: '2025-09-23T12:00:00.000000+00:00'
 # applied_improvements:
 # - ScreenScraper_Enhancement_1
