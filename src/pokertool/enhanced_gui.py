@@ -953,9 +953,7 @@ class IntegratedPokerAssistant(tk.Tk):
         try:
             if not SCREEN_SCRAPER_LOADED:
                 self._update_table_status("❌ Screen scraper module not available\n")
-                self._update_table_status("   Install dependencies: pip install opencv-python pillow\n")
-                messagebox.showwarning("Missing Dependencies", 
-                    "Screen scraper requires:\n• opencv-python\n• pillow\n• pytesseract\n\nInstall with: pip install opencv-python pillow pytesseract")
+                self._update_table_status("   Install dependencies: pip install opencv-python pillow pytesseract\n")
                 return
             
             if not self.screen_scraper:
@@ -999,13 +997,10 @@ class IntegratedPokerAssistant(tk.Tk):
                 self._update_table_status("   • Screen permissions not granted\n")
                 self._update_table_status("   • Display driver issues\n")
                 self._update_table_status("   • System security restrictions\n")
-                messagebox.showerror("Screenshot Failed", 
-                    "Could not capture screenshot.\n\nCheck:\n• Screen recording permissions\n• Display settings\n• Security restrictions")
                     
         except Exception as e:
             error_msg = f"❌ Table detection error: {e}\n"
             self._update_table_status(error_msg)
-            messagebox.showerror("Detection Error", f"Table detection failed:\n{e}\n\nCheck logs for details.")
             print(f"Table detection exception: {e}")
     
     def _test_screenshot(self):
@@ -1016,8 +1011,6 @@ class IntegratedPokerAssistant(tk.Tk):
             if not SCREEN_SCRAPER_LOADED:
                 self._update_table_status("❌ Screen scraper dependencies not available\n")
                 self._update_table_status("   Install: pip install opencv-python pillow pytesseract\n")
-                messagebox.showwarning("Dependencies Missing", 
-                    "Screenshot functionality requires:\n• opencv-python\n• pillow\n• pytesseract\n\nInstall with: pip install opencv-python pillow pytesseract")
                 return
             
             if not self.screen_scraper:
@@ -1028,7 +1021,6 @@ class IntegratedPokerAssistant(tk.Tk):
                 except Exception as init_error:
                     error_msg = f"❌ Failed to initialize screen scraper: {init_error}\n"
                     self._update_table_status(error_msg)
-                    messagebox.showerror("Initialization Failed", f"Cannot initialize screen scraper:\n{init_error}")
                     return
             
             self._update_table_status("📸 Attempting to capture screenshot...\n")
@@ -1044,10 +1036,6 @@ class IntegratedPokerAssistant(tk.Tk):
                         self.screen_scraper.save_debug_image(img, filename)
                         self._update_table_status(f"✅ Screenshot saved as {filename}\n")
                         self._update_table_status(f"📁 Location: {Path.cwd()}/{filename}\n")
-                        
-                        # Show success dialog with file location
-                        messagebox.showinfo("Screenshot Saved", 
-                            f"Screenshot captured successfully!\n\nSaved as: {filename}\nLocation: {Path.cwd()}")
                     else:
                         # Fallback: try to save using PIL if available
                         try:
@@ -1063,12 +1051,9 @@ class IntegratedPokerAssistant(tk.Tk):
                                     raise ValueError("Unknown image format")
                             
                             self._update_table_status(f"✅ Screenshot saved as {filename} (fallback method)\n")
-                            messagebox.showinfo("Screenshot Saved", f"Screenshot saved as: {filename}")
                         except Exception as save_error:
                             self._update_table_status(f"⚠️ Screenshot captured but save failed: {save_error}\n")
                             self._update_table_status("✅ Screenshot functionality working (capture successful)\n")
-                            messagebox.showwarning("Save Failed", 
-                                f"Screenshot captured but couldn't save:\n{save_error}\n\nCapture functionality is working.")
                                 
                 except Exception as save_error:
                     self._update_table_status(f"⚠️ Screenshot save error: {save_error}\n")
@@ -1081,15 +1066,11 @@ class IntegratedPokerAssistant(tk.Tk):
                 self._update_table_status("   • No active displays detected\n")
                 self._update_table_status("   • Graphics driver issues\n")
                 self._update_table_status("   • Security restrictions\n")
-                
-                messagebox.showerror("Screenshot Failed", 
-                    "Screenshot capture failed.\n\nPossible solutions:\n• Grant screen recording permissions\n• Check display settings\n• Restart the application\n• Check security restrictions")
                     
         except Exception as e:
             error_msg = f"❌ Screenshot test error: {e}\n"
             self._update_table_status(error_msg)
             self._update_table_status("   This may indicate system compatibility issues\n")
-            messagebox.showerror("Screenshot Test Failed", f"Screenshot test encountered an error:\n{e}\n\nCheck system logs for details.")
             print(f"Screenshot test exception: {e}")
     
     def _run_gto_analysis(self):
@@ -1100,8 +1081,6 @@ class IntegratedPokerAssistant(tk.Tk):
             if not GUI_MODULES_LOADED:
                 self._update_table_status("❌ GUI modules not fully loaded\n")
                 self._update_table_status("   Some core dependencies may be missing\n")
-                messagebox.showwarning("Modules Missing", 
-                    "GTO analysis requires core modules.\n\nCheck that all dependencies are installed:\n• numpy\n• scipy\n• pandas")
                 return
             
             if not self.gto_solver:
@@ -1112,12 +1091,10 @@ class IntegratedPokerAssistant(tk.Tk):
                         self._update_table_status("✅ GTO solver initialized successfully\n")
                     else:
                         self._update_table_status("❌ GTO solver initialization returned None\n")
-                        messagebox.showerror("GTO Solver Error", "GTO solver could not be initialized.\n\nCheck system logs for details.")
                         return
                 except Exception as init_error:
                     error_msg = f"❌ Failed to initialize GTO solver: {init_error}\n"
                     self._update_table_status(error_msg)
-                    messagebox.showerror("Initialization Failed", f"Cannot initialize GTO solver:\n{init_error}")
                     return
             
             self._update_table_status("🎯 Performing analysis...\n")
@@ -1154,20 +1131,14 @@ class IntegratedPokerAssistant(tk.Tk):
                 analysis_result += f"   Analysis time: {datetime.now().strftime('%H:%M:%S')}\n"
                 
                 self._update_table_status(analysis_result)
-                
-                # Show results in dialog
-                messagebox.showinfo("GTO Analysis Results", 
-                    f"Analysis Complete!\n\nRecommended Action: {recommended_action}\nExpected Value: ${ev:+.2f}\nConfidence: {confidence}%")
                     
             except Exception as analysis_error:
                 self._update_table_status(f"❌ Analysis computation failed: {analysis_error}\n")
-                messagebox.showerror("Analysis Failed", f"GTO analysis computation failed:\n{analysis_error}")
                 
         except Exception as e:
             error_msg = f"❌ GTO analysis error: {e}\n"
             self._update_table_status(error_msg)
             self._update_table_status("   This may indicate module compatibility issues\n")
-            messagebox.showerror("GTO Analysis Error", f"GTO analysis encountered an error:\n{e}\n\nCheck system logs for details.")
             print(f"GTO analysis exception: {e}")
     
     def _open_web_interface(self):
@@ -1182,8 +1153,6 @@ class IntegratedPokerAssistant(tk.Tk):
                 error_msg += f"   Expected: {frontend_dir.absolute()}\n"
                 error_msg += "   Run: npm create react-app pokertool-frontend\n"
                 self._update_table_status(error_msg)
-                messagebox.showerror("Frontend Missing", 
-                    f"Frontend directory not found:\n{frontend_dir.absolute()}\n\nSetup instructions:\n1. Run: npm create react-app pokertool-frontend\n2. Configure the React app\n3. Try again")
                 return
             
             # Check if package.json exists
@@ -1192,8 +1161,6 @@ class IntegratedPokerAssistant(tk.Tk):
                 error_msg = "❌ Frontend package.json not found\n"
                 error_msg += "   Frontend appears to be incomplete\n"
                 self._update_table_status(error_msg)
-                messagebox.showerror("Frontend Incomplete", 
-                    "Frontend package.json not found.\n\nThe React frontend may be incomplete.\nPlease reinstall or check the setup.")
                 return
             
             self._update_table_status("📦 Checking Node.js and npm...\n")
@@ -1204,7 +1171,6 @@ class IntegratedPokerAssistant(tk.Tk):
                                          capture_output=True, text=True, timeout=5)
                 if npm_check.returncode != 0:
                     self._update_table_status("❌ npm not working properly\n")
-                    messagebox.showerror("npm Error", "npm is not working properly.\n\nPlease check your Node.js installation.")
                     return
                 else:
                     npm_version = npm_check.stdout.strip()
@@ -1213,8 +1179,6 @@ class IntegratedPokerAssistant(tk.Tk):
                 error_msg = f"❌ npm not found or not responding: {e}\n"
                 error_msg += "   Please install Node.js and npm\n"
                 self._update_table_status(error_msg)
-                messagebox.showerror("npm Missing", 
-                    "npm not found or not responding.\n\nPlease install Node.js and npm:\n• Download from: https://nodejs.org\n• Or use package manager")
                 return
             
             self._update_table_status("🚀 Starting React development server...\n")
@@ -1240,14 +1204,11 @@ class IntegratedPokerAssistant(tk.Tk):
                     if stderr:
                         error_msg += f"   Error: {stderr[:200]}...\n"
                     self._update_table_status(error_msg)
-                    messagebox.showerror("Server Start Failed", 
-                        f"React development server failed to start.\n\nError details:\n{stderr[:300] if stderr else 'Unknown error'}")
                     return
                     
             except Exception as server_error:
                 error_msg = f"❌ Server start error: {server_error}\n"
                 self._update_table_status(error_msg)
-                messagebox.showerror("Server Error", f"Failed to start development server:\n{server_error}")
                 return
             
             self._update_table_status("🌐 Opening browser...\n")
@@ -1257,24 +1218,16 @@ class IntegratedPokerAssistant(tk.Tk):
                 webbrowser.open('http://localhost:3000')
                 self._update_table_status("✅ Web interface opened at http://localhost:3000\n")
                 self._update_table_status("ℹ️ Note: Server will continue running in background\n")
-                
-                # Show success message
-                messagebox.showinfo("Web Interface Opened", 
-                    "Web interface successfully opened!\n\nURL: http://localhost:3000\n\nThe development server is running in the background.")
                     
             except Exception as browser_error:
                 error_msg = f"⚠️ Browser open error: {browser_error}\n"
                 error_msg += "✅ Server is running, manually open: http://localhost:3000\n"
                 self._update_table_status(error_msg)
-                messagebox.showwarning("Browser Error", 
-                    f"Could not automatically open browser:\n{browser_error}\n\nPlease manually open:\nhttp://localhost:3000")
                 
         except Exception as e:
             error_msg = f"❌ Web interface error: {e}\n"
             self._update_table_status(error_msg)
             self._update_table_status("   Check frontend setup and dependencies\n")
-            messagebox.showerror("Web Interface Error", 
-                f"Web interface failed to open:\n{e}\n\nCheck:\n• Frontend directory exists\n• npm is installed\n• Dependencies are installed")
             print(f"Web interface exception: {e}")
     
     def _open_manual_gui(self):
@@ -1286,8 +1239,6 @@ class IntegratedPokerAssistant(tk.Tk):
                 error_msg = "❌ GUI modules not fully loaded\n"
                 error_msg += "   Some core dependencies may be missing\n"
                 self._update_table_status(error_msg)
-                messagebox.showwarning("Modules Missing", 
-                    "Manual GUI requires core modules.\n\nSome dependencies may be missing:\n• Check tkinter installation\n• Verify all pokertool modules are available")
                 return
             
             self._update_table_status("🔧 Initializing manual GUI components...\n")
@@ -1315,21 +1266,15 @@ class IntegratedPokerAssistant(tk.Tk):
                 error_msg = f"❌ Failed to import GUI modules: {import_error}\n"
                 error_msg += "   Manual GUI components not available\n"
                 self._update_table_status(error_msg)
-                messagebox.showerror("Import Error", 
-                    f"Cannot import manual GUI:\n{import_error}\n\nThe enhanced GUI module may not be available.")
                 
             except Exception as gui_error:
                 error_msg = f"❌ GUI initialization failed: {gui_error}\n"
                 self._update_table_status(error_msg)
-                messagebox.showerror("GUI Error", 
-                    f"Manual GUI failed to initialize:\n{gui_error}\n\nThere may be a compatibility issue with your system.")
                 
         except Exception as e:
             error_msg = f"❌ Manual GUI error: {e}\n"
             self._update_table_status(error_msg)
             self._update_table_status("   Check GUI module dependencies\n")
-            messagebox.showerror("Manual GUI Error", 
-                f"Manual GUI encountered an error:\n{e}\n\nCheck system logs for details.")
             print(f"Manual GUI exception: {e}")
     
     def _brighten_color(self, hex_color: str, factor: float = 0.2) -> str:
