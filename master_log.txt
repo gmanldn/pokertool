@@ -76515,3 +76515,86 @@ RESOURCE USAGE:
   System CPU time: 0.026s
 
 --------------------------------------------------------------------------------
+[2025-09-30 01:52:55.625660] [INFO] Application shutdown normally
+Session: 20250930_010837
+Thread: MainThread (ID: 140704656689984)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: main()
+  Line 213: logger.info('Application shutdown normally', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  run_scan = False
+  auto_fix = True
+  quick = True
+  passthrough = []
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 0
+
+ADDITIONAL DATA:
+  0
+
+RESOURCE USAGE:
+  Memory (RSS): 297380.00 MB
+  User CPU time: 5.707s
+  System CPU time: 0.736s
+
+--------------------------------------------------------------------------------
+[2025-09-30 01:52:55.626320] [INFO] Performing cleanup
+Session: 20250930_010837
+Thread: MainThread (ID: 140704656689984)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/tools/poker_go.py
+  Function: cleanup()
+  Line 48: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 297380.00 MB
+  User CPU time: 5.707s
+  System CPU time: 0.737s
+
+--------------------------------------------------------------------------------
+[2025-09-30 01:52:55.665087] [INFO] Application shutdown
+Session: 20250930_010837
+Thread: MainThread (ID: 140704656689984)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: main()
+  Line 207: logger.info('Application shutdown', returncode=app_rc)
+
+LOCAL VARIABLES:
+  argv = []
+  scan_path = PosixPath('/Users/georgeridout/Documents/github/pokertool')
+  passthrough = []
+  rc = 0
+  test_value = {'cards': ['As', 'Kh'], 'position': 'BTN'}
+  app_rc = 0
+
+ADDITIONAL DATA:
+  0
+
+RESOURCE USAGE:
+  Memory (RSS): 11444.00 MB
+  User CPU time: 0.074s
+  System CPU time: 0.038s
+
+--------------------------------------------------------------------------------
+[2025-09-30 01:52:55.665988] [INFO] Performing cleanup
+Session: 20250930_010837
+Thread: MainThread (ID: 140704656689984)
+
+LOCATION:
+  File: /Users/georgeridout/Documents/github/pokertool/start.py
+  Function: cleanup()
+  Line 58: logger.info('Performing cleanup')
+
+RESOURCE USAGE:
+  Memory (RSS): 11444.00 MB
+  User CPU time: 0.074s
+  System CPU time: 0.038s
+
+--------------------------------------------------------------------------------
