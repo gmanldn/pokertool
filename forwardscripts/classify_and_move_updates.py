@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 classify_and_move_updates.py
 
 Scan the repository root for .py files, decide which ones are permanent
