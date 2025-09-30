@@ -132,11 +132,48 @@ class SecureDatabase:
             if path.exists() and path.stat().st_size > MAX_DB_SIZE:
                 raise SecurityError(f"Database size exceeds limit: {path.stat().st_size} > {MAX_DB_SIZE}")
 
-        conn = sqlite3.connect(
-            self.db_path, 
-            timeout=self.max_query_time, 
-            check_same_thread=False
-        )
+        # Detect and quarantine invalid/corrupted SQLite files (e.g., text headers)
+        if self.db_path != ':memory:' and path.exists():
+            try:
+                with open(path, 'rb') as fh:
+                    header = fh.read(16)
+                # A valid SQLite database starts with: b"SQLite format 3\x00"
+                if header != b"SQLite format 3\x00":
+                    ts = time.strftime('%Y%m%d_%H%M%S')
+                    quarantine = path.with_suffix(path.suffix + f".corrupt_{ts}")
+                    path.rename(quarantine)
+                    log.warning('Detected invalid SQLite file. Quarantined and reinitializing. original=%s quarantined=%s',
+                                str(path), str(quarantine))
+            except Exception as e:
+                # If we cannot read/rename, fall through; sqlite3.connect will raise and caller will see.
+                log.warning('Failed to pre-check or quarantine invalid DB file: %s (path=%s)', str(e), str(path))
+
+        try:
+            conn = sqlite3.connect(
+                self.db_path,
+                timeout=self.max_query_time,
+                check_same_thread=False,
+            )
+        except sqlite3.DatabaseError as e:
+            # Handle late-detected invalid DB files
+            msg = str(e).lower()
+            if self.db_path != ':memory:' and ('not a database' in msg or 'file is not a database' in msg):
+                try:
+                    ts = time.strftime('%Y%m%d_%H%M%S')
+                    quarantine = path.with_suffix(path.suffix + f".corrupt_{ts}")
+                    if path.exists():
+                        path.rename(quarantine)
+                    log.warning('SQLite open failed due to invalid file, quarantined and retrying. original=%s quarantined=%s',
+                                str(path), str(quarantine))
+                    conn = sqlite3.connect(
+                        self.db_path,
+                        timeout=self.max_query_time,
+                        check_same_thread=False,
+                    )
+                except Exception:
+                    raise
+            else:
+                raise
 
         # Set security-focused pragmas
         conn.execute('PRAGMA foreign_keys = ON')

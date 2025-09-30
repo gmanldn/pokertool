@@ -59,7 +59,13 @@ def main(argv=None):
         # Check if tkinter is available before importing GUI
         try:
             import tkinter
-            tkinter._test()  # Basic tkinter test
+            # Silent availability check without showing a demo window
+            root = tkinter.Tk()
+            try:
+                root.withdraw()
+                root.update_idletasks()
+            finally:
+                root.destroy()
         except Exception as e:
             logger.error(f'GUI not available: {e}')
             logger.info('Tkinter is not available on this system.')
