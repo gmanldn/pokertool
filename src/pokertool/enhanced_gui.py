@@ -11,8 +11,8 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 20.0.0
-Last Modified: 2025-09-29
+Version: 20.1.0
+Last Modified: 2025-09-30
 Author: PokerTool Development Team
 License: MIT
 
@@ -21,17 +21,61 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v20.1.0 (2025-09-30): Added auto-start scraper, continuous updates, dependency checking
     - v28.0.0 (2025-09-29): Enhanced documentation
     - v19.0.0 (2025-09-18): Bug fixes and improvements
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '20.0.0'
+__version__ = '20.1.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
+
+# CRITICAL: Check and install screen scraper dependencies FIRST
+import sys
+import os
+import subprocess
+
+def _ensure_scraper_dependencies():
+    """Ensure screen scraper dependencies are installed before module imports."""
+    critical_deps = [
+        ('cv2', 'opencv-python'),
+        ('PIL', 'Pillow'),
+        ('pytesseract', 'pytesseract'),
+        ('mss', 'mss'),
+        ('numpy', 'numpy'),
+    ]
+    
+    missing = []
+    for module_name, package_name in critical_deps:
+        try:
+            __import__(module_name)
+        except ImportError:
+            missing.append(package_name)
+    
+    if missing:
+        print(f"\n{'='*60}")
+        print("📦 [enhanced_gui] Installing screen scraper dependencies...")
+        print(f"{'='*60}")
+        for package in missing:
+            print(f"Installing {package}...")
+            try:
+                subprocess.check_call([
+                    sys.executable, '-m', 'pip', 'install', package
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                print(f"✅ {package} installed successfully")
+            except subprocess.CalledProcessError as e:
+                print(f"⚠️  Failed to install {package}: {e}")
+                print(f"   Please run manually: pip install {package}")
+        print(f"{'='*60}\n")
+    
+    return len(missing) == 0
+
+# Install dependencies before other imports
+_DEPENDENCIES_OK = _ensure_scraper_dependencies()
 
 import tkinter as tk
 from tkinter import ttk, messagebox, font
@@ -42,7 +86,6 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Callable
 from dataclasses import dataclass
 from pathlib import Path
-import subprocess
 import webbrowser
 
 # Import all pokertool modules
@@ -61,7 +104,6 @@ except ImportError as e:
 
 # Import screen scraper
 try:
-    import sys
     sys.path.append('.')
     from poker_screen_scraper import PokerScreenScraper, PokerSite, TableState, create_scraper
     SCREEN_SCRAPER_LOADED = True
@@ -71,7 +113,7 @@ except ImportError as e:
 
 # Import enhanced scraper manager utilities
 try:
-    from .scrape import run_screen_scraper, stop_screen_scraper
+    from .scrape import run_screen_scraper, stop_screen_scraper, get_scraper_status
     ENHANCED_SCRAPER_LOADED = True
 except ImportError as e:
     print(f'Warning: Enhanced screen scraper not loaded: {e}')
@@ -86,9 +128,9 @@ COLORS = {
     'accent_success': '#4ade80',
     'accent_warning': '#fbbf24',
     'accent_danger': '#ef4444',
-    'autopilot_active': '#00ff00',  # Bright green for active autopilot
-    'autopilot_inactive': '#ff4444',  # Red for inactive
-    'autopilot_standby': '#ffaa00',   # Orange for standby
+    'autopilot_active': '#00ff00',
+    'autopilot_inactive': '#ff4444',
+    'autopilot_standby': '#ffaa00',
     'text_primary': '#ffffff',
     'text_secondary': '#94a3b8',
     'table_felt': '#0d3a26',
@@ -104,9 +146,9 @@ FONTS = {
     'heading': ('Arial', 18, 'bold'),
     'subheading': ('Arial', 14, 'bold'),
     'body': ('Arial', 12),
-    'autopilot': ('Arial', 20, 'bold'),  # Special font for autopilot
+    'autopilot': ('Arial', 20, 'bold'),
     'status': ('Arial', 16, 'bold'),
-    'analysis': ('Consolas', 14)
+    'analysis': ('Consolas', 12)
 }
 
 @dataclass
@@ -253,48 +295,6 @@ class AutopilotControlPanel(tk.Frame):
         )
         strategy_combo.pack(side='right')
         
-        # Advanced options
-        self.auto_sit_var = tk.BooleanVar(value=True)
-        auto_sit_cb = tk.Checkbutton(
-            settings_frame,
-            text='Auto-sit at tables',
-            variable=self.auto_sit_var,
-            font=FONTS['body'],
-            bg=COLORS['bg_medium'],
-            fg=COLORS['text_primary'],
-            selectcolor=COLORS['bg_light']
-        )
-        auto_sit_cb.pack(anchor='w', padx=10, pady=2)
-        
-        self.multi_table_var = tk.BooleanVar(value=True)
-        multi_table_cb = tk.Checkbutton(
-            settings_frame,
-            text='Multi-table support',
-            variable=self.multi_table_var,
-            font=FONTS['body'],
-            bg=COLORS['bg_medium'],
-            fg=COLORS['text_primary'],
-            selectcolor=COLORS['bg_light']
-        )
-        multi_table_cb.pack(anchor='w', padx=10, pady=2)
-        
-        self.auto_gto_var = tk.BooleanVar(value=True)
-        auto_gto_cb = tk.Checkbutton(
-            settings_frame,
-            text='Auto GTO analysis',
-            variable=self.auto_gto_var,
-            font=FONTS['body'],
-            bg=COLORS['bg_medium'],
-            fg=COLORS['text_primary'],
-            selectcolor=COLORS['bg_light']
-        )
-        auto_gto_cb.pack(anchor='w', padx=10, pady=2)
-        
-        self.auto_detect_var = tk.BooleanVar(value=True)
-        auto_detect_cb = tk.Checkbutton(
-            settings_frame,
-            text='Auto table detection',
-            variable=self.auto_detect_var,
             font=FONTS['body'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary'],
