@@ -513,6 +513,31 @@ class IntegratedPokerAssistant(tk.Tk):
         )
         quick_actions.pack(side='right', fill='both', expand=True, padx=(10, 0))
         
+        # Screen scraper status / toggle button
+        self.scraper_status_button = tk.Button(
+            quick_actions,
+            text='🔌 Screen Scraper OFF',
+            font=FONTS['subheading'],
+            bg=COLORS['accent_danger'],
+            fg=COLORS['text_primary'],
+            activebackground=COLORS['accent_success'],
+            activeforeground=COLORS['text_primary'],
+            relief=tk.RAISED,
+            bd=3,
+            command=self._toggle_screen_scraper
+        )
+        self.scraper_status_button.pack(fill='x', padx=10, pady=(10, 5))
+
+        if not ENHANCED_SCRAPER_LOADED:
+            self.scraper_status_button.config(
+                text='⛔ Screen Scraper Unavailable',
+                state=tk.DISABLED,
+                bg=COLORS['bg_light'],
+                fg=COLORS['text_secondary'],
+                activebackground=COLORS['bg_light'],
+                activeforeground=COLORS['text_secondary']
+            )
+
         # Quick action buttons
         tk.Button(
             quick_actions,
@@ -870,6 +895,8 @@ class IntegratedPokerAssistant(tk.Tk):
 
             if self._start_enhanced_screen_scraper():
                 started_services.append('enhanced screen scraper')
+            else:
+                self._update_scraper_indicator(False)
 
             if started_services:
                 log.info('Background services started: %s', ', '.join(started_services))
@@ -880,6 +907,8 @@ class IntegratedPokerAssistant(tk.Tk):
     def _start_enhanced_screen_scraper(self) -> bool:
         """Start the enhanced screen scraper in continuous mode."""
         if not ENHANCED_SCRAPER_LOADED or self._enhanced_scraper_started:
+            if self._enhanced_scraper_started:
+                self._update_scraper_indicator(True)
             return False
 
         try:
@@ -897,16 +926,19 @@ class IntegratedPokerAssistant(tk.Tk):
                 if result.get('ocr_enabled'):
                     status_line += ' with OCR'
                 self._update_table_status(status_line + '\n')
+                self._update_scraper_indicator(True)
                 log.info('Enhanced screen scraper started automatically (site=%s)', site)
                 return True
 
             failure_message = result.get('message', 'unknown error')
             self._update_table_status(f"❌ Enhanced screen scraper failed to start: {failure_message}\n")
+            self._update_scraper_indicator(False, error=True)
             log.warning('Enhanced screen scraper failed to start: %s', failure_message)
             return False
 
         except Exception as e:
             self._update_table_status(f"❌ Enhanced screen scraper error: {e}\n")
+            self._update_scraper_indicator(False, error=True)
             log.error('Enhanced screen scraper error: %s', e)
             return False
 
@@ -922,6 +954,55 @@ class IntegratedPokerAssistant(tk.Tk):
             log.warning('Enhanced screen scraper stop error: %s', e)
         finally:
             self._enhanced_scraper_started = False
+            self._update_scraper_indicator(False)
+
+    def _toggle_screen_scraper(self) -> None:
+        """Toggle the enhanced screen scraper on or off."""
+        if not ENHANCED_SCRAPER_LOADED:
+            self._update_table_status("❌ Screen scraper dependencies not available\n")
+            return
+
+        if self._enhanced_scraper_started:
+            self._update_table_status("🛑 Stopping enhanced screen scraper...\n")
+            self._stop_enhanced_screen_scraper()
+            return
+
+        self._update_table_status("🚀 Starting enhanced screen scraper...\n")
+        if not self._start_enhanced_screen_scraper():
+            self._update_table_status("❌ Screen scraper did not start\n")
+
+    def _update_scraper_indicator(self, active: bool, *, error: bool = False) -> None:
+        """Update the visual indicator for the screen scraper button."""
+        button = getattr(self, 'scraper_status_button', None)
+        if not button:
+            return
+
+        if error:
+            button.config(
+                text='⚠️ Screen Scraper Check Logs',
+                bg=COLORS['accent_warning'],
+                fg=COLORS['bg_dark'],
+                activebackground=COLORS['accent_warning'],
+                activeforeground=COLORS['bg_dark']
+            )
+            return
+
+        if active:
+            button.config(
+                text='🟢 Screen Scraper ON',
+                bg=COLORS['accent_success'],
+                fg=COLORS['text_primary'],
+                activebackground=COLORS['accent_success'],
+                activeforeground=COLORS['text_primary']
+            )
+        else:
+            button.config(
+                text='🔌 Screen Scraper OFF',
+                bg=COLORS['accent_danger'],
+                fg=COLORS['text_primary'],
+                activebackground=COLORS['accent_success'],
+                activeforeground=COLORS['text_primary']
+            )
 
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""
