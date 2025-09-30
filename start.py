@@ -31,6 +31,96 @@ SRC_DIR = ROOT / 'src'
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+def check_and_install_dependencies():
+    """Check for missing dependencies and install them automatically."""
+    # Check NumPy version compatibility first
+    needs_numpy_fix = False
+    try:
+        import numpy as np
+        numpy_version = tuple(map(int, np.__version__.split('.')[:2]))
+        if numpy_version[0] >= 2:
+            # NumPy 2.x detected, need to check for compatibility issues
+            try:
+                import pandas as pd  # Test if pandas works with current numpy
+            except ImportError as e:
+                if 'NumPy 1.x' in str(e) or 'NumPy 2' in str(e):
+                    needs_numpy_fix = True
+    except ImportError:
+        pass  # NumPy will be installed if needed
+    
+    # Fix NumPy compatibility if needed
+    if needs_numpy_fix:
+        print(f"\n{'='*60}")
+        print("⚠️  NumPy 2.x compatibility issue detected")
+        print("📦 Downgrading to NumPy 1.x for compatibility...")
+        print(f"{'='*60}")
+        try:
+            subprocess.check_call([
+                sys.executable, '-m', 'pip', 'install', 'numpy<2'
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            print(f"✅ NumPy downgraded successfully")
+            print(f"{'='*60}\n")
+        except subprocess.CalledProcessError as e:
+            print(f"⚠️  Failed to fix NumPy: {e}")
+            print(f"   Try manually: pip install numpy<2")
+            print(f"{'='*60}\n")
+    
+    # Critical dependencies for screen scraping functionality
+    critical_deps = [
+        ('cv2', 'opencv-python'),
+        ('PIL', 'Pillow'),
+        ('pytesseract', 'pytesseract'),
+    ]
+    
+    # Optional but recommended dependencies
+    optional_deps = [
+        ('mss', 'mss'),
+    ]
+    
+    missing_critical = []
+    missing_optional = []
+    
+    # Check critical dependencies
+    for module_name, package_name in critical_deps:
+        try:
+            __import__(module_name)
+        except ImportError:
+            missing_critical.append(package_name)
+    
+    # Check optional dependencies
+    for module_name, package_name in optional_deps:
+        try:
+            __import__(module_name)
+        except ImportError:
+            missing_optional.append(package_name)
+    
+    # Install missing critical dependencies
+    if missing_critical:
+        print(f"\n{'='*60}")
+        print("📦 Installing missing critical dependencies...")
+        print(f"{'='*60}")
+        for package in missing_critical:
+            print(f"Installing {package}...")
+            try:
+                subprocess.check_call([
+                    sys.executable, '-m', 'pip', 'install', package
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                print(f"✅ {package} installed successfully")
+            except subprocess.CalledProcessError as e:
+                print(f"⚠️  Failed to install {package}: {e}")
+                print(f"   You may need to install manually: pip install {package}")
+    
+    # Inform about optional dependencies (but don't auto-install)
+    if missing_optional:
+        print(f"\n📌 Optional dependencies available for enhanced features:")
+        for package in missing_optional:
+            print(f"   • {package} - Install with: pip install {package}")
+    
+    if missing_critical or missing_optional:
+        print(f"{'='*60}\n")
+    
+    return len(missing_critical) == 0
+
 # Try to import your logger; if missing, still run with a stub printed by repair script.
 try:
     from logger import logger, log_exceptions, setup_global_exception_handler
@@ -59,6 +149,12 @@ def initialize_logging() -> None:
     safe_env = {k: v for k, v in os.environ.items() if 'TOKEN' not in k and 'KEY' not in k}
     logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(), 
                 python_path=list(sys.path), environment_vars=safe_env)
+    
+    # Check and install dependencies
+    try:
+        check_and_install_dependencies()
+    except Exception as e:
+        logger.warning('Dependency check failed', exception=e)
 
 def cleanup() -> None:
     """Cleanup function called on exit."""

@@ -134,9 +134,22 @@ class AutopilotControlPanel(tk.Frame):
         
         self.state = AutopilotState()
         self.animation_running = False
+        self._animation_id = None
         
         self._build_ui()
         self._start_animation()
+        
+        # Bind cleanup on destroy
+        self.bind('<Destroy>', self._on_destroy)
+    
+    def _on_destroy(self, event=None):
+        """Clean up animation when widget is destroyed."""
+        self.animation_running = False
+        if self._animation_id:
+            try:
+                self.after_cancel(self._animation_id)
+            except:
+                pass
     
     def _build_ui(self):
         """Build the autopilot control interface."""
@@ -392,20 +405,37 @@ class AutopilotControlPanel(tk.Frame):
         """Start status animation for active autopilot."""
         if not self.animation_running:
             self.animation_running = True
-            self._animate_status()
+            self._animation_id = self.after(500, self._animate_status)
     
     def _animate_status(self):
         """Animate the status indicator when autopilot is active."""
-        if self.state.active:
-            current_color = self.status_label.cget('fg')
-            if current_color == COLORS['autopilot_active']:
-                new_color = COLORS['autopilot_standby']
-            else:
-                new_color = COLORS['autopilot_active']
-            self.status_label.config(fg=new_color)
-        
-        if self.animation_running:
-            self.after(500, self._animate_status)
+        if not self.animation_running:
+            return
+            
+        try:
+            # Check if widget still exists before animating
+            if not self.winfo_exists():
+                self.animation_running = False
+                return
+            
+            if self.state.active:
+                current_color = self.status_label.cget('fg')
+                if current_color == COLORS['autopilot_active']:
+                    new_color = COLORS['autopilot_standby']
+                else:
+                    new_color = COLORS['autopilot_active']
+                self.status_label.config(fg=new_color)
+            
+            if self.animation_running and self.winfo_exists():
+                self._animation_id = self.after(500, self._animate_status)
+        except tk.TclError:
+            # Widget was destroyed, stop animation
+            self.animation_running = False
+            self._animation_id = None
+        except Exception as e:
+            print(f"Animation error: {e}")
+            self.animation_running = False
+            self._animation_id = None
     
     def update_statistics(self, stats_update: Dict[str, Any]):
         """Update displayed statistics."""
@@ -1348,8 +1378,12 @@ class IntegratedPokerAssistant(tk.Tk):
             started_services = []
 
             if self.multi_table_manager:
-                self.multi_table_manager.start_monitoring()
-                started_services.append('table monitoring')
+                # Check if start_monitoring method exists before calling
+                if hasattr(self.multi_table_manager, 'start_monitoring'):
+                    self.multi_table_manager.start_monitoring()
+                    started_services.append('table monitoring')
+                else:
+                    print('TableManager initialized (start_monitoring method not available)')
 
             if self._start_enhanced_screen_scraper():
                 started_services.append('enhanced screen scraper')
