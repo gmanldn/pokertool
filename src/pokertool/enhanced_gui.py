@@ -295,6 +295,12 @@ class AutopilotControlPanel(tk.Frame):
         )
         strategy_combo.pack(side='right')
         
+        # Auto-detect tables checkbox
+        self.auto_detect_var = tk.BooleanVar(value=True)
+        auto_detect_cb = tk.Checkbutton(
+            settings_frame,
+            text='Auto-detect tables',
+            variable=self.auto_detect_var,
             font=FONTS['body'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary'],
