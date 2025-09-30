@@ -10,6 +10,7 @@ fixes:
   summary: Enhanced enterprise documentation and comprehensive unit tests added
 ---
 POKERTOOL-HEADER-END */
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/index.css';
