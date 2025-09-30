@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Specific Python files to ignore
+__init__.py
+__main__.py
+
 # Distribution / build
 build/
 dist/
