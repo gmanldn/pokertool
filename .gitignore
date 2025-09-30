@@ -41,6 +41,8 @@ Thumbs.db
 # Project-specific legacy
 poker.db
 pokertool.db
+poker_decisions.db
+
 
 # ==============================================================================
 # STATE DATA - All Runtime and User Data Files

@@ -24,14 +24,18 @@ Comprehensive test suite for the improved GUI and screen scraping functionality.
 
 import pytest
 import numpy as np
-import cv2
 import json
 import time
 import threading
 from unittest.mock import Mock, MagicMock, patch, PropertyMock
 from pathlib import Path
 import tempfile
-import tkinter as tk
+try:
+    import tkinter as tk
+    TK_AVAILABLE = True
+except Exception:  # pragma: no cover - environment-specific
+    tk = None
+    TK_AVAILABLE = False
 from typing import List, Dict, Any, Optional
 
 # Import components to test
@@ -150,14 +154,17 @@ def temp_session_file():
 # ENHANCED GUI TESTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE, reason="Enhanced GUI not available")
+@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE or not TK_AVAILABLE, reason="Enhanced GUI not available")
 class TestEnhancedCardEntry:
     """Test enhanced card entry widget."""
     
     def setup_method(self):
         """Setup for each test method."""
         # Create a temporary root for testing
-        self.root = tk.Tk()
+        try:
+            self.root = tk.Tk()
+        except tk.TclError as exc:
+            pytest.skip(f"Tkinter display not available: {exc}")
         self.root.withdraw()  # Hide the test window
         
         self.callback_called = False
@@ -236,13 +243,16 @@ class TestEnhancedCardEntry:
         assert self.entry.validation_state == ValidationState.VALID
 
 
-@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE, reason="Enhanced GUI not available")
+@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE or not TK_AVAILABLE, reason="Enhanced GUI not available")
 class TestStatusBar:
     """Test status bar component."""
     
     def setup_method(self):
         """Setup for each test method."""
-        self.root = tk.Tk()
+        try:
+            self.root = tk.Tk()
+        except tk.TclError as exc:
+            pytest.skip(f"Tkinter display not available: {exc}")
         self.root.withdraw()
         self.status_bar = StatusBar(self.root)
     
@@ -278,7 +288,7 @@ class TestStatusBar:
         assert 'Permanent message' in self.status_bar.status_label.cget('text')
 
 
-@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE, reason="Enhanced GUI not available")
+@pytest.mark.skipif(not GUI_ENHANCED_AVAILABLE or not TK_AVAILABLE, reason="Enhanced GUI not available")
 class TestEnhancedPokerAssistant:
     """Test main enhanced GUI application."""
     
