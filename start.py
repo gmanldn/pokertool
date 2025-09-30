@@ -65,6 +65,42 @@ def _log_cmd(args: list[str]) -> str:
     """Log command with proper shell escaping."""
     return ' '.join(shlex.quote(a) for a in args)
 
+
+def _build_launcher_env() -> dict[str, str]:
+    """Construct environment with repo paths prioritized for subprocess launches."""
+    env = os.environ.copy()
+    pythonpath_entries = [str(ROOT), str(SRC_DIR)]
+    existing = env.get('PYTHONPATH')
+    if existing:
+        pythonpath_entries.extend(p for p in existing.split(os.pathsep) if p)
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for entry in pythonpath_entries:
+        if entry not in seen:
+            deduped.append(entry)
+            seen.add(entry)
+
+    env['PYTHONPATH'] = os.pathsep.join(deduped)
+    return env
+
+
+def _launch_via_module(passthrough_args: Sequence[str]) -> int:
+    """Launch PokerTool via `python -m pokertool` to favor the packaged entry point."""
+    env = _build_launcher_env()
+    cmd = [sys.executable, '-m', 'pokertool', *passthrough_args]
+    logger.info('Launching pokertool via module', command=_log_cmd(cmd))
+    completed = subprocess.run(cmd, cwd=str(ROOT), env=env)
+    if completed.returncode == 0:
+        return 0
+
+    logger.warning(
+        'Module launcher returned non-zero; falling back to legacy script discovery',
+        returncode=completed.returncode
+    )
+    return _launch_via_fallback_scripts(passthrough_args, env=env)
+
+
 def _detect_scanner_flags(python: str, script: Path) -> dict[str, bool]:
     """
     Probe 'code_scan.py --help' and detect available flags.
@@ -218,18 +254,21 @@ def _launch_cli_directly(passthrough_args: Sequence[str]) -> int:
     """Attempt to launch the PokerTool CLI directly inside the current process."""
     try:
         from pokertool import cli as cli_module
+    except ImportError as e:
+        logger.warning('Direct CLI import failed; retrying via module launcher', exception=e)
+        return _launch_via_module(passthrough_args)
+
+    try:
         logger.info('Launching pokertool.cli directly')
         return int(cli_module.main(list(passthrough_args)))
-    except ImportError as e:
-        logger.warning('Direct CLI import failed; falling back to script discovery', exception=e)
     except Exception as e:
-        logger.error('pokertool.cli execution error', exception=e)
-        return 1
-
-    return _launch_via_fallback_scripts(passthrough_args)
+        logger.warning('pokertool.cli execution error; retrying via module launcher', exception=e)
+        return _launch_via_module(passthrough_args)
 
 
-def _launch_via_fallback_scripts(passthrough_args: Sequence[str]) -> int:
+def _launch_via_fallback_scripts(
+    passthrough_args: Sequence[str], *, env: dict[str, str] | None = None
+) -> int:
     """Fallback: try to execute known launcher scripts via subprocess."""
     candidate_scripts = [
         ROOT / 'src' / 'pokertool' / 'cli.py',
@@ -238,17 +277,13 @@ def _launch_via_fallback_scripts(passthrough_args: Sequence[str]) -> int:
         ROOT / 'launch_pokertool.py',
     ]
 
-    env = os.environ.copy()
-    pythonpath_parts = [str(ROOT), str(SRC_DIR)]
-    if 'PYTHONPATH' in env:
-        pythonpath_parts.append(env['PYTHONPATH'])
-    env['PYTHONPATH'] = os.pathsep.join(pythonpath_parts)
+    launch_env = env or _build_launcher_env()
 
     for script in candidate_scripts:
         if script.exists():
             cmd = [sys.executable, str(script), *passthrough_args]
             logger.info('Launching fallback script', command=_log_cmd(cmd), script=str(script))
-            completed = subprocess.run(cmd, cwd=str(ROOT), env=env)
+            completed = subprocess.run(cmd, cwd=str(ROOT), env=launch_env)
             return int(completed.returncode)
 
     logger.warning('No executable fallback launcher found', candidates=[str(p) for p in candidate_scripts])
