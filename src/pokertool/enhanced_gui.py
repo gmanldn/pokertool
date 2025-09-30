@@ -625,9 +625,9 @@ class IntegratedPokerAssistant(tk.Tk):
                 text=f'{icon}  {text}',
                 font=('Arial', 16, 'bold'),  # Increased from 14 to 16
                 bg=color,
-                fg='#FFFFFF',  # Pure white for maximum contrast
+                fg='#000000',  # Black text for better visibility
                 activebackground=self._brighten_color(color),
-                activeforeground='#FFFFFF',
+                activeforeground='#000000',  # Black text on hover too
                 relief=tk.RAISED,
                 bd=5,  # Increased border
                 height=height,
