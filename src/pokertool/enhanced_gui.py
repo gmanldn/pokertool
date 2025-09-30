@@ -52,7 +52,7 @@ try:
     from .gto_solver import GTOSolver, get_gto_solver
     from .ml_opponent_modeling import OpponentModelingSystem, get_opponent_modeling_system
     from .multi_table_support import TableManager, get_table_manager
-    from .error_handling import sanitize_input, log, run_safely
+    from .error_handling import sanitize_input, run_safely
     from .storage import get_secure_db
     GUI_MODULES_LOADED = True
 except ImportError as e:
@@ -433,16 +433,16 @@ class IntegratedPokerAssistant(tk.Tk):
         try:
             if SCREEN_SCRAPER_LOADED:
                 self.screen_scraper = create_scraper('GENERIC')
-                log("Screen scraper initialized")
+                print("Screen scraper initialized")
             
             if GUI_MODULES_LOADED:
                 self.gto_solver = get_gto_solver()
                 self.opponent_modeler = get_opponent_modeling_system()
                 self.multi_table_manager = get_table_manager()
-                log("Core modules initialized")
+                print("Core modules initialized")
                 
         except Exception as e:
-            log(f"Module initialization error: {e}")
+            print(f"Module initialization error: {e}")
     
     def _setup_styles(self):
         """Configure ttk styles."""
@@ -614,7 +614,7 @@ class IntegratedPokerAssistant(tk.Tk):
                 # For now, we'll create a simplified version
                 pass
         except Exception as e:
-            log(f"Manual GUI creation error: {e}")
+            print(f"Manual GUI creation error: {e}")
         
         # Fallback manual interface
         tk.Label(
@@ -707,19 +707,19 @@ class IntegratedPokerAssistant(tk.Tk):
     
     def _handle_autopilot_settings(self, setting: str, value: Any):
         """Handle autopilot settings changes."""
-        log(f"Autopilot setting changed: {setting} = {value}")
+        print(f"Autopilot setting changed: {setting} = {value}")
         
         if setting == 'site' and self.screen_scraper:
             # Reinitialize scraper for new site
             try:
                 self.screen_scraper = create_scraper(value)
-                log(f"Screen scraper reconfigured for {value}")
+                print(f"Screen scraper reconfigured for {value}")
             except Exception as e:
-                log(f"Screen scraper reconfiguration error: {e}")
+                print(f"Screen scraper reconfiguration error: {e}")
     
     def _start_autopilot(self):
         """Start the autopilot system."""
-        log("Starting autopilot system...")
+        print("Starting autopilot system...")
         
         # Update status
         self._update_table_status("🤖 Autopilot ACTIVATED\n")
@@ -731,7 +731,7 @@ class IntegratedPokerAssistant(tk.Tk):
     
     def _stop_autopilot(self):
         """Stop the autopilot system."""
-        log("Stopping autopilot system...")
+        print("Stopping autopilot system...")
         self._update_table_status("🤖 Autopilot DEACTIVATED\n")
     
     def _autopilot_loop(self):
@@ -755,7 +755,7 @@ class IntegratedPokerAssistant(tk.Tk):
                 self.after(0, lambda: self.autopilot_panel.update_statistics(stats))
                 
             except Exception as e:
-                log(f"Autopilot loop error: {e}")
+                print(f"Autopilot loop error: {e}")
             
             time.sleep(2)  # Check every 2 seconds
     
@@ -771,7 +771,7 @@ class IntegratedPokerAssistant(tk.Tk):
             self.after(0, lambda: self._update_table_status(status_msg))
             
         except Exception as e:
-            log(f"Table state processing error: {e}")
+            print(f"Table state processing error: {e}")
     
     def _detect_tables(self):
         """Detect available poker tables."""
@@ -880,9 +880,9 @@ class IntegratedPokerAssistant(tk.Tk):
         try:
             if GUI_MODULES_LOADED:
                 self.secure_db = get_secure_db()
-                log("Database initialized")
+                print("Database initialized")
         except Exception as e:
-            log(f"Database initialization error: {e}")
+            print(f"Database initialization error: {e}")
     
     def _start_background_services(self):
         """Start background monitoring services."""
@@ -899,10 +899,10 @@ class IntegratedPokerAssistant(tk.Tk):
                 self._update_scraper_indicator(False)
 
             if started_services:
-                log.info('Background services started: %s', ', '.join(started_services))
+                print(f'Background services started: {", ".join(started_services)}')
 
         except Exception as e:
-            log.warning('Background services error: %s', e)
+            print(f'Background services error: {e}')
 
     def _start_enhanced_screen_scraper(self) -> bool:
         """Start the enhanced screen scraper in continuous mode."""
@@ -927,19 +927,19 @@ class IntegratedPokerAssistant(tk.Tk):
                     status_line += ' with OCR'
                 self._update_table_status(status_line + '\n')
                 self._update_scraper_indicator(True)
-                log.info('Enhanced screen scraper started automatically (site=%s)', site)
+                print(f'Enhanced screen scraper started automatically (site={site})')
                 return True
 
             failure_message = result.get('message', 'unknown error')
             self._update_table_status(f"❌ Enhanced screen scraper failed to start: {failure_message}\n")
             self._update_scraper_indicator(False, error=True)
-            log.warning('Enhanced screen scraper failed to start: %s', failure_message)
+            print(f'Enhanced screen scraper failed to start: {failure_message}')
             return False
 
         except Exception as e:
             self._update_table_status(f"❌ Enhanced screen scraper error: {e}\n")
             self._update_scraper_indicator(False, error=True)
-            log.error('Enhanced screen scraper error: %s', e)
+            print(f'Enhanced screen scraper error: {e}')
             return False
 
     def _stop_enhanced_screen_scraper(self) -> None:
@@ -949,9 +949,9 @@ class IntegratedPokerAssistant(tk.Tk):
 
         try:
             stop_screen_scraper()
-            log.info('Enhanced screen scraper stopped')
+            print('Enhanced screen scraper stopped')
         except Exception as e:
-            log.warning('Enhanced screen scraper stop error: %s', e)
+            print(f'Enhanced screen scraper stop error: {e}')
         finally:
             self._enhanced_scraper_started = False
             self._update_scraper_indicator(False)
@@ -1011,7 +1011,7 @@ class IntegratedPokerAssistant(tk.Tk):
                 self.autopilot_active = False
                 self._stop_autopilot()
         except Exception as e:
-            log.warning('Autopilot shutdown error: %s', e)
+            print(f'Autopilot shutdown error: {e}')
         finally:
             self._stop_enhanced_screen_scraper()
             self.destroy()

@@ -58,9 +58,15 @@ def _missing_modules(modules: Iterable[str]) -> list[str]:
     return missing
 
 
-def ensure_ml_tests_run(logger: logging.Logger | None = None) -> None:
+def ensure_ml_tests_run(logger=None) -> None:
     """Run the full pytest suite once the heavyweight ML dependencies are present."""
-    log = logger or logging.getLogger(__name__)
+    # Handle both standard logging.Logger and custom MasterLogger
+    if logger is None:
+        log = logging.getLogger(__name__)
+    elif hasattr(logger, 'info') and callable(getattr(logger, 'info')):
+        log = logger  # Use the custom logger directly
+    else:
+        log = logging.getLogger(__name__)
 
     if os.environ.get('POKERTOOL_SKIP_AUTO_TESTS') == '1':
         log.info('Skipping ML auto-tests due to POKERTOOL_SKIP_AUTO_TESTS=1')
@@ -84,7 +90,15 @@ def ensure_ml_tests_run(logger: logging.Logger | None = None) -> None:
     try:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
     except Exception as exc:
-        log.warning('Unable to prepare state directory for ML auto-tests', exception=exc)
+        if hasattr(log, 'warning') and hasattr(log, 'error'):
+            # Custom MasterLogger with exception parameter
+            try:
+                log.warning('Unable to prepare state directory for ML auto-tests', exception=exc)
+            except TypeError:
+                # Fallback to standard logging format
+                log.warning('Unable to prepare state directory for ML auto-tests: %s', str(exc))
+        else:
+            log.warning('Unable to prepare state directory for ML auto-tests: %s', str(exc))
         return
 
     if SENTINEL_PATH.exists():
@@ -111,7 +125,15 @@ def ensure_ml_tests_run(logger: logging.Logger | None = None) -> None:
             check=False,
         )
     except Exception as exc:
-        log.error('Failed to execute pytest for ML auto-tests', exception=exc)
+        if hasattr(log, 'error') and hasattr(log, 'warning'):
+            # Custom MasterLogger with exception parameter
+            try:
+                log.error('Failed to execute pytest for ML auto-tests', exception=exc)
+            except TypeError:
+                # Fallback to standard logging format
+                log.error('Failed to execute pytest for ML auto-tests: %s', str(exc))
+        else:
+            log.error('Failed to execute pytest for ML auto-tests: %s', str(exc))
         return
 
     if result.returncode != 0:
@@ -122,7 +144,15 @@ def ensure_ml_tests_run(logger: logging.Logger | None = None) -> None:
     try:
         SENTINEL_PATH.write_text(json.dumps(identity, indent=2))
     except Exception as exc:
-        log.warning('Failed to persist ML auto-test sentinel; tests may rerun', exception=exc)
+        if hasattr(log, 'warning') and hasattr(log, 'error'):
+            # Custom MasterLogger with exception parameter
+            try:
+                log.warning('Failed to persist ML auto-test sentinel; tests may rerun', exception=exc)
+            except TypeError:
+                # Fallback to standard logging format
+                log.warning('Failed to persist ML auto-test sentinel; tests may rerun: %s', str(exc))
+        else:
+            log.warning('Failed to persist ML auto-test sentinel; tests may rerun: %s', str(exc))
         return
 
     log.info('ML auto-tests completed successfully')
