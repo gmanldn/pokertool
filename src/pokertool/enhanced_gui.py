@@ -332,6 +332,18 @@ class AutopilotControlPanel(tk.Frame):
         )
         continuous_update_cb.pack(anchor='w', padx=10, pady=2)
         
+        self.auto_gto_var = tk.BooleanVar(value=False)
+        auto_gto_cb = tk.Checkbutton(
+            settings_frame,
+            text='Auto GTO analysis',
+            variable=self.auto_gto_var,
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            selectcolor=COLORS['bg_light']
+        )
+        auto_gto_cb.pack(anchor='w', padx=10, pady=2)
+        
         # Statistics display
         stats_frame = tk.LabelFrame(
             self,
