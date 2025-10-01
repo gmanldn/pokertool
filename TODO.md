@@ -3,8 +3,8 @@
 schema: pokerheader.v1
 project: pokertool
 file: TODO.md
-version: v30.0.0
-last_commit: '2025-10-05T14:30:00+01:00'
+version: v31.0.0
+last_commit: '2025-10-05T18:00:00+01:00'
 fixes:
 - date: '2025-09-30'
   summary: Completed Hand Replay System (REPLAY-001)
@@ -12,6 +12,8 @@ fixes:
   summary: Added 15 new accuracy-focused tasks for improved win rate
 - date: '2025-10-05'
   summary: Completed NN-EVAL-001 and NASH-001 (CNN model + game tree abstraction)
+- date: '2025-10-05'
+  summary: Completed MCTS-001 and ICM-001 (MCTS optimizer + ICM calculator)
 ---
 POKERTOOL-HEADER-END -->
 # PokerTool Development TODO
@@ -19,8 +21,8 @@ POKERTOOL-HEADER-END -->
 <!-- MACHINE-READABLE-HEADER-START
 schema: todo.v1
 project: pokertool
-version: v30.0.0
-generated: 2025-10-05T14:30:00+00:00
+version: v31.0.0
+generated: 2025-10-05T18:00:00+00:00
 priority_levels: [CRITICAL, HIGH, MEDIUM, LOW]
 status_types: [TODO, IN_PROGRESS, TESTING, COMPLETED]
 MACHINE-READABLE-HEADER-END -->
@@ -29,14 +31,14 @@ MACHINE-READABLE-HEADER-END -->
 
 | Priority | Count | Percentage |
 |----------|-------|------------|
-| CRITICAL | 1     | 7.7%       |
-| HIGH     | 5     | 38.5%      |
-| MEDIUM   | 7     | 53.8%      |
+| CRITICAL | 0     | 0.0%       |
+| HIGH     | 4     | 36.4%      |
+| MEDIUM   | 7     | 63.6%      |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 13**
-**COMPLETED TASKS: 23**
-**Note: Completed 2 CRITICAL tasks (NN-EVAL-001, NASH-001) on 2025-10-05.**
+**TOTAL REMAINING TASKS: 11**
+**COMPLETED TASKS: 25**
+**Note: Completed 4 CRITICAL/HIGH tasks (NN-EVAL-001, NASH-001, MCTS-001, ICM-001) on 2025-10-05.**
 
 ---
 
