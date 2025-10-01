@@ -173,7 +173,7 @@ class CardRecognizer:
             suit_val = int(mean_val % 4)
             
             ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
-            suits = [Suit.SPADE, Suit.HEART, Suit.DIAMOND, Suit.CLUB]
+            suits = list(Suit)
             
             rank = ranks[min(rank_val - 2, 12)]
             suit = suits[suit_val]
