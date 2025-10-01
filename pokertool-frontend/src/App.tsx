@@ -59,6 +59,7 @@ function App() {
               root: {
                 textTransform: 'none',
                 borderRadius: 8,
+                color: '#000000',
               },
             },
           },
