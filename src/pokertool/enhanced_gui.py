@@ -186,6 +186,7 @@ class IntegratedPokerAssistant(tk.Tk):
         self.manual_section = None
         self.settings_section = None
         self.coaching_section = None
+        self.coaching_progress_vars = None  # Initialize coaching progress variables
         self._translation_bindings: List[Tuple[Any, str, str, str, str, Dict[str, Any]]] = []
         self._tab_bindings: List[Tuple[Any, str]] = []
         self._window_title_key = 'app.title'
@@ -381,6 +382,12 @@ class IntegratedPokerAssistant(tk.Tk):
 
         if self.settings_section:
             self.settings_section.update_localization_display()
+    
+    def _refresh_progress_summary(self):
+        """Refresh the coaching progress summary display."""
+        # This is a placeholder method for coaching progress updates
+        # The actual implementation would depend on the coaching system structure
+        pass
     
     def _build_ui(self):
         """Build the integrated user interface."""
@@ -691,6 +698,10 @@ class IntegratedPokerAssistant(tk.Tk):
     def _build_coaching_tab(self, parent):
         """Build the coaching integration tab."""
         self.coaching_section = CoachingSection(self, parent)
+
+    def _build_settings_tab(self, parent):
+        """Build the settings configuration tab."""
+        self.settings_section = SettingsSection(self, parent)
 
     def _build_analytics_tab(self, parent):
         """Render analytics dashboard data."""

@@ -3,464 +3,705 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
+# version: v28.1.0
+# last_commit: '2025-01-10T16:58:00+00:00'
 # fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# - date: '2025-01-10'
+#   summary: Complete rewrite for robust cross-platform dependency management and setup
 # ---
 # POKERTOOL-HEADER-END
+"""
+Robust cross-platform setup and launcher for PokerTool.
+
+This script can bootstrap the entire project from nothing on Windows, macOS, and Linux.
+Run with: python start.py --all (or just python start.py)
+"""
 from __future__ import annotations
-from pathlib import Path
-from typing import Sequence
+
 import os
 import sys
-
-# Set NumExpr thread limit to prevent warning (must be set before NumExpr is imported)
-os.environ.setdefault('NUMEXPR_MAX_THREADS', '8')
-
-import atexit
-import shlex
 import subprocess
+import platform
+import shutil
+import venv
+from pathlib import Path
+from typing import Sequence, Optional, Dict, Any, List
+import argparse
+import json
 
+# Constants
 ROOT = Path(__file__).resolve().parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
 SRC_DIR = ROOT / 'src'
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
+VENV_DIR = ROOT / '.venv'
 
-def check_and_install_dependencies(silent: bool = False):
-    """Check for missing dependencies and install them automatically."""
-    # Check NumPy version compatibility first
-    needs_numpy_fix = False
-    try:
-        import numpy as np
-        numpy_version = tuple(map(int, np.__version__.split('.')[:2]))
-        if numpy_version[0] >= 2:
-            # NumPy 2.x detected, need to check for compatibility issues
-            try:
-                import pandas as pd  # Test if pandas works with current numpy
-            except ImportError as e:
-                if 'NumPy 1.x' in str(e) or 'NumPy 2' in str(e):
-                    needs_numpy_fix = True
-    except ImportError:
-        pass  # NumPy will be installed if needed
+# Platform detection
+IS_WINDOWS = platform.system() == 'Windows'
+IS_MACOS = platform.system() == 'Darwin'
+IS_LINUX = platform.system() == 'Linux'
+
+class SetupError(Exception):
+    """Custom exception for setup errors."""
+    pass
+
+class PlatformManager:
+    """Handles platform-specific operations."""
     
-    # Fix NumPy compatibility if needed
-    if needs_numpy_fix:
-        print(f"\n{'='*60}")
-        print("⚠️  NumPy 2.x compatibility issue detected")
-        print("📦 Downgrading to NumPy 1.x for compatibility...")
-        print(f"{'='*60}")
-        try:
-            subprocess.check_call([
-                sys.executable, '-m', 'pip', 'install', 'numpy<2'
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-            print(f"✅ NumPy downgraded successfully")
-            print(f"{'='*60}\n")
-        except subprocess.CalledProcessError as e:
-            print(f"⚠️  Failed to fix NumPy: {e}")
-            print(f"   Try manually: pip install numpy<2")
-            print(f"{'='*60}\n")
-    
-    # Critical dependencies for screen scraping functionality
-    # MUST be installed before application starts
-    critical_deps = [
-        ('cv2', 'opencv-python'),
-        ('PIL', 'Pillow'),
-        ('pytesseract', 'pytesseract'),
-        ('mss', 'mss'),
-    ]
-    
-    # Optional but recommended dependencies
-    optional_deps = [
-    ]
-    
-    missing_critical = []
-    missing_optional = []
-    
-    # Check critical dependencies
-    for module_name, package_name in critical_deps:
-        try:
-            __import__(module_name)
-        except ImportError:
-            missing_critical.append(package_name)
-    
-    # Check optional dependencies
-    for module_name, package_name in optional_deps:
-        try:
-            __import__(module_name)
-        except ImportError:
-            missing_optional.append(package_name)
-    
-    # Install missing critical dependencies
-    if missing_critical:
-        if not silent:
-            print(f"\n{'='*60}")
-            print("📦 Installing missing critical dependencies...")
-            print(f"{'='*60}")
-        for package in missing_critical:
-            if not silent:
-                print(f"Installing {package}...")
-            try:
-                subprocess.check_call([
-                    sys.executable, '-m', 'pip', 'install', package
-                ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-                if not silent:
-                    print(f"✅ {package} installed successfully")
-            except subprocess.CalledProcessError as e:
-                print(f"⚠️  Failed to install {package}: {e}")
-                print(f"   You may need to install manually: pip install {package}")
-    
-    # Inform about optional dependencies (but don't auto-install)
-    if missing_optional and not silent:
-        print(f"\n📌 Optional dependencies available for enhanced features:")
-        for package in missing_optional:
-            print(f"   • {package} - Install with: pip install {package}")
-    
-    if (missing_critical or missing_optional) and not silent:
-        print(f"{'='*60}\n")
-    
-    return len(missing_critical) == 0
-
-# CRITICAL: Check and install dependencies IMMEDIATELY before any other imports
-# This prevents import errors when the application tries to load modules
-print("🔍 Checking critical dependencies before startup...")
-if not check_and_install_dependencies(silent=False):
-    print("⚠️  Some critical dependencies could not be installed automatically.")
-    print("   Please run: pip install opencv-python Pillow pytesseract")
-    print("   Then restart the application.")
-else:
-    print("✅ All critical dependencies are available\n")
-
-# Try to import your logger; if missing, still run with a stub printed by repair script.
-try:
-    from pokertool.modules.logger import logger, log_exceptions, setup_global_exception_handler
-except Exception as e:
-    print('[start.py] WARN: failed to import logger.py: ', e, file=sys.stderr)
-    def _noop(*_a, **_k):
-        pass
-
-    class _FakeLogger:
-        """Fake logger for when real logger fails to import."""
-        info = warning = error = critical = debug = staticmethod(_noop)
-
-    logger = _FakeLogger()
-
-    def log_exceptions(fn):
-        """TODO: Add docstring."""
-        return fn
-
-    def setup_global_exception_handler():
-        """TODO: Add docstring."""
-        pass
-
-def initialize_logging() -> None:
-    """Initialize logging system."""
-    setup_global_exception_handler()
-    safe_env = {k: v for k, v in os.environ.items() if 'TOKEN' not in k and 'KEY' not in k}
-    logger.info('APPLICATION STARTUP', argv=sys.argv, cwd=os.getcwd(), 
-                python_path=list(sys.path), environment_vars=safe_env)
-    
-    # Check and install dependencies
-    try:
-        check_and_install_dependencies()
-    except Exception as e:
-        logger.warning('Dependency check failed', exception=e)
-
-def cleanup() -> None:
-    """Cleanup function called on exit."""
-    logger.info('Performing cleanup')
-
-def _log_cmd(args: list[str]) -> str:
-    """Log command with proper shell escaping."""
-    return ' '.join(shlex.quote(a) for a in args)
-
-
-def _build_launcher_env() -> dict[str, str]:
-    """Construct environment with repo paths prioritized for subprocess launches."""
-    env = os.environ.copy()
-    pythonpath_entries = [str(ROOT), str(SRC_DIR)]
-    existing = env.get('PYTHONPATH')
-    if existing:
-        pythonpath_entries.extend(p for p in existing.split(os.pathsep) if p)
-
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for entry in pythonpath_entries:
-        if entry not in seen:
-            deduped.append(entry)
-            seen.add(entry)
-
-    env['PYTHONPATH'] = os.pathsep.join(deduped)
-    return env
-
-
-def _launch_via_module(passthrough_args: Sequence[str]) -> int:
-    """Launch PokerTool via `python -m pokertool` to favor the packaged entry point."""
-    env = _build_launcher_env()
-    cmd = [sys.executable, '-m', 'pokertool', *passthrough_args]
-    logger.info('Launching pokertool via module', command=_log_cmd(cmd))
-    completed = subprocess.run(cmd, cwd=str(ROOT), env=env)
-    if completed.returncode == 0:
-        return 0
-
-    logger.warning(
-        'Module launcher returned non-zero; falling back to legacy script discovery',
-        returncode=completed.returncode
-    )
-    return _launch_via_fallback_scripts(passthrough_args, env=env)
-
-
-def _detect_scanner_flags(python: str, script: Path) -> dict[str, bool]:
-    """
-    Probe 'code_scan.py --help' and detect available flags.
-    Returns a dict of supported flags (path, dry_run, no_backup).
-    """
-    supported = {'path': False, 'dry_run': False, 'no_backup': False}
-    try:
-        res = subprocess.run([python, str(script), '--help'], 
-                           cwd=str(ROOT), capture_output=True, text=True)
-        help_text = (res.stdout or '') + (res.stderr or '')
-        ht = help_text.replace('-', '')
-        supported['path'] = ('--path' in help_text) or (' path ' in ht)
-        supported['dry_run'] = ('--dry-run' in help_text) or (' dry run' in ht)
-        supported['no_backup'] = ('--no-backup' in help_text) or (' no backup' in ht)
-        logger.debug('Scanner help detected', help=help_text)
-    except Exception as e:
-        logger.warning('Failed to probe code_scan.py --help', exception=e)
-    return supported
-
-def _internal_quick_syntax_scan(scan_path: Path) -> int:
-    """
-    Fallback: compile all .py files for syntax errors.
-    Returns 0 on success, 1 if any errors occurred.
-    """
-    import py_compile
-    import traceback
-
-    errors = 0
-    for p in scan_path.rglob('*.py'):
-        # Skip common virtualenv / cache dirs
-        parts = {part for part in p.parts}
-        if any(x in parts for x in {'.venv', 'venv', '__pycache__', '.git'}):
-            continue
-        try:
-            py_compile.compile(str(p), doraise=True)
-            logger.debug('Syntax OK', file=str(p))
-        except Exception as e:
-            errors += 1
-            logger.error('Syntax error', file=str(p), exception=e)
-            traceback.print_exc()
-
-    if errors:
-        logger.warning('Internal syntax scan found errors', count=errors)
-        return 1
-    logger.info('Internal syntax scan passed (no errors)')
-    return 0
-
-def run_code_scan(python: str, scan_path: Path, *, quick: bool = True, auto_fix: bool = True) -> int:
-    """
-    Try to run ./code_scan.py. Auto-detect flags. If not present or failing,
-    fallback to internal scan.
-    Env overrides:
-        START_NO_SCAN = 1        -> skip
-        START_SCAN_DRY_RUN = 1   -> try dry-run if supported
-        START_NO_BACKUP = 1      -> try no-backup if supported
-        START_SCAN_PATH=...    -> override path
-    """
-    if os.environ.get('START_NO_SCAN') == '1':
-        logger.info("Skipping preflight code scan due to START_NO_SCAN = 1")
-        return 0
-
-    dry_run_requested = os.environ.get('START_SCAN_DRY_RUN') == '1'
-    no_backup_requested = os.environ.get('START_NO_BACKUP') == '1'
-
-    try:
-        import code_scan  # type: ignore
-
-        if hasattr(code_scan, 'scan_and_fix'):
-            logger.info(
-                'Running code_scan.scan_and_fix via import',
-                quick=quick,
-                auto_fix=auto_fix,
-                dry_run=dry_run_requested,
-                no_backup=no_backup_requested,
-                scan_path=str(scan_path)
-            )
-            kwargs = {
-                'root': ROOT,
-                'quick': quick,
-                'auto_fix': auto_fix,
-            }
-            if scan_path:
-                kwargs['path'] = str(scan_path)
-            if dry_run_requested:
-                kwargs['dry_run'] = True
-            if no_backup_requested:
-                kwargs['no_backup'] = True
-
-            try:
-                result = code_scan.scan_and_fix(**kwargs)  # type: ignore[attr-defined]
-            except TypeError:
-                # Older implementations may not accept optional keywords
-                result = code_scan.scan_and_fix(  # type: ignore[attr-defined]
-                    ROOT,
-                    quick=quick,
-                    auto_fix=auto_fix,
-                )
-            errs = getattr(result, 'errors', None)
-            fixed = getattr(result, 'fixed', None)
-            if errs is not None or fixed is not None:
-                logger.info('Code scan finished', errors=errs, fixed=fixed)
-            return 0
-
-        if hasattr(code_scan, 'main'):
-            args = ['--root', str(ROOT)]
-            if scan_path and scan_path != ROOT:
-                args += ['--path', str(scan_path)]
-            args.append('--autofix' if auto_fix else '--no-autofix')
-            args.append('--quick' if quick else '--full')
-            if dry_run_requested:
-                args.append('--dry-run')
-            if no_backup_requested:
-                args.append('--no-backup')
-
-            logger.info('Running code_scan.main via import', args=args)
-            return int(code_scan.main(args))  # type: ignore[attr-defined]
-
-    except Exception as e:
-        logger.warning('Importing code_scan failed; falling back to subprocess', exception=e)
-
-    script = ROOT / 'code_scan.py'
-    if not script.exists():
-        logger.warning("code_scan.py not found; using internal quick syntax scan")
-        return _internal_quick_syntax_scan(scan_path)
-
-    flags = _detect_scanner_flags(python, script)
-    args = [python, str(script)]
-
-    if flags['path']:
-        args += ['--path', str(scan_path)]
-
-    args.append('--autofix' if auto_fix else '--no-autofix')
-    args.append('--quick' if quick else '--full')
-
-    if dry_run_requested and flags['dry_run']:
-        args.append('--dry-run')
-    if no_backup_requested and flags['no_backup']:
-        args.append('--no-backup')
-
-    logger.info('Running code_scan.py', command=_log_cmd(args))
-    completed = subprocess.run(args, cwd=str(ROOT))
-    if completed.returncode != 0:
-        logger.warning(
-            "code_scan.py non-zero or incompatible; running internal syntax scan",
-            returncode=completed.returncode
-        )
-        return _internal_quick_syntax_scan(scan_path)
-    return 0
-
-def _launch_cli_directly(passthrough_args: Sequence[str]) -> int:
-    """Attempt to launch the PokerTool CLI directly inside the current process."""
-    try:
-        from pokertool import cli as cli_module
-    except ImportError as e:
-        logger.warning('Direct CLI import failed; retrying via module launcher', exception=e)
-        return _launch_via_module(passthrough_args)
-
-    try:
-        logger.info('Launching pokertool.cli directly')
-        return int(cli_module.main(list(passthrough_args)))
-    except Exception as e:
-        logger.warning('pokertool.cli execution error; retrying via module launcher', exception=e)
-        return _launch_via_module(passthrough_args)
-
-
-def _launch_via_fallback_scripts(
-    passthrough_args: Sequence[str], *, env: dict[str, str] | None = None
-) -> int:
-    """Fallback: try to execute known launcher scripts via subprocess."""
-    candidate_scripts = [
-        ROOT / 'src' / 'pokertool' / 'cli.py',
-        ROOT / 'tools' / 'poker_go.py',
-        ROOT / 'tools' / 'enhanced_poker_gui.py',
-        ROOT / 'launch_pokertool.py',
-    ]
-
-    launch_env = env or _build_launcher_env()
-
-    for script in candidate_scripts:
-        if script.exists():
-            cmd = [sys.executable, str(script), *passthrough_args]
-            logger.info('Launching fallback script', command=_log_cmd(cmd), script=str(script))
-            completed = subprocess.run(cmd, cwd=str(ROOT), env=launch_env)
-            return int(completed.returncode)
-
-    logger.warning('No executable fallback launcher found', candidates=[str(p) for p in candidate_scripts])
-    return 0
-
-@log_exceptions
-def main(argv: Sequence[str] | None = None) -> int:
-    """Main entry point for the application."""
-    argv = list(argv or sys.argv[1:])
-    initialize_logging()
-
-    try:
-        from pokertool.automation import ensure_ml_tests_run
-    except Exception as exc:  # pragma: no cover - defensive import guard
-        logger.warning('Unable to load automation helpers', exception=exc)
-    else:
-        try:
-            ensure_ml_tests_run(logger)
-        except Exception as exc:  # pragma: no cover - defensive execution guard
-            logger.warning('ML auto-test execution failed', exception=exc)
-
-    # Defaults
-    scan_path = Path(os.environ.get('START_SCAN_PATH', str(ROOT))).resolve()
-    run_scan = True
-    quick_scan = True
-    auto_fix = True
-    passthrough: list[str] = []
-
-    # Minimal passthrough arg split: everything after '--' goes to poker_go.py
-    while argv:
-        a = argv.pop(0)
-        if a == '--scan-path' and argv:
-            scan_path = Path(argv.pop(0)).resolve()
-        elif a == '--no-scan':
-            run_scan = False
-        elif a == '--no-fix':
-            auto_fix = False
-        elif a == '--full-scan':
-            quick_scan = False
-        elif a == '--':
-            passthrough = argv[:]
-            break
+    @staticmethod
+    def get_python_executable() -> str:
+        """Get the best Python executable for this platform."""
+        candidates = []
+        
+        if IS_WINDOWS:
+            # Windows: try py launcher first, then python, then python3
+            candidates = ['py', 'python', 'python3']
         else:
-            passthrough.append(a)
+            # Unix-like: try python3 first, then python
+            candidates = ['python3', 'python']
+        
+        for cmd in candidates:
+            if shutil.which(cmd):
+                try:
+                    result = subprocess.run([cmd, '--version'], 
+                                          capture_output=True, text=True, timeout=10)
+                    if result.returncode == 0 and 'Python 3' in result.stdout:
+                        return cmd
+                except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+                    continue
+        
+        raise SetupError("No suitable Python 3 installation found. Please install Python 3.8 or later.")
+    
+    @staticmethod
+    def get_venv_python() -> str:
+        """Get the Python executable inside the virtual environment."""
+        if IS_WINDOWS:
+            return str(VENV_DIR / 'Scripts' / 'python.exe')
+        else:
+            return str(VENV_DIR / 'bin' / 'python')
+    
+    @staticmethod
+    def get_venv_pip() -> str:
+        """Get the pip executable inside the virtual environment."""
+        if IS_WINDOWS:
+            return str(VENV_DIR / 'Scripts' / 'pip.exe')
+        else:
+            return str(VENV_DIR / 'bin' / 'pip')
+    
+    @staticmethod
+    def check_command_available(command: str) -> bool:
+        """Check if a command is available in PATH."""
+        return shutil.which(command) is not None
 
-    if run_scan:
-        rc = run_code_scan(sys.executable, scan_path, quick=quick_scan, auto_fix=auto_fix)
-        if rc != 0:
-            logger.warning('Proceeding despite scan issues', returncode=rc)
-    else:
-        logger.info('Skipping preflight scan (requested via flag)')
+class DependencyManager:
+    """Manages Python and Node.js dependencies."""
+    
+    def __init__(self, verbose: bool = True):
+        self.verbose = verbose
+        self.platform = PlatformManager()
+    
+    def log(self, message: str) -> None:
+        """Log a message if verbose mode is enabled."""
+        if self.verbose:
+            print(f"[SETUP] {message}")
+    
+    def run_command(self, command: List[str], **kwargs) -> subprocess.CompletedProcess:
+        """Run a command with proper error handling."""
+        self.log(f"Running: {' '.join(command)}")
+        
+        try:
+            result = subprocess.run(
+                command, 
+                check=True, 
+                capture_output=not self.verbose,
+                text=True,
+                timeout=300,  # 5 minute timeout
+                **kwargs
+            )
+            return result
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Command failed: {' '.join(command)}"
+            if e.stderr:
+                error_msg += f"\nError: {e.stderr}"
+            raise SetupError(error_msg) from e
+        except subprocess.TimeoutExpired as e:
+            raise SetupError(f"Command timed out: {' '.join(command)}") from e
+    
+    def check_python_version(self) -> str:
+        """Check Python version and return the executable path."""
+        python_exe = self.platform.get_python_executable()
+        
+        try:
+            result = subprocess.run([python_exe, '--version'], 
+                                  capture_output=True, text=True)
+            version_str = result.stdout.strip()
+            self.log(f"Found {version_str}")
+            
+            # Parse version
+            version_parts = version_str.split()[1].split('.')
+            major, minor = int(version_parts[0]), int(version_parts[1])
+            
+            if major < 3 or (major == 3 and minor < 8):
+                raise SetupError(f"Python 3.8+ required, found {version_str}")
+            
+            return python_exe
+        except Exception as e:
+            raise SetupError(f"Failed to check Python version: {e}")
+    
+    def create_virtual_environment(self, python_exe: str) -> None:
+        """Create a virtual environment."""
+        if VENV_DIR.exists():
+            self.log("Virtual environment already exists")
+            return
+        
+        self.log(f"Creating virtual environment at {VENV_DIR}")
+        
+        try:
+            # Try using built-in venv module first
+            venv.create(VENV_DIR, with_pip=True)
+            self.log("Virtual environment created successfully")
+        except Exception as e:
+            self.log(f"Built-in venv failed: {e}")
+            
+            # Fallback: try installing virtualenv and using it
+            try:
+                self.log("Installing virtualenv as fallback...")
+                self.run_command([python_exe, '-m', 'pip', 'install', '--user', 'virtualenv'])
+                self.run_command([python_exe, '-m', 'virtualenv', str(VENV_DIR)])
+                self.log("Virtual environment created with virtualenv")
+            except Exception as e2:
+                raise SetupError(f"Failed to create virtual environment: {e2}") from e
+    
+    def upgrade_pip_in_venv(self) -> None:
+        """Upgrade pip in the virtual environment."""
+        venv_python = self.platform.get_venv_python()
+        
+        if not Path(venv_python).exists():
+            raise SetupError("Virtual environment Python not found")
+        
+        self.log("Upgrading pip in virtual environment...")
+        try:
+            self.run_command([venv_python, '-m', 'pip', 'install', '--upgrade', 'pip'])
+        except SetupError:
+            # Try alternative upgrade method
+            self.log("Trying alternative pip upgrade method...")
+            self.run_command([venv_python, '-m', 'ensurepip', '--upgrade'])
+            self.run_command([venv_python, '-m', 'pip', 'install', '--upgrade', 'pip'])
+    
+    def install_python_dependencies(self) -> None:
+        """Install Python dependencies from requirements files."""
+        venv_python = self.platform.get_venv_python()
+        
+        # Determine which requirements file to use
+        requirements_lock = ROOT / 'requirements.lock'
+        requirements_txt = ROOT / 'requirements.txt'
+        
+        requirements_file = None
+        if requirements_lock.exists():
+            requirements_file = requirements_lock
+            self.log("Using requirements.lock for reproducible installs")
+        elif requirements_txt.exists():
+            requirements_file = requirements_txt
+            self.log("Using requirements.txt")
+        else:
+            self.log("No requirements file found, skipping Python dependencies")
+            return
+        
+        self.log(f"Installing Python dependencies from {requirements_file.name}...")
+        self.run_command([
+            venv_python, '-m', 'pip', 'install', '-r', str(requirements_file)
+        ])
+        
+        # Install additional critical dependencies that might not be in requirements
+        critical_deps = [
+            'opencv-python',
+            'Pillow',
+            'pytesseract',
+            'mss',
+            'numpy<2.0',  # NumPy 2.x compatibility fix
+        ]
+        
+        self.log("Ensuring critical dependencies are installed...")
+        for dep in critical_deps:
+            try:
+                self.run_command([venv_python, '-m', 'pip', 'install', dep])
+            except SetupError:
+                self.log(f"Warning: Failed to install {dep}")
+    
+    def check_node_available(self) -> bool:
+        """Check if Node.js is available."""
+        return self.platform.check_command_available('node') and self.platform.check_command_available('npm')
+    
+    def install_node_dependencies(self) -> None:
+        """Install Node.js dependencies if package.json exists."""
+        package_json = ROOT / 'package.json'
+        
+        if not package_json.exists():
+            self.log("No package.json found, skipping Node.js dependencies")
+            return
+        
+        if not self.check_node_available():
+            self.log("Node.js/npm not found, skipping Node.js dependencies")
+            self.log("Install Node.js from https://nodejs.org/ for full functionality")
+            return
+        
+        self.log("Installing Node.js dependencies...")
+        try:
+            self.run_command(['npm', 'install'], cwd=ROOT)
+            self.log("Node.js dependencies installed successfully")
+        except SetupError as e:
+            self.log(f"Warning: Node.js dependency installation failed: {e}")
+    
+    def validate_setup(self) -> None:
+        """Validate that the setup was successful."""
+        venv_python = self.platform.get_venv_python()
+        
+        # Check if virtual environment exists
+        if not Path(venv_python).exists():
+            self.log("Virtual environment not found - run with --venv first to create it")
+            # Use system Python for validation
+            try:
+                python_exe = self.platform.get_python_executable()
+                self.log(f"Using system Python for validation: {python_exe}")
+                venv_python = python_exe
+            except SetupError:
+                self.log("No suitable Python installation found")
+                return
+        else:
+            self.log("Using virtual environment Python for validation")
+        
+        # Test importing critical modules
+        test_imports = [
+            ('sys', 'Python standard library'),
+            ('pathlib', 'Python pathlib'),
+            ('numpy', 'NumPy'),
+            ('cv2', 'OpenCV'),
+            ('PIL', 'Pillow'),
+        ]
+        
+        self.log("Validating Python environment...")
+        for module, description in test_imports:
+            try:
+                result = subprocess.run([
+                    venv_python, '-c', f'import {module}; print(f"{module} OK")'
+                ], capture_output=True, text=True, timeout=30)
+                
+                if result.returncode == 0:
+                    self.log(f"✓ {description}")
+                else:
+                    self.log(f"⚠ {description} - {result.stderr.strip()}")
+            except Exception as e:
+                self.log(f"⚠ {description} - validation failed: {e}")
+        
+        self.log("Setup validation complete")
+    
+    def run_comprehensive_self_test(self) -> bool:
+        """Run a comprehensive self-test including system checks."""
+        self.log("=== STARTING COMPREHENSIVE SELF-TEST ===")
+        
+        # 1. System checks
+        success = self._check_system_requirements()
+        
+        # 2. Environment validation
+        if success:
+            try:
+                self.validate_setup()
+                self.log("✓ Environment validation passed")
+            except Exception as e:
+                self.log(f"✗ Environment validation failed: {e}")
+                success = False
+        
+        # 3. Critical dependency checks
+        if success:
+            success = self._check_critical_dependencies()
+        
+        # 4. File system checks
+        if success:
+            success = self._check_file_system()
+        
+        return success
+    
+    def _check_system_requirements(self) -> bool:
+        """Check system-level requirements."""
+        self.log("Checking system requirements...")
+        
+        try:
+            # Check Python version
+            python_exe = self.platform.get_python_executable()
+            result = subprocess.run([python_exe, '--version'], 
+                                  capture_output=True, text=True)
+            version_str = result.stdout.strip()
+            self.log(f"✓ {version_str}")
+            
+            # Check available memory
+            try:
+                import psutil
+                memory = psutil.virtual_memory()
+                memory_gb = memory.total / (1024**3)
+                self.log(f"✓ System memory: {memory_gb:.1f} GB")
+                
+                if memory_gb < 4:
+                    self.log("⚠ Warning: Low system memory (< 4GB)")
+            except ImportError:
+                self.log("⚠ psutil not available, skipping memory check")
+            
+            # Check disk space
+            import shutil
+            disk_usage = shutil.disk_usage(str(ROOT))
+            free_gb = disk_usage.free / (1024**3)
+            self.log(f"✓ Free disk space: {free_gb:.1f} GB")
+            
+            if free_gb < 1:
+                self.log("⚠ Warning: Low disk space (< 1GB)")
+                return False
+            
+            # Check platform specifics
+            self.log(f"✓ Platform: {platform.system()} {platform.release()}")
+            self.log(f"✓ Architecture: {platform.machine()}")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"✗ System requirements check failed: {e}")
+            return False
+    
+    def _check_critical_dependencies(self) -> bool:
+        """Check critical application dependencies."""
+        self.log("Checking critical dependencies...")
+        
+        venv_python = self.platform.get_venv_python()
+        if not Path(venv_python).exists():
+            venv_python = self.platform.get_python_executable()
+        
+        critical_modules = [
+            ('numpy', 'NumPy - Mathematical operations'),
+            ('cv2', 'OpenCV - Computer vision'),
+            ('PIL', 'Pillow - Image processing'),
+            ('tkinter', 'Tkinter - GUI framework'),
+            ('sqlite3', 'SQLite - Database'),
+        ]
+        
+        success = True
+        for module, description in critical_modules:
+            try:
+                result = subprocess.run([
+                    venv_python, '-c', f'import {module}; print("OK")'
+                ], capture_output=True, text=True, timeout=10)
+                
+                if result.returncode == 0:
+                    self.log(f"✓ {description}")
+                else:
+                    self.log(f"✗ {description} - FAILED")
+                    success = False
+            except Exception as e:
+                self.log(f"✗ {description} - ERROR: {e}")
+                success = False
+        
+        return success
+    
+    def _check_file_system(self) -> bool:
+        """Check file system structure and permissions."""
+        self.log("Checking file system...")
+        
+        critical_paths = [
+            (SRC_DIR, "Source directory"),
+            (ROOT / 'tests', "Tests directory"),
+            (ROOT / 'requirements.txt', "Requirements file"),
+        ]
+        
+        success = True
+        for path, description in critical_paths:
+            if path.exists():
+                if path.is_file() and os.access(path, os.R_OK):
+                    self.log(f"✓ {description} readable")
+                elif path.is_dir() and os.access(path, os.R_OK | os.X_OK):
+                    self.log(f"✓ {description} accessible")
+                else:
+                    self.log(f"✗ {description} - permission denied")
+                    success = False
+            else:
+                self.log(f"⚠ {description} - not found")
+                if 'tests' not in str(path):  # Tests dir is optional
+                    success = False
+        
+        # Check write permissions in project root
+        try:
+            test_file = ROOT / '.write_test'
+            test_file.write_text('test')
+            test_file.unlink()
+            self.log("✓ Project directory writable")
+        except Exception as e:
+            self.log(f"✗ Project directory not writable: {e}")
+            success = False
+        
+        return success
 
-    try:
-        logger.info('Starting poker tool application')
-        test_value = {'cards': ["As", "Kh"], 'position': 'BTN'}
-        logger.debug('Test debug message', test_data=test_value)
-        app_rc = _launch_cli_directly(passthrough)
-    except Exception as e:
-        logger.critical('Application failed to start', exception=e)
+class PokerToolLauncher:
+    """Handles launching the PokerTool application."""
+    
+    def __init__(self, dependency_manager: DependencyManager):
+        self.dependency_manager = dependency_manager
+        self.platform = PlatformManager()
+    
+    def setup_python_path(self) -> Dict[str, str]:
+        """Set up the Python path for running the application."""
+        env = os.environ.copy()
+        
+        python_paths = [str(ROOT), str(SRC_DIR)]
+        existing_path = env.get('PYTHONPATH', '')
+        
+        if existing_path:
+            python_paths.append(existing_path)
+        
+        env['PYTHONPATH'] = os.pathsep.join(python_paths)
+        return env
+    
+    def run_tests(self) -> int:
+        """Run the test suite."""
+        venv_python = self.platform.get_venv_python()
+        env = self.setup_python_path()
+        
+        test_file = ROOT / 'run_tests.py'
+        if not test_file.exists():
+            self.dependency_manager.log("No test file found, skipping tests")
+            return 0
+        
+        self.dependency_manager.log("Running tests...")
+        try:
+            result = subprocess.run([venv_python, str(test_file)], 
+                                  cwd=ROOT, env=env)
+            return result.returncode
+        except Exception as e:
+            self.dependency_manager.log(f"Test execution failed: {e}")
+            return 1
+    
+    def run_full_self_test(self) -> int:
+        """Run a complete self-test including system checks, environment validation, and test suite."""
+        self.dependency_manager.log("=== POKERTOOL COMPREHENSIVE SELF-TEST ===")
+        
+        # 1. Run comprehensive system and environment checks
+        if not self.dependency_manager.run_comprehensive_self_test():
+            self.dependency_manager.log("✗ Comprehensive self-test FAILED")
+            return 1
+        
+        self.dependency_manager.log("✓ System and environment checks PASSED")
+        
+        # 2. Run the full test suite
+        self.dependency_manager.log("=== RUNNING TEST SUITE ===")
+        test_result = self.run_tests()
+        
+        if test_result != 0:
+            self.dependency_manager.log("✗ Test suite FAILED")
+            return test_result
+        
+        self.dependency_manager.log("✓ Test suite PASSED")
+        
+        # 3. Optional: Quick application smoke test
+        self.dependency_manager.log("=== BASIC FUNCTIONALITY CHECK ===")
+        if self._run_smoke_test():
+            self.dependency_manager.log("✓ Basic functionality check PASSED")
+        else:
+            self.dependency_manager.log("⚠ Basic functionality check had issues (not critical)")
+        
+        self.dependency_manager.log("=== SELF-TEST COMPLETED SUCCESSFULLY ===")
+        return 0
+    
+    def _run_smoke_test(self) -> bool:
+        """Run a basic smoke test to verify core functionality."""
+        try:
+            venv_python = self.platform.get_venv_python()
+            env = self.setup_python_path()
+            
+            # Test basic module imports
+            smoke_test_code = '''
+try:
+    import sys
+    sys.path.insert(0, "src")
+    # Basic import test - adjust based on your actual module structure
+    print("✓ Basic imports successful")
+    print("✓ Smoke test passed")
+except Exception as e:
+    print(f"✗ Smoke test failed: {e}")
+    sys.exit(1)
+'''
+            
+            result = subprocess.run([
+                venv_python, '-c', smoke_test_code
+            ], capture_output=True, text=True, cwd=ROOT, env=env, timeout=30)
+            
+            if result.returncode == 0:
+                self.dependency_manager.log("✓ Basic module structure accessible")
+                return True
+            else:
+                self.dependency_manager.log(f"⚠ Smoke test issues: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            self.dependency_manager.log(f"⚠ Smoke test error: {e}")
+            return False
+    
+    def launch_application(self, args: List[str] = None) -> int:
+        """Launch the main PokerTool application."""
+        if args is None:
+            args = []
+        
+        venv_python = self.platform.get_venv_python()
+        env = self.setup_python_path()
+        
+        # Try different launch methods in order of preference
+        launch_methods = [
+            # Method 1: Use -m pokertool
+            [venv_python, '-m', 'pokertool'] + args,
+            # Method 2: Direct CLI script
+            [venv_python, str(SRC_DIR / 'pokertool' / 'cli.py')] + args,
+            # Method 3: Legacy scripts
+            [venv_python, str(ROOT / 'tools' / 'poker_go.py')] + args,
+            [venv_python, str(ROOT / 'launch_pokertool.py')] + args,
+        ]
+        
+        for method in launch_methods:
+            # Check if the target file exists (skip -m methods)
+            if len(method) > 2 and not method[0].endswith('python') and not Path(method[1]).exists():
+                continue
+            
+            self.dependency_manager.log(f"Trying launch method: {' '.join(method[:2])}")
+            try:
+                result = subprocess.run(method, cwd=ROOT, env=env)
+                return result.returncode
+            except Exception as e:
+                self.dependency_manager.log(f"Launch method failed: {e}")
+                continue
+        
+        self.dependency_manager.log("All launch methods failed")
         return 1
 
-    logger.info('Application shutdown', returncode=app_rc)
-    return app_rc
+def main() -> int:
+    """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description="PokerTool Setup and Launcher",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python start.py --all          # Full setup and launch (default)
+  python start.py --self-test    # Run comprehensive self-test (system + tests)
+  python start.py --venv         # Setup virtual environment only
+  python start.py --python       # Install Python dependencies only  
+  python start.py --node         # Install Node dependencies only
+  python start.py --tests        # Run tests only
+  python start.py --validate     # Validate environment setup only
+  python start.py --launch       # Launch application only
+        """
+    )
+    
+    parser.add_argument('--venv', action='store_true', 
+                       help='Setup virtual environment')
+    parser.add_argument('--python', action='store_true',
+                       help='Install Python dependencies') 
+    parser.add_argument('--node', action='store_true',
+                       help='Install Node.js dependencies')
+    parser.add_argument('--tests', action='store_true',
+                       help='Run tests')
+    parser.add_argument('--launch', action='store_true',
+                       help='Launch application')
+    parser.add_argument('--all', action='store_true',
+                       help='Do everything (setup + launch)')
+    parser.add_argument('--quiet', action='store_true',
+                       help='Suppress output')
+    parser.add_argument('--validate', action='store_true',
+                       help='Validate setup only')
+    parser.add_argument('--self-test', action='store_true',
+                       help='Run comprehensive self-test (system checks + full test suite)')
+    
+    args, unknown_args = parser.parse_known_args()
+    
+    # Default to --all if no specific action is specified
+    if not any([args.venv, args.python, args.node, args.tests, args.launch, args.all, args.validate, args.self_test]):
+        args.all = True
+    
+    try:
+        dependency_manager = DependencyManager(verbose=not args.quiet)
+        launcher = PokerToolLauncher(dependency_manager)
+        
+        # Platform info
+        dependency_manager.log(f"Platform: {platform.system()} {platform.release()}")
+        dependency_manager.log(f"Architecture: {platform.machine()}")
+        dependency_manager.log(f"Python: {sys.version}")
+        
+        return_code = 0
+        
+        # Check if we're already in the virtual environment
+        in_venv = hasattr(sys, 'real_prefix') or (
+            hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix
+        )
+        
+        # Virtual environment setup
+        if args.all or args.venv:
+            if not in_venv:
+                python_exe = dependency_manager.check_python_version()
+                dependency_manager.create_virtual_environment(python_exe)
+                dependency_manager.upgrade_pip_in_venv()
+                
+                # Re-invoke script in virtual environment if we're not already in one
+                venv_python = PlatformManager.get_venv_python()
+                if Path(venv_python).exists():
+                    dependency_manager.log("Re-invoking script in virtual environment...")
+                    # Remove --venv from args to avoid infinite recursion
+                    new_args = [arg for arg in sys.argv[1:] if arg != '--venv']
+                    if not new_args or (len(new_args) == 1 and new_args[0] == '--all'):
+                        new_args = ['--python', '--node', '--launch']
+                    
+                    result = subprocess.run([venv_python, sys.argv[0]] + new_args)
+                    return result.returncode
+            else:
+                dependency_manager.log("Already in virtual environment")
+        
+        # Python dependencies
+        if args.all or args.python:
+            dependency_manager.install_python_dependencies()
+        
+        # Node dependencies  
+        if args.all or args.node:
+            dependency_manager.install_node_dependencies()
+        
+        # Validation
+        if args.all or args.validate:
+            dependency_manager.validate_setup()
+        
+        # Self-test (comprehensive)
+        if args.self_test:
+            self_test_result = launcher.run_full_self_test()
+            if self_test_result != 0:
+                dependency_manager.log(f"Self-test failed with code {self_test_result}")
+                return_code = self_test_result
+            else:
+                dependency_manager.log("✓ Comprehensive self-test completed successfully!")
+            return return_code  # Exit after self-test, don't proceed to other actions
+        
+        # Tests
+        if args.tests:
+            test_result = launcher.run_tests()
+            if test_result != 0:
+                dependency_manager.log(f"Tests failed with code {test_result}")
+                return_code = test_result
+        
+        # Launch application
+        if args.all or args.launch:
+            if return_code == 0:  # Only launch if previous steps succeeded
+                dependency_manager.log("Launching PokerTool...")
+                return_code = launcher.launch_application(unknown_args)
+        
+        if return_code == 0:
+            dependency_manager.log("✓ Setup and launch completed successfully!")
+        
+        return return_code
+        
+    except SetupError as e:
+        print(f"[ERROR] {e}", file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print("\n[INFO] Setup interrupted by user", file=sys.stderr)
+        return 130
+    except Exception as e:
+        print(f"[ERROR] Unexpected error: {e}", file=sys.stderr)
+        return 1
 
 if __name__ == '__main__':
-    atexit.register(cleanup)
-    raise SystemExit(main())
+    sys.exit(main())

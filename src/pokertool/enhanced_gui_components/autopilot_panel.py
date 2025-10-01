@@ -35,7 +35,7 @@ class AutopilotState:
 
     active: bool = False
     scraping: bool = False
-    site: str = "CHROME"
+    site: str = "GENERIC"
     tables_detected: int = 0
     actions_taken: int = 0
     last_action: str = "None"
