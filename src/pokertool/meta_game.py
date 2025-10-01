@@ -125,7 +125,7 @@ class LevelingWarSimulator:
         return StrategyLevel.LEVEL_1  # Default
 
 
-class DynamicStrategySwit cher:
+class DynamicStrategySwitcher:
     """Dynamically switch between strategies"""
     
     def __init__(self):
@@ -377,7 +377,7 @@ class MetaGameOptimizer:
     
     def __init__(self):
         self.leveling_simulator = LevelingWarSimulator()
-        self.strategy_switcher = DynamicStrategySwit cher()
+        self.strategy_switcher = DynamicStrategySwitcher()
         self.balance_calculator = ExploitationProtectionBalancer()
         self.history_strategy = HistoryDependentStrategy()
         self.reputation_model = ReputationModel()
