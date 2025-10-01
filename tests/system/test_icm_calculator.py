@@ -235,7 +235,7 @@ def test_decision_analysis_positive_ev() -> None:
     
     assert decision.action == 'call'
     assert isinstance(decision.cEV, float)
-    assert isinstance(decision.$EV, float)
+    assert isinstance(decision.dollar_EV, float)
     assert isinstance(decision.risk_premium, float)
 
 
@@ -260,7 +260,7 @@ def test_decision_analysis_negative_ev() -> None:
     
     # Low win probability should not be recommended
     assert not decision.recommended
-    assert decision.$EV < 0
+    assert decision.dollar_EV < 0
 
 
 def test_payout_structure_optimization() -> None:

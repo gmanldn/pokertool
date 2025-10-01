@@ -3,8 +3,8 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v28.1.0
-# last_commit: '2025-01-10T16:58:00+00:00'
+# version: v28.0.0
+# last_commit: '2025-01-10T17:40:00+00:00'
 # fixes:
 # - date: '2025-01-10'
 #   summary: Complete rewrite for robust cross-platform dependency management and setup
