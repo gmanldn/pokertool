@@ -26,11 +26,11 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | HIGH     | 0     | 0.0%       |
-| MEDIUM   | 5     | 100.0%     |
+| MEDIUM   | 3     | 100.0%     |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 5**
-**COMPLETED TASKS: 16**
+**TOTAL REMAINING TASKS: 3**
+**COMPLETED TASKS: 18**
 **Note: All CRITICAL priority tasks have been completed and removed**
 
 ---
@@ -315,35 +315,45 @@ MACHINE-READABLE-HEADER-END -->
   - Late-registration advisory messaging tuned to structure and re-entry rules
   - ROI summaries plus satellite linkage surfaced for multi-step qualifiers
 
-### 22. Performance Profiler
+### 22. Performance Profiler ✅
 
 - **ID**: PERF-002
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-04)
 - **Estimated Hours**: 12
 - **Dependencies**: None
 - **Description**: Application performance monitoring
 - **Subtasks**:
-  - [ ] Add CPU usage monitoring
-  - [ ] Implement memory profiling
-  - [ ] Create bottleneck detection
-  - [ ] Add performance alerts
-  - [ ] Implement optimization suggestions
+  - [x] Add CPU usage monitoring
+  - [x] Implement memory profiling
+  - [x] Create bottleneck detection
+  - [x] Add performance alerts
+  - [x] Implement optimization suggestions
+- **Implementation**: `src/pokertool/performance_profiler.py` with coverage in `tests/system/test_performance_profiler.py`
+- **Deliverables**:
+  - Snapshot-driven profiler with alert rules, report generation, and optimization suggestions
+  - Optional psutil integration plus JSON history export for post-mortem review
+  - Regression tests verifying alerts, baseline suggestions, and persistence
 
 
 
-### 28. Documentation System
+### 28. Documentation System ✅
 
 - **ID**: DOC-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-04)
 - **Estimated Hours**: 16
 - **Dependencies**: None
 - **Description**: Interactive documentation
 - **Subtasks**:
-  - [ ] Create help system
-  - [ ] Add video tutorials
-  - [ ] Implement interactive guides
-  - [ ] Create FAQ system
-  - [ ] Add context-sensitive help
+  - [x] Create help system
+  - [x] Add video tutorials
+  - [x] Implement interactive guides
+  - [x] Create FAQ system
+  - [x] Add context-sensitive help
+- **Implementation**: `src/pokertool/documentation_system.py` with validation in `tests/system/test_documentation_system.py`
+- **Deliverables**:
+  - Help topic registry with search, tutorials, guides, FAQ, and context-sensitive mapping
+  - Documentation export facility for packaging content into `.pokertool/docs`
+  - System tests covering registration, search, guide retrieval, and context help
 
 ### 29. Analytics Dashboard
 
@@ -427,6 +437,16 @@ MACHINE-READABLE-HEADER-END -->
    - Added `theme_system.py` powering theme engine, editor drafts, and marketplace listings
    - Created `tests/system/test_theme_system.py` covering application previews and marketplace downloads
    - Persisted themes to `.pokertool/themes` for GUI consumption
+
+5. **PERF-002** - Performance Profiler
+   - Added `performance_profiler.py` for snapshot capture, alerting, and optimization reporting
+   - Created `tests/system/test_performance_profiler.py` validating alerts, baseline suggestions, and exports
+   - Enabled profiler history exports to `.pokertool/profiler`
+
+6. **DOC-001** - Documentation System
+   - Added `documentation_system.py` handling help topics, tutorials, guides, FAQs, and context help
+   - Created `tests/system/test_documentation_system.py` covering search, guide retrieval, and exports
+   - Persisted documentation bundles to `.pokertool/docs`
 
 ### 2025-10-03
 1. **STUDY-001** - Study Mode
@@ -521,6 +541,14 @@ MACHINE-READABLE-HEADER-END -->
 - Updated priority matrix (0 HIGH, 5 MEDIUM, 0 LOW remaining)
 - Total tasks: 5 remaining, 16 completed
 
+### Version v23.8.0 (2025-10-04)
+- Completed PERF-002: Performance Profiler
+- Completed DOC-001: Documentation System
+- Added performance_profiler.py with alerting, reporting, and persistence tests
+- Added documentation_system.py managing help topics, guides, tutorials, and context help with tests
+- Updated priority matrix (0 HIGH, 3 MEDIUM, 0 LOW remaining)
+- Total tasks: 3 remaining, 18 completed
+
 ### Version v23.3.0 (2025-10-02)
 - Completed BLUFF-001: AI Bluff Detection
 - Completed CONV-001: Hand Converter
@@ -552,7 +580,7 @@ MACHINE-READABLE-HEADER-END -->
 ## Notes
 
 - All CRITICAL, HIGH, and LOW priority tasks have been completed and removed
-- Remaining backlog consists of MEDIUM initiatives (analytics dashboard, performance profiling, documentation system)
+- Remaining backlog consists of MEDIUM initiatives (analytics dashboard, gamification, community features)
 - Prioritise coordination dependencies across analytics dashboard, session management, and networking items
 - Dependencies remain minimal; tasks can be scheduled in parallel with appropriate resourcing
 - Regular updates to this file are recommended as tasks progress
