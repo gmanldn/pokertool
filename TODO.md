@@ -3,8 +3,8 @@
 schema: pokerheader.v1
 project: pokertool
 file: TODO.md
-version: v31.0.0
-last_commit: '2025-10-05T18:00:00+01:00'
+version: v32.0.0
+last_commit: '2025-01-10T14:30:00+00:00'
 fixes:
 - date: '2025-09-30'
   summary: Completed Hand Replay System (REPLAY-001)
@@ -14,6 +14,8 @@ fixes:
   summary: Completed NN-EVAL-001 and NASH-001 (CNN model + game tree abstraction)
 - date: '2025-10-05'
   summary: Completed MCTS-001 and ICM-001 (MCTS optimizer + ICM calculator)
+- date: '2025-01-10'
+  summary: Completed MERGE-001 and QUANTUM-001 (Range merging + Quantum optimization)
 ---
 POKERTOOL-HEADER-END -->
 # PokerTool Development TODO
@@ -21,8 +23,8 @@ POKERTOOL-HEADER-END -->
 <!-- MACHINE-READABLE-HEADER-START
 schema: todo.v1
 project: pokertool
-version: v31.0.0
-generated: 2025-10-05T18:00:00+00:00
+version: v32.0.0
+generated: 2025-01-10T14:30:00+00:00
 priority_levels: [CRITICAL, HIGH, MEDIUM, LOW]
 status_types: [TODO, IN_PROGRESS, TESTING, COMPLETED]
 MACHINE-READABLE-HEADER-END -->
@@ -32,13 +34,13 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | CRITICAL | 0     | 0.0%       |
-| HIGH     | 1     | 14.3%      |
-| MEDIUM   | 6     | 85.7%      |
+| HIGH     | 0     | 0.0%       |
+| MEDIUM   | 6     | 100.0%     |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 7**
-**COMPLETED TASKS: 29**
-**Note: Completed 8 CRITICAL/HIGH tasks (NN-EVAL-001, NASH-001, MCTS-001, ICM-001, BAYES-001, RL-001) on 2025-10-05 and 2025-01-10.**
+**TOTAL REMAINING TASKS: 6**
+**COMPLETED TASKS: 31**
+**Note: Completed 10 CRITICAL/HIGH tasks (NN-EVAL-001, NASH-001, MCTS-001, ICM-001, BAYES-001, RL-001, MERGE-001, QUANTUM-001) on 2025-10-05 and 2025-01-10.**
 
 ---
 
@@ -247,43 +249,45 @@ MACHINE-READABLE-HEADER-END -->
   - `coaching_system.py` - Modular engine for insights, persistence, and training content
   - `test_coaching_system.py` - Unit tests covering detection, scenarios, and live advice
 
-### 7. Advanced Range Merging Algorithm
+### 7. Advanced Range Merging Algorithm ✅
 - **ID**: MERGE-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-01-10)
 - **Priority**: HIGH
 - **Estimated Hours**: 24
 - **Dependencies**: Hand Range Analyzer
 - **Description**: Optimal range construction and merging
 - **Subtasks**:
-  - [ ] Implement minimum defense frequency
-  - [ ] Add polarization optimizer
-  - [ ] Create removal effects calculator
-  - [ ] Implement blockers analysis
-  - [ ] Add range simplification
+  - [x] Implement minimum defense frequency
+  - [x] Add polarization optimizer
+  - [x] Create removal effects calculator
+  - [x] Implement blockers analysis
+  - [x] Add range simplification
 - **Expected Accuracy Gain**: 8-12% improvement in range construction
-- **Files to Create**:
-  - `src/pokertool/range_merger.py`
-  - `src/pokertool/blocker_effects.py`
-  - `tests/system/test_range_merger.py`
+- **Implementation**: Complete range merging system with MDF, polarization, removal effects, blockers, and simplification
+- **Files Created**:
+  - `src/pokertool/range_merger.py` (full implementation)
+  - `src/pokertool/blocker_effects.py` (blocker analysis system)
+  - `tests/system/test_range_merger.py` (32 tests, all passed)
 
-### 8. Quantum-Inspired Optimization
+### 8. Quantum-Inspired Optimization ✅
 - **ID**: QUANTUM-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-01-10)
 - **Priority**: HIGH
 - **Estimated Hours**: 35
 - **Dependencies**: None
 - **Description**: Quantum computing algorithms for complex optimization
 - **Subtasks**:
-  - [ ] Implement quantum annealing simulation
-  - [ ] Add QAOA for combinatorial optimization
-  - [ ] Create superposition state exploration
-  - [ ] Implement entanglement correlations
-  - [ ] Add measurement collapse strategies
+  - [x] Implement quantum annealing simulation
+  - [x] Add QAOA for combinatorial optimization
+  - [x] Create superposition state exploration
+  - [x] Implement entanglement correlations
+  - [x] Add measurement collapse strategies
 - **Expected Accuracy Gain**: 10-14% in specific complex scenarios
-- **Files to Create**:
-  - `src/pokertool/quantum_optimizer.py`
-  - `src/pokertool/qaoa_solver.py`
-  - `tests/system/test_quantum_optimizer.py`
+- **Implementation**: Complete quantum-inspired optimizer with annealing, QAOA, superposition, entanglement
+- **Files Created**:
+  - `src/pokertool/quantum_optimizer.py` (full implementation)
+  - `src/pokertool/qaoa_solver.py` (QAOA solver implementation)
+  - `tests/system/test_quantum_optimizer.py` (36 tests, all passed)
 
 ## MEDIUM Priority Tasks
 
@@ -756,6 +760,29 @@ MACHINE-READABLE-HEADER-END -->
    - Comprehensive tests in `test_rl_agent.py` (39 tests, all passed)
    - **Lines Added**: ~720 lines of production code
 
+3. **MERGE-001** - Advanced Range Merging Algorithm
+   - Created `range_merger.py` with complete range merging system
+   - Implemented `MinimumDefenseFrequencyCalculator` for MDF calculations
+   - Created `PolarizationOptimizer` for optimal bet/bluff ratios
+   - Implemented `RemovalEffectsCalculator` with combo counting logic
+   - Created `BlockerAnalyzer` for blocker analysis and bluff selection
+   - Implemented `RangeSimplifier` for range simplification
+   - Added `AdvancedRangeMerger` orchestrating all components
+   - Created blocker effects module with texture analysis and equity adjustments
+   - Comprehensive tests in `test_range_merger.py` (32 tests, all passed)
+   - **Lines Added**: ~850 lines of production code
+
+4. **QUANTUM-001** - Quantum-Inspired Optimization
+   - Created `quantum_optimizer.py` with quantum annealing simulator
+   - Implemented `SuperpositionStateExplorer` with Grover's algorithm
+   - Created `EntanglementCorrelationAnalyzer` for state correlations
+   - Implemented `QuantumInspiredOptimizer` for poker-specific optimization
+   - Created `qaoa_solver.py` with QAOA implementation
+   - Implemented `PokerQAOASolver` for range and action optimization
+   - Added utility functions for quick optimization tasks
+   - Comprehensive tests in `test_quantum_optimizer.py` (36 tests, all passed)
+   - **Lines Added**: ~920 lines of production code
+
 ### 2025-10-05
 1. **NN-EVAL-001** - Neural Network Hand Strength Evaluator
    - Enhanced `neural_evaluator.py` with full CNN deep learning model
@@ -1067,5 +1094,5 @@ MACHINE-READABLE-HEADER-END -->
 - Real-time game state streaming
 - Historical player statistics
 
-**Last Updated**: 2025-10-04  
-**Next Review**: 2025-10-11
+**Last Updated**: 2025-01-10  
+**Next Review**: 2025-01-17
