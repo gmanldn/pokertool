@@ -421,10 +421,13 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Implement simplification algorithms
   - [ ] Add deviation EV calculator
 - **Expected Accuracy Gain**: 10-12% in exploitative play
-- **Files to Create**:
+- **Implementation**: Complete deviation engine with population biasing, node locking, simplification, exploitability scoring, and solver API integration
+- **Files Created**:
   - `src/pokertool/gto_deviations.py`
   - `src/pokertool/node_locker.py`
   - `tests/system/test_gto_deviations.py`
+  - `src/pokertool/solver_api.py` (integrated deviation helpers)
+  - `tests/system/test_solver_api.py` (added deviation coverage)
 
 ### 9. Internationalization ✅
 

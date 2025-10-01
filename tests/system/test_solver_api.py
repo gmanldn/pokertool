@@ -15,9 +15,11 @@ from src.pokertool.solver_api import (
     ProgressiveRefiner,
     LatencyOptimizer,
     ParallelSolverExecutor,
+    PopulationProfile,
     create_solver_api,
     quick_query
 )
+from src.pokertool.gto_deviations import DeviationResult
 
 
 class TestSolverQuery(unittest.TestCase):
@@ -455,6 +457,37 @@ class TestRealtimeSolverAPI(unittest.TestCase):
         
         stats = self.api.get_stats()
         self.assertEqual(stats['cache_stats']['size'], 0)
+    
+    def test_register_population_profile(self):
+        """Population profile delegates to deviation engine registry."""
+        profile = PopulationProfile(
+            name="tight-passive",
+            action_bias={"fold": 0.1, "raise": -0.1},
+        )
+        self.api.register_population_profile(profile)
+        
+        stored = self.api.deviation_engine.get_population_profile("tight-passive")
+        self.assertIsNotNone(stored)
+        self.assertEqual(stored.name, "tight-passive")
+    
+    def test_compute_gto_deviation(self):
+        """Compute GTO deviation returns DeviationResult with EV gain metadata."""
+        baseline = {"raise": 0.3, "call": 0.4, "fold": 0.3}
+        action_evs = {"raise": 1.8, "call": 0.9, "fold": 0.1}
+        
+        result = self.api.compute_gto_deviation(
+            node_id="turn_node",
+            baseline_strategy=baseline,
+            action_evs=action_evs,
+            game_state={"position": "CO"},
+            max_shift=0.2,
+        )
+        
+        self.assertIsInstance(result, DeviationResult)
+        self.assertAlmostEqual(sum(result.deviation_strategy.values()), 1.0, places=6)
+        self.assertGreaterEqual(result.ev_gain, 0.0)
+        self.assertIn("ev_baseline", result.metadata)
+        self.assertIn("ev_deviation", result.metadata)
 
 
 class TestConvenienceFunctions(unittest.TestCase):

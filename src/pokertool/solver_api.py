@@ -14,6 +14,12 @@ import time
 import hashlib
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, asdict
+
+from src.pokertool.gto_deviations import (
+    DeviationRequest,
+    GTODeviationEngine,
+    PopulationProfile,
+)
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
@@ -339,12 +345,16 @@ class RealtimeSolverAPI:
     
     def __init__(self, cache_size: int = 1000, 
                  cache_ttl: int = 3600,
-                 max_parallel_workers: int = 4):
+                 max_parallel_workers: int = 4,
+                 deviation_engine: Optional[GTODeviationEngine] = None):
         self.cache = SolverCache(max_size=cache_size, ttl_seconds=cache_ttl)
         self.approximation_engine = ApproximationEngine()
         self.progressive_refiner = ProgressiveRefiner()
         self.latency_optimizer = LatencyOptimizer()
         self.parallel_executor = ParallelSolverExecutor(max_workers=max_parallel_workers)
+        self.deviation_engine = deviation_engine or GTODeviationEngine(solver_api=self)
+        if self.deviation_engine.solver_api is None:
+            self.deviation_engine.solver_api = self
         self.query_count = 0
     
     def query(self, query: SolverQuery) -> SolverResult:
@@ -421,6 +431,56 @@ class RealtimeSolverAPI:
             List of results in same order as queries
         """
         return self.parallel_executor.execute_parallel(queries, self)
+    
+    # ------------------------------------------------------------------ #
+    # GTO deviation helpers
+    # ------------------------------------------------------------------ #
+    
+    def register_population_profile(self, profile: PopulationProfile) -> None:
+        """Register a population profile for deviation analysis."""
+        self.deviation_engine.register_population_profile(profile)
+    
+    def compute_gto_deviation(
+        self,
+        node_id: str,
+        baseline_strategy: Dict[str, float],
+        action_evs: Dict[str, float],
+        game_state: Optional[Dict[str, Any]] = None,
+        population_profile: Optional[PopulationProfile] = None,
+        simplification_threshold: float = 0.01,
+        max_actions: Optional[int] = 3,
+        max_shift: float = 0.40,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Compute an exploitative deviation against a baseline strategy.
+
+        Args:
+            node_id: Identifier for the decision node being analysed.
+            baseline_strategy: Baseline action frequencies (must sum to 1.0).
+            action_evs: Expected values for each action.
+            game_state: Additional state information for downstream consumers.
+            population_profile: Optional bias profile to seed deviations.
+            simplification_threshold: Minimum retained probability after pruning.
+            max_actions: Optional cap on number of actions retained.
+            max_shift: Maximum total probability mass shifted from baseline.
+            metadata: Optional metadata for downstream consumers.
+
+        Returns:
+            DeviationResult produced by the GTO deviation engine.
+        """
+        request = DeviationRequest(
+            node_id=node_id,
+            game_state=game_state or {},
+            baseline_strategy=baseline_strategy,
+            action_evs=action_evs,
+            population_profile=population_profile,
+            simplification_threshold=simplification_threshold,
+            max_actions=max_actions,
+            max_shift=max_shift,
+            metadata=metadata or {},
+        )
+        return self.deviation_engine.compute_deviation(request)
     
     def _approximate_query(self, query: SolverQuery) -> Dict[str, Any]:
         """Execute query using approximation."""
