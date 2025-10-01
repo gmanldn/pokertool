@@ -32,13 +32,13 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | CRITICAL | 0     | 0.0%       |
-| HIGH     | 4     | 36.4%      |
-| MEDIUM   | 7     | 63.6%      |
+| HIGH     | 3     | 33.3%      |
+| MEDIUM   | 6     | 66.7%      |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 11**
-**COMPLETED TASKS: 25**
-**Note: Completed 4 CRITICAL/HIGH tasks (NN-EVAL-001, NASH-001, MCTS-001, ICM-001) on 2025-10-05.**
+**TOTAL REMAINING TASKS: 9**
+**COMPLETED TASKS: 27**
+**Note: Completed 6 CRITICAL/HIGH tasks (NN-EVAL-001, NASH-001, MCTS-001, ICM-001) on 2025-10-05.**
 
 ---
 
@@ -83,45 +83,45 @@ MACHINE-READABLE-HEADER-END -->
   - `src/pokertool/cfr_plus.py` (CFR++ implementation)
   - `tests/system/test_nash_solver.py` (comprehensive tests - 256 lines)
 
-### 3. Monte Carlo Tree Search (MCTS) Optimizer
+### 3. Monte Carlo Tree Search (MCTS) Optimizer ✅
 - **ID**: MCTS-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-05)
 - **Priority**: CRITICAL
 - **Estimated Hours**: 32
 - **Dependencies**: None
 - **Description**: MCTS for optimal action selection in complex spots
 - **Subtasks**:
-  - [ ] Implement UCT algorithm
-  - [ ] Add progressive widening
-  - [ ] Create parallel tree search
-  - [ ] Implement transposition tables
-  - [ ] Add time management system
+  - [x] Implement UCT algorithm
+  - [x] Add progressive widening
+  - [x] Create parallel tree search
+  - [x] Implement transposition tables
+  - [x] Add time management system
 - **Expected Accuracy Gain**: 10-15% improvement in complex decisions
-- **Files to Create**:
-  - `src/pokertool/mcts_optimizer.py`
-  - `src/pokertool/tree_search.py`
-  - `tests/system/test_mcts_optimizer.py`
+- **Implementation**: Complete MCTS implementation with UCT, progressive widening, transposition tables
+- **Files Created**:
+  - `src/pokertool/mcts_optimizer.py` (full implementation - 505 lines)
+  - `tests/system/test_mcts_optimizer.py` (comprehensive coverage)
 
 ## HIGH Priority Tasks
 
-### 4. Real-Time ICM Calculator
+### 4. Real-Time ICM Calculator ✅
 - **ID**: ICM-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-05)
 - **Priority**: HIGH
 - **Estimated Hours**: 28
 - **Dependencies**: None
 - **Description**: Independent Chip Model for tournament optimal play
 - **Subtasks**:
-  - [ ] Implement Malmuth-Harville algorithm
-  - [ ] Add future game simulation
-  - [ ] Create bubble factor calculations
-  - [ ] Implement risk premium adjustments
-  - [ ] Add payout structure optimizer
+  - [x] Implement Malmuth-Harville algorithm
+  - [x] Add future game simulation
+  - [x] Create bubble factor calculations
+  - [x] Implement risk premium adjustments
+  - [x] Add payout structure optimizer
 - **Expected Accuracy Gain**: 20-25% improvement in tournament decisions
-- **Files to Create**:
-  - `src/pokertool/icm_calculator.py`
-  - `src/pokertool/tournament_equity.py`
-  - `tests/system/test_icm_calculator.py`
+- **Implementation**: Complete ICM calculator with Malmuth-Harville, bubble factors, risk premium
+- **Files Created**:
+  - `src/pokertool/icm_calculator.py` (full implementation - 510 lines)
+  - `tests/system/test_icm_calculator.py` (comprehensive coverage)
 
 ### 5. Bayesian Opponent Profiler
 - **ID**: BAYES-001
@@ -749,6 +749,26 @@ MACHINE-READABLE-HEADER-END -->
    - Added comprehensive tests in `test_nash_solver.py` (8 new tests)
    - Full support for reducing game complexity via abstraction
    - **Lines Added**: ~310 lines of production code
+
+3. **MCTS-001** - Monte Carlo Tree Search Optimizer
+   - Created `mcts_optimizer.py` with full MCTS implementation
+   - Implemented UCT (Upper Confidence bounds for Trees) algorithm
+   - Added progressive widening for large action spaces
+   - Created transposition table with LRU eviction
+   - Implemented time management for real-time decisions
+   - Added comprehensive tests in `test_mcts_optimizer.py`
+   - Complete node expansion, selection, simulation, and backpropagation
+   - **Lines Added**: ~505 lines of production code
+
+4. **ICM-001** - Real-Time ICM Calculator
+   - Created `icm_calculator.py` with Malmuth-Harville algorithm
+   - Implemented finish probability calculations with memoization
+   - Added bubble factor analysis for ICM pressure situations
+   - Created risk premium calculations for tournament decisions
+   - Implemented payout structure optimizer with exponential decay
+   - Added future game simulation capabilities
+   - Comprehensive tests in `test_icm_calculator.py`
+   - **Lines Added**: ~510 lines of production code
 
 ### 2025-10-04
 1. **REPORT-001** - Advanced Reporting
