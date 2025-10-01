@@ -3,11 +3,13 @@
 schema: pokerheader.v1
 project: pokertool
 file: TODO.md
-version: v28.1.0
-last_commit: '2025-09-30T12:00:00+01:00'
+version: v29.0.0
+last_commit: '2025-10-04T12:00:00+01:00'
 fixes:
 - date: '2025-09-30'
   summary: Completed Hand Replay System (REPLAY-001)
+- date: '2025-10-04'
+  summary: Added 15 new accuracy-focused tasks for improved win rate
 ---
 POKERTOOL-HEADER-END -->
 # PokerTool Development TODO
@@ -15,9 +17,9 @@ POKERTOOL-HEADER-END -->
 <!-- MACHINE-READABLE-HEADER-START
 schema: todo.v1
 project: pokertool
-version: v23.0.0
-generated: 2025-09-30T12:00:00+00:00
-priority_levels: [HIGH, MEDIUM, LOW]
+version: v29.0.0
+generated: 2025-10-04T12:00:00+00:00
+priority_levels: [CRITICAL, HIGH, MEDIUM, LOW]
 status_types: [TODO, IN_PROGRESS, TESTING, COMPLETED]
 MACHINE-READABLE-HEADER-END -->
 
@@ -25,17 +27,134 @@ MACHINE-READABLE-HEADER-END -->
 
 | Priority | Count | Percentage |
 |----------|-------|------------|
-| HIGH     | 0     | 0.0%       |
-| MEDIUM   | 0     | 0.0%       |
+| CRITICAL | 3     | 20.0%      |
+| HIGH     | 5     | 33.3%      |
+| MEDIUM   | 7     | 46.7%      |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 0**
+**TOTAL REMAINING TASKS: 15**
 **COMPLETED TASKS: 21**
-**Note: All CRITICAL priority tasks have been completed and removed**
+**Note: All previous tasks completed. New advanced accuracy-focused tasks added.**
 
 ---
 
+## CRITICAL Priority Tasks (Accuracy & Win Rate Enhancement)
+
+### 1. Neural Network Hand Strength Evaluator
+- **ID**: NN-EVAL-001
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 40
+- **Dependencies**: None
+- **Description**: Deep learning model for precise hand strength evaluation
+- **Subtasks**:
+  - [ ] Train CNN model on 10M+ hand histories
+  - [ ] Implement real-time inference engine
+  - [ ] Create confidence scoring system
+  - [ ] Add contextual strength adjustments
+  - [ ] Implement board texture analysis
+- **Expected Accuracy Gain**: 15-20% improvement in hand evaluation
+- **Files to Create**:
+  - `src/pokertool/neural_evaluator.py`
+  - `src/pokertool/models/hand_strength_model.h5`
+  - `tests/system/test_neural_evaluator.py`
+
+### 2. Advanced Nash Equilibrium Solver
+- **ID**: NASH-001
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 36
+- **Dependencies**: GTO Solver
+- **Description**: Multi-street Nash equilibrium computation with mixed strategies
+- **Subtasks**:
+  - [ ] Implement counterfactual regret minimization++
+  - [ ] Add multi-way pot support
+  - [ ] Create abstraction algorithms for large game trees
+  - [ ] Implement real-time approximation
+  - [ ] Add exploitability metrics
+- **Expected Accuracy Gain**: 12-18% improvement in decision making
+- **Files to Create**:
+  - `src/pokertool/nash_solver.py`
+  - `src/pokertool/cfr_plus.py`
+  - `tests/system/test_nash_solver.py`
+
+### 3. Monte Carlo Tree Search (MCTS) Optimizer
+- **ID**: MCTS-001
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 32
+- **Dependencies**: None
+- **Description**: MCTS for optimal action selection in complex spots
+- **Subtasks**:
+  - [ ] Implement UCT algorithm
+  - [ ] Add progressive widening
+  - [ ] Create parallel tree search
+  - [ ] Implement transposition tables
+  - [ ] Add time management system
+- **Expected Accuracy Gain**: 10-15% improvement in complex decisions
+- **Files to Create**:
+  - `src/pokertool/mcts_optimizer.py`
+  - `src/pokertool/tree_search.py`
+  - `tests/system/test_mcts_optimizer.py`
+
 ## HIGH Priority Tasks
+
+### 4. Real-Time ICM Calculator
+- **ID**: ICM-001
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 28
+- **Dependencies**: None
+- **Description**: Independent Chip Model for tournament optimal play
+- **Subtasks**:
+  - [ ] Implement Malmuth-Harville algorithm
+  - [ ] Add future game simulation
+  - [ ] Create bubble factor calculations
+  - [ ] Implement risk premium adjustments
+  - [ ] Add payout structure optimizer
+- **Expected Accuracy Gain**: 20-25% improvement in tournament decisions
+- **Files to Create**:
+  - `src/pokertool/icm_calculator.py`
+  - `src/pokertool/tournament_equity.py`
+  - `tests/system/test_icm_calculator.py`
+
+### 5. Bayesian Opponent Profiler
+- **ID**: BAYES-001
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 30
+- **Dependencies**: ML Opponent Modeling
+- **Description**: Bayesian inference for opponent tendency prediction
+- **Subtasks**:
+  - [ ] Implement prior distribution models
+  - [ ] Add online belief updating
+  - [ ] Create uncertainty quantification
+  - [ ] Implement action prediction
+  - [ ] Add convergence guarantees
+- **Expected Accuracy Gain**: 15-20% improvement in opponent exploitation
+- **Files to Create**:
+  - `src/pokertool/bayesian_profiler.py`
+  - `src/pokertool/belief_updater.py`
+  - `tests/system/test_bayesian_profiler.py`
+
+### 6. Reinforcement Learning Agent
+- **ID**: RL-001
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 45
+- **Dependencies**: Neural Evaluator
+- **Description**: Self-play RL agent for strategy improvement
+- **Subtasks**:
+  - [ ] Implement PPO algorithm
+  - [ ] Create reward shaping system
+  - [ ] Add experience replay buffer
+  - [ ] Implement curriculum learning
+  - [ ] Add multi-agent training
+- **Expected Accuracy Gain**: 18-22% overall improvement
+- **Files to Create**:
+  - `src/pokertool/rl_agent.py`
+  - `src/pokertool/ppo_trainer.py`
+  - `tests/system/test_rl_agent.py`
 
 ### 1. Hand Replay System ✅
 - **ID**: REPLAY-001
@@ -123,7 +242,178 @@ MACHINE-READABLE-HEADER-END -->
   - `coaching_system.py` - Modular engine for insights, persistence, and training content
   - `test_coaching_system.py` - Unit tests covering detection, scenarios, and live advice
 
+### 7. Advanced Range Merging Algorithm
+- **ID**: MERGE-001
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 24
+- **Dependencies**: Hand Range Analyzer
+- **Description**: Optimal range construction and merging
+- **Subtasks**:
+  - [ ] Implement minimum defense frequency
+  - [ ] Add polarization optimizer
+  - [ ] Create removal effects calculator
+  - [ ] Implement blockers analysis
+  - [ ] Add range simplification
+- **Expected Accuracy Gain**: 8-12% improvement in range construction
+- **Files to Create**:
+  - `src/pokertool/range_merger.py`
+  - `src/pokertool/blocker_effects.py`
+  - `tests/system/test_range_merger.py`
+
+### 8. Quantum-Inspired Optimization
+- **ID**: QUANTUM-001
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 35
+- **Dependencies**: None
+- **Description**: Quantum computing algorithms for complex optimization
+- **Subtasks**:
+  - [ ] Implement quantum annealing simulation
+  - [ ] Add QAOA for combinatorial optimization
+  - [ ] Create superposition state exploration
+  - [ ] Implement entanglement correlations
+  - [ ] Add measurement collapse strategies
+- **Expected Accuracy Gain**: 10-14% in specific complex scenarios
+- **Files to Create**:
+  - `src/pokertool/quantum_optimizer.py`
+  - `src/pokertool/qaoa_solver.py`
+  - `tests/system/test_quantum_optimizer.py`
+
 ## MEDIUM Priority Tasks
+
+### 9. Timing Tell Analyzer
+- **ID**: TIMING-001
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 22
+- **Dependencies**: Bluff Detection
+- **Description**: Advanced timing pattern analysis
+- **Subtasks**:
+  - [ ] Implement microsecond precision tracking
+  - [ ] Add action sequence timing
+  - [ ] Create timing deviation detection
+  - [ ] Implement pattern clustering
+  - [ ] Add confidence intervals
+- **Expected Accuracy Gain**: 5-8% improvement in live play reads
+- **Files to Create**:
+  - `src/pokertool/timing_analyzer.py`
+  - `src/pokertool/pattern_detector.py`
+  - `tests/system/test_timing_analyzer.py`
+
+### 10. Meta-Game Optimizer
+- **ID**: META-001
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 26
+- **Dependencies**: GTO Solver, Nash Solver
+- **Description**: Meta-game theory optimal adjustments
+- **Subtasks**:
+  - [ ] Implement leveling war simulator
+  - [ ] Add dynamic strategy switching
+  - [ ] Create exploitation vs protection balance
+  - [ ] Implement history-dependent strategies
+  - [ ] Add reputation modeling
+- **Expected Accuracy Gain**: 7-10% in regular games
+- **Files to Create**:
+  - `src/pokertool/meta_game.py`
+  - `src/pokertool/leveling_war.py`
+  - `tests/system/test_meta_game.py`
+
+### 11. Statistical Significance Validator
+- **ID**: STATS-001
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 18
+- **Dependencies**: Database
+- **Description**: Statistical validation of patterns and reads
+- **Subtasks**:
+  - [ ] Implement hypothesis testing framework
+  - [ ] Add confidence interval calculation
+  - [ ] Create sample size recommendations
+  - [ ] Implement variance reduction techniques
+  - [ ] Add p-value corrections
+- **Expected Accuracy Gain**: Prevents 10-15% of false positive reads
+- **Files to Create**:
+  - `src/pokertool/stats_validator.py`
+  - `src/pokertool/hypothesis_tester.py`
+  - `tests/system/test_stats_validator.py`
+
+### 12. Solver-Based Preflop Charts
+- **ID**: PREFLOP-001
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 20
+- **Dependencies**: GTO Solver
+- **Description**: Comprehensive solver-approved preflop ranges
+- **Subtasks**:
+  - [ ] Generate 100bb deep ranges
+  - [ ] Add ante adjustment calculations
+  - [ ] Create straddle adaptations
+  - [ ] Implement ICM preflop adjustments
+  - [ ] Add multi-way pot ranges
+- **Expected Accuracy Gain**: 8-10% improvement in preflop play
+- **Files to Create**:
+  - `src/pokertool/preflop_charts.py`
+  - `src/pokertool/range_generator.py`
+  - `tests/system/test_preflop_charts.py`
+
+### 13. Real-Time Solver API
+- **ID**: SOLVER-API-001
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 25
+- **Dependencies**: GTO Solver, Nash Solver
+- **Description**: Fast API for real-time solver queries
+- **Subtasks**:
+  - [ ] Implement caching layer
+  - [ ] Add approximation algorithms
+  - [ ] Create parallel computation
+  - [ ] Implement progressive refinement
+  - [ ] Add latency optimization
+- **Expected Accuracy Gain**: Enables real-time optimal decisions
+- **Files to Create**:
+  - `src/pokertool/solver_api.py`
+  - `src/pokertool/solver_cache.py`
+  - `tests/system/test_solver_api.py`
+
+### 14. Ensemble Decision System
+- **ID**: ENSEMBLE-001
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 28
+- **Dependencies**: All solvers and analyzers
+- **Description**: Combine multiple decision engines
+- **Subtasks**:
+  - [ ] Implement weighted voting system
+  - [ ] Add confidence-based weighting
+  - [ ] Create disagreement resolution
+  - [ ] Implement adaptive weights
+  - [ ] Add performance tracking
+- **Expected Accuracy Gain**: 12-15% overall improvement
+- **Files to Create**:
+  - `src/pokertool/ensemble_decision.py`
+  - `src/pokertool/weight_optimizer.py`
+  - `tests/system/test_ensemble_decision.py`
+
+### 15. Game Theory Optimal Deviations
+- **ID**: GTO-DEV-001
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 24
+- **Dependencies**: GTO Solver
+- **Description**: Profitable GTO deviations calculator
+- **Subtasks**:
+  - [ ] Implement maximum exploitation finder
+  - [ ] Add population tendency adjustments
+  - [ ] Create node-locking strategies
+  - [ ] Implement simplification algorithms
+  - [ ] Add deviation EV calculator
+- **Expected Accuracy Gain**: 10-12% in exploitative play
+- **Files to Create**:
+  - `src/pokertool/gto_deviations.py`
+  - `src/pokertool/node_locker.py`
+  - `tests/system/test_gto_deviations.py`
 
 ### 9. Internationalization ✅
 
@@ -591,6 +881,24 @@ MACHINE-READABLE-HEADER-END -->
 - Updated priority matrix (0 HIGH, 0 MEDIUM, 0 LOW remaining)
 - Total tasks: 0 remaining, 21 completed
 
+### Version v29.0.0 (2025-10-04)
+- Added 15 new accuracy-focused tasks to improve win rate
+- Introduced CRITICAL priority level for essential accuracy improvements
+- New tasks include:
+  - Neural Network Hand Strength Evaluator (15-20% accuracy gain)
+  - Advanced Nash Equilibrium Solver (12-18% accuracy gain)
+  - Monte Carlo Tree Search Optimizer (10-15% accuracy gain)
+  - Real-Time ICM Calculator (20-25% tournament improvement)
+  - Bayesian Opponent Profiler (15-20% exploitation improvement)
+  - Reinforcement Learning Agent (18-22% overall improvement)
+  - Advanced Range Merging Algorithm (8-12% range construction improvement)
+  - Quantum-Inspired Optimization (10-14% in complex scenarios)
+  - Plus 7 additional MEDIUM priority accuracy enhancements
+- Created 5-phase implementation plan with expected 55-65% cumulative win rate improvement
+- Added technical requirements for ML infrastructure and computational resources
+- Updated priority matrix (3 CRITICAL, 5 HIGH, 7 MEDIUM, 0 LOW)
+- Total tasks: 15 remaining, 21 completed
+
 ### Version v23.3.0 (2025-10-02)
 - Completed BLUFF-001: AI Bluff Detection
 - Completed CONV-001: Hand Converter
@@ -628,6 +936,63 @@ MACHINE-READABLE-HEADER-END -->
 - Regular updates to this file are recommended as tasks progress
 
 ---
+
+---
+
+## Implementation Priority Order
+
+1. **Phase 1 - Core Accuracy** (Weeks 1-3)
+   - Neural Network Hand Strength Evaluator
+   - Advanced Nash Equilibrium Solver
+   - Real-Time ICM Calculator
+
+2. **Phase 2 - Advanced Optimization** (Weeks 4-6)
+   - Monte Carlo Tree Search Optimizer
+   - Bayesian Opponent Profiler
+   - Advanced Range Merging Algorithm
+
+3. **Phase 3 - Machine Learning** (Weeks 7-9)
+   - Reinforcement Learning Agent
+   - Timing Tell Analyzer
+   - Statistical Significance Validator
+
+4. **Phase 4 - Integration** (Weeks 10-12)
+   - Ensemble Decision System
+   - Real-Time Solver API
+   - Meta-Game Optimizer
+
+5. **Phase 5 - Advanced Features** (Weeks 13-15)
+   - Quantum-Inspired Optimization
+   - Solver-Based Preflop Charts
+   - Game Theory Optimal Deviations
+
+## Expected Cumulative Accuracy Improvements
+
+- **After Phase 1**: +15-20% win rate improvement
+- **After Phase 2**: +25-35% win rate improvement  
+- **After Phase 3**: +35-45% win rate improvement
+- **After Phase 4**: +45-55% win rate improvement
+- **After Phase 5**: +55-65% win rate improvement
+
+## Technical Requirements for New Modules
+
+### Machine Learning Infrastructure
+- TensorFlow 2.15+ or PyTorch 2.0+
+- CUDA 12.0+ for GPU acceleration
+- Minimum 16GB RAM for model training
+- SSD storage for fast model loading
+
+### Computational Requirements
+- Multi-core CPU (8+ cores recommended)
+- GPU with 8GB+ VRAM for neural networks
+- 100GB+ storage for training data
+- High-speed internet for real-time solver queries
+
+### Data Requirements
+- 10M+ hand histories for training
+- Population tendency database
+- Real-time game state streaming
+- Historical player statistics
 
 **Last Updated**: 2025-10-04  
 **Next Review**: 2025-10-11
