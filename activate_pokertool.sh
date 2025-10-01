@@ -26,11 +26,13 @@ echo "Checking critical dependencies..."
 python3 -c "
 import subprocess
 import sys
+from distutils.version import LooseVersion
 
 critical_deps = [
     ('cv2', 'opencv-python'),
     ('PIL', 'Pillow'),
     ('pytesseract', 'pytesseract'),
+    ('torch', 'torch>=2.0.0,<3.0.0'),
 ]
 
 missing = []
@@ -41,6 +43,18 @@ for module_name, package_name in critical_deps:
     except ImportError:
         missing.append(package_name)
         print(f'❌ {package_name} is MISSING')
+
+# Additional version check for torch
+if 'torch>=2.0.0,<3.0.0' not in missing:
+    try:
+        import torch
+        if LooseVersion(torch.__version__) < LooseVersion("2.0.0"):
+            missing.append('torch>=2.0.0,<3.0.0')
+            print(f'❌ torch version {torch.__version__} is below required')
+        else:
+            print(f'✅ torch version {torch.__version__} is OK')
+    except ImportError:
+        pass
 
 if missing:
     print(f'\n📦 Installing missing dependencies...')

@@ -94,6 +94,8 @@ pyproject.toml              # packaging / tooling
 2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
+   # For GPU-enabled PyTorch, install with official instructions:
+   # pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
    # Optional scraper extras
    pip install -r requirements_scraper.txt
    ```
@@ -191,6 +193,7 @@ The repository also includes focused tests, e.g. GUI integration, scraper valida
 - _“from __future__ import … must occur at the beginning”_: Ensure file headers are clean. The preflight scanner will attempt to fix this automatically.
 - _SyntaxError in Enums or dataclasses_: Caused by attribute assignment in `Enum` members. Prefer standard `Enum` patterns; the auto-fixer mitigates common mistakes.
 - _ImportError for symbols like `Card`/`analyse_hand`_: Confirm you are importing from the right module and that older modules haven’t overwritten newer ones.
+- _ImportError for torch_: If torch fails to import or version check fails, ensure you have a compatible torch wheel installed (>=2.0.0,<3.0.0). The `activate_pokertool.sh` script will attempt to install it automatically. For GPU support, install from official PyTorch channels.
 
 **Logs & retention**
 - A unified log file is kept for tests/validation. Old entries older than **1 year** are automatically pruned by the maintenance task (when enabled).
