@@ -164,11 +164,13 @@ class HandRange:
         """Expand plus notation into all included hands."""
         expanded = set()
         
+        # Pair plus: include this pair and all higher pairs
         if len(hand) == 2 and hand[0] == hand[1]:
             rank_index = RANKS.index(hand[0])
             for i in range(rank_index + 1):
                 rank = RANKS[i]
                 expanded.add(f"{rank}{rank}")
+        # Non-pair plus notation
         elif len(hand) in [2, 3]:
             rank1, rank2 = hand[0], hand[1]
             suffix = hand[2] if len(hand) == 3 else None
@@ -176,14 +178,20 @@ class HandRange:
             rank1_index = RANKS.index(rank1)
             rank2_index = RANKS.index(rank2)
             
-            for i in range(rank2_index, len(RANKS)):
-                kicker = RANKS[i]
-                if kicker == rank1:
-                    continue
-                
-                if suffix:
+            if suffix in ('s', 'o'):
+                # Suited or offsuit plus: include this and stronger second ranks
+                for i in range(rank2_index, rank1_index, -1):
+                    kicker = RANKS[i]
+                    if kicker == rank1:
+                        continue
                     expanded.add(f"{rank1}{kicker}{suffix}")
-                else:
+            else:
+                # No suffix: include both suited and offsuit down to 'T'
+                t_index = RANKS.index('T')
+                for i in range(rank2_index, t_index + 1):
+                    kicker = RANKS[i]
+                    if kicker == rank1:
+                        continue
                     expanded.add(f"{rank1}{kicker}s")
                     expanded.add(f"{rank1}{kicker}o")
         
@@ -237,14 +245,9 @@ class RangeGrid:
     
     def _initialize_grid(self) -> None:
         """Initialize the 13x13 grid with all possible hands."""
-        for i, rank1 in enumerate(RANKS):
-            for j, rank2 in enumerate(RANKS):
-                if i < j:
-                    self.grid[(rank1, rank2)] = False
-                elif i > j:
-                    self.grid[(rank2, rank1)] = False
-                else:
-                    self.grid[(rank1, rank2)] = False
+        for rank1 in RANKS:
+            for rank2 in RANKS:
+                self.grid[(rank1, rank2)] = False
     
     @log_exceptions
     def set_hand(self, rank1: str, rank2: str, selected: bool) -> None:
@@ -500,6 +503,13 @@ class RangeConstructionTool:
         self.ranges[name] = hand_range
         self.current_range = hand_range
         logger.info(f"Created new range: {name}")
+        # Ensure direct range string additions update the grid
+        orig_add_range_string = hand_range.add_range_string
+        def _wrapped_add_range_string(range_string: str):
+            result = orig_add_range_string(range_string)
+            self.grid.load_from_range(self.current_range)
+            return result
+        hand_range.add_range_string = _wrapped_add_range_string
         return hand_range
     
     @log_exceptions
