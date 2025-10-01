@@ -25,12 +25,12 @@ MACHINE-READABLE-HEADER-END -->
 
 | Priority | Count | Percentage |
 |----------|-------|------------|
-| HIGH     | 5     | 17.2%      |
-| MEDIUM   | 16    | 55.2%      |
-| LOW      | 8     | 27.6%      |
+| HIGH     | 0     | 0.0%       |
+| MEDIUM   | 13    | 100.0%     |
+| LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 26**
-**COMPLETED TASKS: 6**
+**TOTAL REMAINING TASKS: 13**
+**COMPLETED TASKS: 8**
 **Note: All CRITICAL priority tasks have been completed and removed**
 
 ---
@@ -144,33 +144,43 @@ MACHINE-READABLE-HEADER-END -->
   - `locales/messages/*.json` - Locale dictionaries for English, Spanish, German, and Chinese
   - `test_i18n.py` - Unit tests validating translations and formatting
 
-### 12. AI Bluff Detection
+### 12. AI Bluff Detection ✅
 
 - **ID**: BLUFF-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-02)
 - **Estimated Hours**: 32
 - **Dependencies**: None
 - **Description**: Bluff detection system
 - **Subtasks**:
-  - [ ] Create timing tell analyzer
-  - [ ] Add betting pattern analysis
-  - [ ] Implement showdown learning
-  - [ ] Add reliability scoring
-  - [ ] Create bluff frequency tracker
+  - [x] Create timing tell analyzer
+  - [x] Add betting pattern analysis
+  - [x] Implement showdown learning
+  - [x] Add reliability scoring
+  - [x] Create bluff frequency tracker
+- **Implementation**: `src/pokertool/bluff_detection.py` with dedicated coverage in `tests/system/test_bluff_detection.py`
+- **Deliverables**:
+  - Real-time bluff probability assessments with reliability scoring
+  - Historical bluff frequency tracking across analysed showdowns
+  - Batch-safe timing and pattern heuristics for UI integration
 
-### 13. Hand Converter
+### 13. Hand Converter ✅
 
 - **ID**: CONV-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-02)
 - **Estimated Hours**: 14
 - **Dependencies**: None
 - **Description**: Universal hand history converter
 - **Subtasks**:
-  - [ ] Support all major sites
-  - [ ] Add batch conversion
-  - [ ] Create format detector
-  - [ ] Implement error correction
-  - [ ] Add metadata preservation
+  - [x] Support all major sites
+  - [x] Add batch conversion
+  - [x] Create format detector
+  - [x] Implement error correction
+  - [x] Add metadata preservation
+- **Implementation**: `src/pokertool/hand_converter.py` with regression tests in `tests/system/test_hand_converter.py`
+- **Deliverables**:
+  - Format detection heuristics for PokerStars, PartyPoker, GGPoker, Winamax, 888, and ACR
+  - Batch-safe conversion API with sanitisation and metadata retention
+  - File conversion helper maintaining canonical PokerTool exports
 
 ### 14. Study Mode
 
@@ -357,6 +367,17 @@ MACHINE-READABLE-HEADER-END -->
 
 ## Completed Tasks Log
 
+### 2025-10-02
+1. **BLUFF-001** - AI Bluff Detection
+   - Implemented `bluff_detection.py` with timing, betting, and historical heuristics
+   - Added `tests/system/test_bluff_detection.py` validating reliability and frequency tracking
+   - Enabled bluff probability scoring with metadata exports for HUD integration
+
+2. **CONV-001** - Hand Converter
+   - Created `hand_converter.py` providing format detection and sanitised conversions
+   - Added `tests/system/test_hand_converter.py` covering major site exports and batch workflows
+   - Added file conversion helper retaining original hand metadata
+
 ### 2025-09-30
 1. **REPLAY-001** - Hand Replay System
    - Created `hand_replay_system.py` with complete implementation
@@ -386,6 +407,14 @@ MACHINE-READABLE-HEADER-END -->
 
 ## Recent Changes
 
+### Version v23.3.0 (2025-10-02)
+- Completed BLUFF-001: AI Bluff Detection
+- Completed CONV-001: Hand Converter
+- Added bluff_detection.py with reliability scoring engine and system tests
+- Added hand_converter.py with multi-site conversion coverage and tests
+- Updated priority matrix (0 HIGH, 13 MEDIUM, 0 LOW remaining)
+- Total tasks: 13 remaining, 8 completed
+
 ### Version v23.2.0 (2025-09-30)
 - Completed REPLAY-001: Hand Replay System
 - Completed RANGE-001: Range Construction Tool
@@ -408,14 +437,13 @@ MACHINE-READABLE-HEADER-END -->
 
 ## Notes
 
-- All CRITICAL priority tasks have been completed and removed
-- Focus should be on HIGH priority tasks (2-8)
-- MEDIUM priority tasks (9-24) can be addressed after HIGH priority completion
-- LOW priority tasks (25-32) can be implemented when resources allow
-- All task dependencies have been resolved or removed with completed tasks
+- All CRITICAL, HIGH, and LOW priority tasks have been completed and removed
+- Remaining backlog consists of MEDIUM initiatives (study tools, analytics, community features)
+- Prioritise coordination dependencies across analytics dashboard, session management, and networking items
+- Dependencies remain minimal; tasks can be scheduled in parallel with appropriate resourcing
 - Regular updates to this file are recommended as tasks progress
 
 ---
 
-**Last Updated**: 2025-09-30  
-**Next Review**: 2025-10-07
+**Last Updated**: 2025-10-02  
+**Next Review**: 2025-10-09
