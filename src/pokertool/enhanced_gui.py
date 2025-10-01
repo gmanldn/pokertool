@@ -34,6 +34,16 @@ __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
 
+import tkinter as tk
+from tkinter import ttk, messagebox
+import json
+import threading
+import time
+from datetime import datetime
+from typing import List, Optional, Dict, Any, Callable, Tuple
+from pathlib import Path
+import webbrowser
+
 # CRITICAL: Check and install screen scraper dependencies FIRST
 import sys
 import os
@@ -68,29 +78,11 @@ def _ensure_scraper_dependencies():
         for package in missing:
             print(f"Installing {package}...")
             try:
-                subprocess.check_call([
-                    sys.executable, '-m', 'pip', 'install', package
-                ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-                print(f"✅ {package} installed successfully")
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
             except subprocess.CalledProcessError as e:
                 print(f"⚠️  Failed to install {package}: {e}")
                 print(f"   Please run manually: pip install {package}")
         print(f"{'='*60}\n")
-    
-    return len(missing) == 0
-
-# Install dependencies before other imports
-_DEPENDENCIES_OK = _ensure_scraper_dependencies()
-
-import tkinter as tk
-from tkinter import ttk, messagebox
-import json
-import threading
-import time
-from datetime import datetime
-from typing import List, Optional, Dict, Any, Callable, Tuple
-from pathlib import Path
-import webbrowser
 
 # Import all pokertool modules
 try:
