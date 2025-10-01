@@ -88,7 +88,7 @@ import json
 import threading
 import time
 from datetime import datetime
-from typing import List, Optional, Dict, Any, Callable
+from typing import List, Optional, Dict, Any, Callable, Tuple
 from dataclasses import dataclass
 from pathlib import Path
 import webbrowser
@@ -97,6 +97,17 @@ import webbrowser
 try:
     from .gui import EnhancedPokerAssistant, VisualCard, CardSelectionPanel, TableVisualization
     from .core import analyse_hand, Card, Suit, Position, HandAnalysisResult, parse_card
+    from .i18n import (
+        translate,
+        set_locale,
+        get_current_locale,
+        available_locales,
+        format_currency,
+        format_decimal,
+        format_datetime,
+        register_locale_listener,
+        unregister_locale_listener,
+    )
     from .gto_solver import GTOSolver, get_gto_solver
     from .ml_opponent_modeling import OpponentModelingSystem, get_opponent_modeling_system
     from .multi_table_support import TableManager, get_table_manager
@@ -166,6 +177,7 @@ class AutopilotState:
     tables_detected: int = 0
     actions_taken: int = 0
     last_action: str = 'None'
+    last_action_key: Optional[str] = 'autopilot.last_action.none'
     last_decision: str = 'None'
     profit_session: float = 0.0
     hands_played: int = 0
@@ -179,13 +191,19 @@ class AutopilotControlPanel(tk.Frame):
         
         self.on_toggle_autopilot = on_toggle_autopilot
         self.on_settings_changed = on_settings_changed
-        
+
         self.state = AutopilotState()
         self.animation_running = False
         self._animation_id = None
-        
+        self._translation_bindings: List[Tuple[Any, str, str, Dict[str, Any]]] = []
+        self._locale_listener_token: Optional[int] = None
+
         self._build_ui()
         self._start_animation()
+
+        # Register for locale updates and apply current translations
+        self._locale_listener_token = register_locale_listener(self.apply_translations)
+        self.apply_translations()
 
         # Propagate initial site selection to listeners
         self._on_site_changed()
@@ -201,7 +219,48 @@ class AutopilotControlPanel(tk.Frame):
                 self.after_cancel(self._animation_id)
             except:
                 pass
-    
+        if self._locale_listener_token is not None:
+            unregister_locale_listener(self._locale_listener_token)
+            self._locale_listener_token = None
+
+    def _register_translation(self, widget: Any, key: str, attr: str = 'text', **kwargs: Any) -> None:
+        """Register a widget attribute for dynamic translation updates."""
+        self._translation_bindings.append((widget, key, attr, kwargs))
+        try:
+            widget.configure(**{attr: translate(key, **kwargs)})
+        except tk.TclError:
+            pass
+
+    def apply_translations(self, _locale_code: Optional[str] = None) -> None:
+        """Refresh all translated strings for the current locale."""
+        for widget, key, attr, kwargs in list(self._translation_bindings):
+            try:
+                widget.configure(**{attr: translate(key, **kwargs)})
+            except tk.TclError:
+                continue
+
+        if self.state.active:
+            self.status_label.config(text=translate('autopilot.status.active'))
+            self.autopilot_button.config(text=translate('autopilot.button.stop'))
+        else:
+            self.status_label.config(text=translate('autopilot.status.inactive'))
+            self.autopilot_button.config(text=translate('autopilot.button.start'))
+
+        if self.state.last_action_key:
+            self.last_action_label.config(text=translate(self.state.last_action_key))
+        elif not self.state.last_action:
+            self.last_action_label.config(text=translate('autopilot.last_action.none'))
+
+        self._refresh_statistics()
+
+    def _refresh_statistics(self) -> None:
+        """Update statistic labels using locale-specific formatting."""
+        self.tables_label.config(text=format_decimal(self.state.tables_detected, digits=0))
+        self.hands_label.config(text=format_decimal(self.state.hands_played, digits=0))
+        self.actions_label.config(text=format_decimal(self.state.actions_taken, digits=0))
+        profit_color = COLORS['accent_success'] if self.state.profit_session >= 0 else COLORS['accent_danger']
+        self.profit_label.config(text=format_currency(self.state.profit_session), fg=profit_color)
+
     def _build_ui(self):
         """Build the autopilot control interface."""
         # Main title
@@ -210,20 +269,22 @@ class AutopilotControlPanel(tk.Frame):
         
         title_label = tk.Label(
             title_frame,
-            text='🤖 POKER AUTOPILOT',
+            text='',
             font=FONTS['title'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
         )
         title_label.pack()
-        
+        self.title_label = title_label
+        self._register_translation(title_label, 'autopilot.title')
+
         # Status indicator
         status_frame = tk.Frame(self, bg=COLORS['bg_medium'])
         status_frame.pack(fill='x', pady=5)
-        
+
         self.status_label = tk.Label(
             status_frame,
-            text='● INACTIVE',
+            text=translate('autopilot.status.inactive'),
             font=FONTS['status'],
             bg=COLORS['bg_medium'],
             fg=COLORS['autopilot_inactive']
@@ -233,7 +294,7 @@ class AutopilotControlPanel(tk.Frame):
         # Main autopilot button
         self.autopilot_button = tk.Button(
             self,
-            text='START AUTOPILOT',
+            text=translate('autopilot.button.start'),
             font=FONTS['autopilot'],
             bg=COLORS['autopilot_inactive'],
             fg=COLORS['text_primary'],
@@ -250,7 +311,7 @@ class AutopilotControlPanel(tk.Frame):
         # Settings panel
         settings_frame = tk.LabelFrame(
             self,
-            text='Autopilot Settings',
+            text=translate('autopilot.settings.title'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary'],
@@ -258,19 +319,22 @@ class AutopilotControlPanel(tk.Frame):
             bd=2
         )
         settings_frame.pack(fill='x', padx=10, pady=10)
-        
+        self._register_translation(settings_frame, 'autopilot.settings.title')
+
         # Poker site selection
         site_frame = tk.Frame(settings_frame, bg=COLORS['bg_medium'])
         site_frame.pack(fill='x', padx=10, pady=5)
-        
-        tk.Label(
+
+        site_label = tk.Label(
             site_frame,
-            text='Poker Site:',
+            text='',
             font=FONTS['subheading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
-        ).pack(side='left')
-        
+        )
+        site_label.pack(side='left')
+        self._register_translation(site_label, 'autopilot.settings.site')
+
         self.site_var = tk.StringVar(value=self.state.site)
         site_combo = ttk.Combobox(
             site_frame,
@@ -287,13 +351,15 @@ class AutopilotControlPanel(tk.Frame):
         strategy_frame = tk.Frame(settings_frame, bg=COLORS['bg_medium'])
         strategy_frame.pack(fill='x', padx=10, pady=5)
         
-        tk.Label(
+        strategy_label = tk.Label(
             strategy_frame,
-            text='Strategy:',
+            text='',
             font=FONTS['subheading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
-        ).pack(side='left')
+        )
+        strategy_label.pack(side='left')
+        self._register_translation(strategy_label, 'autopilot.settings.strategy')
         
         self.strategy_var = tk.StringVar(value='GTO')
         strategy_combo = ttk.Combobox(
@@ -309,7 +375,7 @@ class AutopilotControlPanel(tk.Frame):
         self.auto_detect_var = tk.BooleanVar(value=True)
         auto_detect_cb = tk.Checkbutton(
             settings_frame,
-            text='Auto-detect tables',
+            text=translate('autopilot.settings.auto_detect'),
             variable=self.auto_detect_var,
             font=FONTS['body'],
             bg=COLORS['bg_medium'],
@@ -317,11 +383,12 @@ class AutopilotControlPanel(tk.Frame):
             selectcolor=COLORS['bg_light']
         )
         auto_detect_cb.pack(anchor='w', padx=10, pady=2)
-        
+        self._register_translation(auto_detect_cb, 'autopilot.settings.auto_detect')
+
         self.auto_scraper_var = tk.BooleanVar(value=True)
         auto_scraper_cb = tk.Checkbutton(
             settings_frame,
-            text='Screen scraper enabled',
+            text=translate('autopilot.settings.auto_scraper'),
             variable=self.auto_scraper_var,
             font=FONTS['body'],
             bg=COLORS['bg_medium'],
@@ -329,11 +396,12 @@ class AutopilotControlPanel(tk.Frame):
             selectcolor=COLORS['bg_light']
         )
         auto_scraper_cb.pack(anchor='w', padx=10, pady=2)
-        
+        self._register_translation(auto_scraper_cb, 'autopilot.settings.auto_scraper')
+
         self.continuous_update_var = tk.BooleanVar(value=True)
         continuous_update_cb = tk.Checkbutton(
             settings_frame,
-            text='Continuous screen updates',
+            text=translate('autopilot.settings.continuous_updates'),
             variable=self.continuous_update_var,
             font=FONTS['body'],
             bg=COLORS['bg_medium'],
@@ -341,11 +409,12 @@ class AutopilotControlPanel(tk.Frame):
             selectcolor=COLORS['bg_light']
         )
         continuous_update_cb.pack(anchor='w', padx=10, pady=2)
-        
+        self._register_translation(continuous_update_cb, 'autopilot.settings.continuous_updates')
+
         self.auto_gto_var = tk.BooleanVar(value=False)
         auto_gto_cb = tk.Checkbutton(
             settings_frame,
-            text='Auto GTO analysis',
+            text=translate('autopilot.settings.auto_gto'),
             variable=self.auto_gto_var,
             font=FONTS['body'],
             bg=COLORS['bg_medium'],
@@ -353,11 +422,12 @@ class AutopilotControlPanel(tk.Frame):
             selectcolor=COLORS['bg_light']
         )
         auto_gto_cb.pack(anchor='w', padx=10, pady=2)
+        self._register_translation(auto_gto_cb, 'autopilot.settings.auto_gto')
         
         # Statistics display
         stats_frame = tk.LabelFrame(
             self,
-            text='Session Statistics',
+            text=translate('autopilot.stats.title'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary'],
@@ -365,44 +435,55 @@ class AutopilotControlPanel(tk.Frame):
             bd=2
         )
         stats_frame.pack(fill='x', padx=10, pady=10)
+        self._register_translation(stats_frame, 'autopilot.stats.title')
         
         # Stats grid
         stats_grid = tk.Frame(stats_frame, bg=COLORS['bg_medium'])
         stats_grid.pack(fill='x', padx=10, pady=10)
         
         # Row 1
-        tk.Label(stats_grid, text='Tables:', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary']).grid(row=0, column=0, sticky='w')
+        tables_header = tk.Label(stats_grid, text='', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary'])
+        tables_header.grid(row=0, column=0, sticky='w')
+        self._register_translation(tables_header, 'autopilot.stats.tables')
         self.tables_label = tk.Label(stats_grid, text='0', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['accent_success'])
         self.tables_label.grid(row=0, column=1, sticky='w')
-        
-        tk.Label(stats_grid, text='Hands:', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary']).grid(row=0, column=2, sticky='w', padx=(20,0))
+
+        hands_header = tk.Label(stats_grid, text='', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary'])
+        hands_header.grid(row=0, column=2, sticky='w', padx=(20,0))
+        self._register_translation(hands_header, 'autopilot.stats.hands')
         self.hands_label = tk.Label(stats_grid, text='0', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['accent_success'])
         self.hands_label.grid(row=0, column=3, sticky='w')
-        
+
         # Row 2
-        tk.Label(stats_grid, text='Actions:', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary']).grid(row=1, column=0, sticky='w')
+        actions_header = tk.Label(stats_grid, text='', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary'])
+        actions_header.grid(row=1, column=0, sticky='w')
+        self._register_translation(actions_header, 'autopilot.stats.actions')
         self.actions_label = tk.Label(stats_grid, text='0', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['accent_warning'])
         self.actions_label.grid(row=1, column=1, sticky='w')
-        
-        tk.Label(stats_grid, text='Profit:', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary']).grid(row=1, column=2, sticky='w', padx=(20,0))
+
+        profit_header = tk.Label(stats_grid, text='', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['text_primary'])
+        profit_header.grid(row=1, column=2, sticky='w', padx=(20,0))
+        self._register_translation(profit_header, 'autopilot.stats.profit')
         self.profit_label = tk.Label(stats_grid, text='$0.00', font=FONTS['body'], bg=COLORS['bg_medium'], fg=COLORS['accent_success'])
         self.profit_label.grid(row=1, column=3, sticky='w')
-        
+
         # Last action display
         action_frame = tk.Frame(self, bg=COLORS['bg_medium'])
         action_frame.pack(fill='x', padx=10, pady=5)
-        
-        tk.Label(
+
+        last_action_label = tk.Label(
             action_frame,
-            text='Last Action:',
+            text='',
             font=FONTS['subheading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
-        ).pack(side='left')
-        
+        )
+        last_action_label.pack(side='left')
+        self._register_translation(last_action_label, 'autopilot.last_action')
+
         self.last_action_label = tk.Label(
             action_frame,
-            text='None',
+            text=translate('autopilot.last_action.none'),
             font=FONTS['subheading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['accent_primary']
@@ -483,27 +564,31 @@ class AutopilotControlPanel(tk.Frame):
         """Update displayed statistics."""
         if 'tables_detected' in stats_update:
             self.state.tables_detected = stats_update['tables_detected']
-            self.tables_label.config(text=str(self.state.tables_detected))
-        
+
         if 'hands_played' in stats_update:
             self.state.hands_played = stats_update['hands_played']
-            self.hands_label.config(text=str(self.state.hands_played))
-        
+
         if 'actions_taken' in stats_update:
             self.state.actions_taken = stats_update['actions_taken']
-            self.actions_label.config(text=str(self.state.actions_taken))
-        
+
         if 'profit_session' in stats_update:
             self.state.profit_session = stats_update['profit_session']
-            profit_color = COLORS['accent_success'] if self.state.profit_session >= 0 else COLORS['accent_danger']
-            self.profit_label.config(
-                text=f'${self.state.profit_session:.2f}',
-                fg=profit_color
-            )
-        
-        if 'last_action' in stats_update:
-            self.state.last_action = stats_update['last_action']
+
+        if 'last_action_key' in stats_update:
+            key = stats_update['last_action_key']
+            self.state.last_action_key = key
+            self.state.last_action = translate(key)
             self.last_action_label.config(text=self.state.last_action)
+
+        elif 'last_action' in stats_update:
+            self.state.last_action = stats_update['last_action']
+            self.state.last_action_key = None
+            self.last_action_label.config(text=self.state.last_action)
+
+        self._refresh_statistics()
+        if not self.state.last_action:
+            self.last_action_label.config(text=translate('autopilot.last_action.none'))
+            self.state.last_action_key = 'autopilot.last_action.none'
 
 class IntegratedPokerAssistant(tk.Tk):
     """Integrated Poker Assistant with prominent Autopilot functionality."""
@@ -511,7 +596,7 @@ class IntegratedPokerAssistant(tk.Tk):
     def __init__(self):
         super().__init__()
         
-        self.title('🎰 Poker Tool - Enhanced with Autopilot')
+        self.title(translate('app.title'))
         self.geometry('1600x1000')
         self.minsize(1400, 900)
         self.configure(bg=COLORS['bg_dark'])
@@ -544,11 +629,22 @@ class IntegratedPokerAssistant(tk.Tk):
         self.coaching_to_call_var = None
         self.coaching_position_var = None
         self.coaching_last_tip_var = None
+        self._translation_bindings: List[Tuple[Any, str, str, str, str, Dict[str, Any]]] = []
+        self._tab_bindings: List[Tuple[Any, str]] = []
+        self._window_title_key = 'app.title'
+        self._locale_listener_token: Optional[int] = None
+        self._locale_code_by_name: Dict[str, str] = {}
+        self._locale_name_by_code: Dict[str, str] = {}
+        self._locale_currency_map: Dict[str, str] = {}
+        self.language_var: Optional[tk.StringVar] = None
+        self.currency_display_var: Optional[tk.StringVar] = None
 
         # Initialize modules
         self._init_modules()
         self._setup_styles()
         self._build_ui()
+        self._locale_listener_token = register_locale_listener(self._apply_translations)
+        self._apply_translations()
         self._init_database()
         
         # Start background services (includes auto-starting scraper)
@@ -591,6 +687,85 @@ class IntegratedPokerAssistant(tk.Tk):
         style.configure('Autopilot.TButton',
                        font=FONTS['autopilot'],
                        foreground=COLORS['text_primary'])
+
+    # Translation helpers -------------------------------------------------
+    def _register_widget_translation(
+        self,
+        widget: Any,
+        key: str,
+        attr: str = 'text',
+        *,
+        prefix: str = '',
+        suffix: str = '',
+        **kwargs: Any,
+    ) -> None:
+        self._translation_bindings.append((widget, key, attr, prefix, suffix, kwargs))
+        self._apply_widget_translation(widget, key, attr, prefix, suffix, kwargs)
+
+    def _update_widget_translation_key(
+        self,
+        widget: Any,
+        key: str,
+        attr: str = 'text',
+        *,
+        prefix: str = '',
+        suffix: str = '',
+        **kwargs: Any,
+    ) -> None:
+        for idx, (stored_widget, stored_key, stored_attr, stored_prefix, stored_suffix, stored_kwargs) in enumerate(self._translation_bindings):
+            if stored_widget is widget and stored_attr == attr:
+                self._translation_bindings[idx] = (widget, key, attr, prefix, suffix, kwargs)
+                break
+        else:
+            self._translation_bindings.append((widget, key, attr, prefix, suffix, kwargs))
+        self._apply_widget_translation(widget, key, attr, prefix, suffix, kwargs)
+
+    def _register_tab_title(self, frame: Any, key: str) -> None:
+        self._tab_bindings.append((frame, key))
+        if hasattr(self, 'notebook'):
+            try:
+                self.notebook.tab(frame, text=translate(key))
+            except Exception:
+                pass
+
+    def _apply_widget_translation(
+        self,
+        widget: Any,
+        key: str,
+        attr: str,
+        prefix: str,
+        suffix: str,
+        kwargs: Dict[str, Any],
+    ) -> None:
+        try:
+            translated = translate(key, **kwargs)
+            widget.configure(**{attr: f"{prefix}{translated}{suffix}"})
+        except tk.TclError:
+            pass
+
+    def _apply_translations(self, _locale_code: Optional[str] = None) -> None:
+        try:
+            self.title(translate(self._window_title_key))
+        except tk.TclError:
+            pass
+
+        for widget, key, attr, prefix, suffix, kwargs in list(self._translation_bindings):
+            self._apply_widget_translation(widget, key, attr, prefix, suffix, kwargs)
+
+        if hasattr(self, 'notebook'):
+            for frame, key in list(self._tab_bindings):
+                try:
+                    self.notebook.tab(frame, text=translate(key))
+                except Exception:
+                    continue
+
+        if hasattr(self, 'autopilot_panel') and self.autopilot_panel:
+            self.autopilot_panel.apply_translations()
+
+        if self.coaching_progress_vars:
+            self._refresh_progress_summary()
+
+        self._update_localization_display()
     
     def _build_ui(self):
         """Build the integrated user interface."""
@@ -604,27 +779,32 @@ class IntegratedPokerAssistant(tk.Tk):
         
         # Autopilot tab (most prominent)
         autopilot_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(autopilot_frame, text='🤖 AUTOPILOT')
+        self.notebook.add(autopilot_frame, text=translate('tab.autopilot'))
+        self._register_tab_title(autopilot_frame, 'tab.autopilot')
         self._build_autopilot_tab(autopilot_frame)
         
         # Manual play tab
         manual_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(manual_frame, text='🎮 Manual Play')
+        self.notebook.add(manual_frame, text=translate('tab.manual_play'))
+        self._register_tab_title(manual_frame, 'tab.manual_play')
         self._build_manual_play_tab(manual_frame)
         
         # Analysis tab
         analysis_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(analysis_frame, text='📊 Analysis')
+        self.notebook.add(analysis_frame, text=translate('tab.analysis'))
+        self._register_tab_title(analysis_frame, 'tab.analysis')
         self._build_analysis_tab(analysis_frame)
-
+        
         # Coaching tab
         coaching_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(coaching_frame, text='🎯 Coaching')
+        self.notebook.add(coaching_frame, text=translate('tab.coaching'))
+        self._register_tab_title(coaching_frame, 'tab.coaching')
         self._build_coaching_tab(coaching_frame)
 
         # Settings tab
         settings_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(settings_frame, text='⚙️ Settings')
+        self.notebook.add(settings_frame, text=translate('tab.settings'))
+        self._register_tab_title(settings_frame, 'tab.settings')
         self._build_settings_tab(settings_frame)
         
         # Make autopilot tab active by default
@@ -647,7 +827,7 @@ class IntegratedPokerAssistant(tk.Tk):
         # Quick action panel (right side) - Enhanced for better visibility
         quick_actions = tk.LabelFrame(
             control_section,
-            text='⚡ QUICK ACTIONS',
+            text=translate('section.quick_actions'),
             font=('Arial', 20, 'bold'),
             bg=COLORS['bg_medium'],
             fg=COLORS['accent_primary'],
@@ -656,6 +836,7 @@ class IntegratedPokerAssistant(tk.Tk):
             labelanchor='n'
         )
         quick_actions.pack(side='right', fill='both', expand=True, padx=(10, 0))
+        self._register_widget_translation(quick_actions, 'section.quick_actions')
         
         # Create a scrollable frame for quick actions
         quick_actions_canvas = tk.Canvas(quick_actions, bg=COLORS['bg_medium'], highlightthickness=0)
@@ -670,13 +851,14 @@ class IntegratedPokerAssistant(tk.Tk):
         quick_actions_canvas.pack(side='left', fill='both', expand=True)
         
         # Enhanced button styling function with improved visibility
-        def create_action_button(parent, text, icon, command, color, description="", height=3):
+        def create_action_button(parent, text_key, icon, command, color, desc_key=None, height=3):
             button_frame = tk.Frame(parent, bg=COLORS['bg_medium'])
             button_frame.pack(fill='x', padx=8, pady=8)
-            
+
+            translated_text = translate(text_key)
             button = tk.Button(
                 button_frame,
-                text=f'{icon}  {text}',
+                text=f'{icon}  {translated_text}',
                 font=('Arial', 16, 'bold'),  # Increased from 14 to 16
                 bg=color,
                 fg='#000000',  # Black text for better visibility
@@ -691,7 +873,8 @@ class IntegratedPokerAssistant(tk.Tk):
                 pady=8
             )
             button.pack(fill='x', ipady=8)  # Increased internal padding
-            
+            self._update_widget_translation_key(button, text_key, prefix=f'{icon}  ')
+
             # Add hover effects with shadow
             def on_enter(e):
                 button.config(
@@ -708,35 +891,37 @@ class IntegratedPokerAssistant(tk.Tk):
             
             button.bind("<Enter>", on_enter)
             button.bind("<Leave>", on_leave)
-            
+
             # Add description label if provided with improved visibility
-            if description:
+            if desc_key:
+                desc_text = translate(desc_key)
                 desc_label = tk.Label(
                     button_frame,
-                    text=description,
+                    text=desc_text,
                     font=('Arial', 10, 'italic'),  # Increased from 9 to 10
                     bg=COLORS['bg_medium'],
                     fg='#C8D3E0',  # Lighter color for better visibility
                     wraplength=220
                 )
                 desc_label.pack(pady=(3, 0))
-            
+                self._register_widget_translation(desc_label, desc_key)
+
             return button
         
         # Screen scraper status / toggle button (most prominent)
         self.scraper_status_button = create_action_button(
             quick_actions_frame,
-            'Screen Scraper OFF',
+            'actions.screen_scraper_off',
             '🔌',
             self._toggle_screen_scraper,
             COLORS['accent_danger'],
-            'Toggle real-time table detection',
+            desc_key='actions.screen_scraper_desc',
             height=4
         )
 
         if not ENHANCED_SCRAPER_LOADED:
             self.scraper_status_button.config(
-                text='⛔  Screen Scraper Unavailable',
+                text=translate('actions.screen_scraper_unavailable'),
                 state=tk.DISABLED,
                 bg=COLORS['bg_light'],
                 fg=COLORS['text_secondary'],
@@ -744,36 +929,37 @@ class IntegratedPokerAssistant(tk.Tk):
                 activeforeground=COLORS['text_secondary'],
                 cursor='arrow'
             )
-        
+            self._register_widget_translation(self.scraper_status_button, 'actions.screen_scraper_unavailable')
+
         # Separator
         tk.Frame(quick_actions_frame, height=2, bg=COLORS['accent_primary']).pack(fill='x', padx=10, pady=8)
-        
+
         # Table detection and analysis buttons
         create_action_button(
             quick_actions_frame,
-            'Detect Tables',
+            'actions.detect_tables',
             '🔍',
             self._detect_tables,
             COLORS['accent_primary'],
-            'Scan for active poker tables'
+            desc_key='actions.detect_tables_desc'
         )
-        
+
         create_action_button(
             quick_actions_frame,
-            'Screenshot Test',
+            'actions.screenshot_test',
             '📷',
             self._test_screenshot,
             COLORS['accent_warning'],
-            'Capture and analyze screen'
+            desc_key='actions.screenshot_desc'
         )
-        
+
         create_action_button(
             quick_actions_frame,
-            'GTO Analysis',
+            'actions.gto_analysis',
             '🧠',
             self._run_gto_analysis,
             COLORS['accent_success'],
-            'Run Game Theory Optimal analysis'
+            desc_key='actions.gto_desc'
         )
         
         # Separator
@@ -782,29 +968,29 @@ class IntegratedPokerAssistant(tk.Tk):
         # Interface and utility buttons
         create_action_button(
             quick_actions_frame,
-            'Web Interface',
+            'actions.web_interface',
             '🌐',
             self._open_web_interface,
             COLORS['accent_primary'],
-            'Open React web dashboard'
+            desc_key='actions.web_desc'
         )
-        
+
         create_action_button(
             quick_actions_frame,
-            'Manual GUI',
+            'actions.manual_gui',
             '🎮',
             self._open_manual_gui,
             '#9333ea',
-            'Open manual play interface'
+            desc_key='actions.manual_desc'
         )
-        
+
         create_action_button(
             quick_actions_frame,
-            'Settings',
+            'actions.settings',
             '⚙️',
             lambda: self.notebook.select(4),
             '#64748b',
-            'Open configuration panel'
+            desc_key='actions.settings_desc'
         )
         
         # Update canvas scroll region
@@ -816,7 +1002,7 @@ class IntegratedPokerAssistant(tk.Tk):
         # Bottom section - Table monitoring
         monitor_section = tk.LabelFrame(
             parent,
-            text='Table Monitor',
+            text=translate('section.table_monitor'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary'],
@@ -824,6 +1010,7 @@ class IntegratedPokerAssistant(tk.Tk):
             bd=2
         )
         monitor_section.pack(fill='both', expand=True, pady=(10, 0))
+        self._register_widget_translation(monitor_section, 'section.table_monitor')
         
         # Table status display
         self.table_status = tk.Text(
@@ -855,32 +1042,38 @@ class IntegratedPokerAssistant(tk.Tk):
             print(f"Manual GUI creation error: {e}")
         
         # Fallback manual interface
-        tk.Label(
+        manual_label = tk.Label(
             parent,
-            text='Manual Play Interface',
+            text=translate('manual.title'),
             font=FONTS['title'],
             bg=COLORS['bg_dark'],
             fg=COLORS['text_primary']
-        ).pack(pady=50)
-        
-        tk.Button(
+        )
+        manual_label.pack(pady=50)
+        self._register_widget_translation(manual_label, 'manual.title')
+
+        manual_button = tk.Button(
             parent,
-            text='Open Enhanced Manual GUI',
+            text=translate('manual.open_button'),
             font=FONTS['heading'],
             bg=COLORS['accent_primary'],
             fg=COLORS['text_primary'],
             command=self._open_manual_gui
-        ).pack()
+        )
+        manual_button.pack()
+        self._register_widget_translation(manual_button, 'manual.open_button')
     
     def _build_analysis_tab(self, parent):
         """Build analysis and statistics tab."""
-        tk.Label(
+        analysis_label = tk.Label(
             parent,
-            text='Poker Analysis & Statistics',
+            text=translate('analysis.title'),
             font=FONTS['title'],
             bg=COLORS['bg_dark'],
             fg=COLORS['text_primary']
-        ).pack(pady=20)
+        )
+        analysis_label.pack(pady=20)
+        self._register_widget_translation(analysis_label, 'analysis.title')
 
         # Analysis output
         analysis_output = tk.Text(
@@ -897,13 +1090,15 @@ class IntegratedPokerAssistant(tk.Tk):
         """Build the coaching integration tab."""
         parent.configure(bg=COLORS['bg_dark'])
 
-        tk.Label(
+        coaching_title = tk.Label(
             parent,
-            text='AI Coaching Command Center',
+            text=translate('coaching.title'),
             font=FONTS['title'],
             bg=COLORS['bg_dark'],
             fg=COLORS['text_primary']
-        ).pack(pady=(10, 0))
+        )
+        coaching_title.pack(pady=(10, 0))
+        self._register_widget_translation(coaching_title, 'coaching.title')
 
         main_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
@@ -916,12 +1111,13 @@ class IntegratedPokerAssistant(tk.Tk):
 
         advice_frame = tk.LabelFrame(
             left_frame,
-            text='Real-Time Advice',
+            text=translate('coaching.sections.advice'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
         )
         advice_frame.pack(fill='x', pady=(0, 12))
+        self._register_widget_translation(advice_frame, 'coaching.sections.advice')
 
         self.coaching_advice_text = tk.Text(
             advice_frame,
@@ -934,20 +1130,23 @@ class IntegratedPokerAssistant(tk.Tk):
         )
         self.coaching_advice_text.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Button(
+        refresh_advice_btn = ttk.Button(
             advice_frame,
-            text='Refresh Advice',
+            text=translate('coaching.buttons.refresh_advice'),
             command=self._refresh_coaching_advice
-        ).pack(padx=10, pady=(0, 10), anchor='e')
+        )
+        refresh_advice_btn.pack(padx=10, pady=(0, 10), anchor='e')
+        self._register_widget_translation(refresh_advice_btn, 'coaching.buttons.refresh_advice')
 
         mistake_frame = tk.LabelFrame(
             left_frame,
-            text='Mistake Log',
+            text=translate('coaching.sections.mistakes'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
         )
         mistake_frame.pack(fill='both', expand=True, pady=(0, 12))
+        self._register_widget_translation(mistake_frame, 'coaching.sections.mistakes')
 
         columns = ('category', 'severity', 'equity', 'recommendation')
         self.coaching_mistake_tree = ttk.Treeview(
@@ -968,12 +1167,13 @@ class IntegratedPokerAssistant(tk.Tk):
 
         tips_frame = tk.LabelFrame(
             left_frame,
-            text='Personalized Tips',
+            text=translate('coaching.sections.tips'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
         )
         tips_frame.pack(fill='both', expand=True)
+        self._register_widget_translation(tips_frame, 'coaching.sections.tips')
 
         self.coaching_tips_text = tk.Text(
             tips_frame,
@@ -988,28 +1188,31 @@ class IntegratedPokerAssistant(tk.Tk):
 
         progress_frame = tk.LabelFrame(
             right_frame,
-            text='Progress Summary',
+            text=translate('coaching.sections.progress'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
         )
         progress_frame.pack(fill='x', pady=(0, 12))
+        self._register_widget_translation(progress_frame, 'coaching.sections.progress')
 
         metrics = {
-            'hands': ('Hands Reviewed', '0'),
-            'accuracy': ('Accuracy Score', '100%'),
-            'streak': ('Study Streak', '0 days'),
-            'scenarios': ('Scenarios Completed', '0'),
+            'hands': ('coaching.progress.hands', format_decimal(0, digits=0)),
+            'accuracy': ('coaching.progress.accuracy', translate('coaching.progress.accuracy_value', value=format_decimal(100, digits=0))),
+            'streak': ('coaching.progress.streak', translate('coaching.progress.streak_value', days=format_decimal(0, digits=0))),
+            'scenarios': ('coaching.progress.scenarios', format_decimal(0, digits=0)),
         }
         self.coaching_progress_vars = {}
         for idx, (key, (label_text, default_value)) in enumerate(metrics.items()):
-            tk.Label(
+            metric_label = tk.Label(
                 progress_frame,
-                text=label_text,
+                text=translate(label_text),
                 font=FONTS['subheading'],
                 bg=COLORS['bg_medium'],
                 fg=COLORS['text_primary']
-            ).grid(row=idx, column=0, sticky='w', padx=10, pady=4)
+            )
+            metric_label.grid(row=idx, column=0, sticky='w', padx=10, pady=4)
+            self._register_widget_translation(metric_label, label_text)
             var = tk.StringVar(value=default_value)
             self.coaching_progress_vars[key] = var
             tk.Label(
@@ -1020,14 +1223,16 @@ class IntegratedPokerAssistant(tk.Tk):
                 fg=COLORS['accent_primary']
             ).grid(row=idx, column=1, sticky='e', padx=10, pady=4)
 
-        self.coaching_last_tip_var = tk.StringVar(value='No tips yet. Play a hand to generate insights.')
-        tk.Label(
+        self.coaching_last_tip_var = tk.StringVar(value=translate('coaching.tips.empty'))
+        latest_tip_label = tk.Label(
             progress_frame,
-            text='Latest Tip',
+            text=translate('coaching.progress.latest_tip'),
             font=FONTS['subheading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
-        ).grid(row=len(metrics), column=0, sticky='w', padx=10, pady=(10, 4))
+        )
+        latest_tip_label.grid(row=len(metrics), column=0, sticky='w', padx=10, pady=(10, 4))
+        self._register_widget_translation(latest_tip_label, 'coaching.progress.latest_tip')
         tk.Label(
             progress_frame,
             textvariable=self.coaching_last_tip_var,
@@ -1040,12 +1245,13 @@ class IntegratedPokerAssistant(tk.Tk):
 
         scenarios_frame = tk.LabelFrame(
             right_frame,
-            text='Training Scenarios',
+            text=translate('coaching.sections.scenarios'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
         )
         scenarios_frame.pack(fill='both', expand=True, pady=(0, 12))
+        self._register_widget_translation(scenarios_frame, 'coaching.sections.scenarios')
 
         scenario_columns = ('stage', 'focus', 'difficulty', 'status')
         self.coaching_scenario_tree = ttk.Treeview(
@@ -1068,30 +1274,37 @@ class IntegratedPokerAssistant(tk.Tk):
         scenario_actions = tk.Frame(scenarios_frame, bg=COLORS['bg_medium'])
         scenario_actions.pack(fill='x', padx=10, pady=(0, 10))
 
-        ttk.Button(
+        mark_completed_btn = ttk.Button(
             scenario_actions,
-            text='Mark Completed',
+            text=translate('coaching.buttons.mark_completed'),
             command=self._mark_selected_scenario_completed
-        ).pack(side='left')
+        )
+        mark_completed_btn.pack(side='left')
+        self._register_widget_translation(mark_completed_btn, 'coaching.buttons.mark_completed')
 
-        ttk.Button(
+        refresh_scenarios_btn = ttk.Button(
             scenario_actions,
-            text='Refresh',
+            text=translate('coaching.buttons.refresh'),
             command=self._populate_coaching_scenarios
-        ).pack(side='left', padx=6)
+        )
+        refresh_scenarios_btn.pack(side='left', padx=6)
+        self._register_widget_translation(refresh_scenarios_btn, 'coaching.buttons.refresh')
 
         eval_frame = tk.LabelFrame(
             right_frame,
-            text='Evaluate Latest Decision',
+            text=translate('coaching.sections.evaluate'),
             font=FONTS['heading'],
             bg=COLORS['bg_medium'],
             fg=COLORS['text_primary']
         )
         eval_frame.pack(fill='x')
+        self._register_widget_translation(eval_frame, 'coaching.sections.evaluate')
 
         actions = ['fold', 'check', 'call', 'bet', 'raise', 'all-in']
         self.coaching_action_var = tk.StringVar(value=actions[0])
-        ttk.Label(eval_frame, text='Action', font=FONTS['analysis']).grid(row=0, column=0, padx=10, pady=6, sticky='w')
+        action_label = ttk.Label(eval_frame, text=translate('coaching.evaluate.action'), font=FONTS['analysis'])
+        action_label.grid(row=0, column=0, padx=10, pady=6, sticky='w')
+        self._register_widget_translation(action_label, 'coaching.evaluate.action')
         ttk.Combobox(
             eval_frame,
             textvariable=self.coaching_action_var,
@@ -1101,16 +1314,22 @@ class IntegratedPokerAssistant(tk.Tk):
         ).grid(row=0, column=1, padx=10, pady=6, sticky='w')
 
         self.coaching_pot_var = tk.StringVar()
-        ttk.Label(eval_frame, text='Pot Size', font=FONTS['analysis']).grid(row=0, column=2, padx=10, pady=6, sticky='w')
+        pot_label = ttk.Label(eval_frame, text=translate('coaching.evaluate.pot_size'), font=FONTS['analysis'])
+        pot_label.grid(row=0, column=2, padx=10, pady=6, sticky='w')
+        self._register_widget_translation(pot_label, 'coaching.evaluate.pot_size')
         ttk.Entry(eval_frame, textvariable=self.coaching_pot_var, width=10).grid(row=0, column=3, padx=10, pady=6, sticky='w')
 
         self.coaching_to_call_var = tk.StringVar()
-        ttk.Label(eval_frame, text='To Call', font=FONTS['analysis']).grid(row=1, column=0, padx=10, pady=6, sticky='w')
+        to_call_label = ttk.Label(eval_frame, text=translate('coaching.evaluate.to_call'), font=FONTS['analysis'])
+        to_call_label.grid(row=1, column=0, padx=10, pady=6, sticky='w')
+        self._register_widget_translation(to_call_label, 'coaching.evaluate.to_call')
         ttk.Entry(eval_frame, textvariable=self.coaching_to_call_var, width=10).grid(row=1, column=1, padx=10, pady=6, sticky='w')
 
         positions = ['AUTO'] + [pos.name for pos in Position if isinstance(pos.value, str)]
         self.coaching_position_var = tk.StringVar(value='AUTO')
-        ttk.Label(eval_frame, text='Position', font=FONTS['analysis']).grid(row=1, column=2, padx=10, pady=6, sticky='w')
+        position_label = ttk.Label(eval_frame, text=translate('coaching.evaluate.position'), font=FONTS['analysis'])
+        position_label.grid(row=1, column=2, padx=10, pady=6, sticky='w')
+        self._register_widget_translation(position_label, 'coaching.evaluate.position')
         ttk.Combobox(
             eval_frame,
             textvariable=self.coaching_position_var,
@@ -1119,11 +1338,13 @@ class IntegratedPokerAssistant(tk.Tk):
             width=12
         ).grid(row=1, column=3, padx=10, pady=6, sticky='w')
 
-        ttk.Button(
+        evaluate_button = ttk.Button(
             eval_frame,
-            text='Evaluate',
+            text=translate('coaching.buttons.evaluate'),
             command=self._evaluate_recent_hand
-        ).grid(row=2, column=0, columnspan=4, padx=10, pady=(10, 12), sticky='ew')
+        )
+        evaluate_button.grid(row=2, column=0, columnspan=4, padx=10, pady=(10, 12), sticky='ew')
+        self._register_widget_translation(evaluate_button, 'coaching.buttons.evaluate')
 
         self._refresh_progress_summary()
         self._populate_coaching_scenarios()
@@ -1134,52 +1355,126 @@ class IntegratedPokerAssistant(tk.Tk):
         settings_scroll = tk.Frame(parent, bg=COLORS['bg_dark'])
         settings_scroll.pack(fill='both', expand=True, padx=20, pady=20)
 
-        tk.Label(
+        settings_title = tk.Label(
             settings_scroll,
-            text='Poker Tool Settings',
+            text=translate('settings.title'),
             font=FONTS['title'],
             bg=COLORS['bg_dark'],
             fg=COLORS['text_primary']
-        ).pack(pady=(0, 20))
+        )
+        settings_title.pack(pady=(0, 20))
+        self._register_widget_translation(settings_title, 'settings.title')
 
         # Settings categories
-        categories = [
-            'Autopilot Configuration',
-            'Screen Recognition',
-            'GTO Solver Options',
-            'Opponent Modeling',
-            'Multi-Table Settings',
-            'Security & Privacy'
+        category_keys = [
+            'settings.category.autopilot',
+            'settings.category.screen_recognition',
+            'settings.category.gto',
+            'settings.category.opponent_modeling',
+            'settings.category.multi_table',
+            'settings.category.security'
         ]
 
-        for category in categories:
+        for key in category_keys:
             category_frame = tk.LabelFrame(
                 settings_scroll,
-                text=category,
+                text=translate(key),
                 font=FONTS['heading'],
                 bg=COLORS['bg_medium'],
                 fg=COLORS['text_primary']
             )
             category_frame.pack(fill='x', pady=10)
-            
-            tk.Label(
+            self._register_widget_translation(category_frame, key)
+
+            placeholder_label = tk.Label(
                 category_frame,
-                text=f'{category} options will be configured here.',
+                text=translate('settings.placeholder'),
                 font=FONTS['body'],
                 bg=COLORS['bg_medium'],
                 fg=COLORS['text_secondary']
-            ).pack(padx=10, pady=10)
+            )
+            placeholder_label.pack(padx=10, pady=10)
+            self._register_widget_translation(placeholder_label, 'settings.placeholder')
+
+        # Localization section
+        localization_frame = tk.LabelFrame(
+            settings_scroll,
+            text=translate('settings.localization.section'),
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        localization_frame.pack(fill='x', pady=10)
+        self._register_widget_translation(localization_frame, 'settings.localization.section')
+
+        locales_available = available_locales()
+        self._locale_code_by_name = {entry['name']: entry['code'] for entry in locales_available}
+        self._locale_name_by_code = {entry['code']: entry['name'] for entry in locales_available}
+        self._locale_currency_map = {entry['code']: entry['currency'] for entry in locales_available}
+
+        current_locale = get_current_locale()
+        current_locale_name = self._locale_name_by_code.get(current_locale, current_locale)
+
+        language_label = tk.Label(
+            localization_frame,
+            text=translate('settings.language.label'),
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        language_label.grid(row=0, column=0, sticky='w', padx=10, pady=8)
+        self._register_widget_translation(language_label, 'settings.language.label')
+
+        self.language_var = tk.StringVar(value=current_locale_name)
+        language_combo = ttk.Combobox(
+            localization_frame,
+            textvariable=self.language_var,
+            values=[entry['name'] for entry in locales_available],
+            state='readonly',
+            width=28
+        )
+        language_combo.grid(row=0, column=1, sticky='w', padx=10, pady=8)
+        language_combo.bind('<<ComboboxSelected>>', self._on_language_changed)
+
+        currency_label = tk.Label(
+            localization_frame,
+            text=translate('settings.currency.label'),
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        currency_label.grid(row=1, column=0, sticky='w', padx=10, pady=(0, 10))
+        self._register_widget_translation(currency_label, 'settings.currency.label')
+
+        self.currency_display_var = tk.StringVar()
+        currency_value_label = tk.Label(
+            localization_frame,
+            textvariable=self.currency_display_var,
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['accent_primary']
+        )
+        currency_value_label.grid(row=1, column=1, sticky='w', padx=10, pady=(0, 10))
+
+        localization_frame.columnconfigure(1, weight=1)
+
+        self._update_localization_display()
 
     def _refresh_progress_summary(self):
         if not self.coaching_system or not self.coaching_progress_vars:
             return
         snapshot = self.coaching_system.get_progress_snapshot()
-        self.coaching_progress_vars['hands'].set(str(snapshot.hands_reviewed))
-        self.coaching_progress_vars['accuracy'].set(f"{snapshot.accuracy_score * 100:.0f}%")
-        self.coaching_progress_vars['streak'].set(f"{snapshot.streak_days} days")
-        self.coaching_progress_vars['scenarios'].set(str(snapshot.scenarios_completed))
+        self.coaching_progress_vars['hands'].set(format_decimal(snapshot.hands_reviewed, digits=0))
+        accuracy_value = format_decimal(snapshot.accuracy_score * 100, digits=0)
+        self.coaching_progress_vars['accuracy'].set(
+            translate('coaching.progress.accuracy_value', value=accuracy_value)
+        )
+        self.coaching_progress_vars['streak'].set(
+            translate('coaching.progress.streak_value', days=format_decimal(snapshot.streak_days, digits=0))
+        )
+        self.coaching_progress_vars['scenarios'].set(format_decimal(snapshot.scenarios_completed, digits=0))
         if self.coaching_last_tip_var is not None:
-            self.coaching_last_tip_var.set(snapshot.last_tip or 'Play a hand to receive tailored guidance.')
+            self.coaching_last_tip_var.set(snapshot.last_tip or translate('coaching.tips.empty'))
 
     def _refresh_coaching_tips(self, tips: List[str]):
         if not self.coaching_tips_text:
@@ -1190,6 +1485,20 @@ class IntegratedPokerAssistant(tk.Tk):
             self.coaching_tips_text.insert(tk.END, f"• {tip}\n\n")
         self.coaching_tips_text.configure(state='disabled')
 
+    def _update_localization_display(self) -> None:
+        if not self.currency_display_var:
+            return
+        current_locale = get_current_locale()
+        if self.language_var and current_locale in self._locale_name_by_code:
+            self.language_var.set(self._locale_name_by_code[current_locale])
+        currency_code = self._locale_currency_map.get(current_locale)
+        if currency_code:
+            sample = format_currency(1234.56, currency=currency_code)
+            display_text = f"{currency_code} ({sample})"
+        else:
+            display_text = current_locale.upper()
+        self.currency_display_var.set(display_text)
+
     def _populate_coaching_scenarios(self):
         if not self.coaching_system or not self.coaching_scenario_tree:
             return
@@ -1197,7 +1506,8 @@ class IntegratedPokerAssistant(tk.Tk):
             self.coaching_scenario_tree.delete(item)
         scenarios = self.coaching_system.get_training_scenarios()
         for scenario in scenarios:
-            status = 'Completed' if scenario.completed else 'Active'
+            status_key = 'coaching.scenario.status.completed' if scenario.completed else 'coaching.scenario.status.active'
+            status = translate(status_key)
             self.coaching_scenario_tree.insert(
                 '',
                 'end',
@@ -1205,12 +1515,28 @@ class IntegratedPokerAssistant(tk.Tk):
                 values=(scenario.stage.title(), scenario.focus, scenario.difficulty, status)
             )
 
+    def _on_language_changed(self, _event=None):
+        if not self.language_var:
+            return
+        selected_name = self.language_var.get().strip()
+        locale_code = self._locale_code_by_name.get(selected_name)
+        if not locale_code or locale_code == get_current_locale():
+            return
+        try:
+            set_locale(locale_code)
+            messagebox.showinfo(
+                translate('tab.settings'),
+                translate('settings.language.applied', language=selected_name)
+            )
+        except Exception as exc:
+            messagebox.showerror(translate('tab.settings'), str(exc))
+
     def _mark_selected_scenario_completed(self):
         if not self.coaching_system or not self.coaching_scenario_tree:
             return
         selection = self.coaching_scenario_tree.selection()
         if not selection:
-            messagebox.showinfo('Coaching', 'Select a scenario to mark as completed.')
+            messagebox.showinfo(translate('tab.coaching'), translate('coaching.dialog.no_scenario'))
             return
         scenario_id = selection[0]
         self.coaching_system.mark_scenario_completed(scenario_id)
@@ -1221,7 +1547,7 @@ class IntegratedPokerAssistant(tk.Tk):
         if not self.coaching_system or not self.coaching_advice_text:
             return
         if self._latest_table_state is None:
-            messagebox.showinfo('Coaching', 'No table information available yet. Start Autopilot or import a hand.')
+            messagebox.showinfo(translate('tab.coaching'), translate('coaching.dialog.no_table_state'))
             return
         advice = self.coaching_system.get_real_time_advice(self._latest_table_state)
         if advice:
@@ -1257,10 +1583,10 @@ class IntegratedPokerAssistant(tk.Tk):
 
     def _evaluate_recent_hand(self):
         if not self.coaching_system:
-            messagebox.showerror('Coaching', 'Coaching system not available.')
+            messagebox.showerror(translate('tab.coaching'), translate('coaching.dialog.no_coaching_system'))
             return
         if not self._latest_hand_result:
-            messagebox.showinfo('Coaching', 'No recent hand captured. Start Autopilot or input a manual analysis first.')
+            messagebox.showinfo(translate('tab.coaching'), translate('coaching.dialog.no_hand'))
             return
 
         action = (self.coaching_action_var.get() if self.coaching_action_var else 'fold').lower()
@@ -1394,22 +1720,23 @@ class IntegratedPokerAssistant(tk.Tk):
     def _start_autopilot(self):
         """Start the autopilot system."""
         print("Starting autopilot system...")
-        
+
         # Update status
-        self._update_table_status("🤖 Autopilot ACTIVATED\n")
-        
+        start_time = self.state.start_time or datetime.now()
+        self._update_table_status(translate('autopilot.log.activated', time=format_datetime(start_time)) + "\n")
+
         # Execute quick actions based on settings
         if self.autopilot_panel.auto_scraper_var.get():
-            self._update_table_status("⚡ Auto-starting screen scraper...\n")
+            self._update_table_status(translate('autopilot.log.auto_start_scraper') + "\n")
             if not self._enhanced_scraper_started:
                 self._toggle_screen_scraper()
-        
+
         if self.autopilot_panel.auto_detect_var.get():
-            self._update_table_status("⚡ Running auto table detection...\n")
+            self._update_table_status(translate('autopilot.log.auto_detect') + "\n")
             threading.Thread(target=self._detect_tables, daemon=True).start()
-        
-        self._update_table_status("Scanning for poker tables...\n")
-        
+
+        self._update_table_status(translate('autopilot.log.scanning_tables') + "\n")
+
         # Start autopilot thread
         autopilot_thread = threading.Thread(target=self._autopilot_loop, daemon=True)
         autopilot_thread.start()
@@ -1417,7 +1744,7 @@ class IntegratedPokerAssistant(tk.Tk):
     def _stop_autopilot(self):
         """Stop the autopilot system."""
         print("Stopping autopilot system...")
-        self._update_table_status("🤖 Autopilot DEACTIVATED\n")
+        self._update_table_status(translate('autopilot.log.deactivated') + "\n")
     
     def _autopilot_loop(self):
         """Main autopilot processing loop."""
@@ -1432,10 +1759,10 @@ class IntegratedPokerAssistant(tk.Tk):
                         # Auto GTO analysis if enabled
                         if self.autopilot_panel.auto_gto_var.get() and self.gto_solver:
                             try:
-                                self.after(0, lambda: self._update_table_status("⚡ Running auto GTO analysis...\n"))
+                                self.after(0, lambda: self._update_table_status(translate('autopilot.log.auto_gto_start') + "\n"))
                                 # GTO analysis would happen here with table_state
                                 # This is a placeholder for the real implementation
-                                self.after(0, lambda: self._update_table_status("✅ Auto GTO analysis complete\n"))
+                                self.after(0, lambda: self._update_table_status(translate('autopilot.log.auto_gto_complete') + "\n"))
                             except Exception as gto_error:
                                 print(f"Auto GTO analysis error: {gto_error}")
                 
@@ -1444,9 +1771,9 @@ class IntegratedPokerAssistant(tk.Tk):
                     'tables_detected': 1,  # Mock data
                     'hands_played': self.autopilot_panel.state.hands_played + 1,
                     'actions_taken': self.autopilot_panel.state.actions_taken + (1 if self.autopilot_panel.auto_gto_var.get() else 0),
-                    'last_action': 'Auto-analyzing...' if self.autopilot_panel.auto_gto_var.get() else 'Monitoring...'
+                    'last_action_key': 'autopilot.last_action.auto_analyzing' if self.autopilot_panel.auto_gto_var.get() else 'autopilot.last_action.monitoring'
                 }
-                
+
                 self.after(0, lambda: self.autopilot_panel.update_statistics(stats))
                 
             except Exception as e:
@@ -1472,7 +1799,7 @@ class IntegratedPokerAssistant(tk.Tk):
     
     def _detect_tables(self):
         """Detect available poker tables with comprehensive error handling."""
-        self._update_table_status("🔍 Detecting poker tables...\n")
+        self._update_table_status(translate('autopilot.log.detecting_tables') + "\n")
         
         try:
             if not SCREEN_SCRAPER_LOADED:
@@ -1945,31 +2272,34 @@ class IntegratedPokerAssistant(tk.Tk):
             return
 
         if error:
+            text_key = 'actions.screen_scraper_error'
             button.config(
-                text='⚠️ Screen Scraper Check Logs',
                 bg=COLORS['accent_warning'],
                 fg=COLORS['bg_dark'],
                 activebackground=COLORS['accent_warning'],
                 activeforeground=COLORS['bg_dark']
             )
+            self._update_widget_translation_key(button, text_key, prefix='⚠️ ')
             return
 
         if active:
+            text_key = 'actions.screen_scraper_on'
             button.config(
-                text='🟢 Screen Scraper ON',
                 bg=COLORS['accent_success'],
                 fg=COLORS['text_primary'],
                 activebackground=COLORS['accent_success'],
                 activeforeground=COLORS['text_primary']
             )
+            self._update_widget_translation_key(button, text_key, prefix='🟢 ')
         else:
+            text_key = 'actions.screen_scraper_off'
             button.config(
-                text='🔌 Screen Scraper OFF',
                 bg=COLORS['accent_danger'],
                 fg=COLORS['text_primary'],
                 activebackground=COLORS['accent_success'],
                 activeforeground=COLORS['text_primary']
             )
+            self._update_widget_translation_key(button, text_key, prefix='🔌 ')
 
     def _start_screen_update_loop(self):
         """Start continuous screen update loop to follow scraper output."""
@@ -2060,6 +2390,9 @@ class IntegratedPokerAssistant(tk.Tk):
             print(f'Shutdown error: {e}')
         finally:
             self._stop_enhanced_screen_scraper()
+            if self._locale_listener_token is not None:
+                unregister_locale_listener(self._locale_listener_token)
+                self._locale_listener_token = None
             self.destroy()
 
 
