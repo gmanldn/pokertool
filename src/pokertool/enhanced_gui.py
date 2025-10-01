@@ -110,10 +110,39 @@ try:
     from .multi_table_support import TableManager, get_table_manager
     from .error_handling import sanitize_input, run_safely
     from .storage import get_secure_db
-    from .coaching_system import CoachingSystem
-    from .analytics_dashboard import AnalyticsDashboard, PrivacySettings, UsageEvent
-    from .gamification import GamificationEngine, Achievement, Badge, ProgressState
-    from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle, MentorshipPair
+    try:
+        from .coaching_system import CoachingSystem
+    except ImportError:
+        print("Warning: CoachingSystem not available")
+        CoachingSystem = None
+    
+    try:
+        from .analytics_dashboard import AnalyticsDashboard, PrivacySettings, UsageEvent
+    except ImportError:
+        print("Warning: Analytics dashboard not available")
+        AnalyticsDashboard = None
+        PrivacySettings = None
+        UsageEvent = None
+    
+    try:
+        from .gamification import GamificationEngine, Achievement, Badge, ProgressState
+    except ImportError:
+        print("Warning: Gamification engine not available")
+        GamificationEngine = None
+        Achievement = None
+        Badge = None
+        ProgressState = None
+    
+    try:
+        from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle, MentorshipPair
+    except ImportError:
+        print("Warning: Community platform not available")
+        CommunityPlatform = None
+        ForumPost = None
+        Challenge = None
+        CommunityTournament = None
+        KnowledgeArticle = None
+        MentorshipPair = None
     GUI_MODULES_LOADED = True
 except ImportError as e:
     print(f'Warning: GUI modules not fully loaded: {e}')
@@ -214,73 +243,90 @@ class IntegratedPokerAssistant(tk.Tk):
                 print("Core modules initialized")
 
             try:
-                self.coaching_system = CoachingSystem()
-                print("Coaching system ready")
+                if CoachingSystem:
+                    self.coaching_system = CoachingSystem()
+                    print("Coaching system ready")
+                else:
+                    print("Warning: CoachingSystem class not available")
             except Exception as coaching_error:
                 print(f"Coaching system initialization error: {coaching_error}")
+                self.coaching_system = None
 
             try:
-                self.analytics_dashboard = AnalyticsDashboard()
-                print("Analytics dashboard loaded")
+                if AnalyticsDashboard:
+                    self.analytics_dashboard = AnalyticsDashboard()
+                    print("Analytics dashboard loaded")
+                else:
+                    print("Warning: AnalyticsDashboard class not available")
             except Exception as analytics_error:
                 print(f"Analytics dashboard initialization error: {analytics_error}")
+                self.analytics_dashboard = None
 
             try:
-                self.gamification_engine = GamificationEngine()
-                if 'volume_grinder' not in self.gamification_engine.achievements:
-                    self.gamification_engine.register_achievement(Achievement(
-                        achievement_id='volume_grinder',
-                        title='Volume Grinder',
-                        description='Play 100 hands in a day',
-                        points=200,
-                        condition={'hands_played': 100}
-                    ))
-                if 'marathon' not in self.gamification_engine.badges:
-                    self.gamification_engine.register_badge(Badge(
-                        badge_id='marathon',
-                        title='Marathon',
-                        description='Maintain a 7-day streak of activity',
-                        tier='gold'
-                    ))
-                print("Gamification engine ready")
+                if GamificationEngine and Achievement and Badge:
+                    self.gamification_engine = GamificationEngine()
+                    if hasattr(self.gamification_engine, 'achievements') and 'volume_grinder' not in self.gamification_engine.achievements:
+                        self.gamification_engine.register_achievement(Achievement(
+                            achievement_id='volume_grinder',
+                            title='Volume Grinder',
+                            description='Play 100 hands in a day',
+                            points=200,
+                            condition={'hands_played': 100}
+                        ))
+                    if hasattr(self.gamification_engine, 'badges') and 'marathon' not in self.gamification_engine.badges:
+                        self.gamification_engine.register_badge(Badge(
+                            badge_id='marathon',
+                            title='Marathon',
+                            description='Maintain a 7-day streak of activity',
+                            tier='gold'
+                        ))
+                    print("Gamification engine ready")
+                else:
+                    print("Warning: Gamification classes not available")
             except Exception as gamification_error:
                 print(f"Gamification engine initialization error: {gamification_error}")
+                self.gamification_engine = None
 
             try:
-                self.community_platform = CommunityPlatform()
-                if not self.community_platform.posts:
-                    self.community_platform.create_post(ForumPost(
-                        post_id='welcome',
-                        author='coach',
-                        title='Welcome to the community',
-                        content='Share your goals and get feedback from other players.',
-                        tags=['announcement']
-                    ))
-                if not self.community_platform.challenges:
-                    self.community_platform.create_challenge(Challenge(
-                        challenge_id='daily_focus',
-                        title='Daily Focus Session',
-                        description='Play a focused 30-minute session and post a takeaway.',
-                        reward_points=150
-                    ))
-                if not self.community_platform.tournaments:
-                    self.community_platform.schedule_tournament(CommunityTournament(
-                        tournament_id='community_cup',
-                        name='Community Cup',
-                        start_time=time.time() + 86400,
-                        format='freeroll'
-                    ))
-                if not self.community_platform.articles:
-                    self.community_platform.add_article(KnowledgeArticle(
-                        article_id='icm_basics',
-                        title='ICM Basics',
-                        author='mentor',
-                        content='Understanding short-stack decisions on the bubble.',
-                        categories=['icm', 'strategy']
-                    ))
-                print("Community platform ready")
+                if (CommunityPlatform and ForumPost and Challenge and 
+                    CommunityTournament and KnowledgeArticle):
+                    self.community_platform = CommunityPlatform()
+                    if hasattr(self.community_platform, 'posts') and not self.community_platform.posts:
+                        self.community_platform.create_post(ForumPost(
+                            post_id='welcome',
+                            author='coach',
+                            title='Welcome to the community',
+                            content='Share your goals and get feedback from other players.',
+                            tags=['announcement']
+                        ))
+                    if hasattr(self.community_platform, 'challenges') and not self.community_platform.challenges:
+                        self.community_platform.create_challenge(Challenge(
+                            challenge_id='daily_focus',
+                            title='Daily Focus Session',
+                            description='Play a focused 30-minute session and post a takeaway.',
+                            reward_points=150
+                        ))
+                    if hasattr(self.community_platform, 'tournaments') and not self.community_platform.tournaments:
+                        self.community_platform.schedule_tournament(CommunityTournament(
+                            tournament_id='community_cup',
+                            name='Community Cup',
+                            start_time=time.time() + 86400,
+                            format='freeroll'
+                        ))
+                    if hasattr(self.community_platform, 'articles') and not self.community_platform.articles:
+                        self.community_platform.add_article(KnowledgeArticle(
+                            article_id='icm_basics',
+                            title='ICM Basics',
+                            author='mentor',
+                            content='Understanding short-stack decisions on the bubble.',
+                            categories=['icm', 'strategy']
+                        ))
+                    print("Community platform ready")
+                else:
+                    print("Warning: Community platform classes not available")
             except Exception as community_error:
                 print(f"Community platform initialization error: {community_error}")
+                self.community_platform = None
 
         except Exception as e:
             print(f"Module initialization error: {e}")
