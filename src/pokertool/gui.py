@@ -553,38 +553,14 @@ class EnhancedPokerAssistantFrame(tk.Frame):
         if auto_pack:
             self.pack(fill='both', expand=True)
 
+    # Compatibility helpers --------------------------------------------------
+    def _setup_window(self):  # pragma: no cover - retained for legacy patching
+        """Legacy hook expected by older test suites."""
 
-class EnhancedPokerAssistant(tk.Tk):
-    """Standalone top-level window that hosts the manual play workspace."""
+    def _bind_events(self):  # pragma: no cover - retained for legacy patching
+        """Legacy hook expected by older test suites."""
 
-    def __init__(self):
-        super().__init__()
-
-        self.title('🎰 Poker Assistant - Enhanced Edition')
-        self.geometry('1400x900')
-        self.minsize(1200, 800)
-        self.configure(bg=COLORS['bg_dark'])
-
-        self._frame = EnhancedPokerAssistantFrame(self)
-
-    def __getattr__(self, name: str):
-        try:
-            return super().__getattribute__(name)
-        except AttributeError:
-            return getattr(self._frame, name)
-
-    def __setattr__(self, name: str, value):
-        if name == '_frame' or not hasattr(self, '_frame'):
-            super().__setattr__(name, value)
-        elif hasattr(self._frame, name):
-            setattr(self._frame, name, value)
-        else:
-            super().__setattr__(name, value)
-
-    def destroy(self):
-        self._frame.destroy()
-        super().destroy()
-
+    # Core UI construction ---------------------------------------------------
     def _init_players(self) -> Dict[int, PlayerInfo]:
         """Initialize default player configuration."""
         players = {}
@@ -754,6 +730,7 @@ class EnhancedPokerAssistant(tk.Tk):
         )
         self.analysis_text.pack(fill='both', expand=True, padx=10, pady=10)
 
+    # Interaction logic ------------------------------------------------------
     def _on_card_selected(self, card: VisualCard):
         """Handle card selection from visual selector."""
         self.selected_cards = self.card_selector.get_selected_cards()
@@ -881,7 +858,47 @@ class EnhancedPokerAssistant(tk.Tk):
             print(f'Database initialization failed: {e}')
             self.secure_db = None
 
-# Alias the new GUI class for compatibility
+
+class EnhancedPokerAssistant(tk.Tk):
+    """Standalone top-level window that hosts the manual play workspace."""
+
+    def __init__(self):
+        super().__init__()
+
+        self.title('🎰 Poker Assistant - Enhanced Edition')
+        self.geometry('1400x900')
+        self.minsize(1200, 800)
+        self.configure(bg=COLORS['bg_dark'])
+
+        self._frame = EnhancedPokerAssistantFrame(self, auto_pack=True)
+        self._setup_window()
+        self._bind_events()
+
+    def _setup_window(self):  # pragma: no cover - legacy hook
+        """Compatibility hook for older launchers."""
+
+    def _bind_events(self):  # pragma: no cover - legacy hook
+        """Compatibility hook for older launchers."""
+
+    def __getattr__(self, name: str):
+        frame = self.__dict__.get('_frame')
+        if frame is not None and hasattr(frame, name):
+            return getattr(frame, name)
+        raise AttributeError(name)
+
+    def __setattr__(self, name: str, value):
+        if name == '_frame' or '_frame' not in self.__dict__:
+            super().__setattr__(name, value)
+        elif hasattr(self._frame, name):
+            setattr(self._frame, name, value)
+        else:
+            super().__setattr__(name, value)
+
+    def destroy(self):
+        self._frame.destroy()
+        super().destroy()
+
+
 SecureGUI = EnhancedPokerAssistant
 
 def main() -> int:
