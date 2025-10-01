@@ -123,49 +123,10 @@ MACHINE-READABLE-HEADER-END -->
   - `coaching_system.py` - Modular engine for insights, persistence, and training content
   - `test_coaching_system.py` - Unit tests covering detection, scenarios, and live advice
 
-
 ## MEDIUM Priority Tasks
 
-### 9. Internationalization
-- **ID**: I18N-001
-- **Status**: TODO
-- **Estimated Hours**: 16
-- **Dependencies**: None
-- **Description**: Multi-language support
-- **Subtasks**:
-  - [ ] Create translation framework
-  - [ ] Add language selection
-  - [ ] Translate core features
-  - [ ] Add currency conversion
-  - [ ] Implement locale-specific formatting
-
-### 10. Plugin System
-- **ID**: PLUGIN-001
-- **Status**: TODO
-- **Estimated Hours**: 24
-- **Dependencies**: None
-- **Description**: Extensible plugin architecture
-- **Subtasks**:
-  - [ ] Design plugin API
-  - [ ] Create plugin loader
-  - [ ] Add plugin marketplace
-  - [ ] Implement sandboxing
-  - [ ] Create example plugins
-
-### 11. Voice Commands
-- **ID**: VOICE-001
-- **Status**: TODO
-- **Estimated Hours**: 20
-- **Dependencies**: None
-- **Description**: Voice control integration
-- **Subtasks**:
-  - [ ] Implement speech recognition
-  - [ ] Add command parser
-  - [ ] Create voice feedback
-  - [ ] Add customizable commands
-  - [ ] Implement noise filtering
-
 ### 12. AI Bluff Detection
+
 - **ID**: BLUFF-001
 - **Status**: TODO
 - **Estimated Hours**: 32
@@ -179,6 +140,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Create bluff frequency tracker
 
 ### 13. Hand Converter
+
 - **ID**: CONV-001
 - **Status**: TODO
 - **Estimated Hours**: 14
@@ -192,6 +154,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Add metadata preservation
 
 ### 14. Study Mode
+
 - **ID**: STUDY-001
 - **Status**: TODO
 - **Estimated Hours**: 18
@@ -204,20 +167,8 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Add progress tracking
   - [ ] Create custom lessons
 
-### 15. Live Stream Integration
-- **ID**: STREAM-001
-- **Status**: TODO
-- **Estimated Hours**: 20
-- **Dependencies**: None
-- **Description**: Integration with streaming platforms
-- **Subtasks**:
-  - [ ] Add Twitch integration
-  - [ ] Create overlay for streams
-  - [ ] Implement viewer interaction
-  - [ ] Add highlight reel generator
-  - [ ] Create streaming dashboard
-
 ### 16. Hand Range Analyzer
+
 - **ID**: RANGE-002
 - **Status**: TODO
 - **Estimated Hours**: 16
@@ -231,6 +182,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Implement range reduction
 
 ### 17. Session Management
+
 - **ID**: SESSION-001
 - **Status**: TODO
 - **Estimated Hours**: 14
@@ -244,6 +196,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Implement session analytics
 
 ### 18. Database Optimization
+
 - **ID**: DB-002
 - **Status**: TODO
 - **Estimated Hours**: 18
@@ -257,6 +210,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Implement query monitoring
 
 ### 19. Advanced Reporting
+
 - **ID**: REPORT-001
 - **Status**: TODO
 - **Estimated Hours**: 22
@@ -270,6 +224,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Create report templates
 
 ### 20. Network Analysis
+
 - **ID**: NET-001
 - **Status**: TODO
 - **Estimated Hours**: 20
@@ -283,6 +238,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Create network metrics
 
 ### 21. Tournament Tracker
+
 - **ID**: TOUR-002
 - **Status**: TODO
 - **Estimated Hours**: 16
@@ -296,6 +252,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Implement tournament alerts
 
 ### 22. Performance Profiler
+
 - **ID**: PERF-002
 - **Status**: TODO
 - **Estimated Hours**: 12
@@ -308,76 +265,10 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Add performance alerts
   - [ ] Implement optimization suggestions
 
-### 23. Data Export System
-- **ID**: EXPORT-001
-- **Status**: TODO
-- **Estimated Hours**: 10
-- **Dependencies**: None
-- **Description**: Comprehensive data export
-- **Subtasks**:
-  - [ ] Add CSV export
-  - [ ] Implement JSON export
-  - [ ] Create XML export
-  - [ ] Add custom format support
-  - [ ] Implement batch export
 
-### 24. Accessibility Features
-- **ID**: ACCESS-001
-- **Status**: TODO
-- **Estimated Hours**: 14
-- **Dependencies**: None
-- **Description**: Accessibility improvements
-- **Subtasks**:
-  - [ ] Add screen reader support
-  - [ ] Implement high contrast mode
-  - [ ] Create keyboard navigation
-  - [ ] Add font size options
-  - [ ] Implement color blind support
-
----
-
-## LOW Priority Tasks
-
-### 25. Easter Eggs
-- **ID**: EASTER-001
-- **Status**: TODO
-- **Estimated Hours**: 4
-- **Dependencies**: None
-- **Description**: Fun hidden features
-- **Subtasks**:
-  - [ ] Add achievement system
-  - [ ] Create hidden animations
-  - [ ] Add funny messages
-  - [ ] Implement joke features
-  - [ ] Create surprise elements
-
-### 26. Legacy Support
-- **ID**: LEGACY-001
-- **Status**: TODO
-- **Estimated Hours**: 8
-- **Dependencies**: None
-- **Description**: Support for older systems
-- **Subtasks**:
-  - [ ] Add Windows 7 support
-  - [ ] Implement Python 3.8 compatibility
-  - [ ] Create legacy database migration
-  - [ ] Add fallback UI options
-  - [ ] Implement compatibility mode
-
-### 27. Beta Testing Program
-- **ID**: BETA-001
-- **Status**: TODO
-- **Estimated Hours**: 12
-- **Dependencies**: None
-- **Description**: Organized beta testing
-- **Subtasks**:
-  - [ ] Create beta user portal
-  - [ ] Implement feedback system
-  - [ ] Add bug reporting tools
-  - [ ] Create beta release pipeline
-  - [ ] Implement beta analytics
 
 ### 28. Documentation System
+
 - **ID**: DOC-001
 - **Status**: TODO
 - **Estimated Hours**: 16
@@ -391,6 +282,7 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Add context-sensitive help
 
 ### 29. Analytics Dashboard
+
 - **ID**: ANALYTICS-001
 - **Status**: TODO
 - **Estimated Hours**: 10
