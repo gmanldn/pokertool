@@ -96,12 +96,13 @@ import webbrowser
 # Import all pokertool modules
 try:
     from .gui import EnhancedPokerAssistant, VisualCard, CardSelectionPanel, TableVisualization
-    from .core import analyse_hand, Card, Suit, Position, HandAnalysisResult
+    from .core import analyse_hand, Card, Suit, Position, HandAnalysisResult, parse_card
     from .gto_solver import GTOSolver, get_gto_solver
     from .ml_opponent_modeling import OpponentModelingSystem, get_opponent_modeling_system
     from .multi_table_support import TableManager, get_table_manager
     from .error_handling import sanitize_input, run_safely
     from .storage import get_secure_db
+    from .coaching_system import CoachingSystem, RealTimeAdvice, TrainingScenario
     GUI_MODULES_LOADED = True
 except ImportError as e:
     print(f'Warning: GUI modules not fully loaded: {e}')
@@ -521,9 +522,28 @@ class IntegratedPokerAssistant(tk.Tk):
         self.gto_solver = None
         self.opponent_modeler = None
         self.multi_table_manager = None
+        self.coaching_system = None
         self._enhanced_scraper_started = False
         self._screen_update_running = False
         self._screen_update_thread = None
+
+        # Coaching state tracking
+        self._latest_table_state = None
+        self._latest_hand_result = None
+        self._latest_table_stage = None
+        self._latest_position = None
+
+        # Coaching UI widgets populated later
+        self.coaching_advice_text = None
+        self.coaching_mistake_tree = None
+        self.coaching_progress_vars: Dict[str, tk.StringVar] = {}
+        self.coaching_tips_text = None
+        self.coaching_scenario_tree = None
+        self.coaching_action_var = None
+        self.coaching_pot_var = None
+        self.coaching_to_call_var = None
+        self.coaching_position_var = None
+        self.coaching_last_tip_var = None
 
         # Initialize modules
         self._init_modules()
@@ -552,7 +572,13 @@ class IntegratedPokerAssistant(tk.Tk):
                 self.opponent_modeler = get_opponent_modeling_system()
                 self.multi_table_manager = get_table_manager()
                 print("Core modules initialized")
-                
+
+            try:
+                self.coaching_system = CoachingSystem()
+                print("Coaching system ready")
+            except Exception as coaching_error:
+                print(f"Coaching system initialization error: {coaching_error}")
+        
         except Exception as e:
             print(f"Module initialization error: {e}")
     
@@ -590,7 +616,12 @@ class IntegratedPokerAssistant(tk.Tk):
         analysis_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
         self.notebook.add(analysis_frame, text='📊 Analysis')
         self._build_analysis_tab(analysis_frame)
-        
+
+        # Coaching tab
+        coaching_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
+        self.notebook.add(coaching_frame, text='🎯 Coaching')
+        self._build_coaching_tab(coaching_frame)
+
         # Settings tab
         settings_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
         self.notebook.add(settings_frame, text='⚙️ Settings')
@@ -771,7 +802,7 @@ class IntegratedPokerAssistant(tk.Tk):
             quick_actions_frame,
             'Settings',
             '⚙️',
-            lambda: self.notebook.select(3),
+            lambda: self.notebook.select(4),
             '#64748b',
             'Open configuration panel'
         )
@@ -850,7 +881,7 @@ class IntegratedPokerAssistant(tk.Tk):
             bg=COLORS['bg_dark'],
             fg=COLORS['text_primary']
         ).pack(pady=20)
-        
+
         # Analysis output
         analysis_output = tk.Text(
             parent,
@@ -861,12 +892,248 @@ class IntegratedPokerAssistant(tk.Tk):
             height=20
         )
         analysis_output.pack(fill='both', expand=True, padx=20, pady=20)
-    
+
+    def _build_coaching_tab(self, parent):
+        """Build the coaching integration tab."""
+        parent.configure(bg=COLORS['bg_dark'])
+
+        tk.Label(
+            parent,
+            text='AI Coaching Command Center',
+            font=FONTS['title'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['text_primary']
+        ).pack(pady=(10, 0))
+
+        main_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        left_frame = tk.Frame(main_frame, bg=COLORS['bg_dark'])
+        left_frame.pack(side='left', fill='both', expand=True, padx=(0, 12))
+
+        right_frame = tk.Frame(main_frame, bg=COLORS['bg_dark'])
+        right_frame.pack(side='left', fill='both', expand=True)
+
+        advice_frame = tk.LabelFrame(
+            left_frame,
+            text='Real-Time Advice',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        advice_frame.pack(fill='x', pady=(0, 12))
+
+        self.coaching_advice_text = tk.Text(
+            advice_frame,
+            height=6,
+            bg=COLORS['bg_light'],
+            fg=COLORS['text_primary'],
+            font=FONTS['analysis'],
+            wrap='word',
+            state='disabled'
+        )
+        self.coaching_advice_text.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Button(
+            advice_frame,
+            text='Refresh Advice',
+            command=self._refresh_coaching_advice
+        ).pack(padx=10, pady=(0, 10), anchor='e')
+
+        mistake_frame = tk.LabelFrame(
+            left_frame,
+            text='Mistake Log',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        mistake_frame.pack(fill='both', expand=True, pady=(0, 12))
+
+        columns = ('category', 'severity', 'equity', 'recommendation')
+        self.coaching_mistake_tree = ttk.Treeview(
+            mistake_frame,
+            columns=columns,
+            show='headings',
+            height=8
+        )
+        for col, heading in zip(columns, ['Category', 'Severity', 'Equity Loss', 'Recommendation']):
+            self.coaching_mistake_tree.heading(col, text=heading)
+            width = 130 if col != 'recommendation' else 200
+            self.coaching_mistake_tree.column(col, width=width, anchor='center')
+
+        mistake_scroll = ttk.Scrollbar(mistake_frame, orient='vertical', command=self.coaching_mistake_tree.yview)
+        self.coaching_mistake_tree.configure(yscrollcommand=mistake_scroll.set)
+        self.coaching_mistake_tree.pack(side='left', fill='both', expand=True, padx=(10, 0), pady=10)
+        mistake_scroll.pack(side='right', fill='y', padx=(0, 10), pady=10)
+
+        tips_frame = tk.LabelFrame(
+            left_frame,
+            text='Personalized Tips',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        tips_frame.pack(fill='both', expand=True)
+
+        self.coaching_tips_text = tk.Text(
+            tips_frame,
+            height=8,
+            bg=COLORS['bg_light'],
+            fg=COLORS['text_primary'],
+            font=FONTS['analysis'],
+            wrap='word',
+            state='disabled'
+        )
+        self.coaching_tips_text.pack(fill='both', expand=True, padx=10, pady=10)
+
+        progress_frame = tk.LabelFrame(
+            right_frame,
+            text='Progress Summary',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        progress_frame.pack(fill='x', pady=(0, 12))
+
+        metrics = {
+            'hands': ('Hands Reviewed', '0'),
+            'accuracy': ('Accuracy Score', '100%'),
+            'streak': ('Study Streak', '0 days'),
+            'scenarios': ('Scenarios Completed', '0'),
+        }
+        self.coaching_progress_vars = {}
+        for idx, (key, (label_text, default_value)) in enumerate(metrics.items()):
+            tk.Label(
+                progress_frame,
+                text=label_text,
+                font=FONTS['subheading'],
+                bg=COLORS['bg_medium'],
+                fg=COLORS['text_primary']
+            ).grid(row=idx, column=0, sticky='w', padx=10, pady=4)
+            var = tk.StringVar(value=default_value)
+            self.coaching_progress_vars[key] = var
+            tk.Label(
+                progress_frame,
+                textvariable=var,
+                font=FONTS['analysis'],
+                bg=COLORS['bg_medium'],
+                fg=COLORS['accent_primary']
+            ).grid(row=idx, column=1, sticky='e', padx=10, pady=4)
+
+        self.coaching_last_tip_var = tk.StringVar(value='No tips yet. Play a hand to generate insights.')
+        tk.Label(
+            progress_frame,
+            text='Latest Tip',
+            font=FONTS['subheading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        ).grid(row=len(metrics), column=0, sticky='w', padx=10, pady=(10, 4))
+        tk.Label(
+            progress_frame,
+            textvariable=self.coaching_last_tip_var,
+            font=FONTS['analysis'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            wraplength=320,
+            justify='left'
+        ).grid(row=len(metrics), column=0, columnspan=2, sticky='w', padx=10, pady=(0, 10))
+
+        scenarios_frame = tk.LabelFrame(
+            right_frame,
+            text='Training Scenarios',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        scenarios_frame.pack(fill='both', expand=True, pady=(0, 12))
+
+        scenario_columns = ('stage', 'focus', 'difficulty', 'status')
+        self.coaching_scenario_tree = ttk.Treeview(
+            scenarios_frame,
+            columns=scenario_columns,
+            show='headings',
+            height=6
+        )
+        headings = ['Stage', 'Focus', 'Difficulty', 'Status']
+        widths = [80, 140, 100, 100]
+        for col, heading, width in zip(scenario_columns, headings, widths):
+            self.coaching_scenario_tree.heading(col, text=heading)
+            self.coaching_scenario_tree.column(col, width=width, anchor='center')
+
+        scenario_scroll = ttk.Scrollbar(scenarios_frame, orient='vertical', command=self.coaching_scenario_tree.yview)
+        self.coaching_scenario_tree.configure(yscrollcommand=scenario_scroll.set)
+        self.coaching_scenario_tree.pack(side='left', fill='both', expand=True, padx=(10, 0), pady=10)
+        scenario_scroll.pack(side='right', fill='y', padx=(0, 10), pady=10)
+
+        scenario_actions = tk.Frame(scenarios_frame, bg=COLORS['bg_medium'])
+        scenario_actions.pack(fill='x', padx=10, pady=(0, 10))
+
+        ttk.Button(
+            scenario_actions,
+            text='Mark Completed',
+            command=self._mark_selected_scenario_completed
+        ).pack(side='left')
+
+        ttk.Button(
+            scenario_actions,
+            text='Refresh',
+            command=self._populate_coaching_scenarios
+        ).pack(side='left', padx=6)
+
+        eval_frame = tk.LabelFrame(
+            right_frame,
+            text='Evaluate Latest Decision',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        )
+        eval_frame.pack(fill='x')
+
+        actions = ['fold', 'check', 'call', 'bet', 'raise', 'all-in']
+        self.coaching_action_var = tk.StringVar(value=actions[0])
+        ttk.Label(eval_frame, text='Action', font=FONTS['analysis']).grid(row=0, column=0, padx=10, pady=6, sticky='w')
+        ttk.Combobox(
+            eval_frame,
+            textvariable=self.coaching_action_var,
+            values=actions,
+            state='readonly',
+            width=10
+        ).grid(row=0, column=1, padx=10, pady=6, sticky='w')
+
+        self.coaching_pot_var = tk.StringVar()
+        ttk.Label(eval_frame, text='Pot Size', font=FONTS['analysis']).grid(row=0, column=2, padx=10, pady=6, sticky='w')
+        ttk.Entry(eval_frame, textvariable=self.coaching_pot_var, width=10).grid(row=0, column=3, padx=10, pady=6, sticky='w')
+
+        self.coaching_to_call_var = tk.StringVar()
+        ttk.Label(eval_frame, text='To Call', font=FONTS['analysis']).grid(row=1, column=0, padx=10, pady=6, sticky='w')
+        ttk.Entry(eval_frame, textvariable=self.coaching_to_call_var, width=10).grid(row=1, column=1, padx=10, pady=6, sticky='w')
+
+        positions = ['AUTO'] + [pos.name for pos in Position if isinstance(pos.value, str)]
+        self.coaching_position_var = tk.StringVar(value='AUTO')
+        ttk.Label(eval_frame, text='Position', font=FONTS['analysis']).grid(row=1, column=2, padx=10, pady=6, sticky='w')
+        ttk.Combobox(
+            eval_frame,
+            textvariable=self.coaching_position_var,
+            values=positions,
+            state='readonly',
+            width=12
+        ).grid(row=1, column=3, padx=10, pady=6, sticky='w')
+
+        ttk.Button(
+            eval_frame,
+            text='Evaluate',
+            command=self._evaluate_recent_hand
+        ).grid(row=2, column=0, columnspan=4, padx=10, pady=(10, 12), sticky='ew')
+
+        self._refresh_progress_summary()
+        self._populate_coaching_scenarios()
+        self._refresh_coaching_tips(self.coaching_system.get_personalized_tips() if self.coaching_system else [])
+
     def _build_settings_tab(self, parent):
         """Build settings and configuration tab."""
         settings_scroll = tk.Frame(parent, bg=COLORS['bg_dark'])
         settings_scroll.pack(fill='both', expand=True, padx=20, pady=20)
-        
+
         tk.Label(
             settings_scroll,
             text='Poker Tool Settings',
@@ -874,7 +1141,7 @@ class IntegratedPokerAssistant(tk.Tk):
             bg=COLORS['bg_dark'],
             fg=COLORS['text_primary']
         ).pack(pady=(0, 20))
-        
+
         # Settings categories
         categories = [
             'Autopilot Configuration',
@@ -884,7 +1151,7 @@ class IntegratedPokerAssistant(tk.Tk):
             'Multi-Table Settings',
             'Security & Privacy'
         ]
-        
+
         for category in categories:
             category_frame = tk.LabelFrame(
                 settings_scroll,
@@ -902,6 +1169,206 @@ class IntegratedPokerAssistant(tk.Tk):
                 bg=COLORS['bg_medium'],
                 fg=COLORS['text_secondary']
             ).pack(padx=10, pady=10)
+
+    def _refresh_progress_summary(self):
+        if not self.coaching_system or not self.coaching_progress_vars:
+            return
+        snapshot = self.coaching_system.get_progress_snapshot()
+        self.coaching_progress_vars['hands'].set(str(snapshot.hands_reviewed))
+        self.coaching_progress_vars['accuracy'].set(f"{snapshot.accuracy_score * 100:.0f}%")
+        self.coaching_progress_vars['streak'].set(f"{snapshot.streak_days} days")
+        self.coaching_progress_vars['scenarios'].set(str(snapshot.scenarios_completed))
+        if self.coaching_last_tip_var is not None:
+            self.coaching_last_tip_var.set(snapshot.last_tip or 'Play a hand to receive tailored guidance.')
+
+    def _refresh_coaching_tips(self, tips: List[str]):
+        if not self.coaching_tips_text:
+            return
+        self.coaching_tips_text.configure(state='normal')
+        self.coaching_tips_text.delete('1.0', tk.END)
+        for tip in tips:
+            self.coaching_tips_text.insert(tk.END, f"• {tip}\n\n")
+        self.coaching_tips_text.configure(state='disabled')
+
+    def _populate_coaching_scenarios(self):
+        if not self.coaching_system or not self.coaching_scenario_tree:
+            return
+        for item in self.coaching_scenario_tree.get_children():
+            self.coaching_scenario_tree.delete(item)
+        scenarios = self.coaching_system.get_training_scenarios()
+        for scenario in scenarios:
+            status = 'Completed' if scenario.completed else 'Active'
+            self.coaching_scenario_tree.insert(
+                '',
+                'end',
+                iid=scenario.scenario_id,
+                values=(scenario.stage.title(), scenario.focus, scenario.difficulty, status)
+            )
+
+    def _mark_selected_scenario_completed(self):
+        if not self.coaching_system or not self.coaching_scenario_tree:
+            return
+        selection = self.coaching_scenario_tree.selection()
+        if not selection:
+            messagebox.showinfo('Coaching', 'Select a scenario to mark as completed.')
+            return
+        scenario_id = selection[0]
+        self.coaching_system.mark_scenario_completed(scenario_id)
+        self._populate_coaching_scenarios()
+        self._refresh_progress_summary()
+
+    def _refresh_coaching_advice(self):
+        if not self.coaching_system or not self.coaching_advice_text:
+            return
+        if self._latest_table_state is None:
+            messagebox.showinfo('Coaching', 'No table information available yet. Start Autopilot or import a hand.')
+            return
+        advice = self.coaching_system.get_real_time_advice(self._latest_table_state)
+        if advice:
+            self._update_coaching_advice(advice)
+
+    def _update_coaching_advice(self, advice: RealTimeAdvice):
+        if not self.coaching_advice_text:
+            return
+        self.coaching_advice_text.configure(state='normal')
+        self.coaching_advice_text.delete('1.0', tk.END)
+        self.coaching_advice_text.insert('end', f"{advice.summary}\n\n{advice.reasoning}")
+        self.coaching_advice_text.configure(state='disabled')
+
+    def _append_coaching_mistakes(self, mistakes: List[Any]):
+        if not self.coaching_mistake_tree:
+            return
+        for mistake in mistakes:
+            self.coaching_mistake_tree.insert(
+                '',
+                'end',
+                values=(
+                    mistake.category.replace('_', ' ').title(),
+                    mistake.severity.title(),
+                    f"{mistake.equity_impact:.2f}",
+                    mistake.recommended_action.upper(),
+                )
+            )
+        # Keep table trimmed to recent entries
+        rows = self.coaching_mistake_tree.get_children()
+        if len(rows) > 50:
+            for item in rows[:-50]:
+                self.coaching_mistake_tree.delete(item)
+
+    def _evaluate_recent_hand(self):
+        if not self.coaching_system:
+            messagebox.showerror('Coaching', 'Coaching system not available.')
+            return
+        if not self._latest_hand_result:
+            messagebox.showinfo('Coaching', 'No recent hand captured. Start Autopilot or input a manual analysis first.')
+            return
+
+        action = (self.coaching_action_var.get() if self.coaching_action_var else 'fold').lower()
+
+        def to_float(value: Optional[str]) -> Optional[float]:
+            if not value:
+                return None
+            try:
+                return float(value)
+            except ValueError:
+                return None
+
+        pot = to_float(self.coaching_pot_var.get() if self.coaching_pot_var else None)
+        to_call = to_float(self.coaching_to_call_var.get() if self.coaching_to_call_var else None)
+
+        position = None
+        if self.coaching_position_var:
+            selected = self.coaching_position_var.get()
+            if selected == 'AUTO':
+                position = self._latest_position if isinstance(self._latest_position, Position) else None
+                if isinstance(self._latest_position, str):
+                    try:
+                        position = Position[self._latest_position]
+                    except KeyError:
+                        try:
+                            position = Position(self._latest_position)
+                        except ValueError:
+                            position = None
+            else:
+                try:
+                    position = Position[selected]
+                except KeyError:
+                    try:
+                        position = Position(selected)
+                    except ValueError:
+                        position = None
+
+        feedback = self.coaching_system.evaluate_hand(
+            self._latest_hand_result,
+            action,
+            pot=pot,
+            to_call=to_call,
+            position=position,
+            table_stage=self._latest_table_stage,
+        )
+
+        if feedback.real_time_advice:
+            self._update_coaching_advice(feedback.real_time_advice)
+        if feedback.mistakes:
+            self._append_coaching_mistakes(feedback.mistakes)
+        self._refresh_coaching_tips(self.coaching_system.get_personalized_tips())
+        if feedback.personalized_tips and self.coaching_last_tip_var is not None:
+            self.coaching_last_tip_var.set(feedback.personalized_tips[0])
+        self._refresh_progress_summary()
+
+    def _handle_coaching_table_state(self, table_state):
+        if not self.coaching_system:
+            return
+        self._latest_table_state = table_state
+        self._latest_table_stage = getattr(table_state, 'stage', None)
+        self._latest_position = getattr(table_state, 'hero_position', None)
+
+        hero_cards = self._normalize_cards(getattr(table_state, 'hero_cards', []))
+        board_cards = self._normalize_cards(getattr(table_state, 'board_cards', []))
+
+        position = None
+        if isinstance(self._latest_position, Position):
+            position = self._latest_position
+        elif isinstance(self._latest_position, str):
+            try:
+                position = Position[self._latest_position]
+            except KeyError:
+                try:
+                    position = Position(self._latest_position)
+                except ValueError:
+                    position = None
+
+        try:
+            if hero_cards:
+                self._latest_hand_result = analyse_hand(
+                    hero_cards,
+                    board_cards,
+                    position,
+                    getattr(table_state, 'pot_size', None),
+                    getattr(table_state, 'current_bet', None)
+                )
+            else:
+                self._latest_hand_result = None
+        except Exception:
+            self._latest_hand_result = None
+
+        advice = self.coaching_system.get_real_time_advice(table_state)
+        if advice:
+            self.after(0, lambda: self._update_coaching_advice(advice))
+
+    def _normalize_cards(self, cards: Optional[List[Any]]) -> List[Card]:
+        normalized: List[Card] = []
+        if not cards:
+            return normalized
+        for card in cards:
+            if isinstance(card, Card):
+                normalized.append(card)
+            elif isinstance(card, str):
+                try:
+                    normalized.append(parse_card(card))
+                except ValueError:
+                    continue
+        return normalized
     
     def _handle_autopilot_toggle(self, active: bool):
         """Handle autopilot activation/deactivation."""
@@ -998,6 +1465,7 @@ class IntegratedPokerAssistant(tk.Tk):
             status_msg += f"  Hero cards: {len(table_state.hero_cards)}\n"
             
             self.after(0, lambda: self._update_table_status(status_msg))
+            self.after(0, lambda ts=table_state: self._handle_coaching_table_state(ts))
             
         except Exception as e:
             print(f"Table state processing error: {e}")
