@@ -297,7 +297,7 @@ class MasterLogger:
             logging.getLogger('pokertool.ocr_recognition'),
             logging.getLogger('pokertool.hud_overlay'),
             logging.getLogger('pokertool.api'),
-            logging.getLogger('pokertool.threading'),
+            logging.getLogger('pokertool.concurrency'),
             logging.getLogger('pokertool.multi_table_support'),
             logging.getLogger('pokertool.production_database'),
             logging.getLogger('pokertool.game_selection'),

@@ -110,14 +110,19 @@ class DependencyManager:
         try:
             result = subprocess.run(
                 command, 
-                check=True, 
-                capture_output=not self.verbose,
+                check=True,
+                capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
                 **kwargs
             )
+            if self.verbose and result.stdout:
+                print(result.stdout)
             return result
         except subprocess.CalledProcessError as e:
+            if self.verbose:
+                print(e.stdout, file=sys.stdout)
+                print(e.stderr, file=sys.stderr)
             error_msg = f"Command failed: {' '.join(command)}"
             if e.stderr:
                 error_msg += f"\nError: {e.stderr}"
@@ -479,7 +484,7 @@ class PokerToolLauncher:
         
         # 1. Run comprehensive system and environment checks
         if not self.dependency_manager.run_comprehensive_self_test():
-            self.dependency_manager.log("✗ Comprehensive self-test FAILED")
+            self.dependency_manager.log("\n✗ Comprehensive self-test FAILED")
             return 1
         
         self.dependency_manager.log("✓ System and environment checks PASSED")

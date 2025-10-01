@@ -107,7 +107,7 @@ except ImportError:
 try:
     from .threading import get_thread_pool, TaskPriority, cpu_intensive
 except ImportError:
-    from pokertool.threading import get_thread_pool, TaskPriority, cpu_intensive
+    from pokertool.concurrency import get_thread_pool, TaskPriority, cpu_intensive
 
 try:
     from .error_handling import retry_on_failure
