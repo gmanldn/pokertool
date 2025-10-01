@@ -6,7 +6,7 @@ Provides thread-safe utilities and helpers for concurrent operations.
 import threading
 import time
 import logging
-from typing import Any, Callable, Optional, Dict, List
+from typing import Any, Callable, Optional, Dict, List, Enum
 from concurrent.futures import ThreadPoolExecutor, Future
 import functools
 import weakref
@@ -85,6 +85,15 @@ class ThreadSafeCounter:
     def value(self):
         with self._lock:
             return self._value
+
+
+class TaskPriority(Enum):
+    """Task priority levels for the thread pool."""
+    CRITICAL = "critical"
+    HIGH = "high" 
+    NORMAL = "normal"
+    LOW = "low"
+
 
 def get_thread_pool(max_workers: int = 4) -> ThreadPoolExecutor:
     """Get or create the global thread pool."""
@@ -222,6 +231,7 @@ def cleanup_threading() -> None:
 
 # Export commonly used items
 __all__ = [
+    'TaskPriority',
     'ThreadSafeDict',
     'ThreadSafeCounter', 
     'get_thread_pool',
