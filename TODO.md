@@ -26,11 +26,11 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | HIGH     | 0     | 0.0%       |
-| MEDIUM   | 11    | 100.0%     |
+| MEDIUM   | 9     | 100.0%     |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 11**
-**COMPLETED TASKS: 10**
+**TOTAL REMAINING TASKS: 9**
+**COMPLETED TASKS: 12**
 **Note: All CRITICAL priority tasks have been completed and removed**
 
 ---
@@ -220,33 +220,43 @@ MACHINE-READABLE-HEADER-END -->
   - Monte-Carlo equity evaluation with matchup sampling caps for responsiveness
   - Combination metrics surfaced through `tests/system/test_hand_range_analyzer.py`
 
-### 17. Session Management
+### 17. Session Management ✅
 
 - **ID**: SESSION-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-03)
 - **Estimated Hours**: 14
 - **Dependencies**: None
 - **Description**: Advanced session tracking
 - **Subtasks**:
-  - [ ] Add session goals
-  - [ ] Implement break reminders
-  - [ ] Create session reviews
-  - [ ] Add tilt detection
-  - [ ] Implement session analytics
+  - [x] Add session goals
+  - [x] Implement break reminders
+  - [x] Create session reviews
+  - [x] Add tilt detection
+  - [x] Implement session analytics
+- **Implementation**: `src/pokertool/session_management.py` orchestrating session lifecycle, goal tracking, and analytics
+- **Deliverables**:
+  - Session goals with loss guardrails, tilt detection, and break scheduling
+  - JSON persistence with structured reviews surfaced through `tests/system/test_session_management.py`
+  - Analytics snapshot including winrate, hourly, VPIP, aggression, and break history
 
-### 18. Database Optimization
+### 18. Database Optimization ✅
 
 - **ID**: DB-002
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-03)
 - **Estimated Hours**: 18
 - **Dependencies**: None
 - **Description**: Database performance improvements
 - **Subtasks**:
-  - [ ] Add query optimization
-  - [ ] Implement caching layer
-  - [ ] Create data archiving
-  - [ ] Add index optimization
-  - [ ] Implement query monitoring
+  - [x] Add query optimization
+  - [x] Implement caching layer
+  - [x] Create data archiving
+  - [x] Add index optimization
+  - [x] Implement query monitoring
+- **Implementation**: `src/pokertool/database_optimization.py` providing caching, monitoring, indexing advice, and archiving
+- **Deliverables**:
+  - Query cache with TTL, monitoring of slow/failing queries, and heuristic optimization hints
+  - Index advisor informed by real query filters plus archive manager for cold data offload
+  - Regression coverage in `tests/system/test_database_optimization.py`
 
 ### 19. Advanced Reporting
 
@@ -388,6 +398,16 @@ MACHINE-READABLE-HEADER-END -->
    - Created `tests/system/test_hand_range_analyzer.py` validating parsing accuracy, equity evaluation, and filters
    - Integrated Monte Carlo equities via `EquityCalculator` with matchup sampling safeguards
 
+3. **SESSION-001** - Session Management
+   - Added `session_management.py` with goal tracking, break reminders, tilt detection, and analytics snapshots
+   - Created `tests/system/test_session_management.py` validating lifecycle flows and tilt/break logic
+   - Persisted structured session reviews into `.pokertool/sessions`
+
+4. **DB-002** - Database Optimization
+   - Added `database_optimization.py` offering query cache, monitor, index advisor, and archive workflows
+   - Created `tests/system/test_database_optimization.py` covering caching, optimization hints, and recommendations
+   - Produced optimization summary reporting with slow query insights and archive listings
+
 ### 2025-10-02
 1. **BLUFF-001** - AI Bluff Detection
    - Implemented `bluff_detection.py` with timing, betting, and historical heuristics
@@ -436,6 +456,14 @@ MACHINE-READABLE-HEADER-END -->
 - Updated priority matrix (0 HIGH, 11 MEDIUM, 0 LOW remaining)
 - Total tasks: 11 remaining, 10 completed
 
+### Version v23.5.0 (2025-10-03)
+- Completed SESSION-001: Session Management
+- Completed DB-002: Database Optimization
+- Added session_management.py for goals, breaks, tilt detection, and analytics with tests
+- Added database_optimization.py for caching, monitoring, indexing, and archiving with tests
+- Updated priority matrix (0 HIGH, 9 MEDIUM, 0 LOW remaining)
+- Total tasks: 9 remaining, 12 completed
+
 ### Version v23.3.0 (2025-10-02)
 - Completed BLUFF-001: AI Bluff Detection
 - Completed CONV-001: Hand Converter
@@ -467,7 +495,7 @@ MACHINE-READABLE-HEADER-END -->
 ## Notes
 
 - All CRITICAL, HIGH, and LOW priority tasks have been completed and removed
-- Remaining backlog consists of MEDIUM initiatives (analytics, session tooling, community features)
+- Remaining backlog consists of MEDIUM initiatives (analytics, reporting, community features)
 - Prioritise coordination dependencies across analytics dashboard, session management, and networking items
 - Dependencies remain minimal; tasks can be scheduled in parallel with appropriate resourcing
 - Regular updates to this file are recommended as tasks progress
