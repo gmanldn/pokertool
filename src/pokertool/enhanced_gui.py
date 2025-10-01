@@ -1096,7 +1096,7 @@ class IntegratedPokerAssistant(tk.Tk):
         print("Starting autopilot system...")
 
         # Update status
-        start_time = self.state.start_time or datetime.now()
+        start_time = getattr(self.autopilot_panel.state, 'start_time', None) or datetime.now()
         self._update_table_status(translate('autopilot.log.activated', time=format_datetime(start_time)) + "\n")
 
         # Execute quick actions based on settings
