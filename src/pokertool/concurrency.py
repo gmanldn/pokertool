@@ -9,7 +9,7 @@ Sophisticated thread and process pool management for concurrent operations.
 Implements priority queuing, task scheduling, and resource management for
 optimal performance in multi-core environments.
 
-Module: pokertool.threading
+Module: pokertool.concurrency
 Version: 20.0.0
 Last Modified: 2025-09-29
 Author: PokerTool Development Team
@@ -62,6 +62,7 @@ from enum import Enum
 import multiprocessing
 import functools
 import weakref
+import atexit
 
 logger = logging.getLogger(__name__)
 
@@ -407,11 +408,20 @@ class PokerThreadPool:
 # Global instances
 _global_thread_pool: Optional[PokerThreadPool] = None
 
+def _shutdown_global_thread_pool():
+    """Shuts down the global thread pool if it exists."""
+    global _global_thread_pool
+    if _global_thread_pool:
+        logger.info("Registering atexit handler for global thread pool shutdown.")
+        _global_thread_pool.shutdown(wait=True)
+        _global_thread_pool = None # Clear the reference
+
 def get_thread_pool() -> PokerThreadPool:
     """Get the global thread pool instance."""
     global _global_thread_pool
     if _global_thread_pool is None:
         _global_thread_pool = PokerThreadPool()
+        atexit.register(_shutdown_global_thread_pool) # Register for cleanup
     return _global_thread_pool
 
 # Decorators for threading support
