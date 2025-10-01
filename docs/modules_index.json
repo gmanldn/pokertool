@@ -26,7 +26,7 @@
       "TableDiagramWindow"
     ]
   },
-  "autoconfirm.py": {
+  "pokertool/modules/autoconfirm.py": {
     "functions": [],
     "classes": []
   },
@@ -45,7 +45,7 @@
     ],
     "classes": []
   },
-  "poker_test.py": {
+  "tests/system/poker_test.py": {
     "functions": [],
     "classes": []
   },
@@ -125,7 +125,7 @@
       "TestConcurrencySecurityValidation"
     ]
   },
-  "poker_screen_scraper.py": {
+  "pokertool/modules/poker_screen_scraper.py": {
     "functions": [
       "test_screen_scraper"
     ],

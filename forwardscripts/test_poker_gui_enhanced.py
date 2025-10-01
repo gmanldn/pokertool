@@ -23,9 +23,16 @@ import tkinter as tk
 from dataclasses import dataclass
 import sys
 import os
+from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add repository root and modules directory to path for imports
+ROOT = Path(__file__).resolve().parents[1]
+MODULES_DIR = ROOT / "pokertool" / "modules"
+
+for path in (ROOT, MODULES_DIR):
+    path_str = str(path)
+    if path_str not in sys.path:
+        sys.path.insert(0, path_str)
 
 # Mock the poker modules if not available
 try:

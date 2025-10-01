@@ -65,17 +65,49 @@ from contextlib import contextmanager
 from typing import Any, Callable, Iterator
 from functools import wraps
 
-def _configure_logging() -> None:
-    """Configure centralized logging for the application."""
-    logging.basicConfig(
-        level=logging.INFO, 
-        format='%(asctime)s %(levelname)s %(name)s :: %(message)s', 
-        handlers=[logging.StreamHandler(sys.stderr)], 
-        force=True, 
-    )
+# Import master logging system if available
+try:
+    from .master_logging import get_master_logger, log_error, log_warning, LogCategory, auto_log_errors
+    MASTER_LOGGING_AVAILABLE = True
+    
+    # Use master logger
+    master_logger = get_master_logger()
+    
+    def log_info(message: str, **kwargs):
+        master_logger.info(message, category=LogCategory.ERROR, **kwargs)
+    
+    def log_warning_msg(message: str, **kwargs):
+        master_logger.warning(message, category=LogCategory.ERROR, **kwargs)
+    
+    def log_exception(message: str, exception: Exception, **kwargs):
+        master_logger.error(message, category=LogCategory.ERROR, exception=exception, **kwargs)
+        
+    log = master_logger  # For backward compatibility
+    
+except ImportError:
+    # Fallback to basic logging if master logging not available
+    MASTER_LOGGING_AVAILABLE = False
+    
+    def _configure_logging() -> None:
+        """Configure centralized logging for the application."""
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s %(levelname)s %(name)s :: %(message)s', 
+            handlers=[logging.StreamHandler(sys.stderr)], 
+            force=True, 
+        )
 
-_configure_logging()
-log = logging.getLogger('pokertool')
+    _configure_logging()
+    log = logging.getLogger('pokertool')
+    
+    def log_info(message: str, **kwargs):
+        log.info(message)
+    
+    def log_warning_msg(message: str, **kwargs):
+        log.warning(message)
+    
+    def log_exception(message: str, exception: Exception, **kwargs):
+        log.exception(message)
 
 
 class SecurityError(Exception):
@@ -182,7 +214,12 @@ def run_safely(fn: Callable, *args, **kwargs) -> int:
     except SystemExit as e:
         return int(e.code) if isinstance(e.code, int) else 1
     except Exception as e:  # noqa: BLE001
-        log.exception('Fatal error: %s', e)
+        # Use appropriate logging method depending on logger type
+        if MASTER_LOGGING_AVAILABLE:
+            log_exception('Fatal error: %s' % e, e)
+        else:
+            log.exception('Fatal error: %s', e)
+        
         # Best-effort user-facing dialog if Tk is available
         try:
             import tkinter  # type: ignore

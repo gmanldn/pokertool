@@ -1,15 +1,16 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: pokertool-frontend/src/App.tsx
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+/* POKERTOOL-HEADER-START
+---
+schema: pokerheader.v1
+project: pokertool
+file: pokertool-frontend/src/App.tsx
+version: v28.0.0
+last_commit: '2025-09-23T08:41:38+01:00'
+fixes:
+- date: '2025-09-25'
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
+---
+POKERTOOL-HEADER-END */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
@@ -58,6 +59,7 @@ function App() {
               root: {
                 textTransform: 'none',
                 borderRadius: 8,
+                color: '#000000',
               },
             },
           },

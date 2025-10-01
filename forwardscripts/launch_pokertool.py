@@ -201,7 +201,7 @@ def test_screen_scraper():
     try:
         print("📷 Testing Screen Scraper...")
         
-        import poker_screen_scraper as pss
+        from pokertool.modules import poker_screen_scraper as pss
         
         if not pss.SCRAPER_DEPENDENCIES_AVAILABLE:
             print("❌ Screen scraper dependencies not available")

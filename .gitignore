@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Specific Python files to ignore
+__init__.py
+__main__.py
+!pokertool/modules/__init__.py
+
 # Distribution / build
 build/
 dist/
@@ -262,4 +267,6 @@ core.*
 
 # Keep static assets
 !assets/**/*
+master_log.txt
+master_log.txt
 master_log.txt

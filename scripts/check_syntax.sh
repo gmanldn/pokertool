@@ -99,10 +99,7 @@ echo "────────────────────────�
 
 ROOT_FILES=(
     "start.py"
-    "poker_test.py"
-    "enhanced_tests.py"
-    "autoconfirm.py"
-    "logger.py"
+    "run_tests.py"
 )
 
 for file in "${ROOT_FILES[@]}"; do

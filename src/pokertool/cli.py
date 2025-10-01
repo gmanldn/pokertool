@@ -76,15 +76,28 @@ def main(argv=None):
             return run_test_mode()
         
         # Import GUI only after tkinter check passes
+        gui_module = None
         try:
-            from pokertool import gui
-            return gui.main()
-        except AttributeError:
-            # Fallback if gui exposes a function named run() instead
-            return getattr(gui, 'run')()
+            from pokertool import enhanced_gui as gui_module
+        except ImportError:
+            logger.warning('Enhanced GUI unavailable, falling back to legacy interface')
+            try:
+                from pokertool import gui as gui_module
+            except ImportError as e:
+                logger.error(f'GUI import failed: {e}')
+                return 1
+
+        try:
+            if hasattr(gui_module, 'main'):
+                return gui_module.main()
+            if hasattr(gui_module, 'run'):
+                return gui_module.run()
         except Exception as e:
             logger.error(f'GUI startup failed: {e}')
             return 1
+
+        logger.error('GUI module missing entry point (main/run)')
+        return 1
     
     elif args.cmd == 'scrape':
         try:

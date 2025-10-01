@@ -212,10 +212,7 @@ def main():
     print("─" * 60)
     root_files = [
         'start.py',
-        'poker_test.py',
-        'enhanced_tests.py',
-        'autoconfirm.py',
-        'logger.py'
+        'run_tests.py'
     ]
     
     for filename in root_files:

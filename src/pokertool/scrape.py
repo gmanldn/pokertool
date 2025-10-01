@@ -70,7 +70,7 @@ try:
     root_dir = Path(__file__).parent.parent.parent
     sys.path.insert(0, str(root_dir))
 
-    from poker_screen_scraper import (
+    from pokertool.modules.poker_screen_scraper import (
         PokerScreenScraper, 
         ScreenScraperBridge, 
         PokerSite, 
@@ -84,6 +84,23 @@ except ImportError as e:
     PokerSite = None
     TableState = None
     SCRAPER_AVAILABLE = False
+
+# Import desktop-independent scraper
+try:
+    from .desktop_independent_scraper import (
+        DesktopIndependentScraper,
+        create_desktop_scraper,
+        WindowInfo,
+        PokerDetectionMode
+    )
+    DESKTOP_SCRAPER_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f'Could not import desktop-independent scraper: {e}')
+    DesktopIndependentScraper = None
+    create_desktop_scraper = None
+    WindowInfo = None
+    PokerDetectionMode = None
+    DESKTOP_SCRAPER_AVAILABLE = False
 
 # Import OCR system
 try:
@@ -700,16 +717,15 @@ def run_screen_scraper(site: str = 'GENERIC', continuous: bool = False, interval
     """
     global _scraper_manager
 
-    if not _scraper_manager.scraper:
-        if not _scraper_manager.initialize(site, enable_ocr):
-            return {
-                'status': 'error',
-                'message': 'Failed to initialize enhanced screen scraper',
-                'dependencies_missing': {
-                    'scraper': not SCRAPER_AVAILABLE,
-                    'ocr': not OCR_AVAILABLE
-                }
+    if not _scraper_manager.initialize(site, enable_ocr):
+        return {
+            'status': 'error',
+            'message': 'Failed to initialize enhanced screen scraper',
+            'dependencies_missing': {
+                'scraper': not SCRAPER_AVAILABLE,
+                'ocr': not OCR_AVAILABLE
             }
+        }
 
     if continuous:
         success = _scraper_manager.start_continuous_capture(interval)
@@ -749,11 +765,295 @@ def get_scraper_status() -> Dict[str, Any]:
         'initialized': _scraper_manager.scraper is not None,
         'running': _scraper_manager.running,
         'available': SCRAPER_AVAILABLE,
+        'desktop_scraper_available': DESKTOP_SCRAPER_AVAILABLE,
         'ocr_available': OCR_AVAILABLE,
         'ocr_enabled': _scraper_manager.ocr_engine is not None,
         'last_state': _scraper_manager.last_state,
         'recognition_stats': _scraper_manager.get_recognition_stats()
     }
+
+# Desktop-Independent Scraper Functions ----------------------------------
+
+_desktop_scraper = None
+
+def run_desktop_independent_scraper(detection_mode: str = 'COMBINED', continuous: bool = False, interval: float = 2.0) -> Dict[str, Any]:
+    """
+    Run the desktop-independent screen scraper that works across all desktops/workspaces.
+    
+    Args:
+        detection_mode: Poker detection mode ('WINDOW_TITLE', 'PROCESS_NAME', 'COMBINED', 'FUZZY_MATCH')
+        continuous: Whether to run continuously
+        interval: Capture interval in seconds (for continuous mode)
+        
+    Returns:
+        Dict containing scraper status and results
+    """
+    global _desktop_scraper
+    
+    if not DESKTOP_SCRAPER_AVAILABLE:
+        return {
+            'status': 'error',
+            'message': 'Desktop-independent scraper not available',
+            'dependencies_missing': {
+                'desktop_scraper': True,
+                'mss': False,  # Will be checked by the scraper itself
+                'cv2': False,
+                'platform_apis': False
+            }
+        }
+    
+    try:
+        # Initialize desktop scraper
+        if not _desktop_scraper:
+            _desktop_scraper = create_desktop_scraper()
+        
+        # Convert string to enum
+        mode_map = {
+            'WINDOW_TITLE': PokerDetectionMode.WINDOW_TITLE,
+            'PROCESS_NAME': PokerDetectionMode.PROCESS_NAME,
+            'COMBINED': PokerDetectionMode.COMBINED,
+            'FUZZY_MATCH': PokerDetectionMode.FUZZY_MATCH
+        }
+        
+        mode = mode_map.get(detection_mode.upper(), PokerDetectionMode.COMBINED)
+        
+        # Scan for poker windows
+        windows = _desktop_scraper.scan_for_poker_windows(mode)
+        
+        if not windows:
+            return {
+                'status': 'warning',
+                'message': 'No poker windows found across all desktops',
+                'windows_found': 0,
+                'capabilities': _desktop_scraper.get_platform_capabilities(),
+                'detection_mode': detection_mode
+            }
+        
+        if continuous:
+            # Register callback to forward updates to the main scraper manager
+            def forward_update(capture_result: Dict[str, Any]):
+                if capture_result.get('success') and capture_result.get('likely_poker_table'):
+                    # Convert desktop scraper result to standard format
+                    window_info = capture_result.get('window_info')
+                    game_state = {
+                        'source': 'desktop_independent_scraper',
+                        'window_title': window_info.title if window_info else 'Unknown',
+                        'platform': capture_result.get('platform'),
+                        'timestamp': capture_result.get('timestamp'),
+                        'table_active': capture_result.get('table_active', False),
+                        'cards_detected': capture_result.get('cards_detected', False),
+                        'pot_detected': capture_result.get('pot_detected', False),
+                        'buttons_detected': capture_result.get('buttons_detected', False),
+                        'activity_score': capture_result.get('activity_score', 0),
+                        'detected_amounts': capture_result.get('detected_amounts', []),
+                        'potential_cards': capture_result.get('potential_cards', 0),
+                        'button_count': capture_result.get('button_count', 0),
+                        'green_ratio': capture_result.get('green_ratio', 0.0),
+                        'table_image': capture_result.get('screenshot')  # Include screenshot for OCR
+                    }
+                    
+                    # Forward to main scraper callbacks
+                    for callback in _scraper_manager.callbacks:
+                        try:
+                            callback(game_state)
+                        except Exception as e:
+                            logger.error(f'Desktop scraper callback error: {e}')
+            
+            _desktop_scraper.register_callback(forward_update)
+            
+            success = _desktop_scraper.start_continuous_monitoring(interval)
+            
+            return {
+                'status': 'success' if success else 'error',
+                'message': f'Continuous monitoring started for {len(windows)} windows' if success else 'Failed to start monitoring',
+                'continuous': True,
+                'windows_found': len(windows),
+                'windows': [{'title': w.title, 'bounds': w.bounds, 'visible': w.is_visible} for w in windows],
+                'detection_mode': detection_mode,
+                'platform': _desktop_scraper.platform,
+                'capabilities': _desktop_scraper.get_platform_capabilities()
+            }
+        else:
+            # Single capture of all detected windows
+            results = []
+            for window in windows[:5]:  # Limit to first 5 windows
+                capture_result = _desktop_scraper.capture_window(window, include_screenshot=False)
+                if capture_result:
+                    results.append({
+                        'window_title': window.title,
+                        'success': capture_result.get('success', False),
+                        'likely_poker_table': capture_result.get('likely_poker_table', False),
+                        'activity_score': capture_result.get('activity_score', 0),
+                        'table_active': capture_result.get('table_active', False),
+                        'cards_detected': capture_result.get('cards_detected', False),
+                        'pot_detected': capture_result.get('pot_detected', False)
+                    })
+            
+            return {
+                'status': 'success',
+                'message': f'Single capture completed for {len(windows)} windows',
+                'continuous': False,
+                'windows_found': len(windows),
+                'capture_results': results,
+                'detection_mode': detection_mode,
+                'platform': _desktop_scraper.platform,
+                'capabilities': _desktop_scraper.get_platform_capabilities()
+            }
+            
+    except Exception as e:
+        logger.error(f'Desktop-independent scraper error: {e}')
+        return {
+            'status': 'error',
+            'message': f'Desktop scraper failed: {str(e)}',
+            'error_details': str(e)
+        }
+
+def stop_desktop_scraper() -> Dict[str, Any]:
+    """Stop the desktop-independent scraper."""
+    global _desktop_scraper
+    
+    if _desktop_scraper:
+        _desktop_scraper.stop_monitoring()
+        return {
+            'status': 'success',
+            'message': 'Desktop-independent scraper stopped'
+        }
+    else:
+        return {
+            'status': 'warning',
+            'message': 'Desktop scraper was not running'
+        }
+
+def get_desktop_scraper_status() -> Dict[str, Any]:
+    """Get desktop scraper status and capabilities."""
+    if not DESKTOP_SCRAPER_AVAILABLE:
+        return {
+            'available': False,
+            'message': 'Desktop-independent scraper not available'
+        }
+    
+    if not _desktop_scraper:
+        capabilities = {}
+        try:
+            temp_scraper = create_desktop_scraper()
+            capabilities = temp_scraper.get_platform_capabilities()
+        except Exception as e:
+            capabilities = {'error': str(e)}
+        
+        return {
+            'available': True,
+            'initialized': False,
+            'running': False,
+            'capabilities': capabilities
+        }
+    
+    return {
+        'available': True,
+        'initialized': True,
+        'running': _desktop_scraper.running,
+        'platform': _desktop_scraper.platform,
+        'detected_windows_count': len(_desktop_scraper.detected_windows),
+        'detected_windows': [
+            {
+                'title': w.title,
+                'bounds': w.bounds,
+                'visible': w.is_visible,
+                'minimized': w.is_minimized,
+                'area': w.area
+            } for w in _desktop_scraper.detected_windows
+        ],
+        'capabilities': _desktop_scraper.get_platform_capabilities()
+    }
+
+def save_debug_screenshots_all_desktops(output_dir: str = "debug_screenshots") -> Dict[str, Any]:
+    """
+    Save debug screenshots of all poker windows found across all desktops.
+    
+    Args:
+        output_dir: Directory to save screenshots
+        
+    Returns:
+        Dict with results
+    """
+    global _desktop_scraper
+    
+    if not DESKTOP_SCRAPER_AVAILABLE:
+        return {
+            'status': 'error',
+            'message': 'Desktop-independent scraper not available'
+        }
+    
+    try:
+        if not _desktop_scraper:
+            _desktop_scraper = create_desktop_scraper()
+        
+        # Scan for windows if not already done
+        if not _desktop_scraper.detected_windows:
+            _desktop_scraper.scan_for_poker_windows()
+        
+        saved_files = _desktop_scraper.save_debug_screenshots(output_dir)
+        
+        return {
+            'status': 'success',
+            'message': f'Saved {len(saved_files)} debug screenshots',
+            'saved_files': saved_files,
+            'output_directory': output_dir,
+            'windows_captured': len(saved_files)
+        }
+        
+    except Exception as e:
+        logger.error(f'Debug screenshot error: {e}')
+        return {
+            'status': 'error',
+            'message': f'Failed to save debug screenshots: {str(e)}',
+            'error_details': str(e)
+        }
+
+def quick_poker_window_scan() -> Dict[str, Any]:
+    """
+    Quick scan for poker windows across all desktops without starting monitoring.
+    
+    Returns:
+        Dict with scan results
+    """
+    if not DESKTOP_SCRAPER_AVAILABLE:
+        return {
+            'status': 'error',
+            'message': 'Desktop-independent scraper not available',
+            'windows': []
+        }
+    
+    try:
+        scraper = create_desktop_scraper()
+        windows = scraper.scan_for_poker_windows()
+        
+        return {
+            'status': 'success',
+            'message': f'Found {len(windows)} poker windows',
+            'windows_found': len(windows),
+            'platform': scraper.platform,
+            'capabilities': scraper.get_platform_capabilities(),
+            'windows': [
+                {
+                    'title': w.title,
+                    'bounds': w.bounds,
+                    'area': w.area,
+                    'visible': w.is_visible,
+                    'minimized': w.is_minimized,
+                    'desktop_id': w.desktop_id,
+                    'workspace_name': w.workspace_name
+                } for w in windows
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f'Quick scan error: {e}')
+        return {
+            'status': 'error',
+            'message': f'Scan failed: {str(e)}',
+            'windows': [],
+            'error_details': str(e)
+        }
 
 if __name__ == '__main__':
     # Test enhanced scraper functionality
@@ -762,7 +1062,7 @@ if __name__ == '__main__':
     print(f"OCR available: {OCR_AVAILABLE}")
     
     if SCRAPER_AVAILABLE:
-        result = run_screen_scraper('GENERIC', False, 1.0, True)
+        result = run_screen_scraper('CHROME', False, 1.0, True)
         print(f"Test result: {result}")
     else:
         print("Screen scraper dependencies not available")
