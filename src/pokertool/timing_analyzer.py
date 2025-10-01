@@ -1,464 +1,519 @@
 """
-Timing Tell Analyzer
+Timing Tell Analyzer - Advanced timing pattern analysis for poker decisions.
 
-Advanced timing pattern analysis for detecting tells in online poker.
-Tracks microsecond-precision timing patterns, action sequences, and deviations.
-
-ID: TIMING-001
-Priority: MEDIUM
-Expected Accuracy Gain: 5-8% improvement in live play reads
+This module provides microsecond precision tracking, action sequence timing,
+timing deviation detection, pattern clustering, and confidence intervals.
 """
 
 import time
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
+from typing import Dict, List, Optional, Tuple
+from collections import defaultdict
 import json
-import statistics
-
-
-class ActionType(Enum):
-    """Types of poker actions"""
-    FOLD = "fold"
-    CHECK = "check"
-    CALL = "call"
-    BET = "bet"
-    RAISE = "raise"
-    ALL_IN = "all_in"
+import math
 
 
 @dataclass
-class TimedAction:
-    """Represents an action with precise timing"""
+class TimingData:
+    """Store timing information for a single action."""
     player_id: str
-    action: ActionType
-    amount: float
-    timestamp: float  # Unix timestamp in seconds with microsecond precision
-    street: str  # preflop, flop, turn, river
+    action: str
+    decision_time: float  # in seconds
+    timestamp: float
+    street: str
     pot_size: float
-    decision_time: float  # Time taken to make decision in seconds
-    context: Dict = field(default_factory=dict)
+    stack_size: float
+    action_type: str  # 'bet', 'raise', 'call', 'fold', 'check'
+    
+    def to_dict(self) -> Dict:
+        """Convert to dictionary."""
+        return {
+            'player_id': self.player_id,
+            'action': self.action,
+            'decision_time': self.decision_time,
+            'timestamp': self.timestamp,
+            'street': self.street,
+            'pot_size': self.pot_size,
+            'stack_size': self.stack_size,
+            'action_type': self.action_type
+        }
 
 
 @dataclass
 class TimingPattern:
-    """Identified timing pattern for a player"""
-    player_id: str
-    action: ActionType
+    """Detected timing pattern for a player."""
+    pattern_type: str
+    confidence: float
     mean_time: float
     std_dev: float
-    median_time: float
-    min_time: float
-    max_time: float
     sample_size: int
-    confidence_interval: Tuple[float, float]
-    street: str = "all"
+    correlation: float
+    description: str
+    
+    def to_dict(self) -> Dict:
+        """Convert to dictionary."""
+        return {
+            'pattern_type': self.pattern_type,
+            'confidence': self.confidence,
+            'mean_time': self.mean_time,
+            'std_dev': self.std_dev,
+            'sample_size': self.sample_size,
+            'correlation': self.correlation,
+            'description': self.description
+        }
 
 
-@dataclass
-class TimingDeviation:
-    """Represents a significant timing deviation"""
-    player_id: str
-    action: ActionType
-    expected_time: float
-    actual_time: float
-    deviation_magnitude: float  # Standard deviations from mean
-    significance: float  # 0-1, higher = more significant
-    interpretation: str  # "strength", "weakness", "bluff", "value", "uncertain"
-
-
-class TimingTellDatabase:
-    """Database for storing timing patterns"""
+class MicrosecondPrecisionTracker:
+    """Track action timing with microsecond precision."""
     
     def __init__(self):
-        self.patterns: Dict[str, Dict[str, List[float]]] = {}
-        # Structure: {player_id: {action_type: [times]}}
-    
-    def add_timing(self, player_id: str, action: ActionType, decision_time: float):
-        """Add a timing observation"""
-        if player_id not in self.patterns:
-            self.patterns[player_id] = {}
+        self.timing_data: List[TimingData] = []
+        self.action_start_times: Dict[str, float] = {}
         
-        action_key = action.value
-        if action_key not in self.patterns[player_id]:
-            self.patterns[player_id][action_key] = []
+    def start_action_timer(self, player_id: str) -> None:
+        """Start timing an action."""
+        self.action_start_times[player_id] = time.perf_counter()
         
-        self.patterns[player_id][action_key].append(decision_time)
-    
-    def get_pattern(self, player_id: str, action: ActionType) -> Optional[TimingPattern]:
-        """Get timing pattern for a player and action"""
-        if player_id not in self.patterns:
+    def record_action(
+        self,
+        player_id: str,
+        action: str,
+        street: str,
+        pot_size: float,
+        stack_size: float,
+        action_type: str
+    ) -> Optional[TimingData]:
+        """Record action with timing data."""
+        if player_id not in self.action_start_times:
             return None
-        
-        action_key = action.value
-        if action_key not in self.patterns[player_id]:
-            return None
-        
-        times = self.patterns[player_id][action_key]
-        if len(times) < 3:  # Need minimum samples
-            return None
-        
-        mean_time = statistics.mean(times)
-        std_dev = statistics.stdev(times) if len(times) > 1 else 0.0
-        median_time = statistics.median(times)
-        
-        # Calculate 95% confidence interval
-        z_score = 1.96  # 95% confidence
-        margin = z_score * (std_dev / (len(times) ** 0.5))
-        ci = (mean_time - margin, mean_time + margin)
-        
-        return TimingPattern(
+            
+        decision_time = time.perf_counter() - self.action_start_times[player_id]
+        timing_data = TimingData(
             player_id=player_id,
             action=action,
-            mean_time=mean_time,
-            std_dev=std_dev,
-            median_time=median_time,
-            min_time=min(times),
-            max_time=max(times),
-            sample_size=len(times),
-            confidence_interval=ci
+            decision_time=decision_time,
+            timestamp=time.time(),
+            street=street,
+            pot_size=pot_size,
+            stack_size=stack_size,
+            action_type=action_type
         )
-    
-    def export_data(self, filepath: str):
-        """Export timing database to JSON"""
-        data = {
-            player_id: {
-                action: times
-                for action, times in actions.items()
-            }
-            for player_id, actions in self.patterns.items()
-        }
         
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-    
-    def import_data(self, filepath: str):
-        """Import timing database from JSON"""
-        with open(filepath, 'r') as f:
-            data = json.load(f)
+        self.timing_data.append(timing_data)
+        del self.action_start_times[player_id]
+        return timing_data
         
-        self.patterns = data
+    def get_player_timings(self, player_id: str) -> List[TimingData]:
+        """Get all timing data for a specific player."""
+        return [td for td in self.timing_data if td.player_id == player_id]
+        
+    def get_action_type_timings(self, action_type: str) -> List[TimingData]:
+        """Get timing data for specific action type."""
+        return [td for td in self.timing_data if td.action_type == action_type]
 
 
-class ActionSequenceAnalyzer:
-    """Analyze sequences of actions and their timing"""
+class ActionSequenceTimer:
+    """Analyze timing patterns in action sequences."""
     
     def __init__(self):
-        self.sequences: Dict[str, List[List[TimedAction]]] = {}
-        # Structure: {player_id: [sequences]}
-    
-    def add_sequence(self, player_id: str, sequence: List[TimedAction]):
-        """Add an action sequence"""
-        if player_id not in self.sequences:
-            self.sequences[player_id] = []
+        self.sequences: Dict[str, List[TimingData]] = defaultdict(list)
         
-        self.sequences[player_id].append(sequence)
-    
-    def analyze_sequence_timing(self, sequence: List[TimedAction]) -> Dict:
-        """Analyze timing patterns within a sequence"""
-        if len(sequence) < 2:
-            return {'valid': False}
+    def add_to_sequence(self, hand_id: str, timing_data: TimingData) -> None:
+        """Add timing data to a hand sequence."""
+        self.sequences[hand_id].append(timing_data)
         
-        # Calculate time differences between actions
-        time_diffs = []
-        for i in range(1, len(sequence)):
-            diff = sequence[i].timestamp - sequence[i-1].timestamp
-            time_diffs.append(diff)
-        
-        # Look for patterns
-        analysis = {
-            'valid': True,
-            'sequence_length': len(sequence),
-            'total_time': sum(time_diffs),
-            'avg_interval': statistics.mean(time_diffs) if time_diffs else 0,
-            'actions': [a.action.value for a in sequence],
-            'rapid_fire': all(d < 1.0 for d in time_diffs),  # All actions < 1 second apart
-            'deliberate': all(d > 5.0 for d in time_diffs),  # All actions > 5 seconds
-            'escalating': all(time_diffs[i] < time_diffs[i+1] for i in range(len(time_diffs)-1)),
-            'de_escalating': all(time_diffs[i] > time_diffs[i+1] for i in range(len(time_diffs)-1))
+    def get_sequence_pattern(self, hand_id: str) -> Dict:
+        """Analyze timing pattern for a sequence."""
+        sequence = self.sequences.get(hand_id, [])
+        if not sequence:
+            return {}
+            
+        times = [td.decision_time for td in sequence]
+        return {
+            'hand_id': hand_id,
+            'action_count': len(sequence),
+            'total_time': sum(times),
+            'mean_time': sum(times) / len(times),
+            'min_time': min(times),
+            'max_time': max(times),
+            'std_dev': self._calculate_std_dev(times)
         }
         
-        return analysis
-    
-    def get_common_sequences(self, player_id: str, min_count: int = 3) -> List[Tuple[Tuple, int]]:
-        """Get common action sequences for a player"""
-        if player_id not in self.sequences:
+    def detect_speed_changes(self, hand_id: str) -> List[Dict]:
+        """Detect significant speed changes in sequence."""
+        sequence = self.sequences.get(hand_id, [])
+        if len(sequence) < 3:
             return []
+            
+        changes = []
+        for i in range(1, len(sequence) - 1):
+            prev_time = sequence[i - 1].decision_time
+            curr_time = sequence[i].decision_time
+            next_time = sequence[i + 1].decision_time
+            
+            # Detect sudden speed changes
+            if curr_time > prev_time * 1.5 and curr_time > next_time * 1.5:
+                changes.append({
+                    'position': i,
+                    'action': sequence[i].action,
+                    'time': curr_time,
+                    'deviation': (curr_time - prev_time) / prev_time,
+                    'type': 'slowdown'
+                })
+            elif curr_time < prev_time * 0.5 and curr_time < next_time * 0.5:
+                changes.append({
+                    'position': i,
+                    'action': sequence[i].action,
+                    'time': curr_time,
+                    'deviation': (prev_time - curr_time) / prev_time,
+                    'type': 'speedup'
+                })
+                
+        return changes
         
-        # Count sequence patterns
-        sequence_counts = {}
-        for sequence in self.sequences[player_id]:
-            pattern = tuple(a.action.value for a in sequence)
-            sequence_counts[pattern] = sequence_counts.get(pattern, 0) + 1
-        
-        # Filter and sort
-        common = [(pattern, count) for pattern, count in sequence_counts.items()
-                 if count >= min_count]
-        return sorted(common, key=lambda x: x[1], reverse=True)
+    def _calculate_std_dev(self, values: List[float]) -> float:
+        """Calculate standard deviation."""
+        if not values:
+            return 0.0
+        mean = sum(values) / len(values)
+        variance = sum((x - mean) ** 2 for x in values) / len(values)
+        return math.sqrt(variance)
 
 
 class TimingDeviationDetector:
-    """Detect significant timing deviations"""
+    """Detect timing deviations from baseline patterns."""
     
-    def __init__(self, database: TimingTellDatabase):
-        self.database = database
-        self.deviation_threshold = 2.0  # Standard deviations
-    
-    def detect_deviation(self, timed_action: TimedAction) -> Optional[TimingDeviation]:
-        """Detect if an action shows significant timing deviation"""
-        pattern = self.database.get_pattern(timed_action.player_id, timed_action.action)
+    def __init__(self):
+        self.baselines: Dict[str, Dict] = {}
         
-        if pattern is None or pattern.sample_size < 5:
-            return None  # Need sufficient data
+    def establish_baseline(self, player_id: str, timings: List[TimingData]) -> None:
+        """Establish baseline timing for a player."""
+        if not timings:
+            return
+            
+        by_action_type = defaultdict(list)
+        for td in timings:
+            by_action_type[td.action_type].append(td.decision_time)
+            
+        self.baselines[player_id] = {}
+        for action_type, times in by_action_type.items():
+            self.baselines[player_id][action_type] = {
+                'mean': sum(times) / len(times),
+                'std_dev': self._calculate_std_dev(times),
+                'sample_size': len(times)
+            }
+            
+    def detect_deviation(
+        self,
+        player_id: str,
+        action_type: str,
+        decision_time: float
+    ) -> Optional[Dict]:
+        """Detect if timing deviates from baseline."""
+        if player_id not in self.baselines:
+            return None
+            
+        if action_type not in self.baselines[player_id]:
+            return None
+            
+        baseline = self.baselines[player_id][action_type]
+        mean = baseline['mean']
+        std_dev = baseline['std_dev']
         
-        # Calculate z-score
-        if pattern.std_dev == 0:
-            return None  # No variation to detect
+        if std_dev == 0:
+            return None
+            
+        z_score = (decision_time - mean) / std_dev
         
-        z_score = (timed_action.decision_time - pattern.mean_time) / pattern.std_dev
+        return {
+            'player_id': player_id,
+            'action_type': action_type,
+            'decision_time': decision_time,
+            'baseline_mean': mean,
+            'z_score': z_score,
+            'is_deviation': abs(z_score) > 2.0,
+            'deviation_type': 'slower' if z_score > 0 else 'faster',
+            'confidence': min(abs(z_score) / 3.0, 1.0)
+        }
         
-        if abs(z_score) < self.deviation_threshold:
-            return None  # Not significant
-        
-        # Interpret the deviation
-        interpretation = self._interpret_deviation(
-            timed_action.action,
-            z_score,
-            timed_action.context
-        )
-        
-        significance = min(1.0, abs(z_score) / 5.0)  # Cap at 5 std devs
-        
-        return TimingDeviation(
-            player_id=timed_action.player_id,
-            action=timed_action.action,
-            expected_time=pattern.mean_time,
-            actual_time=timed_action.decision_time,
-            deviation_magnitude=z_score,
-            significance=significance,
-            interpretation=interpretation
-        )
-    
-    def _interpret_deviation(self, action: ActionType, z_score: float,
-                           context: Dict) -> str:
-        """Interpret what a timing deviation might mean"""
-        is_fast = z_score < 0  # Negative z = faster than normal
-        is_slow = z_score > 0
-        
-        # Quick actions often indicate strength or automation
-        if is_fast:
-            if action in [ActionType.BET, ActionType.RAISE]:
-                return "strength"  # Fast aggression = confident/strong
-            elif action == ActionType.CALL:
-                return "value"  # Fast call = clear call
-            elif action == ActionType.FOLD:
-                return "weakness"  # Fast fold = easy decision
-        
-        # Slow actions often indicate difficult decisions or bluffs
-        if is_slow:
-            if action in [ActionType.BET, ActionType.RAISE]:
-                return "bluff"  # Slow bluff = acting/thinking
-            elif action == ActionType.CALL:
-                return "weakness"  # Slow call = marginal hand
-            elif action == ActionType.FOLD:
-                return "strength"  # Slow fold = tough laydown
-        
-        return "uncertain"
+    def _calculate_std_dev(self, values: List[float]) -> float:
+        """Calculate standard deviation."""
+        if not values:
+            return 0.0
+        mean = sum(values) / len(values)
+        variance = sum((x - mean) ** 2 for x in values) / len(values)
+        return math.sqrt(variance)
 
 
 class PatternClusterer:
-    """Cluster timing patterns to identify player types"""
+    """Cluster timing patterns to identify player tendencies."""
     
-    def __init__(self):
-        self.player_profiles = {}
-    
-    def create_profile(self, player_id: str, patterns: List[TimingPattern]) -> Dict:
-        """Create a timing profile for a player"""
-        if not patterns:
-            return {'valid': False}
+    def __init__(self, n_clusters: int = 3):
+        self.n_clusters = n_clusters
+        self.clusters: Dict[str, List[Dict]] = {}
         
-        # Calculate aggregate statistics
-        all_times = []
-        action_stats = {}
+    def cluster_timings(self, player_id: str, timings: List[TimingData]) -> List[Dict]:
+        """Cluster timing data for a player."""
+        if not timings:
+            return []
+            
+        # Group by action type and street
+        groups = defaultdict(list)
+        for td in timings:
+            key = f"{td.action_type}_{td.street}"
+            groups[key].append(td.decision_time)
+            
+        clusters = []
+        for key, times in groups.items():
+            action_type, street = key.split('_')
+            clusters.append({
+                'action_type': action_type,
+                'street': street,
+                'mean_time': sum(times) / len(times),
+                'std_dev': self._calculate_std_dev(times),
+                'sample_size': len(times),
+                'min_time': min(times),
+                'max_time': max(times)
+            })
+            
+        self.clusters[player_id] = clusters
+        return clusters
         
-        for pattern in patterns:
-            all_times.extend([pattern.mean_time] * pattern.sample_size)
-            action_stats[pattern.action.value] = {
-                'mean': pattern.mean_time,
-                'std_dev': pattern.std_dev,
-                'samples': pattern.sample_size
-            }
+    def identify_patterns(self, player_id: str) -> List[TimingPattern]:
+        """Identify timing patterns from clusters."""
+        if player_id not in self.clusters:
+            return []
+            
+        clusters = self.clusters[player_id]
+        patterns = []
         
-        profile = {
-            'valid': True,
-            'player_id': player_id,
-            'overall_speed': statistics.mean(all_times) if all_times else 0,
-            'consistency': statistics.stdev(all_times) if len(all_times) > 1 else 0,
-            'action_stats': action_stats,
-            'total_actions': len(all_times),
-            'player_type': self._classify_player_type(all_times, action_stats)
-        }
+        for cluster in clusters:
+            # Fast decisions (< 2 seconds)
+            if cluster['mean_time'] < 2.0:
+                patterns.append(TimingPattern(
+                    pattern_type='fast_decision',
+                    confidence=min(cluster['sample_size'] / 20.0, 1.0),
+                    mean_time=cluster['mean_time'],
+                    std_dev=cluster['std_dev'],
+                    sample_size=cluster['sample_size'],
+                    correlation=0.8,
+                    description=f"Fast {cluster['action_type']} on {cluster['street']}"
+                ))
+                
+            # Slow decisions (> 10 seconds)
+            elif cluster['mean_time'] > 10.0:
+                patterns.append(TimingPattern(
+                    pattern_type='slow_decision',
+                    confidence=min(cluster['sample_size'] / 20.0, 1.0),
+                    mean_time=cluster['mean_time'],
+                    std_dev=cluster['std_dev'],
+                    sample_size=cluster['sample_size'],
+                    correlation=0.75,
+                    description=f"Slow {cluster['action_type']} on {cluster['street']}"
+                ))
+                
+            # Consistent timing
+            if cluster['std_dev'] < cluster['mean_time'] * 0.3:
+                patterns.append(TimingPattern(
+                    pattern_type='consistent_timing',
+                    confidence=min(cluster['sample_size'] / 15.0, 1.0),
+                    mean_time=cluster['mean_time'],
+                    std_dev=cluster['std_dev'],
+                    sample_size=cluster['sample_size'],
+                    correlation=0.85,
+                    description=f"Consistent {cluster['action_type']} timing on {cluster['street']}"
+                ))
+                
+        return patterns
         
-        self.player_profiles[player_id] = profile
-        return profile
-    
-    def _classify_player_type(self, all_times: List[float], action_stats: Dict) -> str:
-        """Classify player based on timing patterns"""
-        if not all_times:
-            return "unknown"
-        
-        avg_time = statistics.mean(all_times)
-        consistency = statistics.stdev(all_times) if len(all_times) > 1 else 0
-        
-        # Very fast and consistent = bot or timing software
-        if avg_time < 1.0 and consistency < 0.5:
-            return "automated"
-        
-        # Fast but variable = experienced player
-        if avg_time < 2.0:
-            return "fast_player"
-        
-        # Slow and consistent = recreational/careful
-        if avg_time > 5.0 and consistency < 2.0:
-            return "slow_player"
-        
-        # Highly variable = nervous or strategic
-        if consistency > 3.0:
-            return "variable_player"
-        
-        return "standard_player"
+    def _calculate_std_dev(self, values: List[float]) -> float:
+        """Calculate standard deviation."""
+        if not values:
+            return 0.0
+        mean = sum(values) / len(values)
+        variance = sum((x - mean) ** 2 for x in values) / len(values)
+        return math.sqrt(variance)
 
 
-class AdvancedTimingAnalyzer:
-    """Main timing analyzer with all features"""
+class ConfidenceIntervalCalculator:
+    """Calculate confidence intervals for timing patterns."""
     
-    def __init__(self):
-        self.database = TimingTellDatabase()
-        self.sequence_analyzer = ActionSequenceAnalyzer()
-        self.deviation_detector = TimingDeviationDetector(self.database)
-        self.clusterer = PatternClusterer()
-        self.current_sequences: Dict[str, List[TimedAction]] = {}
-    
-    def record_action(self, timed_action: TimedAction) -> Optional[TimingDeviation]:
-        """Record an action and check for deviations"""
-        # Add to database
-        self.database.add_timing(
-            timed_action.player_id,
-            timed_action.action,
-            timed_action.decision_time
+    def calculate_interval(
+        self,
+        mean: float,
+        std_dev: float,
+        sample_size: int,
+        confidence_level: float = 0.95
+    ) -> Tuple[float, float]:
+        """Calculate confidence interval for timing mean."""
+        if sample_size < 2:
+            return (mean, mean)
+            
+        # Use t-distribution approximation
+        # For 95% confidence, t ≈ 1.96 for large samples
+        t_score = 1.96 if confidence_level == 0.95 else 2.576
+        
+        margin_of_error = t_score * (std_dev / math.sqrt(sample_size))
+        
+        return (mean - margin_of_error, mean + margin_of_error)
+        
+    def calculate_pattern_confidence(self, pattern: TimingPattern) -> float:
+        """Calculate overall confidence in a pattern."""
+        # Base confidence on sample size
+        sample_confidence = min(pattern.sample_size / 30.0, 1.0)
+        
+        # Factor in consistency (lower std_dev = higher confidence)
+        consistency_confidence = 1.0 - min(pattern.std_dev / pattern.mean_time, 1.0)
+        
+        # Factor in correlation
+        correlation_confidence = pattern.correlation
+        
+        # Weighted average
+        overall_confidence = (
+            sample_confidence * 0.4 +
+            consistency_confidence * 0.3 +
+            correlation_confidence * 0.3
         )
         
-        # Track sequences
-        player_id = timed_action.player_id
-        if player_id not in self.current_sequences:
-            self.current_sequences[player_id] = []
-        
-        self.current_sequences[player_id].append(timed_action)
-        
-        # Check for deviation
-        deviation = self.deviation_detector.detect_deviation(timed_action)
-        
-        return deviation
+        return overall_confidence
+
+
+class TimingTellAnalyzer:
+    """Main class orchestrating all timing analysis components."""
     
-    def end_hand(self, player_id: str):
-        """Mark end of hand and finalize sequence"""
-        if player_id in self.current_sequences:
-            sequence = self.current_sequences[player_id]
-            if len(sequence) > 0:
-                self.sequence_analyzer.add_sequence(player_id, sequence)
-            self.current_sequences[player_id] = []
-    
-    def get_player_analysis(self, player_id: str) -> Dict:
-        """Get comprehensive timing analysis for a player"""
-        # Get all patterns
-        patterns = []
-        for action_type in ActionType:
-            pattern = self.database.get_pattern(player_id, action_type)
-            if pattern:
-                patterns.append(pattern)
+    def __init__(self):
+        self.tracker = MicrosecondPrecisionTracker()
+        self.sequence_timer = ActionSequenceTimer()
+        self.deviation_detector = TimingDeviationDetector()
+        self.clusterer = PatternClusterer()
+        self.confidence_calculator = ConfidenceIntervalCalculator()
         
-        # Create profile
-        profile = self.clusterer.create_profile(player_id, patterns)
+    def start_action(self, player_id: str) -> None:
+        """Start timing an action."""
+        self.tracker.start_action_timer(player_id)
         
-        # Get common sequences
-        sequences = self.sequence_analyzer.get_common_sequences(player_id)
+    def record_action(
+        self,
+        player_id: str,
+        action: str,
+        street: str,
+        pot_size: float,
+        stack_size: float,
+        action_type: str,
+        hand_id: Optional[str] = None
+    ) -> Optional[TimingData]:
+        """Record action with timing."""
+        timing_data = self.tracker.record_action(
+            player_id, action, street, pot_size, stack_size, action_type
+        )
+        
+        if timing_data and hand_id:
+            self.sequence_timer.add_to_sequence(hand_id, timing_data)
+            
+        return timing_data
+        
+    def analyze_player(self, player_id: str) -> Dict:
+        """Comprehensive timing analysis for a player."""
+        timings = self.tracker.get_player_timings(player_id)
+        
+        if not timings:
+            return {'error': 'No timing data available'}
+            
+        # Establish baseline
+        self.deviation_detector.establish_baseline(player_id, timings)
+        
+        # Cluster patterns
+        clusters = self.clusterer.cluster_timings(player_id, timings)
+        patterns = self.clusterer.identify_patterns(player_id)
+        
+        # Calculate confidence intervals for each pattern
+        pattern_analysis = []
+        for pattern in patterns:
+            interval = self.confidence_calculator.calculate_interval(
+                pattern.mean_time,
+                pattern.std_dev,
+                pattern.sample_size
+            )
+            confidence = self.confidence_calculator.calculate_pattern_confidence(pattern)
+            
+            pattern_analysis.append({
+                'pattern': pattern.to_dict(),
+                'confidence_interval': interval,
+                'overall_confidence': confidence
+            })
+            
+        return {
+            'player_id': player_id,
+            'total_actions': len(timings),
+            'clusters': clusters,
+            'patterns': pattern_analysis,
+            'baseline': self.deviation_detector.baselines.get(player_id, {})
+        }
+        
+    def detect_live_deviation(
+        self,
+        player_id: str,
+        action_type: str,
+        decision_time: float
+    ) -> Optional[Dict]:
+        """Detect live timing deviation."""
+        return self.deviation_detector.detect_deviation(
+            player_id, action_type, decision_time
+        )
+        
+    def get_hand_sequence_analysis(self, hand_id: str) -> Dict:
+        """Analyze timing sequence for a hand."""
+        pattern = self.sequence_timer.get_sequence_pattern(hand_id)
+        changes = self.sequence_timer.detect_speed_changes(hand_id)
         
         return {
-            'profile': profile,
-            'patterns': [
-                {
-                    'action': p.action.value,
-                    'mean_time': p.mean_time,
-                    'std_dev': p.std_dev,
-                    'samples': p.sample_size
-                }
-                for p in patterns
-            ],
-            'common_sequences': sequences[:5]  # Top 5
+            'sequence_pattern': pattern,
+            'speed_changes': changes
         }
-    
-    def get_tell_interpretation(self, deviation: TimingDeviation) -> Dict:
-        """Get detailed interpretation of a timing tell"""
+        
+    def export_data(self) -> Dict:
+        """Export all timing data."""
         return {
-            'player_id': deviation.player_id,
-            'action': deviation.action.value,
-            'expected_time': round(deviation.expected_time, 3),
-            'actual_time': round(deviation.actual_time, 3),
-            'deviation': round(deviation.deviation_magnitude, 2),
-            'significance': round(deviation.significance, 3),
-            'interpretation': deviation.interpretation,
-            'reliability': self._calculate_reliability(deviation),
-            'recommendation': self._get_recommendation(deviation)
-        }
-    
-    def _calculate_reliability(self, deviation: TimingDeviation) -> float:
-        """Calculate reliability of the tell"""
-        # More samples = more reliable
-        pattern = self.database.get_pattern(deviation.player_id, deviation.action)
-        if not pattern:
-            return 0.0
-        
-        sample_factor = min(1.0, pattern.sample_size / 30)  # Cap at 30 samples
-        significance_factor = deviation.significance
-        
-        return (sample_factor + significance_factor) / 2
-    
-    def _get_recommendation(self, deviation: TimingDeviation) -> str:
-        """Get strategic recommendation based on tell"""
-        if deviation.interpretation == "strength":
-            return "Consider folding marginal hands; opponent likely has strong holding"
-        elif deviation.interpretation == "weakness":
-            return "Consider bluffing or applying pressure"
-        elif deviation.interpretation == "bluff":
-            return "Opponent may be bluffing; consider calling with bluff-catchers"
-        elif deviation.interpretation == "value":
-            return "Opponent likely has made hand; proceed cautiously"
-        else:
-            return "Insufficient information for reliable recommendation"
-    
-    def export_analysis(self, filepath: str):
-        """Export complete analysis to JSON"""
-        data = {
-            'database': self.database.patterns,
-            'profiles': self.clusterer.player_profiles
+            'timing_data': [td.to_dict() for td in self.tracker.timing_data],
+            'baselines': self.deviation_detector.baselines,
+            'clusters': self.clusters
         }
         
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
+    def import_data(self, data: Dict) -> None:
+        """Import timing data."""
+        if 'baselines' in data:
+            self.deviation_detector.baselines = data['baselines']
+        if 'clusters' in data:
+            self.clusterer.clusters = data['clusters']
 
 
 # Utility functions
-def calculate_decision_time(action_start: float, action_end: float) -> float:
-    """Calculate decision time in seconds"""
-    return action_end - action_start
+def analyze_timing_patterns(timings: List[TimingData]) -> List[TimingPattern]:
+    """Quick utility to analyze timing patterns."""
+    analyzer = TimingTellAnalyzer()
+    for td in timings:
+        analyzer.tracker.timing_data.append(td)
+        
+    if timings:
+        player_id = timings[0].player_id
+        return analyzer.clusterer.identify_patterns(player_id)
+    return []
 
 
-def is_instant_action(decision_time: float, threshold: float = 0.5) -> bool:
-    """Check if action was instant (likely pre-selected)"""
-    return decision_time < threshold
-
-
-def is_time_bank_used(decision_time: float, typical_max: float = 30.0) -> bool:
-    """Check if player used time bank"""
-    return decision_time > typical_max
+def detect_timing_tell(
+    baseline_mean: float,
+    baseline_std: float,
+    decision_time: float
+) -> Dict:
+    """Quick utility to detect timing tell."""
+    if baseline_std == 0:
+        return {'is_tell': False}
+        
+    z_score = (decision_time - baseline_mean) / baseline_std
+    
+    return {
+        'is_tell': abs(z_score) > 2.0,
+        'z_score': z_score,
+        'deviation_type': 'slower' if z_score > 0 else 'faster',
+        'confidence': min(abs(z_score) / 3.0, 1.0)
+    }
