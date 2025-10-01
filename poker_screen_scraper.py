@@ -19,6 +19,7 @@ anti-detection mechanisms, and real-time table analysis.
 """
 
 import logging
+import os
 import time
 import threading
 from typing import Dict, List, Optional, Any, Callable, Tuple
@@ -39,6 +40,27 @@ except ImportError as e:
     cv2 = None
     Image = None
     SCRAPER_DEPENDENCIES_AVAILABLE = False
+
+try:
+    from browser_tab_capture import (
+        ChromeTabCapture,
+        ChromeTabCaptureConfig,
+        ChromeTabCaptureError,
+        ChromeWindowCapture,
+        ChromeWindowCaptureConfig,
+    )
+    CHROME_CAPTURE_AVAILABLE = True
+except ImportError as e:  # pragma: no cover - optional dependency
+    logging.debug(f"Chrome tab capture bridge unavailable: {e}")
+
+    class ChromeTabCaptureError(RuntimeError):
+        """Fallback error used when chrome capture dependencies are missing."""
+
+    ChromeTabCapture = None  # type: ignore[assignment]
+    ChromeTabCaptureConfig = None  # type: ignore[assignment]
+    ChromeWindowCapture = None  # type: ignore[assignment]
+    ChromeWindowCaptureConfig = None  # type: ignore[assignment]
+    CHROME_CAPTURE_AVAILABLE = False
 
 try:
     from poker_modules import Card, Suit, Position
@@ -75,6 +97,7 @@ class PokerSite(Enum):
     PARTYPOKER = 'partypoker'
     IGNITION = 'ignition'
     BOVADA = 'bovada'
+    CHROME = 'chrome'
 
 @dataclass
 class TableRegion:
@@ -237,6 +260,7 @@ class TableConfig:
         base_config = {
             'window_title_pattern': r'.*[Pp]oker.*',
             'table_size': (1024, 768),
+            'capture_source': 'monitor',
             'colors': {
                 'background': (0, 128, 0),  # Green felt
                 'card_white': (255, 255, 255),
@@ -274,7 +298,13 @@ class TableConfig:
                     'pot': TableRegion(390, 250, 100, 25, 'pot'),
                 }
             })
-        
+        elif site == PokerSite.CHROME:
+            base_config.update({
+                'window_title_pattern': r'.*Chrome.*',
+                'capture_source': 'chrome_tab',
+                'table_size': (1280, 720),
+            })
+
         return base_config
 
 class PokerScreenScraper:
@@ -290,42 +320,130 @@ class PokerScreenScraper:
         self.card_recognizer = CardRecognizer()
         self.text_recognizer = TextRecognizer()
         self.button_detector = ButtonDetector()
-        
+
         self.calibrated = False
         self.last_state = None
         self.capture_thread = None
         self.stop_event = None
         self.state_history = []
-        
+        self.capture_source = self.config.get('capture_source', 'monitor')
+        self.chrome_capture = None
+        self.chrome_window_capture = None
+
         if SCRAPER_DEPENDENCIES_AVAILABLE:
             self.sct = mss.mss()
-            
+
+        if self.capture_source == 'chrome_tab':
+            self._initialise_chrome_capture()
+
         logger.info(f"PokerScreenScraper initialized for {site.value}")
-    
+
+    def __del__(self):
+        try:
+            self.shutdown()
+        except Exception:
+            pass
+
     def capture_table(self) -> Optional[np.ndarray]:
         """Capture a screenshot of the poker table."""
         try:
+            if self.capture_source == 'chrome_tab' and self.chrome_capture:
+                try:
+                    return self.chrome_capture.capture()
+                except ChromeTabCaptureError as exc:
+                    logger.error(f"Chrome tab capture failed: {exc}")
+                    try:
+                        self.chrome_capture.close()
+                    except Exception:
+                        pass
+                    self.chrome_capture = None
+                    if self._initialise_chrome_window_capture():
+                        self.capture_source = 'chrome_window'
+                    else:
+                        self.capture_source = 'monitor'
+
+            if self.capture_source == 'chrome_window' and self.chrome_window_capture:
+                try:
+                    return self.chrome_window_capture.capture()
+                except ChromeTabCaptureError as exc:
+                    logger.error(f"Chrome window capture failed: {exc}")
+                    self.chrome_window_capture = None
+                    self.capture_source = 'monitor'
+
             if not self.sct:
                 logger.error("Screenshot capability not available")
                 return None
-                
+
             # Get primary monitor
             monitor = self.sct.monitors[1]  # Primary monitor
-            
+
             # Capture screenshot
             screenshot = self.sct.grab(monitor)
-            
+
             # Convert to numpy array and BGR format
             img = np.array(screenshot)
             if len(img.shape) == 3 and img.shape[2] == 4:  # BGRA
                 img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-            
+
             return img
-            
+
         except Exception as e:
             logger.error(f"Table capture failed: {e}")
             return None
-    
+
+    def _initialise_chrome_capture(self) -> None:
+        if not CHROME_CAPTURE_AVAILABLE:
+            logger.warning(
+                "Chrome tab capture selected but optional dependencies are missing"
+            )
+            if not self._initialise_chrome_window_capture():
+                self.capture_source = 'monitor'
+            return
+
+        try:
+            config = ChromeTabCaptureConfig(
+                host=os.getenv('POKERTOOL_CHROME_HOST', '127.0.0.1'),
+                port=int(os.getenv('POKERTOOL_CHROME_PORT', '9222')),
+                target_filter=os.getenv('POKERTOOL_CHROME_URL_FILTER'),
+                title_filter=os.getenv('POKERTOOL_CHROME_TITLE_FILTER'),
+            )
+            self.chrome_capture = ChromeTabCapture(config)
+            logger.info(
+                "Chrome tab capture initialised (host=%s, port=%s)",
+                config.host,
+                config.port,
+            )
+        except ChromeTabCaptureError as exc:
+            logger.error(f"Failed to initialise Chrome tab capture: {exc}")
+            if self._initialise_chrome_window_capture():
+                self.capture_source = 'chrome_window'
+            else:
+                self.capture_source = 'monitor'
+
+    def _initialise_chrome_window_capture(self) -> bool:
+        if ChromeWindowCapture is None:
+            logger.warning("Chrome window capture not available on this platform")
+            return False
+
+        try:
+            config = ChromeWindowCaptureConfig(
+                owner_name=os.getenv('POKERTOOL_CHROME_OWNER', 'Google Chrome'),
+                title_filter=os.getenv('POKERTOOL_CHROME_TITLE_FILTER'),
+                toolbar_height=int(os.getenv('POKERTOOL_CHROME_TOOLBAR_HEIGHT', '80')),
+                crop_height=(
+                    int(os.getenv('POKERTOOL_CHROME_CROP_HEIGHT'))
+                    if os.getenv('POKERTOOL_CHROME_CROP_HEIGHT')
+                    else None
+                ),
+            )
+            self.chrome_window_capture = ChromeWindowCapture(config)
+            logger.info("Chrome window capture initialised (owner=%s)", config.owner_name)
+            return True
+        except Exception as exc:
+            logger.error(f"Failed to initialise Chrome window capture: {exc}")
+            self.chrome_window_capture = None
+            return False
+
     def extract_pot_size(self, image: np.ndarray) -> float:
         """Extract pot size from table image."""
         try:
@@ -601,11 +719,24 @@ class PokerScreenScraper:
         """Stop continuous capture."""
         if self.stop_event:
             self.stop_event.set()
-            
+
         if self.capture_thread and self.capture_thread.is_alive():
             self.capture_thread.join(timeout=2.0)
-            
+
+        self.shutdown()
+
         logger.info("Continuous capture stopped")
+
+    def shutdown(self) -> None:
+        """Release resources held by the scraper."""
+        if self.chrome_capture:
+            try:
+                self.chrome_capture.close()
+            except Exception as exc:
+                logger.debug(f"Error while closing chrome capture: {exc}")
+        self.chrome_capture = None
+
+        self.chrome_window_capture = None
     
     def get_state_updates(self, timeout: float = 1.0) -> Optional[TableState]:
         """Get latest state update."""

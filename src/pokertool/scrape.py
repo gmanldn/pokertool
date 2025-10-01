@@ -700,16 +700,15 @@ def run_screen_scraper(site: str = 'GENERIC', continuous: bool = False, interval
     """
     global _scraper_manager
 
-    if not _scraper_manager.scraper:
-        if not _scraper_manager.initialize(site, enable_ocr):
-            return {
-                'status': 'error',
-                'message': 'Failed to initialize enhanced screen scraper',
-                'dependencies_missing': {
-                    'scraper': not SCRAPER_AVAILABLE,
-                    'ocr': not OCR_AVAILABLE
-                }
+    if not _scraper_manager.initialize(site, enable_ocr):
+        return {
+            'status': 'error',
+            'message': 'Failed to initialize enhanced screen scraper',
+            'dependencies_missing': {
+                'scraper': not SCRAPER_AVAILABLE,
+                'ocr': not OCR_AVAILABLE
             }
+        }
 
     if continuous:
         success = _scraper_manager.start_continuous_capture(interval)
@@ -762,7 +761,7 @@ if __name__ == '__main__':
     print(f"OCR available: {OCR_AVAILABLE}")
     
     if SCRAPER_AVAILABLE:
-        result = run_screen_scraper('GENERIC', False, 1.0, True)
+        result = run_screen_scraper('CHROME', False, 1.0, True)
         print(f"Test result: {result}")
     else:
         print("Screen scraper dependencies not available")

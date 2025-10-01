@@ -47,7 +47,12 @@ def _ensure_scraper_dependencies():
         ('pytesseract', 'pytesseract'),
         ('mss', 'mss'),
         ('numpy', 'numpy'),
+        ('requests', 'requests'),
+        ('websocket', 'websocket-client'),
     ]
+
+    if sys.platform == 'darwin':
+        critical_deps.append(('Quartz', 'pyobjc-framework-Quartz'))
     
     missing = []
     for module_name, package_name in critical_deps:
@@ -156,7 +161,7 @@ class AutopilotState:
     """State of the autopilot system."""
     active: bool = False
     scraping: bool = False
-    site: str = 'GENERIC'
+    site: str = 'CHROME'
     tables_detected: int = 0
     actions_taken: int = 0
     last_action: str = 'None'
@@ -180,7 +185,10 @@ class AutopilotControlPanel(tk.Frame):
         
         self._build_ui()
         self._start_animation()
-        
+
+        # Propagate initial site selection to listeners
+        self._on_site_changed()
+
         # Bind cleanup on destroy
         self.bind('<Destroy>', self._on_destroy)
     
@@ -262,16 +270,17 @@ class AutopilotControlPanel(tk.Frame):
             fg=COLORS['text_primary']
         ).pack(side='left')
         
-        self.site_var = tk.StringVar(value='GENERIC')
+        self.site_var = tk.StringVar(value=self.state.site)
         site_combo = ttk.Combobox(
             site_frame,
             textvariable=self.site_var,
-            values=['GENERIC', 'POKERSTARS', 'PARTYPOKER', 'IGNITION', 'BOVADA'],
+            values=['GENERIC', 'POKERSTARS', 'PARTYPOKER', 'IGNITION', 'BOVADA', 'CHROME'],
             state='readonly',
             width=15
         )
         site_combo.pack(side='right')
         site_combo.bind('<<ComboboxSelected>>', self._on_site_changed)
+        site_combo.set(self.state.site)
         
         # Strategy selection
         strategy_frame = tk.Frame(settings_frame, bg=COLORS['bg_medium'])
@@ -428,8 +437,10 @@ class AutopilotControlPanel(tk.Frame):
     
     def _on_site_changed(self, event=None):
         """Handle poker site selection change."""
+        selected_site = self.site_var.get()
+        self.state.site = selected_site
         if self.on_settings_changed:
-            self.on_settings_changed('site', self.site_var.get())
+            self.on_settings_changed('site', selected_site)
     
     def _start_animation(self):
         """Start status animation for active autopilot."""
@@ -533,7 +544,7 @@ class IntegratedPokerAssistant(tk.Tk):
         """Initialize all poker tool modules."""
         try:
             if SCREEN_SCRAPER_LOADED:
-                self.screen_scraper = create_scraper('GENERIC')
+                self.screen_scraper = create_scraper('CHROME')
                 print("Screen scraper initialized")
             
             if GUI_MODULES_LOADED:
