@@ -269,3 +269,4 @@ core.*
 !assets/**/*
 master_log.txt
 master_log.txt
+master_log.txt
