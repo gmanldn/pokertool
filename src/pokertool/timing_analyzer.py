@@ -476,7 +476,7 @@ class TimingTellAnalyzer:
         return {
             'timing_data': [td.to_dict() for td in self.tracker.timing_data],
             'baselines': self.deviation_detector.baselines,
-            'clusters': self.clusters
+            'clusters': self.clusterer.clusters
         }
         
     def import_data(self, data: Dict) -> None:

@@ -341,7 +341,7 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertEqual(result['deviation_type'], 'slower')
 
 
-class TestTimingDataSerializat ion(unittest.TestCase):
+class TestTimingDataSerialization(unittest.TestCase):
     """Test data serialization."""
     
     def test_timing_data_to_dict(self):
