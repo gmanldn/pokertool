@@ -27,6 +27,7 @@ export * from "./providers/vertex"
 export * from "./providers/openRouter"
 export * from "./providers/gemini"
 export * from "./providers/qwen"
+export * from "./providers/doubao"
 
 // OpenRouter
 // https://openrouter.ai/models?order=newest&supported_parameters=tools
@@ -293,54 +294,6 @@ export const huggingFaceModels = {
 		inputPrice: 0,
 		outputPrice: 0,
 		description: "Efficient 8B parameter Llama model for general-purpose tasks.",
-	},
-} as const satisfies Record<string, ModelInfo>
-
-// Doubao
-// https://www.volcengine.com/docs/82379/1298459
-// https://console.volcengine.com/ark/region:ark+cn-beijing/openManagement
-export type DoubaoModelId = keyof typeof doubaoModels
-export const doubaoDefaultModelId: DoubaoModelId = "doubao-1-5-pro-256k-250115"
-export const doubaoModels = {
-	"doubao-1-5-pro-256k-250115": {
-		maxTokens: 12_288,
-		contextWindow: 256_000,
-		supportsImages: false,
-		supportsPromptCache: false,
-		inputPrice: 0.7,
-		outputPrice: 1.3,
-		cacheWritesPrice: 0,
-		cacheReadsPrice: 0,
-	},
-	"doubao-1-5-pro-32k-250115": {
-		maxTokens: 12_288,
-		contextWindow: 32_000,
-		supportsImages: false,
-		supportsPromptCache: false,
-		inputPrice: 0.11,
-		outputPrice: 0.3,
-		cacheWritesPrice: 0,
-		cacheReadsPrice: 0,
-	},
-	"deepseek-v3-250324": {
-		maxTokens: 12_288,
-		contextWindow: 128_000,
-		supportsImages: false,
-		supportsPromptCache: false,
-		inputPrice: 0.55,
-		outputPrice: 2.19,
-		cacheWritesPrice: 0,
-		cacheReadsPrice: 0,
-	},
-	"deepseek-r1-250120": {
-		maxTokens: 32_768,
-		contextWindow: 64_000,
-		supportsImages: false,
-		supportsPromptCache: false,
-		inputPrice: 0.27,
-		outputPrice: 1.09,
-		cacheWritesPrice: 0,
-		cacheReadsPrice: 0,
 	},
 } as const satisfies Record<string, ModelInfo>
 
