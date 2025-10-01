@@ -26,11 +26,11 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | HIGH     | 0     | 0.0%       |
-| MEDIUM   | 9     | 100.0%     |
+| MEDIUM   | 7     | 100.0%     |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 9**
-**COMPLETED TASKS: 12**
+**TOTAL REMAINING TASKS: 7**
+**COMPLETED TASKS: 14**
 **Note: All CRITICAL priority tasks have been completed and removed**
 
 ---
@@ -258,33 +258,43 @@ MACHINE-READABLE-HEADER-END -->
   - Index advisor informed by real query filters plus archive manager for cold data offload
   - Regression coverage in `tests/system/test_database_optimization.py`
 
-### 19. Advanced Reporting
+### 19. Advanced Reporting ✅
 
 - **ID**: REPORT-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-04)
 - **Estimated Hours**: 22
 - **Dependencies**: None
 - **Description**: Comprehensive reporting system
 - **Subtasks**:
-  - [ ] Create custom report builder
-  - [ ] Add PDF export
-  - [ ] Implement email reports
-  - [ ] Add chart customization
-  - [ ] Create report templates
+  - [x] Create custom report builder
+  - [x] Add PDF export
+  - [x] Implement email reports
+  - [x] Add chart customization
+  - [x] Create report templates
+- **Implementation**: `src/pokertool/advanced_reporting.py` delivering templating, chart config, and delivery hooks
+- **Deliverables**:
+  - Customizable report builder with template registry, chart metadata, and numeric summaries
+  - PDF/JSON export alongside email delivery logging validated in `tests/system/test_advanced_reporting_module.py`
+  - Series summary helpers for analytics dashboards
 
-### 20. Network Analysis
+### 20. Network Analysis ✅
 
 - **ID**: NET-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-04)
 - **Estimated Hours**: 20
 - **Dependencies**: None
 - **Description**: Player network analysis
 - **Subtasks**:
-  - [ ] Create player relationship mapping
-  - [ ] Add collusion detection
-  - [ ] Implement network visualization
-  - [ ] Add buddy list analysis
-  - [ ] Create network metrics
+  - [x] Create player relationship mapping
+  - [x] Add collusion detection
+  - [x] Implement network visualization
+  - [x] Add buddy list analysis
+  - [x] Create network metrics
+- **Implementation**: `src/pokertool/network_analysis.py` providing relationship graphs, collusion scoring, and visualization payloads
+- **Deliverables**:
+  - Relationship graph builder with collusion warnings and suspicious flagging
+  - Visualization-friendly node and edge exports validated in `tests/system/test_network_analysis.py`
+  - Network metrics summarizing density, degree, and relationship counts
 
 ### 21. Tournament Tracker
 
@@ -387,6 +397,17 @@ MACHINE-READABLE-HEADER-END -->
 
 ## Completed Tasks Log
 
+### 2025-10-04
+1. **REPORT-001** - Advanced Reporting
+   - Added `advanced_reporting.py` with template registry, chart configuration, export, and delivery routines
+   - Created `tests/system/test_advanced_reporting_module.py` covering report generation, exports, email logging, and numeric summaries
+   - Established report storage in `.pokertool/reports` for PDF/JSON archives
+
+2. **NET-001** - Network Analysis
+   - Added `network_analysis.py` providing relationship mapping, collusion heuristics, and visualization payloads
+   - Created `tests/system/test_network_analysis.py` validating warnings, metrics, and graph exports
+   - Delivered density and degree metrics for dashboards
+
 ### 2025-10-03
 1. **STUDY-001** - Study Mode
    - Added `study_mode.py` managing flashcards, quizzes, lessons, and spaced repetition persistence
@@ -464,6 +485,14 @@ MACHINE-READABLE-HEADER-END -->
 - Updated priority matrix (0 HIGH, 9 MEDIUM, 0 LOW remaining)
 - Total tasks: 9 remaining, 12 completed
 
+### Version v23.6.0 (2025-10-04)
+- Completed REPORT-001: Advanced Reporting
+- Completed NET-001: Network Analysis
+- Added advanced_reporting.py with template workflows, exports, and delivery tests
+- Added network_analysis.py with relationship mapping and collusion detection tests
+- Updated priority matrix (0 HIGH, 7 MEDIUM, 0 LOW remaining)
+- Total tasks: 7 remaining, 14 completed
+
 ### Version v23.3.0 (2025-10-02)
 - Completed BLUFF-001: AI Bluff Detection
 - Completed CONV-001: Hand Converter
@@ -495,12 +524,12 @@ MACHINE-READABLE-HEADER-END -->
 ## Notes
 
 - All CRITICAL, HIGH, and LOW priority tasks have been completed and removed
-- Remaining backlog consists of MEDIUM initiatives (analytics, reporting, community features)
+- Remaining backlog consists of MEDIUM initiatives (analytics dashboard, theme system, community features)
 - Prioritise coordination dependencies across analytics dashboard, session management, and networking items
 - Dependencies remain minimal; tasks can be scheduled in parallel with appropriate resourcing
 - Regular updates to this file are recommended as tasks progress
 
 ---
 
-**Last Updated**: 2025-10-03  
-**Next Review**: 2025-10-10
+**Last Updated**: 2025-10-04  
+**Next Review**: 2025-10-11
