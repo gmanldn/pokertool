@@ -109,8 +109,8 @@ class ValueNetwork:
     def forward(self, state: np.ndarray) -> float:
         """Forward pass to estimate state value"""
         hidden = np.maximum(0, np.dot(state, self.weights_input) + self.bias_hidden)
-        value = float(np.dot(hidden, self.weights_output) + self.bias_output)
-        return value
+        value = np.dot(hidden, self.weights_output).item() + self.bias_output
+        return float(value)
 
 
 class ExperienceReplayBuffer:
