@@ -29,11 +29,13 @@ import os
 import sys
 import time
 import threading
-from typing import Dict, List, Optional, Any, Tuple, Callable
+import re
+from typing import Dict, List, Optional, Any, Tuple, Callable, Set
 from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
 import numpy as np
+from collections import deque
 
 # Cross-platform dependencies
 try:
@@ -156,6 +158,31 @@ class DesktopIndependentScraper:
         self.detected_windows: List[WindowInfo] = []
         self.active_captures: Dict[str, Any] = {}
         self.callbacks: List[Callable[[Dict[str, Any]], None]] = []
+        
+        # Performance optimization features
+        self._window_cache: Dict[str, WindowInfo] = {}
+        self._last_scan_time = 0.0
+        self._scan_cache_duration = 5.0  # Cache window scan results for 5 seconds
+        self._capture_history: deque = deque(maxlen=100)  # Keep last 100 captures
+        self._analysis_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}  # Cache analysis results
+        self._cache_ttl = 2.0  # Cache analysis for 2 seconds
+        
+        # Adaptive monitoring
+        self._adaptive_intervals = True
+        self._base_interval = 2.0
+        self._fast_interval = 0.5
+        self._slow_interval = 5.0
+        self._consecutive_no_activity = 0
+        
+        # Performance metrics
+        self._metrics = {
+            'total_captures': 0,
+            'successful_captures': 0,
+            'failed_captures': 0,
+            'avg_capture_time': 0.0,
+            'cache_hits': 0,
+            'cache_misses': 0
+        }
         
         # Platform-specific initialization
         self.platform = self._detect_platform()
@@ -561,80 +588,126 @@ class DesktopIndependentScraper:
             }
     
     def _analyze_poker_screenshot(self, screenshot: np.ndarray, window: WindowInfo) -> Dict[str, Any]:
-        """Analyze poker table screenshot to extract game state."""
+        """Enhanced poker table screenshot analysis with caching and improved accuracy."""
+        
+        # Create cache key based on image hash
+        cache_key = f"{window.handle}_{hash(screenshot.tobytes())}"
+        current_time = time.time()
+        
+        # Check cache first
+        if cache_key in self._analysis_cache:
+            cached_time, cached_result = self._analysis_cache[cache_key]
+            if current_time - cached_time < self._cache_ttl:
+                self._metrics['cache_hits'] += 1
+                return cached_result
+        
+        self._metrics['cache_misses'] += 1
+        analysis = self._enhanced_table_analysis(screenshot, window)
+        
+        # Cache result
+        self._analysis_cache[cache_key] = (current_time, analysis)
+        
+        # Clean old cache entries
+        self._cleanup_analysis_cache()
+        
+        return analysis
+    
+    def _enhanced_table_analysis(self, screenshot: np.ndarray, window: WindowInfo) -> Dict[str, Any]:
+        """Enhanced analysis with multiple detection algorithms."""
         analysis = {
             'pot_detected': False,
             'cards_detected': False,
             'buttons_detected': False,
             'table_active': False,
+            'action_buttons_visible': False,
+            'seat_count': 0,
+            'hero_cards_visible': False,
+            'board_cards_count': 0,
+            'confidence_score': 0.0
         }
         
         try:
-            # Basic image analysis
+            start_time = time.time()
+            
+            # Multi-scale analysis for better detection
+            scales = [1.0, 0.8, 0.6] if screenshot.shape[0] > 800 else [1.0]
+            best_analysis = None
+            best_confidence = 0.0
+            
+            for scale in scales:
+                scaled_analysis = self._analyze_at_scale(screenshot, scale)
+                if scaled_analysis['confidence_score'] > best_confidence:
+                    best_confidence = scaled_analysis['confidence_score']
+                    best_analysis = scaled_analysis
+            
+            if best_analysis:
+                analysis.update(best_analysis)
+            
+            # Update performance metrics
+            processing_time = time.time() - start_time
+            self._metrics['avg_capture_time'] = (
+                (self._metrics['avg_capture_time'] * self._metrics['total_captures'] + processing_time) /
+                (self._metrics['total_captures'] + 1)
+            )
+            
+        except Exception as e:
+            logger.debug(f"Enhanced analysis error: {e}")
+            analysis['analysis_error'] = str(e)
+        
+        return analysis
+    
+    def _analyze_at_scale(self, screenshot: np.ndarray, scale: float) -> Dict[str, Any]:
+        """Analyze screenshot at a specific scale for multi-scale detection."""
+        if scale != 1.0:
+            height, width = screenshot.shape[:2]
+            new_height, new_width = int(height * scale), int(width * scale)
+            screenshot = cv2.resize(screenshot, (new_width, new_height))
+        
+        analysis = {
+            'pot_detected': False,
+            'cards_detected': False,
+            'buttons_detected': False,
+            'table_active': False,
+            'action_buttons_visible': False,
+            'seat_count': 0,
+            'hero_cards_visible': False,
+            'board_cards_count': 0,
+            'confidence_score': 0.0
+        }
+        
+        try:
+            # Convert to different color spaces for analysis
             gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-            
-            # Detect if table is active (look for green felt color)
             hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
+            lab = cv2.cvtColor(screenshot, cv2.COLOR_BGR2LAB)
             
-            # Green range for poker table felt
-            lower_green = np.array([40, 40, 40])
-            upper_green = np.array([80, 255, 255])
-            green_mask = cv2.inRange(hsv, lower_green, upper_green)
-            green_pixels = cv2.countNonZero(green_mask)
+            # Enhanced table detection using multiple color spaces
+            table_confidence = self._detect_poker_table(screenshot, hsv, lab)
+            analysis['table_active'] = table_confidence > 0.3
+            analysis['confidence_score'] += table_confidence * 0.4
             
-            total_pixels = screenshot.shape[0] * screenshot.shape[1]
-            green_ratio = green_pixels / total_pixels
+            # Advanced card detection
+            card_analysis = self._detect_cards_advanced(screenshot, gray, hsv)
+            analysis.update(card_analysis)
+            analysis['confidence_score'] += card_analysis.get('card_confidence', 0) * 0.3
             
-            analysis['table_active'] = green_ratio > 0.1  # At least 10% green
-            analysis['green_ratio'] = green_ratio
+            # Button and UI element detection
+            ui_analysis = self._detect_poker_ui_elements(screenshot, gray)
+            analysis.update(ui_analysis)
+            analysis['confidence_score'] += ui_analysis.get('ui_confidence', 0) * 0.2
             
-            # Look for cards (white rectangles with rounded corners)
-            contours, _ = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            card_like_contours = []
+            # OCR enhancement with better preprocessing
+            ocr_analysis = self._enhanced_ocr_analysis(screenshot, gray)
+            analysis.update(ocr_analysis)
+            analysis['confidence_score'] += ocr_analysis.get('text_confidence', 0) * 0.1
             
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if 500 < area < 5000:  # Card-like area
-                    x, y, w, h = cv2.boundingRect(contour)
-                    aspect_ratio = w / h if h > 0 else 0
-                    if 0.6 < aspect_ratio < 0.8:  # Card-like aspect ratio
-                        card_like_contours.append((x, y, w, h))
-            
-            analysis['cards_detected'] = len(card_like_contours) > 0
-            analysis['potential_cards'] = len(card_like_contours)
-            
-            # Look for circular buttons (chips, dealer button)
-            circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 20,
-                                     param1=50, param2=30, minRadius=10, maxRadius=50)
-            
-            if circles is not None:
-                analysis['buttons_detected'] = True
-                analysis['button_count'] = len(circles[0])
-            
-            # OCR for pot size and betting amounts
-            if OCR_AVAILABLE:
-                try:
-                    text = pytesseract.image_to_string(screenshot, config='--psm 6')
-                    
-                    # Look for currency symbols and numbers
-                    import re
-                    money_pattern = r'[\$€£¥]\s*\d+(?:,\d{3})*(?:\.\d{2})?'
-                    amounts = re.findall(money_pattern, text)
-                    
-                    if amounts:
-                        analysis['pot_detected'] = True
-                        analysis['detected_amounts'] = amounts
-                        
-                except Exception as e:
-                    logger.debug(f"OCR analysis failed: {e}")
-            
-            # Overall activity score
+            # Calculate overall activity score
             activity_score = 0
             if analysis['table_active']:
                 activity_score += 40
             if analysis['cards_detected']:
                 activity_score += 30
-            if analysis['buttons_detected']:
+            if analysis['action_buttons_visible']:
                 activity_score += 20
             if analysis['pot_detected']:
                 activity_score += 10
@@ -643,10 +716,377 @@ class DesktopIndependentScraper:
             analysis['likely_poker_table'] = activity_score >= 50
             
         except Exception as e:
-            logger.debug(f"Screenshot analysis error: {e}")
+            logger.debug(f"Scale analysis error at {scale}: {e}")
             analysis['analysis_error'] = str(e)
         
         return analysis
+    
+    def _detect_poker_table(self, screenshot: np.ndarray, hsv: np.ndarray, lab: np.ndarray) -> float:
+        """Enhanced poker table detection using multiple color spaces."""
+        confidence = 0.0
+        
+        try:
+            # Multiple green ranges for different table types
+            green_ranges = [
+                ([40, 40, 40], [80, 255, 255]),    # Standard green felt
+                ([35, 50, 50], [85, 255, 200]),    # Darker green
+                ([45, 30, 30], [75, 255, 255]),    # Lighter green
+            ]
+            
+            best_green_ratio = 0.0
+            total_pixels = screenshot.shape[0] * screenshot.shape[1]
+            
+            for lower, upper in green_ranges:
+                mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+                green_pixels = cv2.countNonZero(mask)
+                green_ratio = green_pixels / total_pixels
+                best_green_ratio = max(best_green_ratio, green_ratio)
+            
+            # Blue table detection (some sites use blue)
+            blue_lower = np.array([100, 50, 50])
+            blue_upper = np.array([130, 255, 255])
+            blue_mask = cv2.inRange(hsv, blue_lower, blue_upper)
+            blue_ratio = cv2.countNonZero(blue_mask) / total_pixels
+            
+            # Combine color ratios
+            color_confidence = min(1.0, (best_green_ratio + blue_ratio) * 2)
+            confidence += color_confidence * 0.6
+            
+            # Check for table edge patterns
+            gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 50, 150)
+            
+            # Look for elliptical/circular patterns (table edges)
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            ellipse_confidence = 0.0
+            
+            for contour in contours:
+                if len(contour) >= 5:  # Minimum points for ellipse fitting
+                    area = cv2.contourArea(contour)
+                    if area > 1000:  # Significant area
+                        try:
+                            ellipse = cv2.fitEllipse(contour)
+                            # Check if it's roughly table-shaped
+                            (center, axes, angle) = ellipse
+                            major_axis, minor_axis = max(axes), min(axes)
+                            aspect_ratio = major_axis / minor_axis if minor_axis > 0 else 0
+                            
+                            if 1.2 < aspect_ratio < 3.0:  # Typical poker table ratios
+                                ellipse_confidence = min(1.0, area / (total_pixels * 0.3))
+                                break
+                        except:
+                            continue
+            
+            confidence += ellipse_confidence * 0.4
+            
+        except Exception as e:
+            logger.debug(f"Table detection error: {e}")
+        
+        return min(1.0, confidence)
+    
+    def _detect_cards_advanced(self, screenshot: np.ndarray, gray: np.ndarray, hsv: np.ndarray) -> Dict[str, Any]:
+        """Advanced card detection with template matching and contour analysis."""
+        result = {
+            'cards_detected': False,
+            'potential_cards': 0,
+            'hero_cards_visible': False,
+            'board_cards_count': 0,
+            'card_confidence': 0.0,
+            'card_regions': []
+        }
+        
+        try:
+            # Adaptive thresholding for better card edge detection
+            adaptive_thresh = cv2.adaptiveThreshold(
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+            )
+            
+            # Find contours
+            contours, _ = cv2.findContours(adaptive_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            card_like_regions = []
+            
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                
+                # Adaptive area thresholds based on image size
+                min_area = (screenshot.shape[0] * screenshot.shape[1]) * 0.001
+                max_area = (screenshot.shape[0] * screenshot.shape[1]) * 0.05
+                
+                if min_area < area < max_area:
+                    x, y, w, h = cv2.boundingRect(contour)
+                    aspect_ratio = w / h if h > 0 else 0
+                    
+                    # Enhanced card aspect ratio detection
+                    if 0.55 < aspect_ratio < 0.85:  # Typical playing card ratios
+                        # Check for rounded corners (card characteristic)
+                        roi = gray[y:y+h, x:x+w]
+                        if roi.size > 0:
+                            corners_score = self._detect_rounded_corners(roi)
+                            if corners_score > 0.3:
+                                card_like_regions.append({
+                                    'bbox': (x, y, w, h),
+                                    'area': area,
+                                    'aspect_ratio': aspect_ratio,
+                                    'corners_score': corners_score,
+                                    'confidence': min(1.0, corners_score + (0.7 - abs(aspect_ratio - 0.7)))
+                                })
+            
+            # Sort by confidence and position
+            card_like_regions.sort(key=lambda x: x['confidence'], reverse=True)
+            
+            result['potential_cards'] = len(card_like_regions)
+            result['cards_detected'] = len(card_like_regions) > 0
+            result['card_regions'] = card_like_regions[:10]  # Keep top 10
+            
+            # Estimate hero vs board cards based on position
+            if card_like_regions:
+                height = screenshot.shape[0]
+                width = screenshot.shape[1]
+                
+                hero_cards = [r for r in card_like_regions if r['bbox'][1] > height * 0.7]
+                board_cards = [r for r in card_like_regions if height * 0.3 < r['bbox'][1] < height * 0.7]
+                
+                result['hero_cards_visible'] = len(hero_cards) >= 2
+                result['board_cards_count'] = min(5, len(board_cards))
+                
+                # Calculate confidence based on detected cards
+                avg_confidence = np.mean([r['confidence'] for r in card_like_regions[:5]])
+                result['card_confidence'] = avg_confidence
+            
+        except Exception as e:
+            logger.debug(f"Advanced card detection error: {e}")
+        
+        return result
+    
+    def _detect_rounded_corners(self, roi: np.ndarray) -> float:
+        """Detect rounded corners characteristic of playing cards."""
+        try:
+            if roi.shape[0] < 20 or roi.shape[1] < 20:
+                return 0.0
+            
+            # Check corner regions
+            corner_size = min(10, roi.shape[0] // 4, roi.shape[1] // 4)
+            corners = [
+                roi[:corner_size, :corner_size],           # Top-left
+                roi[:corner_size, -corner_size:],          # Top-right
+                roi[-corner_size:, :corner_size],          # Bottom-left
+                roi[-corner_size:, -corner_size:]          # Bottom-right
+            ]
+            
+            rounded_score = 0.0
+            for corner in corners:
+                # Count white pixels in the corner (card background)
+                white_pixels = np.sum(corner > 200)
+                total_pixels = corner.size
+                white_ratio = white_pixels / total_pixels
+                
+                # Rounded corners have fewer white pixels in corners
+                if white_ratio < 0.7:  # Less than 70% white suggests rounded corner
+                    rounded_score += 0.25
+            
+            return rounded_score
+            
+        except Exception as e:
+            logger.debug(f"Rounded corner detection error: {e}")
+            return 0.0
+    
+    def _detect_poker_ui_elements(self, screenshot: np.ndarray, gray: np.ndarray) -> Dict[str, Any]:
+        """Detect poker-specific UI elements like buttons, chips, etc."""
+        result = {
+            'buttons_detected': False,
+            'action_buttons_visible': False,
+            'seat_count': 0,
+            'ui_confidence': 0.0
+        }
+        
+        try:
+            # Detect circular elements (chips, dealer button)
+            circles = cv2.HoughCircles(
+                gray, cv2.HOUGH_GRADIENT, 1, 20,
+                param1=50, param2=30, minRadius=5, maxRadius=100
+            )
+            
+            if circles is not None:
+                circles = np.round(circles[0, :]).astype("int")
+                result['buttons_detected'] = True
+                result['ui_confidence'] += 0.3
+                
+                # Analyze circle positions to estimate seat count
+                height = screenshot.shape[0]
+                width = screenshot.shape[1]
+                
+                # Group circles by position to find seat patterns
+                edge_circles = [
+                    c for c in circles 
+                    if c[0] < width * 0.2 or c[0] > width * 0.8 or 
+                       c[1] < height * 0.2 or c[1] > height * 0.8
+                ]
+                
+                result['seat_count'] = min(10, len(edge_circles))
+            
+            # Detect rectangular buttons (fold, call, raise)
+            contours, _ = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            button_like_regions = 0
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                if 1000 < area < 10000:  # Button-like area
+                    x, y, w, h = cv2.boundingRect(contour)
+                    aspect_ratio = w / h if h > 0 else 0
+                    
+                    # Check for button-like aspect ratio
+                    if 1.5 < aspect_ratio < 4.0:
+                        # Check if it's in the bottom area (where action buttons typically are)
+                        if y > screenshot.shape[0] * 0.6:
+                            button_like_regions += 1
+            
+            if button_like_regions >= 2:  # At least 2 action buttons
+                result['action_buttons_visible'] = True
+                result['ui_confidence'] += 0.4
+            
+            # Look for text patterns typical of poker games
+            if button_like_regions > 0:
+                result['ui_confidence'] += 0.3
+            
+            result['ui_confidence'] = min(1.0, result['ui_confidence'])
+            
+        except Exception as e:
+            logger.debug(f"UI detection error: {e}")
+        
+        return result
+    
+    def _enhanced_ocr_analysis(self, screenshot: np.ndarray, gray: np.ndarray) -> Dict[str, Any]:
+        """Enhanced OCR analysis with better preprocessing."""
+        result = {
+            'pot_detected': False,
+            'detected_amounts': [],
+            'text_confidence': 0.0,
+            'detected_text': ''
+        }
+        
+        if not OCR_AVAILABLE:
+            return result
+        
+        try:
+            # Preprocess image for better OCR
+            # Apply denoising
+            denoised = cv2.fastNlMeansDenoising(gray)
+            
+            # Enhance contrast
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            enhanced = clahe.apply(denoised)
+            
+            # Multiple OCR attempts with different configurations
+            ocr_configs = [
+                '--psm 6',  # Uniform block of text
+                '--psm 7',  # Single text line
+                '--psm 8',  # Single word
+                '--psm 13'  # Raw line. Treat the image as a single text line
+            ]
+            
+            all_text = ""
+            best_confidence = 0.0
+            
+            for config in ocr_configs:
+                try:
+                    text = pytesseract.image_to_string(enhanced, config=config)
+                    if text.strip():
+                        all_text += text + " "
+                        
+                        # Get confidence data
+                        data = pytesseract.image_to_data(enhanced, config=config, output_type=pytesseract.Output.DICT)
+                        confidences = [int(c) for c in data['conf'] if int(c) > 0]
+                        if confidences:
+                            avg_conf = np.mean(confidences) / 100.0
+                            best_confidence = max(best_confidence, avg_conf)
+                            
+                except Exception as e:
+                    logger.debug(f"OCR config {config} failed: {e}")
+                    continue
+            
+            result['detected_text'] = all_text.strip()
+            result['text_confidence'] = best_confidence
+            
+            # Enhanced money pattern matching
+            money_patterns = [
+                r'[\$€£¥]\s*\d+(?:,\d{3})*(?:\.\d{2})?',
+                r'\d+(?:,\d{3})*(?:\.\d{2})?\s*[\$€£¥]',
+                r'[Pp]ot\s*:?\s*[\$€£¥]?\s*\d+(?:,\d{3})*(?:\.\d{2})?',
+                r'[Bb]et\s*:?\s*[\$€£¥]?\s*\d+(?:,\d{3})*(?:\.\d{2})?'
+            ]
+            
+            amounts = []
+            for pattern in money_patterns:
+                matches = re.findall(pattern, all_text, re.IGNORECASE)
+                amounts.extend(matches)
+            
+            if amounts:
+                result['pot_detected'] = True
+                result['detected_amounts'] = list(set(amounts))  # Remove duplicates
+                result['text_confidence'] += 0.2
+            
+            result['text_confidence'] = min(1.0, result['text_confidence'])
+            
+        except Exception as e:
+            logger.debug(f"Enhanced OCR analysis failed: {e}")
+        
+        return result
+    
+    def _cleanup_analysis_cache(self):
+        """Clean up old entries from analysis cache."""
+        current_time = time.time()
+        expired_keys = [
+            key for key, (timestamp, _) in self._analysis_cache.items()
+            if current_time - timestamp > self._cache_ttl * 2
+        ]
+        
+        for key in expired_keys:
+            del self._analysis_cache[key]
+    
+    def _calculate_adaptive_interval(self, activity_detected: bool) -> float:
+        """Calculate adaptive monitoring interval based on activity."""
+        if not self._adaptive_intervals:
+            return self._base_interval
+        
+        if activity_detected:
+            self._consecutive_no_activity = 0
+            return self._fast_interval
+        else:
+            self._consecutive_no_activity += 1
+            
+            # Gradually increase interval when no activity detected
+            if self._consecutive_no_activity > 10:
+                return self._slow_interval
+            elif self._consecutive_no_activity > 5:
+                return self._base_interval * 1.5
+            else:
+                return self._base_interval
+    
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """Get current performance metrics."""
+        total_captures = self._metrics['total_captures']
+        success_rate = (
+            self._metrics['successful_captures'] / total_captures 
+            if total_captures > 0 else 0.0
+        )
+        
+        total_cache_requests = self._metrics['cache_hits'] + self._metrics['cache_misses']
+        cache_hit_rate = (
+            self._metrics['cache_hits'] / total_cache_requests
+            if total_cache_requests > 0 else 0.0
+        )
+        
+        return {
+            'total_captures': total_captures,
+            'success_rate': success_rate,
+            'avg_capture_time': self._metrics['avg_capture_time'],
+            'cache_hit_rate': cache_hit_rate,
+            'cache_entries': len(self._analysis_cache),
+            'capture_history_size': len(self._capture_history),
+            'adaptive_monitoring': self._adaptive_intervals,
+            'consecutive_no_activity': self._consecutive_no_activity
+        }
     
     def start_continuous_monitoring(self, interval: float = 2.0) -> bool:
         """
