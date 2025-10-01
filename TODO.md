@@ -26,11 +26,11 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | HIGH     | 0     | 0.0%       |
-| MEDIUM   | 7     | 100.0%     |
+| MEDIUM   | 5     | 100.0%     |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 7**
-**COMPLETED TASKS: 14**
+**TOTAL REMAINING TASKS: 5**
+**COMPLETED TASKS: 16**
 **Note: All CRITICAL priority tasks have been completed and removed**
 
 ---
@@ -296,19 +296,24 @@ MACHINE-READABLE-HEADER-END -->
   - Visualization-friendly node and edge exports validated in `tests/system/test_network_analysis.py`
   - Network metrics summarizing density, degree, and relationship counts
 
-### 21. Tournament Tracker
+### 21. Tournament Tracker ✅
 
 - **ID**: TOUR-002
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-04)
 - **Estimated Hours**: 16
 - **Dependencies**: None
 - **Description**: Enhanced tournament tracking
 - **Subtasks**:
-  - [ ] Add tournament scheduler
-  - [ ] Implement late registration advisor
-  - [ ] Create satellite tracker
-  - [ ] Add ROI calculator
-  - [ ] Implement tournament alerts
+  - [x] Add tournament scheduler
+  - [x] Implement late registration advisor
+  - [x] Create satellite tracker
+  - [x] Add ROI calculator
+  - [x] Implement tournament alerts
+- **Implementation**: `src/pokertool/tournament_tracker.py` with system coverage in `tests/system/test_tournament_tracker.py`
+- **Deliverables**:
+  - Persistent tournament schedule with upcoming views and reminder alerts
+  - Late-registration advisory messaging tuned to structure and re-entry rules
+  - ROI summaries plus satellite linkage surfaced for multi-step qualifiers
 
 ### 22. Performance Profiler
 
@@ -354,18 +359,23 @@ MACHINE-READABLE-HEADER-END -->
   - [ ] Add performance metrics
   - [ ] Create usage reports
 
-### 30. Theme System
+### 30. Theme System ✅
 - **ID**: THEME-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-04)
 - **Estimated Hours**: 8
 - **Dependencies**: None
 - **Description**: Customizable themes
 - **Subtasks**:
-  - [ ] Create theme engine
-  - [ ] Add theme editor
-  - [ ] Implement theme marketplace
-  - [ ] Add theme preview
-  - [ ] Create default themes
+  - [x] Create theme engine
+  - [x] Add theme editor
+  - [x] Implement theme marketplace
+  - [x] Add theme preview
+  - [x] Create default themes
+- **Implementation**: `src/pokertool/theme_system.py` with validation in `tests/system/test_theme_system.py`
+- **Deliverables**:
+  - Theme engine with apply/preview helpers and JSON persistence in `.pokertool/themes`
+  - Draft-based editor and simple marketplace registry enabling downloads and publication
+  - Comprehensive tests covering application flows and marketplace interactions
 
 ### 31. Gamification
 - **ID**: GAME-002
@@ -407,6 +417,16 @@ MACHINE-READABLE-HEADER-END -->
    - Added `network_analysis.py` providing relationship mapping, collusion heuristics, and visualization payloads
    - Created `tests/system/test_network_analysis.py` validating warnings, metrics, and graph exports
    - Delivered density and degree metrics for dashboards
+
+3. **TOUR-002** - Tournament Tracker
+   - Added `tournament_tracker.py` handling scheduling, late-registration advice, ROI, and alerts
+   - Created `tests/system/test_tournament_tracker.py` validating scheduler, satellites, alerts, and ROI summaries
+   - Enabled tournament persistence under `.pokertool/tournaments`
+
+4. **THEME-001** - Theme System
+   - Added `theme_system.py` powering theme engine, editor drafts, and marketplace listings
+   - Created `tests/system/test_theme_system.py` covering application previews and marketplace downloads
+   - Persisted themes to `.pokertool/themes` for GUI consumption
 
 ### 2025-10-03
 1. **STUDY-001** - Study Mode
@@ -493,6 +513,14 @@ MACHINE-READABLE-HEADER-END -->
 - Updated priority matrix (0 HIGH, 7 MEDIUM, 0 LOW remaining)
 - Total tasks: 7 remaining, 14 completed
 
+### Version v23.7.0 (2025-10-04)
+- Completed TOUR-002: Tournament Tracker
+- Completed THEME-001: Theme System
+- Added tournament_tracker.py for scheduling, ROI, and alerts with tests
+- Added theme_system.py with engine, editor, and marketplace coverage
+- Updated priority matrix (0 HIGH, 5 MEDIUM, 0 LOW remaining)
+- Total tasks: 5 remaining, 16 completed
+
 ### Version v23.3.0 (2025-10-02)
 - Completed BLUFF-001: AI Bluff Detection
 - Completed CONV-001: Hand Converter
@@ -524,7 +552,7 @@ MACHINE-READABLE-HEADER-END -->
 ## Notes
 
 - All CRITICAL, HIGH, and LOW priority tasks have been completed and removed
-- Remaining backlog consists of MEDIUM initiatives (analytics dashboard, theme system, community features)
+- Remaining backlog consists of MEDIUM initiatives (analytics dashboard, performance profiling, documentation system)
 - Prioritise coordination dependencies across analytics dashboard, session management, and networking items
 - Dependencies remain minimal; tasks can be scheduled in parallel with appropriate resourcing
 - Regular updates to this file are recommended as tasks progress
