@@ -127,7 +127,12 @@ except ImportError as e:
 # Import screen scraper
 try:
     sys.path.append('.')
-    from poker_screen_scraper import PokerScreenScraper, PokerSite, TableState, create_scraper
+    from pokertool.modules.poker_screen_scraper import (
+        PokerScreenScraper,
+        PokerSite,
+        TableState,
+        create_scraper,
+    )
     SCREEN_SCRAPER_LOADED = True
 except ImportError as e:
     print(f'Warning: Screen scraper not loaded: {e}')

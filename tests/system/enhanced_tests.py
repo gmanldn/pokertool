@@ -40,7 +40,7 @@ from typing import List, Dict, Any, Optional
 
 # Import components to test
 try:
-    from poker_gui_enhanced import (
+    from pokertool.modules.poker_gui_enhanced import (
         EnhancedPokerAssistant, EnhancedCardEntry, StatusBar, UITheme,
         ValidationState, UIState
     )

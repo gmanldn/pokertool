@@ -18,25 +18,25 @@ All critical syntax errors have been fixed and the PokerTool application is now 
 
 ```bash
 cd /Users/georgeridout/Documents/github/pokertool
-python3 run_pokertool.py test
+python3 -m pokertool.modules.run_pokertool test
 ```
 
 ### Launch GUI
 
 ```bash
-python3 run_pokertool.py gui
+python3 -m pokertool.modules.run_pokertool gui
 ```
 
 ### Run Screen Scraper
 
 ```bash
-python3 run_pokertool.py scrape
+python3 -m pokertool.modules.run_pokertool scrape
 ```
 
 ### Get Help
 
 ```bash
-python3 run_pokertool.py --help
+python3 -m pokertool.modules.run_pokertool --help
 ```
 
 ## Test Results
@@ -47,7 +47,7 @@ python3 run_pokertool.py --help
 
 ## Files Created
 
-1. **run_pokertool.py** - Simple launcher that skips problematic directories
+1. **pokertool.modules.run_pokertool** - Simple launcher that skips problematic directories
 2. **test_syntax.py** - Comprehensive syntax and functionality test
 3. **SYNTAX_FIX_REPORT.md** - Detailed report of all fixes
 4. **SUCCESS.md** - This file
@@ -77,8 +77,8 @@ None of these affect the core PokerTool functionality.
 
 ## Next Steps
 
-1. Run `python3 run_pokertool.py test` to verify everything works
-2. Run `python3 run_pokertool.py gui` to launch the poker assistant GUI
+1. Run `python3 -m pokertool.modules.run_pokertool test` to verify everything works
+2. Run `python3 -m pokertool.modules.run_pokertool gui` to launch the poker assistant GUI
 3. Use the application for poker hand analysis!
 
 ---

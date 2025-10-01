@@ -70,7 +70,7 @@ try:
     root_dir = Path(__file__).parent.parent.parent
     sys.path.insert(0, str(root_dir))
 
-    from poker_screen_scraper import (
+    from pokertool.modules.poker_screen_scraper import (
         PokerScreenScraper, 
         ScreenScraperBridge, 
         PokerSite, 

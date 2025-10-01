@@ -6,6 +6,7 @@ __pycache__/
 # Specific Python files to ignore
 __init__.py
 __main__.py
+!pokertool/modules/__init__.py
 
 # Distribution / build
 build/

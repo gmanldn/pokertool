@@ -4,6 +4,7 @@
 import sys
 import os
 import subprocess
+from pathlib import Path
 
 # Set NumExpr thread limit to prevent warning
 os.environ['NUMEXPR_MAX_THREADS'] = '8'
@@ -11,8 +12,13 @@ os.environ['NUMEXPR_MAX_THREADS'] = '8'
 # Set environment variable to skip syntax scan
 os.environ['START_NO_SCAN'] = '1'
 
-# Add current directory to path
-sys.path.insert(0, os.path.dirname(__file__))
+MODULE_DIR = Path(__file__).resolve().parent
+ROOT = MODULE_DIR.parent.parent
+
+for path in (MODULE_DIR, ROOT, ROOT / "src"):
+    path_str = str(path)
+    if path_str not in sys.path:
+        sys.path.insert(0, path_str)
 
 # CRITICAL: Install dependencies before importing anything else
 def ensure_critical_dependencies():

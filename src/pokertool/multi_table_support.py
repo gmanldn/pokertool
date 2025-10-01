@@ -62,7 +62,7 @@ from .error_handling import retry_on_failure
 from .hud_overlay import HUDOverlay
 # Import scraper functionality
 try:
-    from poker_screen_scraper import PokerScreenScraper as PokerScraper
+    from pokertool.modules.poker_screen_scraper import PokerScreenScraper as PokerScraper
 except ImportError:
     # Fallback if module not available
     class PokerScraper:

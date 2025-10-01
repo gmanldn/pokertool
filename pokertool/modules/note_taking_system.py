@@ -44,7 +44,7 @@ from pathlib import Path
 from collections import Counter
 
 try:
-    from logger import logger, log_exceptions
+    from pokertool.modules.logger import logger, log_exceptions
 except ImportError:
     class _FakeLogger:
         def info(self, *args, **kwargs): pass

@@ -12,7 +12,7 @@
 # POKERTOOL-HEADER-END
 __version__ = '20'
 
-import autoconfirm  # added by repo_fixer to disable prompts
+from pokertool.modules import autoconfirm  # added by repo_fixer to disable prompts
 """
 Card Template Generator for Poker Screen Scraper
 Generates template images for card recognition to improve accuracy.

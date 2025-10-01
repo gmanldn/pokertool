@@ -9,6 +9,7 @@ import sys
 _PKG_DIR = Path(__file__).resolve().parent
 _SRC_ROOT = _PKG_DIR.parent / 'src'
 _SRC_PACKAGE = _SRC_ROOT / __name__
+_MODULES_DIR = _PKG_DIR / 'modules'
 
 if _SRC_PACKAGE.exists():
     src_pkg_path = str(_SRC_PACKAGE)
@@ -20,3 +21,7 @@ if _SRC_PACKAGE.exists():
         # Ensure direct, relative imports keep working when executed from repo root
         sys.path.insert(0, src_root_path)
 
+if _MODULES_DIR.exists():
+    modules_path = str(_MODULES_DIR)
+    if modules_path not in sys.path:
+        sys.path.insert(0, modules_path)

@@ -102,7 +102,7 @@ class TestValidator:
     def _check_test_files(self) -> Dict[str, bool]:
         """Check which test files are present."""
         test_files = [
-            'poker_test.py', 
+            'tests/system/poker_test.py', 
             'enhanced_poker_test.py', 
             'additional_test_cases.py', 
             'performance_benchmark_tests.py', 
@@ -216,9 +216,10 @@ class TestValidator:
         results = []
 
         # Core unit tests
-        if Path('poker_test.py').exists():
+        poker_test = Path('tests/system/poker_test.py')
+        if poker_test.exists():
             result = self._run_command(
-                f"{sys.executable} poker_test.py",
+                f"{sys.executable} {poker_test}",
                 'Core Unit Tests',
                 timeout=120
             )

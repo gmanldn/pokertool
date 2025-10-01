@@ -43,7 +43,7 @@ from enum import Enum
 from pathlib import Path
 
 try:
-    from logger import logger, log_exceptions
+    from pokertool.modules.logger import logger, log_exceptions
 except ImportError:
     # Fallback for standalone usage
     class _FakeLogger:

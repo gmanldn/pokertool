@@ -10,7 +10,7 @@
 #   summary: Enhanced enterprise documentation and comprehensive unit tests added
 # ---
 # POKERTOOL-HEADER-END
-from logger import logger, log_exceptions
+from pokertool.modules.logger import logger, log_exceptions
 
 __version__ = '20'
 """

@@ -137,7 +137,7 @@ else:
 
 # Try to import your logger; if missing, still run with a stub printed by repair script.
 try:
-    from logger import logger, log_exceptions, setup_global_exception_handler
+    from pokertool.modules.logger import logger, log_exceptions, setup_global_exception_handler
 except Exception as e:
     print('[start.py] WARN: failed to import logger.py: ', e, file=sys.stderr)
     def _noop(*_a, **_k):

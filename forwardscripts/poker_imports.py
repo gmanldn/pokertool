@@ -32,7 +32,7 @@ class ImportValidator:
             'Card', 'Suit', 'Rank', 'Position', 'HandAnalysis', 
             'HandRanking', 'PokerCard'
         ], 
-        'poker_screen_scraper': ['PokerScreenScraper'], 
+        'pokertool.modules.poker_screen_scraper': ['PokerScreenScraper'], 
         'poker_init': ['initialise_db_if_needed'], 
     }
 

@@ -27,7 +27,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime, timedelta
 
-from note_taking_system import (
+from pokertool.modules.note_taking_system import (
     NoteTakingSystem,
     PlayerNote,
     NoteDatabase,

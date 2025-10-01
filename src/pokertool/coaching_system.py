@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from .core import HandAnalysisResult, analyse_hand, Card, Position, parse_card
 
 try:
-    from poker_screen_scraper import TableState
+    from pokertool.modules.poker_screen_scraper import TableState
 except ImportError:  # pragma: no cover - optional dependency during tests
     TableState = Any  # type: ignore
 

@@ -26,7 +26,7 @@ import tempfile
 import shutil
 from pathlib import Path
 
-from range_construction_tool import (
+from pokertool.modules.range_construction_tool import (
     RangeConstructionTool,
     HandRange,
     RangeGrid,

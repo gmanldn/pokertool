@@ -32,7 +32,7 @@ from typing import Dict, List
 import tempfile
 import shutil
 
-from hand_replay_system import (
+from pokertool.modules.hand_replay_system import (
     HandReplaySystem,
     ReplayFrame,
     ReplayAnimation,

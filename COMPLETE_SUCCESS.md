@@ -28,14 +28,14 @@ python3 test_syntax.py
 
 ### Launch the Application
 ```bash
-python3 run_pokertool.py test    # Test mode (verify everything works)
-python3 run_pokertool.py gui     # Launch GUI
-python3 run_pokertool.py scrape  # Run screen scraper
+python3 -m pokertool.modules.run_pokertool test    # Test mode (verify everything works)
+python3 -m pokertool.modules.run_pokertool gui     # Launch GUI
+python3 -m pokertool.modules.run_pokertool scrape  # Run screen scraper
 ```
 
 ### Get Help
 ```bash
-python3 run_pokertool.py --help
+python3 -m pokertool.modules.run_pokertool --help
 ```
 
 ---
@@ -164,19 +164,19 @@ print(f"Advice: {result.advice}")
 
 ### Launch GUI
 ```bash
-python3 run_pokertool.py gui
+python3 -m pokertool.modules.run_pokertool gui
 ```
 
 ### Run Tests
 ```bash
-python3 run_pokertool.py test
+python3 -m pokertool.modules.run_pokertool test
 ```
 
 ---
 
 ## 📁 Files Created
 
-1. **run_pokertool.py** - Simple launcher (skips problematic directories)
+1. **pokertool.modules.run_pokertool** - Simple launcher (skips problematic directories)
 2. **test_syntax.py** - Comprehensive syntax & functionality tests
 3. **SYNTAX_FIX_REPORT.md** - Detailed fix report
 4. **SUCCESS.md** - This quick start guide
@@ -187,12 +187,12 @@ python3 run_pokertool.py test
 
 1. **Verify Installation**
    ```bash
-   python3 run_pokertool.py test
+   python3 -m pokertool.modules.run_pokertool test
    ```
 
 2. **Try the GUI**
    ```bash
-   python3 run_pokertool.py gui
+   python3 -m pokertool.modules.run_pokertool gui
    ```
 
 3. **Analyze Some Hands**

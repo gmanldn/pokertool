@@ -55,5 +55,6 @@ else:
 "
 
 echo ""
-echo "You can now run: python start.py or python run_pokertool.py"
+echo "You can now run: python start.py or python -m pokertool.modules.run_pokertool"
+echo "Run tests with: python run_tests.py"
 exec "$SHELL"

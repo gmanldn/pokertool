@@ -62,22 +62,23 @@ This README consolidates the content from the previous **`README.md`** and **`RE
 /standalone/                # runtime files & one-click starters
 k8s/, scripts/, proto/, locales/      # infra and i18n
 start.py                    # tiny wrapper to launch the tool
-launch_pokertool.py         # main launcher (calls scanners, then GUI)
-poker_screen_scraper.py     # optional scraping utilities
-poker_tablediagram.py       # visual helpers
-poker_test.py, final_test_validation.py, test_* # tests
+run_tests.py                # convenience runner for pytest suites
+pokertool/modules/*         # standalone Python helpers (scraper, GUI upgrades, etc.)
+forwardscripts/launch_pokertool.py   # main launcher (calls scanners, then GUI)
+tests/system/               # legacy + integration tests
+tests/system/poker_test.py, final_test_validation.py, test_* # tests
 requirements*.txt           # Python deps
 pyproject.toml              # packaging / tooling
 ```
 
 ### Key Python entry points
 - `start.py` — small wrapper that delegates to the launcher.
-- `launch_pokertool.py` — orchestrates preflight checks then launches the GUI.
+- `forwardscripts/launch_pokertool.py` — orchestrates preflight checks then launches the GUI.
 - `tools/`:
   - `code_scan.py` *(if present)* — scans repo and optionally autofixes.
   - `poker_go.py` — convenience launcher that can run a quick scan first.
   - `verify_build.py`, `git_commit_*.py` — CI/local helpers.
-- `poker_screen_scraper.py` — optional live table capture.
+- `pokertool.modules.poker_screen_scraper` — optional live table capture.
 - `poker_imports.py` — centralised safe imports/paths.
 
 ---
@@ -99,11 +100,18 @@ pyproject.toml              # packaging / tooling
 
 3. **Run the launcher**
    ```bash
-   python3 launch_pokertool.py
-   # or
    python3 start.py
    # or, if you prefer the tools wrapper:
    python3 tools/poker_go.py
+   # or launch the lightweight runner directly:
+   python3 -m pokertool.modules.run_pokertool gui
+   ```
+
+4. **Run the test suite**
+   ```bash
+   python3 run_tests.py
+   # target specific tests:
+   python3 run_tests.py tests/system/test_hand_replay_system.py -k overlay
    ```
 
 On first run, the launcher will (if enabled) perform a **quick code scan** to detect common syntax/import issues and attempt safe automatic fixes before starting the GUI.
@@ -128,12 +136,12 @@ If you intend to capture live table state:
 
 1. Install scraper dependencies:
    ```bash
-   pip install -r requirements_scraper.txt
-   ```
+ pip install -r requirements_scraper.txt
+  ```
 2. Run the scraper setup:
-   ```bash
-   python3 poker_screen_scraper.py
-   ```
+  ```bash
+  python3 -m pokertool.modules.poker_screen_scraper
+  ```
 3. Configure regions, OCR, and mappings as instructed in the on-screen prompts.
 
 > Scraper support varies by environment and theme; treat it as **optional**.
@@ -142,7 +150,7 @@ If you intend to capture live table state:
 
 ## Command Line
 
-Most workflows are encapsulated in **`launch_pokertool.py`** and **`tools/poker_go.py`**.
+Most workflows are encapsulated in **`forwardscripts/launch_pokertool.py`** and **`tools/poker_go.py`**.
 
 Typical flags you may find useful:
 

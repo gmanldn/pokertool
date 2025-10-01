@@ -42,7 +42,7 @@ except ImportError as e:
     SCRAPER_DEPENDENCIES_AVAILABLE = False
 
 try:
-    from browser_tab_capture import (
+    from pokertool.modules.browser_tab_capture import (
         ChromeTabCapture,
         ChromeTabCaptureConfig,
         ChromeTabCaptureError,

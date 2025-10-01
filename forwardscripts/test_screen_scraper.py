@@ -27,7 +27,7 @@ import time
 
 # Import modules to test
 try:
-    from poker_screen_scraper import (
+    from pokertool.modules.poker_screen_scraper import (
         PokerScreenScraper, TableState, SeatInfo, CardRecognizer, 
         TextRecognizer, ButtonDetector, TableRegion, PokerSite, 
         ScreenScraperBridge, TableConfig
