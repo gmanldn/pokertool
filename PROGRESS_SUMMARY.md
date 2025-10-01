@@ -3,8 +3,8 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: PROGRESS_SUMMARY.md
-# version: v23.2.0
-# last_commit: '2025-09-30T16:00:00+01:00'
+# version: v28.1.0
+# last_commit: ''2025-10-01T17:00:00+01:00'
 # fixes:
 # - date: '2025-09-30'
 #   summary: Progress summary for 3 completed HIGH priority tasks
