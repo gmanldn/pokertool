@@ -33,7 +33,7 @@ __status__ = 'Production'
 
 import logging
 from typing import Dict, Any, Optional, List, Tuple, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from threading import Thread, Event
 import time
 import json
@@ -55,6 +55,8 @@ from .core import analyse_hand, parse_card, Position
 from .gto_solver import get_gto_solver, GameState, Range, create_standard_ranges
 from .ml_opponent_modeling import get_opponent_modeling_system
 from .storage import get_secure_db
+from .hud_profiles import list_hud_profiles, load_hud_profile, save_hud_profile
+from .hud_designer import HUDDesigner
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +77,35 @@ class HUDConfig:
     update_interval: float = 0.5
     theme: str = 'dark'  # 'dark' or 'light'
     font_size: int = 10
+    available_stats: List[str] = field(default_factory=lambda: [
+        'vpip', 'pfr', 'aggression', 'three_bet', 'fold_to_three_bet',
+        'cbet', 'fold_to_cbet', 'wt_sd', 'hands_played'
+    ])
+    enabled_stats: List[str] = field(default_factory=lambda: ['vpip', 'pfr', 'aggression'])
+    stat_color_conditions: Dict[str, List[Dict[str, Any]]] = field(default_factory=lambda: {
+        'vpip': [
+            {'operator': '>=', 'threshold': 40, 'color': '#f97316', 'label': 'Loose'},
+            {'operator': '<=', 'threshold': 15, 'color': '#22d3ee', 'label': 'Nit'}
+        ],
+        'aggression': [
+            {'operator': '>=', 'threshold': 3.0, 'color': '#ef4444', 'label': 'Aggressive'},
+            {'operator': '<', 'threshold': 1.0, 'color': '#facc15', 'label': 'Passive'}
+        ]
+    })
+    popup_stats: List[str] = field(default_factory=lambda: ['hands_played', 'cbet', 'fold_to_cbet'])
+    popup_enabled: bool = True
+    profile_name: str = 'Default'
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize configuration to a dictionary."""
+        data = asdict(self)
+        return data
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> 'HUDConfig':
+        """Create configuration from dictionary, applying defaults."""
+        kwargs = dict(config_dict or {})
+        return cls(**kwargs)
 
 @dataclass
 class PlayerHUDStats:
@@ -114,6 +145,10 @@ class HUDOverlay:
         # GUI elements
         self.widgets = {}
         self.style = None
+        self.profile_var = None
+        self.profile_combo = None
+        self._opponent_line_map: List[Tuple[int, str, Dict[str, Any]]] = []
+        self._popup_window = None
         
         # Callbacks for table updates
         self.state_callbacks: List[Callable] = []
@@ -181,6 +216,41 @@ class HUDOverlay:
         # Main frame
         main_frame = tk.Frame(self.root, bg=self.colors['bg'])
         main_frame.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Control bar for profiles and customization
+        control_frame = tk.Frame(main_frame, bg=self.colors['bg'])
+        control_frame.pack(fill='x', pady=(0, 4))
+
+        profile_options = list_hud_profiles()
+        if self.config.profile_name not in profile_options:
+            profile_options.append(self.config.profile_name)
+        profile_options = sorted(set(profile_options))
+
+        self.profile_var = tk.StringVar(value=self.config.profile_name)
+        profile_combo = ttk.Combobox(
+            control_frame,
+            textvariable=self.profile_var,
+            values=profile_options,
+            width=18,
+            state='readonly'
+        )
+        profile_combo.pack(side='left', padx=(0, 6))
+        profile_combo.bind('<<ComboboxSelected>>', self._on_profile_selected)
+        self.profile_combo = profile_combo
+
+        ttk.Button(
+            control_frame,
+            text='Customize HUD',
+            style='Hud.TButton',
+            command=self._open_designer
+        ).pack(side='left', padx=3)
+
+        ttk.Button(
+            control_frame,
+            text='Save Profile',
+            style='Hud.TButton',
+            command=self._save_current_profile
+        ).pack(side='left', padx=3)
         
         # Create font
         default_font = tkFont.Font(family="Consolas", size=self.config.font_size)
@@ -246,18 +316,36 @@ class HUDOverlay:
                                          fg=self.colors['fg'], font=default_font)
             opponent_frame.pack(fill='both', expand=True, pady=2)
             
-            # Scrollable text widget for opponent stats
-            self.widgets['opponent_stats'] = tk.Text(opponent_frame, height=4, 
-                                                   font=small_font, bg=self.colors['bg'], 
-                                                   fg=self.colors['fg'], wrap='word')
-            self.widgets['opponent_stats'].pack(fill='both', expand=True)
+            opponent_text = tk.Text(
+                opponent_frame,
+                height=6,
+                font=small_font,
+                bg=self.colors['bg'],
+                fg=self.colors['fg'],
+                wrap='word'
+            )
+            opponent_text.configure(state='disabled')
+            opponent_text.pack(fill='both', expand=True)
+            self.widgets['opponent_stats'] = opponent_text
+            if self.config.popup_enabled:
+                opponent_text.bind('<Double-Button-1>', self._handle_opponent_popup)
         
         # Status bar
         self.widgets['status'] = tk.Label(main_frame, text="Ready", 
                                         font=small_font, bg=self.colors['bg'], 
                                         fg=self.colors['fg'])
         self.widgets['status'].pack(side='bottom', fill='x')
-    
+
+    def _rebuild_widgets(self) -> None:
+        """Rebuild HUD widgets after configuration changes."""
+        for child in list(self.root.winfo_children()):
+            child.destroy()
+        self.widgets.clear()
+        self._opponent_line_map = []
+        self.profile_combo = None
+        self._configure_theme()
+        self._create_widgets()
+
     def start(self) -> bool:
         """Start the HUD overlay."""
         if not self.root:
@@ -467,32 +555,211 @@ class HUDOverlay:
     def _update_opponent_stats(self):
         """Update opponent statistics display."""
         try:
-            if 'opponent_stats' in self.widgets:
-                stats_text = ""
-                
-                # Get recent opponent data from ML system
-                for seat in range(1, 10):  # Up to 9 seats
-                    player_id = f"seat_{seat}"
-                    profile = self.ml_system.get_player_profile(player_id)
-                    
-                    if profile and profile.get('hands_observed', 0) > 10:
-                        name = profile.get('name', f'Player {seat}')
-                        vpip = profile.get('vpip', 0.0) * 100
-                        pfr = profile.get('pfr', 0.0) * 100
-                        aggression = profile.get('aggression_factor', 0.0)
-                        
-                        stats_text += f"{name}: VPIP:{vpip:.0f}% PFR:{pfr:.0f}% AGG:{aggression:.1f}\n"
-                
-                if not stats_text:
-                    stats_text = "No opponent data available yet.\nObserving table..."
-                
-                # Update text widget
-                self.widgets['opponent_stats'].delete('1.0', 'end')
-                self.widgets['opponent_stats'].insert('1.0', stats_text)
-                
+            if 'opponent_stats' not in self.widgets:
+                return
+
+            widget: tk.Text = self.widgets['opponent_stats']
+            widget.configure(state='normal')
+            widget.delete('1.0', 'end')
+            widget.tag_delete('stat_highlight')
+            self._opponent_line_map = []
+
+            line_index = 1
+            stats_found = False
+
+            for seat in range(1, 10):
+                player_id = f"seat_{seat}"
+                profile = self.ml_system.get_player_profile(player_id)
+
+                if not (profile and profile.get('hands_observed', 0) > 10):
+                    continue
+
+                stats_found = True
+                name = profile.get('name', f'Player {seat}')
+                widget.insert('end', f"{name}: ")
+
+                for stat_name in self.config.enabled_stats:
+                    value, suffix = self._extract_stat_value(profile, stat_name)
+                    if value is None:
+                        continue
+                    display_text = f"{stat_name.upper()}:{value}{suffix} "
+                    color, label = self._resolve_stat_color(stat_name, value)
+                    tag = f"stat_{line_index}_{stat_name}"
+                    if color:
+                        widget.tag_configure(tag, foreground=color)
+                        widget.insert('end', display_text, tag)
+                    else:
+                        widget.insert('end', display_text)
+                    if label:
+                        widget.insert('end', f"[{label}] ")
+
+                widget.insert('end', "\n")
+                self._opponent_line_map.append((line_index, player_id, profile))
+                line_index += 1
+
+            if not stats_found:
+                widget.insert('end', "No opponent data available yet.\nObserving table...")
+
+            widget.configure(state='disabled')
+
         except Exception as e:
             logger.debug(f"Opponent stats update failed: {e}")
-    
+
+    def _extract_stat_value(self, profile: Dict[str, Any], stat_name: str) -> Tuple[Optional[str], str]:
+        """Extract a formatted stat value and suffix for display."""
+        mapping = {
+            'vpip': ('vpip', 100, '%'),
+            'pfr': ('pfr', 100, '%'),
+            'aggression': ('aggression_factor', 1, ''),
+            'three_bet': ('three_bet', 100, '%'),
+            'fold_to_three_bet': ('fold_to_three_bet', 100, '%'),
+            'cbet': ('cbet', 100, '%'),
+            'fold_to_cbet': ('fold_to_cbet', 100, '%'),
+            'wt_sd': ('went_to_showdown', 100, '%'),
+            'hands_played': ('hands_observed', 1, ''),
+        }
+
+        attr, multiplier, suffix = mapping.get(stat_name, (stat_name, 1, ''))
+        raw_value = profile.get(attr)
+        if raw_value is None:
+            return None, ''
+
+        value = raw_value * multiplier if isinstance(raw_value, (int, float)) else raw_value
+
+        if isinstance(value, float):
+            if suffix == '%':
+                return f"{value:.0f}", suffix
+            return f"{value:.1f}", suffix
+        return str(value), suffix
+
+    def _resolve_stat_color(self, stat_name: str, value_str: str) -> Tuple[Optional[str], Optional[str]]:
+        """Determine stat color and label based on configured conditions."""
+        conditions = self.config.stat_color_conditions.get(stat_name, [])
+        try:
+            value = float(value_str)
+        except (TypeError, ValueError):
+            return None, None
+
+        for condition in conditions:
+            operator = condition.get('operator', '>=')
+            threshold = condition.get('threshold', 0)
+            color = condition.get('color')
+            label = condition.get('label')
+            if self._match_condition(value, operator, threshold):
+                return color, label
+        return None, None
+
+    @staticmethod
+    def _match_condition(value: float, operator: str, threshold: float) -> bool:
+        if operator == '>=':
+            return value >= threshold
+        if operator == '>':
+            return value > threshold
+        if operator == '<=':
+            return value <= threshold
+        if operator == '<':
+            return value < threshold
+        if operator == '==':
+            return value == threshold
+        return False
+
+    def _handle_opponent_popup(self, event):
+        if not self.config.popup_enabled:
+            return
+
+        widget: tk.Text = event.widget
+        index = widget.index(f"@{event.x},{event.y}")
+        line = int(index.split('.')[0])
+
+        for line_index, player_id, profile in self._opponent_line_map:
+            if line_index == line:
+                self._show_popup(profile)
+                break
+
+    def _show_popup(self, profile: Dict[str, Any]):
+        if self._popup_window and self._popup_window.winfo_exists():
+            self._popup_window.destroy()
+
+        self._popup_window = tk.Toplevel(self.root)
+        self._popup_window.title(profile.get('name', 'Player Details'))
+        self._popup_window.configure(bg=self.colors['bg'])
+        self._popup_window.geometry('260x200')
+
+        font = tkFont.Font(family="Consolas", size=self.config.font_size)
+
+        info_frame = tk.Frame(self._popup_window, bg=self.colors['bg'])
+        info_frame.pack(fill='both', expand=True, padx=8, pady=8)
+
+        for stat_name in self.config.popup_stats:
+            value, suffix = self._extract_stat_value(profile, stat_name)
+            if value is None:
+                continue
+            label = tk.Label(
+                info_frame,
+                text=f"{stat_name.upper()}: {value}{suffix}",
+                bg=self.colors['bg'],
+                fg=self.colors['fg'],
+                font=font,
+                anchor='w'
+            )
+            label.pack(fill='x')
+
+        notes = profile.get('notes') or []
+        if notes:
+            tk.Label(
+                info_frame,
+                text='Notes:',
+                bg=self.colors['bg'],
+                fg=self.colors['accent'],
+                font=font
+            ).pack(anchor='w', pady=(6, 0))
+            notes_box = tk.Text(info_frame, height=4, bg=self.colors['bg'], fg=self.colors['fg'], font=font)
+            notes_box.insert('1.0', '\n'.join(notes))
+            notes_box.configure(state='disabled')
+            notes_box.pack(fill='both', expand=True)
+
+        self._popup_window.transient(self.root)
+        self._popup_window.grab_set()
+
+    def _on_profile_selected(self, _event=None):
+        profile_name = self.profile_var.get().strip()
+        if not profile_name:
+            return
+        loaded = load_hud_profile(profile_name)
+        if not loaded:
+            logger.info(f"HUD profile '{profile_name}' not found, keeping current config")
+            return
+        merged = self.config.to_dict()
+        merged.update(loaded)
+        merged['profile_name'] = profile_name
+        self.config = HUDConfig.from_dict(merged)
+        self._rebuild_widgets()
+
+    def _open_designer(self):
+        designer = HUDDesigner(self.root, self.config)
+        updated = designer.show()
+        if updated:
+            self.config = updated
+            self.profile_var.set(self.config.profile_name)
+            if self.profile_combo:
+                existing = list(self.profile_combo['values'])
+                if self.config.profile_name not in existing:
+                    existing.append(self.config.profile_name)
+                existing = sorted(set(existing))
+                self.profile_combo['values'] = existing
+            self._rebuild_widgets()
+
+    def _save_current_profile(self):
+        profile_name = self.profile_var.get().strip() or self.config.profile_name
+        self.config.profile_name = profile_name
+        path = save_hud_profile(profile_name, self.config.to_dict())
+        if self.profile_combo:
+            existing = list(self.profile_combo['values'])
+            if profile_name not in existing:
+                existing.append(profile_name)
+                self.profile_combo['values'] = sorted(set(existing))
+        logger.info(f"Saved HUD profile '{profile_name}' to {path}")
+
     def update_game_state(self, state: Dict[str, Any]):
         """Update the current game state for HUD display."""
         self.current_state = state.copy()
@@ -532,26 +799,9 @@ class HUDOverlay:
         
         try:
             Path(filename).parent.mkdir(exist_ok=True)
-            
-            config_dict = {
-                'position': self.config.position,
-                'size': self.config.size,
-                'opacity': self.config.opacity,
-                'always_on_top': self.config.always_on_top,
-                'show_hole_cards': self.config.show_hole_cards,
-                'show_board_cards': self.config.show_board_cards,
-                'show_position': self.config.show_position,
-                'show_pot_odds': self.config.show_pot_odds,
-                'show_hand_strength': self.config.show_hand_strength,
-                'show_gto_advice': self.config.show_gto_advice,
-                'show_opponent_stats': self.config.show_opponent_stats,
-                'update_interval': self.config.update_interval,
-                'theme': self.config.theme,
-                'font_size': self.config.font_size
-            }
-            
+
             with open(filename, 'w') as f:
-                json.dump(config_dict, f, indent=2)
+                json.dump(self.config.to_dict(), f, indent=2)
             
             logger.info(f"HUD config saved to {filename}")
             return True
@@ -569,8 +819,8 @@ class HUDOverlay:
         try:
             with open(filename, 'r') as f:
                 config_dict = json.load(f)
-            
-            return HUDConfig(**config_dict)
+
+            return HUDConfig.from_dict(config_dict)
             
         except Exception as e:
             logger.warning(f"Failed to load HUD config: {e}, using defaults")
