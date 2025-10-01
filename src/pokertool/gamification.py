@@ -57,15 +57,19 @@ class GamificationEngine:
         self.achievements: Dict[str, Achievement] = {}
         self.badges: Dict[str, Badge] = {}
         self.progress: Dict[str, ProgressState] = {}
+        self._state_file = self.storage_dir / 'gamification.json'
+        self._load_state()
 
     # ------------------------------------------------------------------
     # Content registration
     # ------------------------------------------------------------------
     def register_achievement(self, achievement: Achievement) -> None:
         self.achievements[achievement.achievement_id] = achievement
+        self._persist_state()
 
     def register_badge(self, badge: Badge) -> None:
         self.badges[badge.badge_id] = badge
+        self._persist_state()
 
     # ------------------------------------------------------------------
     # Progress updates
@@ -76,6 +80,7 @@ class GamificationEngine:
         new_level = max(state.level, state.experience // self.LEVEL_XP + 1)
         if new_level > state.level:
             state.level = new_level
+        self._persist_state()
         return state
 
     def record_activity(self, player_id: str, activity_metrics: Dict[str, int]) -> ProgressState:
@@ -96,6 +101,7 @@ class GamificationEngine:
             if all(activity_metrics.get(metric, 0) >= threshold for metric, threshold in achievement.condition.items()):
                 state.achievements_unlocked.append(achievement.achievement_id)
                 self.add_experience(player_id, achievement.points)
+        self._persist_state()
         return state
 
     def award_badge(self, player_id: str, badge_id: str) -> None:
@@ -104,6 +110,7 @@ class GamificationEngine:
         state = self.progress.setdefault(player_id, ProgressState(player_id=player_id))
         if badge_id not in state.badges_earned:
             state.badges_earned.append(badge_id)
+            self._persist_state()
 
     # ------------------------------------------------------------------
     # Reporting
@@ -126,6 +133,33 @@ class GamificationEngine:
         }
         path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
         return path
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+    def _load_state(self) -> None:
+        if not self._state_file.exists():
+            return
+        try:
+            data = json.loads(self._state_file.read_text(encoding='utf-8'))
+        except json.JSONDecodeError:
+            return
+        for achievement in data.get('achievements', []):
+            self.achievements[achievement['achievement_id']] = Achievement(**achievement)
+        for badge in data.get('badges', []):
+            self.badges[badge['badge_id']] = Badge(**badge)
+        for state in data.get('progress', []):
+            self.progress[state['player_id']] = ProgressState(**state)
+
+    def _persist_state(self) -> None:
+        payload = {
+            'achievements': [achievement.__dict__ for achievement in self.achievements.values()],
+            'badges': [badge.__dict__ for badge in self.badges.values()],
+            'progress': [state.__dict__ for state in self.progress.values()],
+        }
+        tmp = self._state_file.with_suffix('.tmp')
+        tmp.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding='utf-8')
+        tmp.replace(self._state_file)
 
 
 __all__ = [

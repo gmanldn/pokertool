@@ -110,6 +110,9 @@ from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
 from .threading import get_thread_pool, TaskPriority, get_poker_concurrency_manager
 from .error_handling import SecurityError, retry_on_failure
 from .hud_overlay import start_hud_overlay, stop_hud_overlay, update_hud_state, is_hud_running
+from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
+from .gamification import GamificationEngine, Achievement, Badge, ProgressState
+from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +196,35 @@ if FASTAPI_AVAILABLE:
         total_hands: int
         unique_users: int
         recent_activity: Dict[str, Any] = Field(default_factory=dict)
+
+    class AnalyticsEventRequest(BaseModel):
+        event_id: str
+        action: str
+        user_id: Optional[str] = None
+        metadata: Dict[str, str] = Field(default_factory=dict)
+
+    class AnalyticsSessionRequest(BaseModel):
+        user_id: Optional[str] = None
+        minutes: float = Field(..., ge=0)
+
+    class GamificationActivityRequest(BaseModel):
+        player_id: str
+        metrics: Dict[str, int] = Field(default_factory=dict)
+
+    class GamificationBadgeRequest(BaseModel):
+        player_id: str
+        badge_id: str
+
+    class CommunityPostRequest(BaseModel):
+        title: str
+        content: str
+        tags: List[str] = Field(default_factory=list)
+
+    class CommunityReplyRequest(BaseModel):
+        message: str
+
+    class ChallengeParticipationRequest(BaseModel):
+        challenge_id: str
 
 else:
     # Fallback classes when FastAPI is not available
@@ -444,7 +476,10 @@ class APIServices:
         self.connection_manager = ConnectionManager()
         self.db = get_production_db()
         self.thread_pool = get_thread_pool()
-        
+        self.analytics_dashboard = AnalyticsDashboard()
+        self.gamification_engine = GamificationEngine()
+        self.community_platform = CommunityPlatform()
+
         # Setup rate limiter with fallback
         try:
             self.limiter = Limiter(key_func=get_remote_address, storage_url=RATE_LIMIT_STORAGE_URL)
@@ -454,6 +489,33 @@ class APIServices:
         # Cache for frequently accessed data
         self._user_cache = {}
         self._cache_ttl = 300  # 5 minutes
+
+        # Seed default gamification content if missing
+        if 'volume_grinder' not in self.gamification_engine.achievements:
+            self.gamification_engine.register_achievement(Achievement(
+                achievement_id='volume_grinder',
+                title='Volume Grinder',
+                description='Play 100 hands in a day',
+                points=200,
+                condition={'hands_played': 100}
+            ))
+        if 'marathon' not in self.gamification_engine.badges:
+            self.gamification_engine.register_badge(Badge(
+                badge_id='marathon',
+                title='Marathon',
+                description='Maintain a seven day activity streak',
+                tier='gold'
+            ))
+
+        # Seed a default community post if empty
+        if not self.community_platform.posts:
+            self.community_platform.create_post(ForumPost(
+                post_id='welcome',
+                author='coach',
+                title='Welcome to the PokerTool community',
+                content='Introduce yourself and share what you are working on this week.',
+                tags=['announcement']
+            ))
 
     def get_cached_user(self, token: str) -> Optional[APIUser]:
         """Get user with caching to reduce database lookups."""
@@ -697,6 +759,116 @@ class PokerToolAPI:
                 unique_users=stats.get('activity', {}).get('unique_users', 0),
                 recent_activity=stats.get('activity', {})
             )
+
+        # Analytics endpoints
+        @self.app.post('/analytics/events')
+        async def record_analytics_event(event: AnalyticsEventRequest, user: APIUser = Depends(get_current_user)):
+            event_user = event.user_id or user.user_id
+            usage_event = UsageEvent(
+                event_id=event.event_id,
+                user_id=event_user,
+                action=event.action,
+                metadata=event.metadata,
+            )
+            self.services.analytics_dashboard.track_event(usage_event)
+            return {'status': 'recorded', 'event_id': usage_event.event_id}
+
+        @self.app.post('/analytics/sessions')
+        async def record_session(session: AnalyticsSessionRequest, user: APIUser = Depends(get_current_user)):
+            session_user = session.user_id or user.user_id
+            self.services.analytics_dashboard.track_session(session_user, session.minutes)
+            return {'status': 'recorded', 'user_id': session_user}
+
+        @self.app.get('/analytics/metrics')
+        async def analytics_metrics(user: APIUser = Depends(get_current_user)):
+            metrics = self.services.analytics_dashboard.generate_metrics()
+            return {
+                'total_events': metrics.total_events,
+                'active_users': metrics.active_users,
+                'actions_per_user': metrics.actions_per_user,
+                'most_common_actions': metrics.most_common_actions,
+                'avg_session_length_minutes': metrics.avg_session_length_minutes,
+            }
+
+        # Gamification endpoints
+        @self.app.post('/gamification/activity')
+        async def gamification_activity(activity: GamificationActivityRequest, user: APIUser = Depends(get_current_user)):
+            state = self.services.gamification_engine.record_activity(activity.player_id, activity.metrics)
+            return {
+                'player_id': state.player_id,
+                'experience': state.experience,
+                'level': state.level,
+                'achievements': state.achievements_unlocked,
+                'badges': state.badges_earned,
+            }
+
+        @self.app.post('/gamification/badges')
+        async def gamification_badge(request: GamificationBadgeRequest, admin_user: APIUser = Depends(get_admin_user)):
+            self.services.gamification_engine.award_badge(request.player_id, request.badge_id)
+            state = self.services.gamification_engine.progress_snapshot(request.player_id)
+            return {
+                'player_id': request.player_id,
+                'badges': state.badges_earned if state else [],
+            }
+
+        @self.app.get('/gamification/progress/{player_id}')
+        async def gamification_progress(player_id: str, user: APIUser = Depends(get_current_user)):
+            state = self.services.gamification_engine.progress.get(player_id)
+            if not state:
+                state = self.services.gamification_engine.progress.setdefault(player_id, ProgressState(player_id=player_id))
+            return state.__dict__
+
+        @self.app.get('/gamification/leaderboard')
+        async def gamification_leaderboard(limit: int = 10, user: APIUser = Depends(get_current_user)):
+            leaderboard = self.services.gamification_engine.leaderboard(top_n=min(limit, 50))
+            return {
+                'leaderboard': [state.__dict__ for state in leaderboard]
+            }
+
+        # Community endpoints
+        @self.app.get('/community/posts')
+        async def list_posts(user: APIUser = Depends(get_current_user)):
+            return {'posts': [self.services.community_platform._serialize_post(post) for post in self.services.community_platform.posts.values()]}
+
+        @self.app.post('/community/posts')
+        async def create_post(request, post: CommunityPostRequest, user: APIUser = Depends(get_current_user)):
+            post_id = f'post_{int(time.time()*1000)}'
+            forum_post = ForumPost(
+                post_id=post_id,
+                author=user.username,
+                title=post.title,
+                content=post.content,
+                tags=post.tags,
+            )
+            self.services.community_platform.create_post(forum_post)
+            return {'post_id': post_id}
+
+        @self.app.post('/community/posts/{post_id}/reply')
+        async def reply_post(post_id: str, reply: CommunityReplyRequest, user: APIUser = Depends(get_current_user)):
+            self.services.community_platform.reply_to_post(post_id, user.username, reply.message)
+            return {'status': 'ok'}
+
+        @self.app.get('/community/challenges')
+        async def list_challenges(user: APIUser = Depends(get_current_user)):
+            return {'challenges': [challenge.__dict__ for challenge in self.services.community_platform.challenges.values()]}
+
+        @self.app.post('/community/challenges')
+        async def join_challenge(request, payload: ChallengeParticipationRequest, user: APIUser = Depends(get_current_user)):
+            self.services.community_platform.join_challenge(payload.challenge_id, user.user_id)
+            return {'status': 'joined', 'challenge_id': payload.challenge_id}
+
+        @self.app.get('/community/mentorships')
+        async def list_mentorships(user: APIUser = Depends(get_current_user)):
+            return {'mentorships': [pair.__dict__ for pair in self.services.community_platform.mentorships]}
+
+        @self.app.get('/community/tournaments')
+        async def list_tournaments(user: APIUser = Depends(get_current_user)):
+            return {'tournaments': [tournament.__dict__ for tournament in self.services.community_platform.tournaments.values()]}
+
+        @self.app.get('/community/articles')
+        async def list_articles(category: Optional[str] = None, user: APIUser = Depends(get_current_user)):
+            articles = self.services.community_platform.list_articles(category)
+            return {'articles': [article.__dict__ for article in articles]}
 
         # Admin endpoints
         @self.app.get('/admin/users')

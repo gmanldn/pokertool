@@ -52,6 +52,8 @@ class AnalyticsDashboard:
         self.privacy = privacy or PrivacySettings()
         self.events: List[UsageEvent] = []
         self.session_lengths: Dict[str, List[float]] = {}
+        self._data_file = self.storage_dir / 'analytics_data.json'
+        self._load_history()
 
     # ------------------------------------------------------------------
     # Event capture
@@ -62,10 +64,12 @@ class AnalyticsDashboard:
         if self.privacy.anonymize_user_ids:
             event.user_id = self._anonymize(event.user_id)
         self.events.append(event)
+        self._persist()
 
     def track_session(self, user_id: str, session_minutes: float) -> None:
         user_id = self._anonymize(user_id) if self.privacy.anonymize_user_ids else user_id
         self.session_lengths.setdefault(user_id, []).append(session_minutes)
+        self._persist()
 
     # ------------------------------------------------------------------
     # Reporting
@@ -115,6 +119,30 @@ class AnalyticsDashboard:
     @staticmethod
     def _anonymize(user_id: str) -> str:
         return f"user_{abs(hash(user_id)) % 10_000}"
+
+    # ------------------------------------------------------------------
+    # Persistence helpers
+    # ------------------------------------------------------------------
+    def _load_history(self) -> None:
+        if not self._data_file.exists():
+            return
+        try:
+            raw = json.loads(self._data_file.read_text(encoding='utf-8'))
+        except json.JSONDecodeError:
+            return
+        events = raw.get('events', [])
+        sessions = raw.get('sessions', {})
+        self.events = [UsageEvent(**event) for event in events]
+        self.session_lengths = {user: list(lengths) for user, lengths in sessions.items()}
+
+    def _persist(self) -> None:
+        payload = {
+            'events': [event.__dict__ for event in self.events],
+            'sessions': self.session_lengths,
+        }
+        tmp = self._data_file.with_suffix('.tmp')
+        tmp.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding='utf-8')
+        tmp.replace(self._data_file)
 
 
 __all__ = [

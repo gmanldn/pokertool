@@ -119,6 +119,9 @@ try:
     from .error_handling import sanitize_input, run_safely
     from .storage import get_secure_db
     from .coaching_system import CoachingSystem
+    from .analytics_dashboard import AnalyticsDashboard, PrivacySettings, UsageEvent
+    from .gamification import GamificationEngine, Achievement, Badge, ProgressState
+    from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle, MentorshipPair
     GUI_MODULES_LOADED = True
 except ImportError as e:
     print(f'Warning: GUI modules not fully loaded: {e}')
@@ -173,6 +176,9 @@ class IntegratedPokerAssistant(tk.Tk):
         self.opponent_modeler = None
         self.multi_table_manager = None
         self.coaching_system = None
+        self.analytics_dashboard = None
+        self.gamification_engine = None
+        self.community_platform = None
         self._enhanced_scraper_started = False
         self._screen_update_running = False
         self._screen_update_thread = None
@@ -219,7 +225,70 @@ class IntegratedPokerAssistant(tk.Tk):
                 print("Coaching system ready")
             except Exception as coaching_error:
                 print(f"Coaching system initialization error: {coaching_error}")
-        
+
+            try:
+                self.analytics_dashboard = AnalyticsDashboard()
+                print("Analytics dashboard loaded")
+            except Exception as analytics_error:
+                print(f"Analytics dashboard initialization error: {analytics_error}")
+
+            try:
+                self.gamification_engine = GamificationEngine()
+                if 'volume_grinder' not in self.gamification_engine.achievements:
+                    self.gamification_engine.register_achievement(Achievement(
+                        achievement_id='volume_grinder',
+                        title='Volume Grinder',
+                        description='Play 100 hands in a day',
+                        points=200,
+                        condition={'hands_played': 100}
+                    ))
+                if 'marathon' not in self.gamification_engine.badges:
+                    self.gamification_engine.register_badge(Badge(
+                        badge_id='marathon',
+                        title='Marathon',
+                        description='Maintain a 7-day streak of activity',
+                        tier='gold'
+                    ))
+                print("Gamification engine ready")
+            except Exception as gamification_error:
+                print(f"Gamification engine initialization error: {gamification_error}")
+
+            try:
+                self.community_platform = CommunityPlatform()
+                if not self.community_platform.posts:
+                    self.community_platform.create_post(ForumPost(
+                        post_id='welcome',
+                        author='coach',
+                        title='Welcome to the community',
+                        content='Share your goals and get feedback from other players.',
+                        tags=['announcement']
+                    ))
+                if not self.community_platform.challenges:
+                    self.community_platform.create_challenge(Challenge(
+                        challenge_id='daily_focus',
+                        title='Daily Focus Session',
+                        description='Play a focused 30-minute session and post a takeaway.',
+                        reward_points=150
+                    ))
+                if not self.community_platform.tournaments:
+                    self.community_platform.schedule_tournament(CommunityTournament(
+                        tournament_id='community_cup',
+                        name='Community Cup',
+                        start_time=time.time() + 86400,
+                        format='freeroll'
+                    ))
+                if not self.community_platform.articles:
+                    self.community_platform.add_article(KnowledgeArticle(
+                        article_id='icm_basics',
+                        title='ICM Basics',
+                        author='mentor',
+                        content='Understanding short-stack decisions on the bubble.',
+                        categories=['icm', 'strategy']
+                    ))
+                print("Community platform ready")
+            except Exception as community_error:
+                print(f"Community platform initialization error: {community_error}")
+
         except Exception as e:
             print(f"Module initialization error: {e}")
     
@@ -353,6 +422,21 @@ class IntegratedPokerAssistant(tk.Tk):
         self.notebook.add(settings_frame, text=translate('tab.settings'))
         self._register_tab_title(settings_frame, 'tab.settings')
         self._build_settings_tab(settings_frame)
+
+        # Analytics tab
+        analytics_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
+        self.notebook.add(analytics_frame, text='Analytics')
+        self._build_analytics_tab(analytics_frame)
+
+        # Gamification tab
+        gamification_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
+        self.notebook.add(gamification_frame, text='Gamification')
+        self._build_gamification_tab(gamification_frame)
+
+        # Community tab
+        community_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
+        self.notebook.add(community_frame, text='Community')
+        self._build_community_tab(community_frame)
         
         # Make autopilot tab active by default
         self.notebook.select(autopilot_frame)
@@ -607,6 +691,322 @@ class IntegratedPokerAssistant(tk.Tk):
     def _build_coaching_tab(self, parent):
         """Build the coaching integration tab."""
         self.coaching_section = CoachingSection(self, parent)
+
+    def _build_analytics_tab(self, parent):
+        """Render analytics dashboard data."""
+        if not self.analytics_dashboard:
+            tk.Label(parent, text='Analytics dashboard unavailable', bg=COLORS['bg_dark'], fg=COLORS['text_primary'], font=FONTS['title']).pack(pady=20)
+            return
+
+        summary_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
+        summary_frame.pack(fill='x', pady=20, padx=20)
+
+        self.analytics_total_var = tk.StringVar(value='0')
+        self.analytics_users_var = tk.StringVar(value='0')
+        self.analytics_session_var = tk.StringVar(value='0.0')
+
+        def build_metric(label_text: str, variable: tk.StringVar):
+            wrapper = tk.Frame(summary_frame, bg=COLORS['bg_medium'], bd=2, relief=tk.RIDGE)
+            wrapper.pack(side='left', expand=True, fill='both', padx=10)
+            tk.Label(wrapper, text=label_text, font=FONTS['heading'], bg=COLORS['bg_medium'], fg=COLORS['accent_primary']).pack(pady=(10, 4))
+            tk.Label(wrapper, textvariable=variable, font=FONTS['title'], bg=COLORS['bg_medium'], fg=COLORS['text_primary']).pack(pady=(0, 10))
+
+        build_metric('Total Events', self.analytics_total_var)
+        build_metric('Active Users', self.analytics_users_var)
+        build_metric('Avg Session (min)', self.analytics_session_var)
+
+        controls = tk.Frame(parent, bg=COLORS['bg_dark'])
+        controls.pack(fill='x', padx=20)
+
+        ttk.Button(controls, text='Refresh Metrics', command=self._refresh_analytics_metrics).pack(side='left', padx=5)
+        ttk.Button(controls, text='Track Sample Event', command=self._record_sample_event).pack(side='left', padx=5)
+        ttk.Button(controls, text='Log 30 min Session', command=self._record_sample_session).pack(side='left', padx=5)
+
+        display_frame = tk.LabelFrame(parent, text='Analytics Details', bg=COLORS['bg_dark'], fg=COLORS['text_primary'], padx=10, pady=10)
+        display_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        self.analytics_metrics_text = tk.Text(display_frame, height=16, bg=COLORS['bg_light'], fg=COLORS['text_primary'], wrap='word')
+        self.analytics_metrics_text.pack(fill='both', expand=True)
+        self.analytics_metrics_text.configure(state='disabled')
+
+        self._refresh_analytics_metrics()
+
+    def _record_sample_event(self):
+        if not self.analytics_dashboard:
+            return
+        event = UsageEvent(
+            event_id=f'gui_{int(time.time()*1000)}',
+            user_id='gui-user',
+            action='gui_interaction',
+            metadata={'source': 'gui'},
+        )
+        self.analytics_dashboard.track_event(event)
+        self._refresh_analytics_metrics()
+
+    def _record_sample_session(self):
+        if not self.analytics_dashboard:
+            return
+        self.analytics_dashboard.track_session('gui-user', 30.0)
+        self._refresh_analytics_metrics()
+
+    def _refresh_analytics_metrics(self):
+        if not self.analytics_dashboard:
+            return
+        metrics = self.analytics_dashboard.generate_metrics()
+        self.analytics_total_var.set(str(metrics.total_events))
+        self.analytics_users_var.set(str(metrics.active_users))
+        self.analytics_session_var.set(f"{metrics.avg_session_length_minutes:.2f}")
+
+        self.analytics_metrics_text.configure(state='normal')
+        self.analytics_metrics_text.delete('1.0', tk.END)
+        summary_lines = [
+            f"Most common actions: {', '.join(metrics.most_common_actions) or 'N/A'}",
+            "",
+            "Actions per user:",
+        ]
+        for user_id, count in metrics.actions_per_user.items():
+            summary_lines.append(f" - {user_id}: {count} events")
+        self.analytics_metrics_text.insert(tk.END, '\n'.join(summary_lines))
+        self.analytics_metrics_text.configure(state='disabled')
+
+    def _ensure_gamification_state(self, player_id: str) -> ProgressState:
+        if not self.gamification_engine:
+            raise RuntimeError('Gamification engine is not available')
+        state = self.gamification_engine.progress.get(player_id)
+        if not state:
+            self.gamification_engine.progress[player_id] = ProgressState(player_id=player_id)
+            state = self.gamification_engine.progress[player_id]
+            self.gamification_engine.export_state()
+        return state
+
+    def _build_gamification_tab(self, parent):
+        if not self.gamification_engine:
+            tk.Label(parent, text='Gamification engine unavailable', bg=COLORS['bg_dark'], fg=COLORS['text_primary'], font=FONTS['title']).pack(pady=20)
+            return
+
+        state = self._ensure_gamification_state('hero')
+
+        summary_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
+        summary_frame.pack(fill='x', padx=20, pady=20)
+
+        self.gamification_level_var = tk.StringVar()
+        self.gamification_xp_var = tk.StringVar()
+        self.gamification_streak_var = tk.StringVar()
+
+        def metric_block(label, variable):
+            block = tk.Frame(summary_frame, bg=COLORS['bg_medium'], bd=2, relief=tk.RIDGE)
+            block.pack(side='left', expand=True, fill='both', padx=10)
+            tk.Label(block, text=label, font=FONTS['heading'], bg=COLORS['bg_medium'], fg=COLORS['accent_success']).pack(pady=(10, 4))
+            tk.Label(block, textvariable=variable, font=FONTS['title'], bg=COLORS['bg_medium'], fg=COLORS['text_primary']).pack(pady=(0, 10))
+
+        metric_block('Level', self.gamification_level_var)
+        metric_block('Experience', self.gamification_xp_var)
+        metric_block('Streak (days)', self.gamification_streak_var)
+
+        controls = tk.Frame(parent, bg=COLORS['bg_dark'])
+        controls.pack(fill='x', padx=20)
+
+        ttk.Button(controls, text='Log 50 hands', command=lambda: self._log_gamification_activity(heroes_hands=50)).pack(side='left', padx=5)
+        ttk.Button(controls, text='Log coaching session', command=lambda: self._log_gamification_activity(coaching_minutes=30)).pack(side='left', padx=5)
+        ttk.Button(controls, text='Award Marathon Badge', command=self._award_marathon_badge).pack(side='left', padx=5)
+
+        progress_frame = tk.LabelFrame(parent, text='Hero Progress', bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
+        progress_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        self.gamification_progress_text = tk.Text(progress_frame, height=12, bg=COLORS['bg_light'], fg=COLORS['text_primary'], wrap='word')
+        self.gamification_progress_text.pack(fill='both', expand=True)
+        self.gamification_progress_text.configure(state='disabled')
+
+        leaderboard_frame = tk.LabelFrame(parent, text='Leaderboard', bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
+        leaderboard_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
+
+        self.leaderboard_text = tk.Text(leaderboard_frame, height=8, bg=COLORS['bg_light'], fg=COLORS['text_primary'])
+        self.leaderboard_text.pack(fill='both', expand=True)
+        self.leaderboard_text.configure(state='disabled')
+
+        self._refresh_gamification_view()
+
+    def _log_gamification_activity(self, heroes_hands: int = 0, coaching_minutes: int = 0):
+        if not self.gamification_engine:
+            return
+        metrics = {}
+        if heroes_hands:
+            metrics['hands_played'] = heroes_hands
+        if coaching_minutes:
+            metrics['learning_minutes'] = coaching_minutes
+        self.gamification_engine.record_activity('hero', metrics)
+        self._refresh_gamification_view()
+
+    def _award_marathon_badge(self):
+        if not self.gamification_engine:
+            return
+        try:
+            self.gamification_engine.award_badge('hero', 'marathon')
+        except KeyError:
+            pass
+        self._refresh_gamification_view()
+
+    def _refresh_gamification_view(self):
+        if not self.gamification_engine:
+            return
+        state = self._ensure_gamification_state('hero')
+        self.gamification_level_var.set(str(state.level))
+        self.gamification_xp_var.set(str(state.experience))
+        self.gamification_streak_var.set(str(state.streak_days))
+
+        self.gamification_progress_text.configure(state='normal')
+        self.gamification_progress_text.delete('1.0', tk.END)
+        self.gamification_progress_text.insert(tk.END, 'Achievements:\n')
+        for achievement in state.achievements_unlocked or ['None yet']:
+            self.gamification_progress_text.insert(tk.END, f" - {achievement}\n")
+        self.gamification_progress_text.insert(tk.END, '\nBadges:\n')
+        for badge in state.badges_earned or ['None yet']:
+            self.gamification_progress_text.insert(tk.END, f" - {badge}\n")
+        self.gamification_progress_text.configure(state='disabled')
+
+        leaderboard = self.gamification_engine.leaderboard()
+        self.leaderboard_text.configure(state='normal')
+        self.leaderboard_text.delete('1.0', tk.END)
+        for idx, entry in enumerate(leaderboard, start=1):
+            self.leaderboard_text.insert(tk.END, f"{idx}. {entry.player_id} - XP: {entry.experience} (Lvl {entry.level})\n")
+        if not leaderboard:
+            self.leaderboard_text.insert(tk.END, 'No players yet.')
+        self.leaderboard_text.configure(state='disabled')
+
+    def _build_community_tab(self, parent):
+        if not self.community_platform:
+            tk.Label(parent, text='Community platform unavailable', bg=COLORS['bg_dark'], fg=COLORS['text_primary'], font=FONTS['title']).pack(pady=20)
+            return
+
+        layout = tk.Frame(parent, bg=COLORS['bg_dark'])
+        layout.pack(fill='both', expand=True, padx=20, pady=20)
+
+        # Posts column
+        posts_frame = tk.LabelFrame(layout, text='Forum Posts', bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
+        posts_frame.pack(side='left', fill='both', expand=True, padx=10)
+
+        self.community_posts_list = tk.Listbox(posts_frame, height=12, bg=COLORS['bg_light'], fg=COLORS['text_primary'])
+        self.community_posts_list.pack(fill='both', expand=True, padx=10, pady=10)
+
+        post_controls = tk.Frame(posts_frame, bg=COLORS['bg_dark'])
+        post_controls.pack(fill='x', padx=10, pady=(0, 10))
+
+        tk.Label(post_controls, text='Title', bg=COLORS['bg_dark'], fg=COLORS['text_primary']).grid(row=0, column=0, sticky='w')
+        self.community_post_title = tk.Entry(post_controls)
+        self.community_post_title.grid(row=0, column=1, sticky='ew', padx=5)
+
+        tk.Label(post_controls, text='Content', bg=COLORS['bg_dark'], fg=COLORS['text_primary']).grid(row=1, column=0, sticky='nw')
+        self.community_post_content = tk.Text(post_controls, height=4, width=30)
+        self.community_post_content.grid(row=1, column=1, sticky='ew', padx=5)
+
+        tk.Label(post_controls, text='Tags (comma separated)', bg=COLORS['bg_dark'], fg=COLORS['text_primary']).grid(row=2, column=0, sticky='w')
+        self.community_post_tags = tk.Entry(post_controls)
+        self.community_post_tags.grid(row=2, column=1, sticky='ew', padx=5, pady=(0, 5))
+
+        post_controls.columnconfigure(1, weight=1)
+
+        ttk.Button(post_controls, text='Create Post', command=self._create_community_post).grid(row=3, column=0, columnspan=2, pady=5, sticky='ew')
+
+        reply_frame = tk.Frame(posts_frame, bg=COLORS['bg_dark'])
+        reply_frame.pack(fill='x', padx=10, pady=(0, 10))
+        tk.Label(reply_frame, text='Reply', bg=COLORS['bg_dark'], fg=COLORS['text_primary']).pack(anchor='w')
+        self.community_reply_entry = tk.Entry(reply_frame)
+        self.community_reply_entry.pack(fill='x', pady=5)
+        ttk.Button(reply_frame, text='Reply to Selected Post', command=self._reply_to_selected_post).pack(fill='x')
+
+        # Challenges and tournaments column
+        community_right = tk.Frame(layout, bg=COLORS['bg_dark'])
+        community_right.pack(side='left', fill='both', expand=True, padx=10)
+
+        challenges_frame = tk.LabelFrame(community_right, text='Challenges', bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
+        challenges_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+        self.community_challenges_list = tk.Listbox(challenges_frame, height=6, bg=COLORS['bg_light'], fg=COLORS['text_primary'])
+        self.community_challenges_list.pack(fill='both', expand=True, padx=10, pady=10)
+        ttk.Button(challenges_frame, text='Join Selected Challenge', command=self._join_selected_challenge).pack(fill='x', padx=10, pady=(0, 10))
+
+        tournaments_frame = tk.LabelFrame(community_right, text='Community Tournaments', bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
+        tournaments_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+        self.community_tournaments_list = tk.Listbox(tournaments_frame, height=6, bg=COLORS['bg_light'], fg=COLORS['text_primary'])
+        self.community_tournaments_list.pack(fill='both', expand=True, padx=10, pady=10)
+
+        articles_frame = tk.LabelFrame(community_right, text='Knowledge Articles', bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
+        articles_frame.pack(fill='both', expand=True, padx=10)
+        self.community_articles_list = tk.Listbox(articles_frame, height=6, bg=COLORS['bg_light'], fg=COLORS['text_primary'])
+        self.community_articles_list.pack(fill='both', expand=True, padx=10, pady=10)
+
+        self._refresh_community_views()
+
+    def _create_community_post(self):
+        if not self.community_platform:
+            return
+        title = self.community_post_title.get().strip()
+        content = self.community_post_content.get('1.0', tk.END).strip()
+        tags = [tag.strip() for tag in self.community_post_tags.get().split(',') if tag.strip()]
+        if not title or not content:
+            messagebox.showwarning('Community', 'Title and content are required.')
+            return
+        post_id = f"gui_{int(time.time()*1000)}"
+        self.community_platform.create_post(ForumPost(
+            post_id=post_id,
+            author='hero',
+            title=title,
+            content=content,
+            tags=tags
+        ))
+        self.community_post_title.delete(0, tk.END)
+        self.community_post_content.delete('1.0', tk.END)
+        self.community_post_tags.delete(0, tk.END)
+        self._refresh_community_views()
+
+    def _reply_to_selected_post(self):
+        if not self.community_platform:
+            return
+        selection = self.community_posts_list.curselection()
+        if not selection:
+            messagebox.showinfo('Community', 'Select a post to reply to.')
+            return
+        post_id = self.community_posts_list.get(selection[0]).split(' - ')[0]
+        message = self.community_reply_entry.get().strip()
+        if not message:
+            messagebox.showinfo('Community', 'Enter a reply message.')
+            return
+        self.community_platform.reply_to_post(post_id, 'hero', message)
+        self.community_reply_entry.delete(0, tk.END)
+        self._refresh_community_views()
+
+    def _join_selected_challenge(self):
+        if not self.community_platform:
+            return
+        selection = self.community_challenges_list.curselection()
+        if not selection:
+            messagebox.showinfo('Community', 'Select a challenge to join.')
+            return
+        challenge_id = self.community_challenges_list.get(selection[0]).split(' - ')[0]
+        self.community_platform.join_challenge(challenge_id, 'hero')
+        self.community_platform.complete_challenge(challenge_id, 'hero')
+        self._refresh_community_views()
+
+    def _refresh_community_views(self):
+        if not self.community_platform:
+            return
+        self.community_posts_list.delete(0, tk.END)
+        for post in sorted(self.community_platform.posts.values(), key=lambda p: p.created_at, reverse=True):
+            self.community_posts_list.insert(tk.END, f"{post.post_id} - {post.title} ({len(post.replies)} replies)")
+
+        self.community_challenges_list.delete(0, tk.END)
+        for challenge in self.community_platform.challenges.values():
+            completed = len(challenge.completed_participants)
+            total = len(challenge.participants)
+            self.community_challenges_list.insert(tk.END, f"{challenge.challenge_id} - {challenge.title} ({completed}/{total} complete)")
+
+        self.community_tournaments_list.delete(0, tk.END)
+        for tournament in self.community_platform.tournaments.values():
+            self.community_tournaments_list.insert(tk.END, f"{tournament.tournament_id} - {tournament.name} ({len(tournament.entrants)} entrants)")
+
+        self.community_articles_list.delete(0, tk.END)
+        for article in self.community_platform.list_articles():
+            categories = ', '.join(article.categories)
+            self.community_articles_list.insert(tk.END, f"{article.title} [{categories}]")
 
     def _handle_autopilot_toggle(self, active: bool):
         """Handle autopilot activation/deactivation."""
