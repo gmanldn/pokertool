@@ -586,6 +586,15 @@ class EnhancedPokerAssistantFrame(tk.Frame):
                        background=COLORS['bg_dark'],
                        foreground=COLORS['text_primary'])
 
+        # Default TButton style for high-contrast bold buttons
+        style.configure('TButton',
+                       font=FONTS['button'],
+                       background=COLORS['accent_primary'],
+                       foreground=COLORS['text_primary'])
+        style.map('TButton',
+                  background=[('active', COLORS['accent_success']), ('pressed', COLORS['accent_danger'])],
+                  foreground=[('disabled', COLORS['text_secondary'])])
+
     def _build_ui(self):
         """Build the main UI."""
         # Main container

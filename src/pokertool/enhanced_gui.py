@@ -303,6 +303,12 @@ class IntegratedPokerAssistant(tk.Tk):
                        font=FONTS['autopilot'],
                        foreground=COLORS['text_primary'])
 
+        # Default TButton style for high-contrast bold buttons
+        style.configure('TButton',
+                       font=FONTS['body'],
+                       background=COLORS['accent_primary'],
+                       foreground=COLORS['text_primary'])
+
     # Translation helpers -------------------------------------------------
     def _register_widget_translation(
         self,

@@ -34,10 +34,10 @@ FONTS = {
     "title": ("Arial", 28, "bold"),
     "heading": ("Arial", 18, "bold"),
     "subheading": ("Arial", 14, "bold"),
-    "body": ("Arial", 12),
+    "body": ("Arial", 14, "bold"),
     "autopilot": ("Arial", 20, "bold"),
     "status": ("Arial", 16, "bold"),
-    "analysis": ("Consolas", 12),
+    "analysis": ("Consolas", 12, "bold"),
 }
 
 __all__ = ["COLORS", "FONTS"]
