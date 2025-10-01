@@ -26,11 +26,11 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | HIGH     | 0     | 0.0%       |
-| MEDIUM   | 13    | 100.0%     |
+| MEDIUM   | 11    | 100.0%     |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 13**
-**COMPLETED TASKS: 8**
+**TOTAL REMAINING TASKS: 11**
+**COMPLETED TASKS: 10**
 **Note: All CRITICAL priority tasks have been completed and removed**
 
 ---
@@ -182,33 +182,43 @@ MACHINE-READABLE-HEADER-END -->
   - Batch-safe conversion API with sanitisation and metadata retention
   - File conversion helper maintaining canonical PokerTool exports
 
-### 14. Study Mode
+### 14. Study Mode ✅
 
 - **ID**: STUDY-001
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-03)
 - **Estimated Hours**: 18
 - **Dependencies**: None
 - **Description**: Interactive study tools
 - **Subtasks**:
-  - [ ] Create quiz system
-  - [ ] Add flashcards
-  - [ ] Implement spaced repetition
-  - [ ] Add progress tracking
-  - [ ] Create custom lessons
+  - [x] Create quiz system
+  - [x] Add flashcards
+  - [x] Implement spaced repetition
+  - [x] Add progress tracking
+  - [x] Create custom lessons
+- **Implementation**: `src/pokertool/study_mode.py` orchestrating flashcards, quizzes, lessons, and persistence
+- **Deliverables**:
+  - Spaced-repetition scheduling with SM-2 style adjustments and streak tracking
+  - Quiz sessions with grading, history logging, and persistence to `.pokertool/study`
+  - Lesson management APIs delivering progress snapshots for UI surfaces
 
-### 16. Hand Range Analyzer
+### 16. Hand Range Analyzer ✅
 
 - **ID**: RANGE-002
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-03)
 - **Estimated Hours**: 16
 - **Dependencies**: None
 - **Description**: Advanced range analysis tools
 - **Subtasks**:
-  - [ ] Implement equity calculations
-  - [ ] Add range vs range analysis
-  - [ ] Create heat maps
-  - [ ] Add combinatorics calculator
-  - [ ] Implement range reduction
+  - [x] Implement equity calculations
+  - [x] Add range vs range analysis
+  - [x] Create heat maps
+  - [x] Add combinatorics calculator
+  - [x] Implement range reduction
+- **Implementation**: `src/pokertool/hand_range_analyzer.py` producing parsing, heatmap, and equity utilities with `EquityCalculator`
+- **Deliverables**:
+  - Range parsing with combo weighting, heatmap generation, and board-aware reductions
+  - Monte-Carlo equity evaluation with matchup sampling caps for responsiveness
+  - Combination metrics surfaced through `tests/system/test_hand_range_analyzer.py`
 
 ### 17. Session Management
 
@@ -367,6 +377,17 @@ MACHINE-READABLE-HEADER-END -->
 
 ## Completed Tasks Log
 
+### 2025-10-03
+1. **STUDY-001** - Study Mode
+   - Added `study_mode.py` managing flashcards, quizzes, lessons, and spaced repetition persistence
+   - Created `tests/system/test_study_mode.py` verifying quiz scoring, flashcard scheduling, and progress snapshots
+   - Delivered study progress reporting with streak tracking for UI dashboards
+
+2. **RANGE-002** - Hand Range Analyzer
+   - Added `hand_range_analyzer.py` covering parsing, heatmaps, equity, and range reduction utilities
+   - Created `tests/system/test_hand_range_analyzer.py` validating parsing accuracy, equity evaluation, and filters
+   - Integrated Monte Carlo equities via `EquityCalculator` with matchup sampling safeguards
+
 ### 2025-10-02
 1. **BLUFF-001** - AI Bluff Detection
    - Implemented `bluff_detection.py` with timing, betting, and historical heuristics
@@ -407,6 +428,14 @@ MACHINE-READABLE-HEADER-END -->
 
 ## Recent Changes
 
+### Version v23.4.0 (2025-10-03)
+- Completed STUDY-001: Study Mode
+- Completed RANGE-002: Hand Range Analyzer
+- Added study_mode.py delivering quizzes, flashcards, and streak tracking with tests
+- Added hand_range_analyzer.py for equity, heatmaps, and reductions with tests
+- Updated priority matrix (0 HIGH, 11 MEDIUM, 0 LOW remaining)
+- Total tasks: 11 remaining, 10 completed
+
 ### Version v23.3.0 (2025-10-02)
 - Completed BLUFF-001: AI Bluff Detection
 - Completed CONV-001: Hand Converter
@@ -438,12 +467,12 @@ MACHINE-READABLE-HEADER-END -->
 ## Notes
 
 - All CRITICAL, HIGH, and LOW priority tasks have been completed and removed
-- Remaining backlog consists of MEDIUM initiatives (study tools, analytics, community features)
+- Remaining backlog consists of MEDIUM initiatives (analytics, session tooling, community features)
 - Prioritise coordination dependencies across analytics dashboard, session management, and networking items
 - Dependencies remain minimal; tasks can be scheduled in parallel with appropriate resourcing
 - Regular updates to this file are recommended as tasks progress
 
 ---
 
-**Last Updated**: 2025-10-02  
-**Next Review**: 2025-10-09
+**Last Updated**: 2025-10-03  
+**Next Review**: 2025-10-10
