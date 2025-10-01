@@ -95,7 +95,13 @@ import webbrowser
 
 # Import all pokertool modules
 try:
-    from .gui import EnhancedPokerAssistant, VisualCard, CardSelectionPanel, TableVisualization
+    from .gui import (
+        EnhancedPokerAssistant,
+        EnhancedPokerAssistantFrame,
+        VisualCard,
+        CardSelectionPanel,
+        TableVisualization,
+    )
     from .core import analyse_hand, Card, Suit, Position, HandAnalysisResult, parse_card
     from .i18n import (
         translate,
@@ -629,6 +635,8 @@ class IntegratedPokerAssistant(tk.Tk):
         self.coaching_to_call_var = None
         self.coaching_position_var = None
         self.coaching_last_tip_var = None
+        self.manual_panel = None
+        self.manual_status_label = None
         self._translation_bindings: List[Tuple[Any, str, str, str, str, Dict[str, Any]]] = []
         self._tab_bindings: List[Tuple[Any, str]] = []
         self._window_title_key = 'app.title'
@@ -787,6 +795,7 @@ class IntegratedPokerAssistant(tk.Tk):
         manual_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
         self.notebook.add(manual_frame, text=translate('tab.manual_play'))
         self._register_tab_title(manual_frame, 'tab.manual_play')
+        self.manual_tab = manual_frame
         self._build_manual_play_tab(manual_frame)
         
         # Analysis tab
@@ -1030,38 +1039,148 @@ class IntegratedPokerAssistant(tk.Tk):
         scrollbar.config(command=self.table_status.yview)
     
     def _build_manual_play_tab(self, parent):
-        """Build manual play tab with enhanced GUI."""
-        try:
-            if GUI_MODULES_LOADED:
-                # Use the enhanced poker assistant from gui.py
-                self.manual_gui = EnhancedPokerAssistant()
-                # Note: This would need to be embedded as a frame rather than separate window
-                # For now, we'll create a simplified version
-                pass
-        except Exception as e:
-            print(f"Manual GUI creation error: {e}")
-        
-        # Fallback manual interface
+        """Build manual play tab with the embedded manual assistant."""
+        header_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
+        header_frame.pack(fill='x', pady=(20, 10))
+
         manual_label = tk.Label(
-            parent,
+            header_frame,
             text=translate('manual.title'),
             font=FONTS['title'],
             bg=COLORS['bg_dark'],
             fg=COLORS['text_primary']
         )
-        manual_label.pack(pady=50)
+        manual_label.pack(anchor='w')
         self._register_widget_translation(manual_label, 'manual.title')
 
-        manual_button = tk.Button(
-            parent,
-            text=translate('manual.open_button'),
-            font=FONTS['heading'],
-            bg=COLORS['accent_primary'],
-            fg=COLORS['text_primary'],
-            command=self._open_manual_gui
+        helper_text = (
+            "Use the manual workspace below to select cards, adjust players, "
+            "and review live analysis without leaving the main window."
         )
-        manual_button.pack()
-        self._register_widget_translation(manual_button, 'manual.open_button')
+        tk.Label(
+            header_frame,
+            text=helper_text,
+            font=FONTS['body'],
+            justify='left',
+            wraplength=900,
+            bg=COLORS['bg_dark'],
+            fg=COLORS['text_secondary']
+        ).pack(anchor='w', pady=(6, 0))
+
+        content_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
+        content_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+
+        manual_container = tk.LabelFrame(
+            content_frame,
+            text=translate('manual.title'),
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            relief=tk.RAISED,
+            bd=2
+        )
+        manual_container.pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self._register_widget_translation(manual_container, 'manual.title')
+
+        manual_inner = tk.Frame(manual_container, bg=COLORS['bg_dark'])
+        manual_inner.pack(fill='both', expand=True, padx=10, pady=10)
+
+        if GUI_MODULES_LOADED:
+            try:
+                self.manual_panel = EnhancedPokerAssistantFrame(manual_inner, auto_pack=False)
+                self.manual_panel.pack(fill='both', expand=True)
+            except Exception as manual_error:
+                fallback = tk.Label(
+                    manual_inner,
+                    text=f"Manual interface unavailable: {manual_error}",
+                    font=FONTS['body'],
+                    bg=COLORS['bg_dark'],
+                    fg=COLORS['accent_danger'],
+                    wraplength=600,
+                    justify='left'
+                )
+                fallback.pack(fill='both', expand=True, pady=20)
+        else:
+            fallback = tk.Label(
+                manual_inner,
+                text="Manual interface modules are not available.",
+                font=FONTS['body'],
+                bg=COLORS['bg_dark'],
+                fg=COLORS['accent_danger'],
+                wraplength=600,
+                justify='left'
+            )
+            fallback.pack(fill='both', expand=True, pady=20)
+
+        sidebar = tk.Frame(content_frame, bg=COLORS['bg_dark'])
+        sidebar.pack(side='right', fill='y')
+
+        tips_frame = tk.LabelFrame(
+            sidebar,
+            text='Manual Workflow Tips',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            relief=tk.RAISED,
+            bd=2
+        )
+        tips_frame.pack(fill='both', padx=(0, 0), pady=(0, 10))
+
+        tips_text = (
+            "1. Click cards in the grid to assign hole cards and board streets.\n"
+            "2. Adjust stacks, blinds, and active seats from the control panel.\n"
+            "3. Use ANALYZE HAND to refresh insights inside the workspace."
+        )
+        tk.Label(
+            tips_frame,
+            text=tips_text,
+            font=FONTS['body'],
+            justify='left',
+            wraplength=320,
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_secondary']
+        ).pack(fill='x', padx=12, pady=12)
+
+        sync_frame = tk.LabelFrame(
+            sidebar,
+            text='Session Sync',
+            font=FONTS['heading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            relief=tk.RAISED,
+            bd=2
+        )
+        sync_frame.pack(fill='both')
+
+        tk.Label(
+            sync_frame,
+            text='Autopilot status:',
+            font=FONTS['subheading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary']
+        ).pack(anchor='w', padx=12, pady=(12, 4))
+
+        self.manual_status_label = tk.Label(
+            sync_frame,
+            text=translate('autopilot.status.inactive'),
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_secondary']
+        )
+        self.manual_status_label.pack(anchor='w', padx=12, pady=(0, 12))
+        self._register_widget_translation(self.manual_status_label, 'autopilot.status.inactive')
+
+        tk.Label(
+            sync_frame,
+            text='Switch tabs at any time — the manual workspace stays in sync with live updates.',
+            font=FONTS['body'],
+            justify='left',
+            wraplength=320,
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_secondary']
+        ).pack(fill='x', padx=12, pady=(0, 12))
+
+        self._update_manual_autopilot_status(self.autopilot_active)
     
     def _build_analysis_tab(self, parent):
         """Build analysis and statistics tab."""
@@ -1704,7 +1823,9 @@ class IntegratedPokerAssistant(tk.Tk):
             self._start_autopilot()
         else:
             self._stop_autopilot()
-    
+
+        self._update_manual_autopilot_status(active)
+
     def _handle_autopilot_settings(self, setting: str, value: Any):
         """Handle autopilot settings changes."""
         print(f"Autopilot setting changed: {setting} = {value}")
@@ -1716,6 +1837,17 @@ class IntegratedPokerAssistant(tk.Tk):
                 print(f"Screen scraper reconfigured for {value}")
             except Exception as e:
                 print(f"Screen scraper reconfiguration error: {e}")
+
+    def _update_manual_autopilot_status(self, active: bool) -> None:
+        """Mirror autopilot status in the manual play tab."""
+        if not getattr(self, 'manual_status_label', None):
+            return
+
+        key = 'autopilot.status.active' if active else 'autopilot.status.inactive'
+        self._update_widget_translation_key(self.manual_status_label, key)
+
+        status_color = COLORS['accent_success'] if active else COLORS['text_secondary']
+        self.manual_status_label.config(fg=status_color)
     
     def _start_autopilot(self):
         """Start the autopilot system."""
@@ -1745,6 +1877,7 @@ class IntegratedPokerAssistant(tk.Tk):
         """Stop the autopilot system."""
         print("Stopping autopilot system...")
         self._update_table_status(translate('autopilot.log.deactivated') + "\n")
+        self._update_manual_autopilot_status(False)
     
     def _autopilot_loop(self):
         """Main autopilot processing loop."""
@@ -2082,51 +2215,18 @@ class IntegratedPokerAssistant(tk.Tk):
             print(f"Web interface exception: {e}")
     
     def _open_manual_gui(self):
-        """Open the enhanced manual GUI with comprehensive error handling."""
-        self._update_table_status("🎮 Opening manual GUI...\n")
-        
-        try:
-            if not GUI_MODULES_LOADED:
-                error_msg = "❌ GUI modules not fully loaded\n"
-                error_msg += "   Some core dependencies may be missing\n"
-                self._update_table_status(error_msg)
-                return
-            
-            self._update_table_status("🔧 Initializing manual GUI components...\n")
-            
+        """Bring the embedded manual GUI into focus inside the notebook."""
+        self._update_table_status("🎮 Manual workspace ready within the main window.\n")
+
+        if getattr(self, 'manual_tab', None):
+            self.notebook.select(self.manual_tab)
+            self._update_table_status("✅ Manual Play tab activated.\n")
+
+        if self.manual_panel:
             try:
-                # Import and create the enhanced GUI
-                from .gui import EnhancedPokerAssistant
-                
-                self._update_table_status("✅ GUI components loaded successfully\n")
-                self._update_table_status("🚀 Starting manual GUI window...\n")
-                
-                # Create and start the manual GUI
-                manual_gui = EnhancedPokerAssistant()
-                
-                # Show success message first
-                self._update_table_status("✅ Manual GUI opened successfully\n")
-                self._update_table_status("ℹ️ Note: GUI running in separate window\n")
-                
-                # Start the GUI main loop
-                manual_gui.mainloop()
-                
-                self._update_table_status("ℹ️ Manual GUI closed\n")
-                
-            except ImportError as import_error:
-                error_msg = f"❌ Failed to import GUI modules: {import_error}\n"
-                error_msg += "   Manual GUI components not available\n"
-                self._update_table_status(error_msg)
-                
-            except Exception as gui_error:
-                error_msg = f"❌ GUI initialization failed: {gui_error}\n"
-                self._update_table_status(error_msg)
-                
-        except Exception as e:
-            error_msg = f"❌ Manual GUI error: {e}\n"
-            self._update_table_status(error_msg)
-            self._update_table_status("   Check GUI module dependencies\n")
-            print(f"Manual GUI exception: {e}")
+                self.manual_panel.focus_set()
+            except Exception:
+                pass
     
     def _brighten_color(self, hex_color: str, factor: float = 0.2) -> str:
         """Brighten a hex color by a given factor for hover effects."""

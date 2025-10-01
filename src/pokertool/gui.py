@@ -532,16 +532,11 @@ class TableVisualization(tk.Canvas):
         self.board_cards = board
         self._draw_table()
 
-class EnhancedPokerAssistant(tk.Tk):
-    """Enhanced Poker Assistant with visual card selection and clear table view."""
+class EnhancedPokerAssistantFrame(tk.Frame):
+    """Embeddable manual play workspace used by the enhanced poker assistant."""
 
-    def __init__(self):
-        super().__init__()
-
-        self.title('🎰 Poker Assistant - Enhanced Edition')
-        self.geometry('1400x900')
-        self.minsize(1200, 800)
-        self.configure(bg=COLORS['bg_dark'])
+    def __init__(self, master: tk.Misc, *, auto_pack: bool = True):
+        super().__init__(master, bg=COLORS['bg_dark'])
 
         # State
         self.hole_cards: List[Card] = []
@@ -554,6 +549,41 @@ class EnhancedPokerAssistant(tk.Tk):
         self._setup_styles()
         self._build_ui()
         self._init_database()
+
+        if auto_pack:
+            self.pack(fill='both', expand=True)
+
+
+class EnhancedPokerAssistant(tk.Tk):
+    """Standalone top-level window that hosts the manual play workspace."""
+
+    def __init__(self):
+        super().__init__()
+
+        self.title('🎰 Poker Assistant - Enhanced Edition')
+        self.geometry('1400x900')
+        self.minsize(1200, 800)
+        self.configure(bg=COLORS['bg_dark'])
+
+        self._frame = EnhancedPokerAssistantFrame(self)
+
+    def __getattr__(self, name: str):
+        try:
+            return super().__getattribute__(name)
+        except AttributeError:
+            return getattr(self._frame, name)
+
+    def __setattr__(self, name: str, value):
+        if name == '_frame' or not hasattr(self, '_frame'):
+            super().__setattr__(name, value)
+        elif hasattr(self._frame, name):
+            setattr(self._frame, name, value)
+        else:
+            super().__setattr__(name, value)
+
+    def destroy(self):
+        self._frame.destroy()
+        super().destroy()
 
     def _init_players(self) -> Dict[int, PlayerInfo]:
         """Initialize default player configuration."""
