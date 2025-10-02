@@ -74,6 +74,70 @@ except ImportError as e:
 
 
 # ============================================================================
+# Scraper Bridge - Connects scraper to application
+# ============================================================================
+
+class ScreenScraperBridge:
+    """
+    Bridge class that connects the screen scraper to the application.
+    Handles state updates and callbacks.
+    """
+    
+    def __init__(self, scraper: 'PokerScreenScraper'):
+        """Initialize bridge with a scraper instance."""
+        self.scraper = scraper
+        self.callbacks: List[Callable[[Dict[str, Any]], None]] = []
+    
+    def register_callback(self, callback: Callable[[Dict[str, Any]], None]) -> None:
+        """Register a callback for state updates."""
+        if callback not in self.callbacks:
+            self.callbacks.append(callback)
+    
+    def unregister_callback(self, callback: Callable[[Dict[str, Any]], None]) -> None:
+        """Unregister a callback."""
+        if callback in self.callbacks:
+            self.callbacks.remove(callback)
+    
+    def process_update(self, state: Any) -> None:
+        """Process a state update and notify callbacks."""
+        # Convert state to dict
+        state_dict = self.convert_to_game_state(state)
+        
+        # Notify all callbacks
+        for callback in list(self.callbacks):
+            try:
+                callback(state_dict)
+            except Exception as e:
+                logger.error(f"Callback error: {e}")
+    
+    @staticmethod
+    def convert_to_game_state(table_state: Any) -> Dict[str, Any]:
+        """
+        Convert a TableState to a game state dictionary.
+        
+        Args:
+            table_state: TableState object or dict
+        
+        Returns:
+            Dictionary representation of the game state
+        """
+        if isinstance(table_state, dict):
+            return dict(table_state)
+        
+        if hasattr(table_state, '__dict__'):
+            return vars(table_state)
+        
+        # Try to extract common attributes
+        state_dict = {}
+        for attr in ['pot_size', 'hero_cards', 'board_cards', 'seats', 
+                     'active_players', 'stage', 'detection_confidence']:
+            if hasattr(table_state, attr):
+                state_dict[attr] = getattr(table_state, attr)
+        
+        return state_dict if state_dict else {'raw_state': str(table_state)}
+
+
+# ============================================================================
 # PUBLIC API - Backward Compatible Interface
 # ============================================================================
 
@@ -141,6 +205,23 @@ class PokerScreenScraper:
     def shutdown(self):
         """Clean shutdown and resource cleanup."""
         self._scraper.shutdown()
+    
+    # Additional methods needed by enhanced_gui
+    def start_continuous_capture(self, interval: float = 1.0) -> bool:
+        """Start continuous table capture."""
+        # This is handled by the scrape.py enhanced scraper manager
+        # but we provide a stub for compatibility
+        logger.debug(f"start_continuous_capture called with interval={interval}")
+        return True
+    
+    def stop_continuous_capture(self):
+        """Stop continuous capture."""
+        logger.debug("stop_continuous_capture called")
+    
+    def get_state_updates(self, timeout: float = 0.5) -> Optional[Dict[str, Any]]:
+        """Get state updates (stub for compatibility)."""
+        # In practice, this is handled by the EnhancedScraperManager
+        return None
     
     # Legacy methods for backward compatibility
     def extract_pot_size(self, image: np.ndarray) -> float:
