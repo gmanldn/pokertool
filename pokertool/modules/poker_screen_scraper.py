@@ -3,9 +3,15 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: poker_screen_scraper.py
-# version: v29.0.0
-# last_commit: '2025-10-02T18:30:00+00:00'
+# version: v30.0.0
+# last_commit: '2025-10-02T20:00:00+00:00'
 # fixes:
+# - date: '2025-10-02'
+#   summary: Added comprehensive table validation to prevent false positives
+# - date: '2025-10-02'
+#   summary: Implemented poker-specific visual detection (felt, graphics)
+# - date: '2025-10-02'
+#   summary: Added detailed logging explaining why tables are/aren't detected
 # - date: '2025-10-02'
 #   summary: Fixed screen scraper Chrome capture initialization - defaults to reliable monitor capture
 # - date: '2025-10-02'
@@ -14,7 +20,7 @@
 #   summary: Enhanced enterprise documentation and comprehensive unit tests added
 # ---
 # POKERTOOL-HEADER-END
-__version__ = '20'
+__version__ = '30'
 
 """
 Poker Screen Scraper Module
@@ -632,12 +638,13 @@ class PokerScreenScraper:
             logger.debug(f"Position assignment failed: {e}")
     
     def analyze_table(self, image: Optional[np.ndarray] = None) -> TableState:
-        """Perform complete table analysis."""
+        """Perform complete table analysis with detailed detection logging."""
         try:
             if image is None:
                 image = self.capture_table()
                 
             if image is None:
+                logger.info("[TABLE DETECTION] No image captured - no table detected")
                 return TableState()
             
             # Extract all information
@@ -648,6 +655,21 @@ class PokerScreenScraper:
             state.seats = self.extract_seat_info(image)
             state.stage = self.detect_game_stage(state.board_cards)
             state.active_players = sum(1 for seat in state.seats if seat.is_active)
+            
+            # Determine if this is actually a poker table
+            table_detected, detection_reason = self._validate_poker_table(state, image)
+            
+            if not table_detected:
+                logger.info(f"[TABLE DETECTION] No valid poker table: {detection_reason}")
+                # Return empty state if no table detected
+                return TableState()
+            
+            logger.info(f"[TABLE DETECTION] ✓ Valid table detected: {detection_reason}")
+            logger.info(f"  - Active players: {state.active_players}")
+            logger.info(f"  - Pot size: ${state.pot_size}")
+            logger.info(f"  - Hero cards: {len(state.hero_cards)}")
+            logger.info(f"  - Board cards: {len(state.board_cards)}")
+            logger.info(f"  - Stage: {state.stage}")
             
             # Assign positions
             self._assign_positions(state)
@@ -747,6 +769,116 @@ class PokerScreenScraper:
         if self.state_history:
             return self.state_history[-1]
         return None
+    
+    def _validate_poker_table(self, state: TableState, image: np.ndarray) -> Tuple[bool, str]:
+        """Validate if the detected state represents an actual poker table.
+        
+        Returns:
+            Tuple of (is_valid, reason_string)
+        """
+        reasons = []
+        
+        # Check 1: Must have at least 2 active players for a real game
+        if state.active_players < 2:
+            return False, f"Only {state.active_players} active players (need 2+)"
+        reasons.append(f"{state.active_players} active players")
+        
+        # Check 2: Pot size should be reasonable (not just noise)
+        # In a real game, pot > 0 OR we're preflop with blinds
+        if state.pot_size == 0.0 and len(state.board_cards) > 0:
+            # Post-flop with zero pot is suspicious
+            return False, "Zero pot with board cards (likely false detection)"
+        
+        if state.pot_size > 0:
+            reasons.append(f"Pot: ${state.pot_size}")
+        
+        # Check 3: Look for poker-specific visual elements
+        if SCRAPER_DEPENDENCIES_AVAILABLE:
+            # Check for green felt color (common in poker tables)
+            felt_detected = self._detect_poker_felt(image)
+            if felt_detected:
+                reasons.append("Felt detected")
+            
+            # Check for button/chip graphics
+            has_poker_graphics = self._detect_poker_graphics(image)
+            if has_poker_graphics:
+                reasons.append("Poker graphics detected")
+            
+            # Need at least one visual indicator
+            if not felt_detected and not has_poker_graphics and state.pot_size == 0:
+                return False, "No poker visual elements detected"
+        
+        # Check 4: If we have hero cards OR board cards, that's strong evidence
+        if len(state.hero_cards) > 0:
+            reasons.append(f"{len(state.hero_cards)} hero cards")
+        if len(state.board_cards) > 0:
+            reasons.append(f"{len(state.board_cards)} board cards")
+        
+        # Check 5: Total confidence - need at least 2 positive indicators
+        if len(reasons) < 2:
+            return False, f"Insufficient evidence (only: {', '.join(reasons)})"
+        
+        return True, ", ".join(reasons)
+    
+    def _detect_poker_felt(self, image: np.ndarray) -> bool:
+        """Detect if image contains green felt typical of poker tables."""
+        try:
+            if not SCRAPER_DEPENDENCIES_AVAILABLE or image is None or image.size == 0:
+                return False
+            
+            # Convert to HSV to detect green
+            if len(image.shape) == 3:
+                hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            else:
+                return False
+            
+            # Define range for green felt (HSV)
+            lower_green = np.array([35, 40, 40])
+            upper_green = np.array([85, 255, 255])
+            
+            # Create mask for green pixels
+            mask = cv2.inRange(hsv, lower_green, upper_green)
+            
+            # Calculate percentage of green pixels
+            green_percentage = (np.count_nonzero(mask) / mask.size) * 100
+            
+            # Poker tables typically have >10% green felt
+            return green_percentage > 10.0
+            
+        except Exception as e:
+            logger.debug(f"Felt detection error: {e}")
+            return False
+    
+    def _detect_poker_graphics(self, image: np.ndarray) -> bool:
+        """Detect poker-specific graphics like chips, buttons, etc."""
+        try:
+            if not SCRAPER_DEPENDENCIES_AVAILABLE or image is None or image.size == 0:
+                return False
+            
+            # Look for circular shapes (chips, buttons)
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            else:
+                gray = image
+            
+            # Use Hough Circle detection
+            circles = cv2.HoughCircles(
+                gray,
+                cv2.HOUGH_GRADIENT,
+                dp=1,
+                minDist=50,
+                param1=100,
+                param2=30,
+                minRadius=10,
+                maxRadius=100
+            )
+            
+            # If we detect multiple circular objects, likely a poker table
+            return circles is not None and len(circles[0]) >= 3
+            
+        except Exception as e:
+            logger.debug(f"Graphics detection error: {e}")
+            return False
     
     def _has_significant_change(self, new_state: TableState) -> bool:
         """Check if the new state has significant changes."""

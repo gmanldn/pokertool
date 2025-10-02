@@ -1122,13 +1122,21 @@ class IntegratedPokerAssistant(tk.Tk):
         self._update_manual_autopilot_status(False)
     
     def _autopilot_loop(self):
-        """Main autopilot processing loop."""
+        """Main autopilot processing loop with detailed table detection."""
         while self.autopilot_active:
             try:
+                table_active = False
+                table_reason = ""
+                
                 # Detect and analyze tables
                 if self.screen_scraper:
                     table_state = self.screen_scraper.analyze_table()
-                    if table_state:
+                    
+                    # Check if we actually detected a valid table
+                    if table_state and table_state.active_players >= 2:
+                        # Valid table detected!
+                        table_active = True
+                        table_reason = f"{table_state.active_players} players, pot ${table_state.pot_size}"
                         self._process_table_state(table_state)
                         
                         # Auto GTO analysis if enabled
@@ -1140,16 +1148,25 @@ class IntegratedPokerAssistant(tk.Tk):
                                 self.after(0, lambda: self._update_table_status(translate('autopilot.log.auto_gto_complete') + "\n"))
                             except Exception as gto_error:
                                 print(f"Auto GTO analysis error: {gto_error}")
+                    else:
+                        # No valid table detected
+                        table_active = False
+                        if not table_state or table_state.active_players == 0:
+                            table_reason = "No active players detected"
+                        else:
+                            table_reason = f"Only {table_state.active_players} player (need 2+)"
                 
-                # Update statistics
+                # Update statistics with table detection status
                 stats = {
-                    'tables_detected': 1,  # Mock data
-                    'hands_played': self.autopilot_panel.state.hands_played + 1,
-                    'actions_taken': self.autopilot_panel.state.actions_taken + (1 if self.autopilot_panel.auto_gto_var.get() else 0),
-                    'last_action_key': 'autopilot.last_action.auto_analyzing' if self.autopilot_panel.auto_gto_var.get() else 'autopilot.last_action.monitoring'
+                    'tables_detected': 1 if table_active else 0,
+                    'hands_played': self.autopilot_panel.state.hands_played + (1 if table_active else 0),
+                    'actions_taken': self.autopilot_panel.state.actions_taken + (1 if self.autopilot_panel.auto_gto_var.get() and table_active else 0),
+                    'last_action_key': 'autopilot.last_action.auto_analyzing' if self.autopilot_panel.auto_gto_var.get() and table_active else 'autopilot.last_action.monitoring',
+                    'table_active': table_active,
+                    'table_reason': table_reason
                 }
 
-                self.after(0, lambda: self.autopilot_panel.update_statistics(stats))
+                self.after(0, lambda s=stats: self.autopilot_panel.update_statistics(s))
                 
             except Exception as e:
                 print(f"Autopilot loop error: {e}")

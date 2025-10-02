@@ -159,15 +159,28 @@ class AutopilotControlPanel(tk.Frame):
             fg=COLORS["autopilot_inactive"],
         )
         self.status_label.pack()
+        
+        # Table Active Indicator
+        table_indicator_frame = tk.Frame(self, bg=COLORS["bg_medium"])
+        table_indicator_frame.pack(fill="x", pady=5)
+        
+        self.table_indicator = tk.Label(
+            table_indicator_frame,
+            text="● Table: Not Detected",
+            font=FONTS["body"],
+            bg=COLORS["bg_medium"],
+            fg=COLORS["text_secondary"],
+        )
+        self.table_indicator.pack()
 
         self.autopilot_button = tk.Button(
             self,
             text=translate("autopilot.button.start"),
             font=FONTS["autopilot"],
             bg=COLORS["autopilot_inactive"],
-            fg=COLORS["text_primary"],
+            fg="#000000",  # Black text for better visibility
             activebackground=COLORS["autopilot_active"],
-            activeforeground=COLORS["text_primary"],
+            activeforeground="#000000",  # Black text on active too
             relief=tk.RAISED,
             bd=5,
             width=20,
@@ -475,11 +488,40 @@ class AutopilotControlPanel(tk.Frame):
             self.state.last_action = stats_update["last_action"]
             self.state.last_action_key = None
             self.last_action_label.config(text=self.state.last_action)
+        
+        # Update table indicator
+        if "table_active" in stats_update:
+            self.update_table_indicator(stats_update["table_active"], 
+                                        stats_update.get("table_reason", ""))
 
         self._refresh_statistics()
         if not self.state.last_action:
             self.last_action_label.config(text=translate("autopilot.last_action.none"))
             self.state.last_action_key = "autopilot.last_action.none"
+    
+    def update_table_indicator(self, active: bool, reason: str = "") -> None:
+        """Update the table active indicator light.
+        
+        Args:
+            active: Whether a table is detected
+            reason: Reason string explaining the detection
+        """
+        if active:
+            self.table_indicator.config(
+                text=f"● Table: ACTIVE",
+                fg=COLORS["accent_success"]
+            )
+            if reason:
+                # Optionally show reason in tooltip or separate label
+                pass
+        else:
+            self.table_indicator.config(
+                text=f"● Table: Not Detected",
+                fg=COLORS["text_secondary"]
+            )
+            if reason:
+                # Show why detection failed
+                pass
 
 
 __all__ = ["AutopilotControlPanel", "AutopilotState"]
