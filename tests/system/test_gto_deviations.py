@@ -1,171 +1,375 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
-Tests for Game Theory Optimal (GTO) deviation engine.
+Tests for GTO Deviations Module
+================================
 
-Covers:
-- Population profile adjustments
-- Maximum exploitation search and EV gain
-- Node locking enforcement
-- Strategy simplification
-- Ensemble adapter integration
+Comprehensive tests for profitable GTO deviation calculations.
+
+Author: PokerTool Development Team
+Version: 1.0.0
 """
 
-import unittest
-from typing import Dict, Any
+import pytest
+import sys
+from pathlib import Path
 
-from src.pokertool.gto_deviations import (
-    PopulationProfile,
-    DeviationAdjustment,
-    DeviationRequest,
-    DeviationResult,
-    GTODeviationEngine,
-    create_ensemble_engine,
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
+
+from pokertool.gto_deviations import (
+    ActionType,
+    PopulationTendency,
+    OpponentModel,
+    Deviation,
+    MaximumExploitationFinder,
+    NodeLocker,
+    StrategySimplifier,
+    GTODeviationCalculator,
+    create_opponent_model,
+    find_deviations
 )
-from src.pokertool.node_locker import NodeLocker
 
 
-class TestPopulationProfile(unittest.TestCase):
-    """Test population profile adjustments."""
-
-    def test_apply_bias(self):
-        """Population bias shifts strategy and renormalises."""
-        profile = PopulationProfile(
-            name="loose-passive",
-            action_bias={"call": 0.1, "fold": -0.1},
+class TestPopulationTendency:
+    """Test PopulationTendency dataclass."""
+    
+    def test_is_significant_with_good_data(self):
+        """Test significance with sufficient confidence and samples."""
+        tendency = PopulationTendency(
+            action=ActionType.FOLD,
+            frequency=0.75,
+            sample_size=50,
+            confidence=0.85
         )
-
-        baseline = {"raise": 0.4, "call": 0.3, "fold": 0.3}
-        adjusted = profile.apply(baseline)
-
-        self.assertAlmostEqual(sum(adjusted.values()), 1.0, places=6)
-        self.assertGreater(adjusted["call"], baseline["call"])
-        self.assertLess(adjusted["fold"], baseline["fold"])
-
-
-class TestNodeLockerIntegration(unittest.TestCase):
-    """Test node locking behaviour."""
-
-    def test_apply_node_lock(self):
-        """Locked actions honour min/max bounds."""
-        locker = NodeLocker()
-        locker.lock_action("node1", "raise", min_frequency=0.5, max_frequency=0.6)
-
-        strategy = {"raise": 0.2, "call": 0.5, "fold": 0.3}
-        adjusted, locks = locker.apply("node1", strategy)
-
-        self.assertAlmostEqual(sum(adjusted.values()), 1.0, places=6)
-        self.assertGreaterEqual(adjusted["raise"], 0.5)
-        self.assertLessEqual(adjusted["raise"], 0.6)
-        self.assertIn("raise", locks)
-
-
-class TestDeviationEngine(unittest.TestCase):
-    """Test core deviation engine logic."""
-
-    def setUp(self):
-        self.locker = NodeLocker()
-        self.engine = GTODeviationEngine(node_locker=self.locker)
-
-        # Baseline scenario
-        self.baseline = {"raise": 0.3, "call": 0.4, "fold": 0.3}
-        self.action_evs = {"raise": 2.0, "call": 1.0, "fold": 0.0}
-
-    def _build_request(self, **kwargs: Any) -> DeviationRequest:
-        data = dict(
-            node_id="river_node",
-            game_state={"position": "BTN"},
-            baseline_strategy=self.baseline,
-            action_evs=self.action_evs,
+        assert tendency.is_significant()
+    
+    def test_is_not_significant_low_confidence(self):
+        """Test not significant with low confidence."""
+        tendency = PopulationTendency(
+            action=ActionType.FOLD,
+            frequency=0.75,
+            sample_size=50,
+            confidence=0.60
         )
-        data.update(kwargs)
-        return DeviationRequest(**data)
-
-    def test_compute_deviation_ev_gain(self):
-        """Deviation increases EV when shifting mass to higher EV actions."""
-        request = self._build_request(max_shift=0.2)
-        result = self.engine.compute_deviation(request)
-
-        self.assertIsInstance(result, DeviationResult)
-        self.assertGreater(result.ev_gain, 0.0)
-        self.assertAlmostEqual(sum(result.deviation_strategy.values()), 1.0, places=6)
-
-        # Raise frequency should increase due to higher EV.
-        self.assertGreater(result.deviation_strategy["raise"], self.baseline["raise"])
-
-    def test_population_profile_applied(self):
-        """Population profile biases initial target strategy."""
-        profile = PopulationProfile(
-            name="over-caller",
-            action_bias={"call": 0.2, "fold": -0.2},
+        assert not tendency.is_significant()
+    
+    def test_is_not_significant_small_sample(self):
+        """Test not significant with small sample."""
+        tendency = PopulationTendency(
+            action=ActionType.FOLD,
+            frequency=0.75,
+            sample_size=20,
+            confidence=0.85
         )
-        request = self._build_request(population_profile=profile, max_shift=0.1)
-        result = self.engine.compute_deviation(request)
-
-        self.assertGreater(result.deviation_strategy["call"], self.baseline["call"])
-        self.assertLess(result.deviation_strategy["fold"], self.baseline["fold"])
-
-    def test_node_lock_respected(self):
-        """Locked frequencies are enforced in deviation output."""
-        self.locker.lock_action("river_node", "raise", 0.5, 0.6)
-
-        request = self._build_request(max_shift=0.4)
-        result = self.engine.compute_deviation(request)
-
-        self.assertGreaterEqual(result.deviation_strategy["raise"], 0.5)
-        self.assertLessEqual(result.deviation_strategy["raise"], 0.6)
-        self.assertIn("raise", result.locked_actions)
-
-    def test_simplification_threshold(self):
-        """Low-probability actions get pruned."""
-        request = self._build_request(max_shift=0.05, simplification_threshold=0.25)
-        result = self.engine.compute_deviation(request)
-
-        # Actions below threshold should be removed.
-        for action, freq in result.deviation_strategy.items():
-            self.assertGreaterEqual(freq, 0.25)
-
-        self.assertLessEqual(len(result.deviation_strategy), 3)
-
-    def test_adjustments_sorted(self):
-        """Adjustments are sorted by delta descending."""
-        request = self._build_request(max_shift=0.2)
-        result = self.engine.compute_deviation(request)
-
-        deltas = [adj.delta for adj in result.adjustments]
-        self.assertEqual(deltas, sorted(deltas, reverse=True))
+        assert not tendency.is_significant()
 
 
-class TestEnsembleAdapter(unittest.TestCase):
-    """Test ensemble integration helper."""
-
-    def test_create_ensemble_engine(self):
-        """Ensemble adapter returns EngineDecision with deviation reasoning."""
-        engine = GTODeviationEngine()
-
-        def ev_provider(game_state: Dict[str, Any]) -> Dict[str, float]:
-            return {"raise": 1.5, "call": 0.8, "fold": 0.1}
-
-        ensemble_engine = create_ensemble_engine(
-            deviation_engine=engine,
-            node_id="flop_node",
-            action_evs_provider=ev_provider,
+class TestOpponentModel:
+    """Test OpponentModel functionality."""
+    
+    def test_create_opponent_model(self):
+        """Test creating opponent model."""
+        opponent = create_opponent_model("test_player", vpip=0.30, pfr=0.20, aggression=1.5)
+        assert opponent.player_id == "test_player"
+        assert opponent.overall_vpip == 0.30
+        assert opponent.overall_pfr == 0.20
+        assert opponent.aggression_factor == 1.5
+    
+    def test_add_and_get_tendency(self):
+        """Test adding and retrieving tendencies."""
+        opponent = OpponentModel(player_id="test")
+        tendency = PopulationTendency(
+            action=ActionType.FOLD,
+            frequency=0.80,
+            sample_size=40,
+            confidence=0.90
         )
+        opponent.add_tendency("3bet_situation", tendency)
+        
+        retrieved = opponent.get_tendency("3bet_situation")
+        assert retrieved == tendency
+    
+    def test_is_tight(self):
+        """Test tight player identification."""
+        tight_opponent = OpponentModel(player_id="tight", overall_vpip=0.15)
+        loose_opponent = OpponentModel(player_id="loose", overall_vpip=0.40)
+        
+        assert tight_opponent.is_tight()
+        assert not loose_opponent.is_tight()
+    
+    def test_is_aggressive(self):
+        """Test aggressive player identification."""
+        aggressive = OpponentModel(player_id="agg", aggression_factor=2.5)
+        passive = OpponentModel(player_id="pass", aggression_factor=0.8)
+        
+        assert aggressive.is_aggressive()
+        assert not passive.is_aggressive()
+    
+    def test_get_style_tag(self):
+        """Test TAG style identification."""
+        tag = OpponentModel(player_id="tag", overall_vpip=0.18, aggression_factor=2.5)
+        assert tag.get_style() == "TAG"
+    
+    def test_get_style_lag(self):
+        """Test LAG style identification."""
+        lag = OpponentModel(player_id="lag", overall_vpip=0.35, aggression_factor=2.5)
+        assert lag.get_style() == "LAG"
+    
+    def test_get_style_tight_passive(self):
+        """Test tight-passive style."""
+        tp = OpponentModel(player_id="tp", overall_vpip=0.15, aggression_factor=1.0)
+        assert tp.get_style() == "Tight-Passive"
+    
+    def test_get_style_loose_passive(self):
+        """Test loose-passive style."""
+        lp = OpponentModel(player_id="lp", overall_vpip=0.40, aggression_factor=1.0)
+        assert lp.get_style() == "Loose-Passive"
 
-        game_state = {
-            "position": "CO",
-            "baseline_strategy": {"raise": 0.25, "call": 0.5, "fold": 0.25},
+
+class TestMaximumExploitationFinder:
+    """Test exploitation finding logic."""
+    
+    def test_find_exploits_over_folding(self):
+        """Test finding exploits against over-folding."""
+        finder = MaximumExploitationFinder()
+        
+        opponent = OpponentModel(player_id="folder")
+        opponent.add_tendency(
+            "test_spot",
+            PopulationTendency(
+                action=ActionType.FOLD,
+                frequency=0.75,
+                sample_size=50,
+                confidence=0.85
+            )
+        )
+        
+        gto_strategy = {
+            ActionType.FOLD: 0.3,
+            ActionType.CALL: 0.4,
+            ActionType.BET: 0.3
         }
+        
+        deviations = finder.find_exploits(opponent, "test_spot", gto_strategy)
+        
+        assert len(deviations) > 0
+        assert deviations[0].ev_gain > 0
+    
+    def test_find_exploits_no_significant_tendency(self):
+        """Test no exploits when no significant tendencies."""
+        finder = MaximumExploitationFinder()
+        
+        opponent = OpponentModel(player_id="balanced")
+        # No tendencies added
+        
+        gto_strategy = {ActionType.FOLD: 0.3, ActionType.CALL: 0.4, ActionType.BET: 0.3}
+        
+        deviations = finder.find_exploits(opponent, "test_spot", gto_strategy)
+        
+        assert len(deviations) == 0
 
-        from src.pokertool.ensemble_decision import DecisionType
 
-        decision = ensemble_engine(game_state, DecisionType.ACTION)
+class TestNodeLocker:
+    """Test node locking functionality."""
+    
+    def test_lock_and_unlock_node(self):
+        """Test basic lock/unlock operations."""
+        locker = NodeLocker()
+        
+        locker.lock_node("test_node", ActionType.BET, "test reason")
+        assert locker.is_locked("test_node")
+        assert locker.get_action("test_node") == ActionType.BET
+        
+        locker.unlock_node("test_node")
+        assert not locker.is_locked("test_node")
+    
+    def test_apply_locking_strategy(self):
+        """Test automatic locking strategy generation."""
+        locker = NodeLocker()
+        
+        opponent = OpponentModel(player_id="test")
+        opponent.add_tendency(
+            "spot1",
+            PopulationTendency(
+                action=ActionType.FOLD,
+                frequency=0.10,  # Rarely folds
+                sample_size=40,
+                confidence=0.85
+            )
+        )
+        
+        locks = locker.apply_locking_strategy(opponent)
+        
+        assert len(locks) > 0
 
-        self.assertEqual(decision.engine_name, "gto_deviation")
-        self.assertEqual(decision.decision_type, DecisionType.ACTION)
-        self.assertIn(decision.value, {"raise", "call", "fold"})
-        self.assertIn("strategy", decision.metadata)
-        self.assertIn("ev_gain", decision.metadata)
-        self.assertGreaterEqual(decision.confidence, 0.5)
+
+class TestStrategySimplifier:
+    """Test strategy simplification."""
+    
+    def test_simplify_removes_low_frequency(self):
+        """Test that simplification removes low-frequency actions."""
+        simplifier = StrategySimplifier()
+        
+        strategy = {
+            ActionType.FOLD: 0.05,  # Should be removed
+            ActionType.CALL: 0.45,
+            ActionType.BET: 0.50
+        }
+        
+        simplified = simplifier.simplify(strategy, min_frequency=0.10)
+        
+        assert ActionType.FOLD not in simplified
+        assert ActionType.CALL in simplified
+        assert ActionType.BET in simplified
+    
+    def test_simplify_renormalizes(self):
+        """Test that simplification renormalizes frequencies."""
+        simplifier = StrategySimplifier()
+        
+        strategy = {
+            ActionType.CALL: 0.45,
+            ActionType.BET: 0.50,
+            ActionType.RAISE: 0.05
+        }
+        
+        simplified = simplifier.simplify(strategy, min_frequency=0.10)
+        
+        # Should sum to 1.0
+        assert abs(sum(simplified.values()) - 1.0) < 0.01
+    
+    def test_merge_similar_actions(self):
+        """Test merging similar actions."""
+        simplifier = StrategySimplifier()
+        
+        strategy = {
+            ActionType.BET: 0.30,
+            ActionType.RAISE: 0.20,
+            ActionType.CALL: 0.50
+        }
+        
+        merged = simplifier.merge_similar_actions(strategy)
+        
+        # Should merge BET and RAISE
+        assert not (ActionType.BET in merged and ActionType.RAISE in merged)
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestGTODeviationCalculator:
+    """Test main GTO deviation calculator."""
+    
+    def test_calculate_deviations(self):
+        """Test full deviation calculation."""
+        calculator = GTODeviationCalculator()
+        
+        opponent = OpponentModel(player_id="fish")
+        opponent.add_tendency(
+            "test_spot",
+            PopulationTendency(
+                action=ActionType.FOLD,
+                frequency=0.80,
+                sample_size=50,
+                confidence=0.90
+            )
+        )
+        
+        gto_strategy = {
+            ActionType.FOLD: 0.3,
+            ActionType.CALL: 0.4,
+            ActionType.BET: 0.3
+        }
+        
+        exploit_strategy, deviations = calculator.calculate_deviations(
+            opponent, "test_spot", gto_strategy
+        )
+        
+        assert len(deviations) > 0
+        assert len(exploit_strategy) > 0
+        assert abs(sum(exploit_strategy.values()) - 1.0) < 0.01
+    
+    def test_calculate_exploitability(self):
+        """Test exploitability calculation."""
+        calculator = GTODeviationCalculator()
+        
+        balanced_strategy = {
+            ActionType.FOLD: 0.3,
+            ActionType.CALL: 0.3,
+            ActionType.BET: 0.4
+        }
+        
+        unbalanced_strategy = {
+            ActionType.FOLD: 0.8,
+            ActionType.CALL: 0.1,
+            ActionType.BET: 0.1
+        }
+        
+        opponent = OpponentModel(player_id="test")
+        
+        balanced_exploit = calculator.calculate_exploitability(balanced_strategy, opponent)
+        unbalanced_exploit = calculator.calculate_exploitability(unbalanced_strategy, opponent)
+        
+        # Unbalanced should be more exploitable
+        assert unbalanced_exploit > balanced_exploit
+    
+    def test_generate_report(self):
+        """Test deviation report generation."""
+        calculator = GTODeviationCalculator()
+        
+        opponent = OpponentModel(
+            player_id="test",
+            overall_vpip=0.30,
+            overall_pfr=0.20,
+            aggression_factor=1.5,
+            sample_hands=100
+        )
+        
+        deviations = [
+            Deviation(
+                situation="test",
+                gto_action=ActionType.CALL,
+                gto_frequency=0.5,
+                exploitative_action=ActionType.BET,
+                exploitative_frequency=0.6,
+                ev_gain=0.5,
+                confidence=0.85,
+                reasoning="Test"
+            )
+        ]
+        
+        report = calculator.generate_report(opponent, deviations)
+        
+        assert 'opponent_style' in report
+        assert 'deviation_count' in report
+        assert report['deviation_count'] == 1
+        assert 'total_ev_gain' in report
+
+
+class TestConvenienceFunctions:
+    """Test convenience helper functions."""
+    
+    def test_find_deviations_convenience(self):
+        """Test find_deviations convenience function."""
+        opponent = create_opponent_model("test", vpip=0.40, pfr=0.10, aggression=0.5)
+        opponent.add_tendency(
+            "test_spot",
+            PopulationTendency(
+                action=ActionType.FOLD,
+                frequency=0.75,
+                sample_size=50,
+                confidence=0.85
+            )
+        )
+        
+        gto_strategy = {
+            'fold': 0.3,
+            'call': 0.4,
+            'bet': 0.3
+        }
+        
+        deviations = find_deviations(opponent, "test_spot", gto_strategy)
+        
+        assert isinstance(deviations, list)
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])
