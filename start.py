@@ -41,6 +41,42 @@ import subprocess
 import sys
 import importlib
 
+# ✅ Dependencies for PokerTool + scraping
+REQUIRED_PACKAGES = [
+    "requests",
+    "beautifulsoup4",
+    "lxml",
+    "selenium",
+    "playwright",
+    "pandas"
+]
+
+def install_and_import(package: str):
+    """Ensure a package is installed and importable."""
+    try:
+        importlib.import_module(package)
+    except ImportError:
+        print(f"[Dependency] {package} not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+    finally:
+        try:
+            globals()[package] = importlib.import_module(package)
+        except ImportError:
+            print(f"[Warning] {package} could not be imported even after install.")
+
+def ensure_dependencies():
+    """Check and install all required packages."""
+    for pkg in REQUIRED_PACKAGES:
+        if pkg == "playwright":
+            try:
+                importlib.import_module("playwright")
+            except ImportError:
+                print("[Dependency] Installing Playwright and browsers...")
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "playwright"])
+                subprocess.check_call([sys.executable, "-m", "playwright", "install"])
+        else:
+            install_and_import(pkg)
+
 # Constants
 ROOT = Path(__file__).resolve().parent
 SRC_DIR = ROOT / 'src'
@@ -396,22 +432,23 @@ class DependencyManager:
             ('sqlite3', 'SQLite - Database'),
         ]
         
-        for module, description in critical_modules:
-            try:
-                result = subprocess.run([
-                    venv_python, '-c', f'import {module}; print("OK")'
-                ], capture_output=True, text=True, timeout=10)
-                
-                if result.returncode == 0:
-                    self.log(f"✓ {description}")
-                else:
-                    self.log(f"✗ {description} - FAILED")
-                    success = False
-            except Exception as e:
-                self.log(f"✗ {description} - ERROR: {e}")
+    success = True
+    for module, description in critical_modules:
+        try:
+            result = subprocess.run([
+                venv_python, '-c', f'import {module}; print("OK")'
+            ], capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                self.log(f"✓ {description}")
+            else:
+                self.log(f"✗ {description} - FAILED")
                 success = False
+        except Exception as e:
+            self.log(f"✗ {description} - ERROR: {e}")
+            success = False
         
-        return success
+    return success
     
     def _check_file_system(self) -> bool:
         """Check file system structure and permissions."""
