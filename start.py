@@ -28,6 +28,57 @@ from pathlib import Path
 from typing import Sequence, Optional, Dict, Any, List
 import argparse
 import json
+import subprocess
+import sys
+import importlib
+
+
+# ✅ Dependencies for PokerTool + scraping
+REQUIRED_PACKAGES = [
+    "requests",
+    "beautifulsoup4",
+    "lxml",
+    "selenium",
+    "playwright",
+    "pandas"
+]
+
+
+def install_and_import(package: str):
+    """Ensure a package is installed and importable."""
+    try:
+        importlib.import_module(package)
+    except ImportError:
+        print(f"[Dependency] {package} not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+    finally:
+        try:
+            globals()[package] = importlib.import_module(package)
+        except ImportError:
+            print(f"[Warning] {package} could not be imported even after install.")
+
+def ensure_dependencies():
+    """Check and install all required packages."""
+    for pkg in REQUIRED_PACKAGES:
+        if pkg == "playwright":
+            try:
+                importlib.import_module("playwright")
+            except ImportError:
+                print("[Dependency] Installing Playwright and browsers...")
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "playwright"])
+                subprocess.check_call([sys.executable, "-m", "playwright", "install"])
+        else:
+            install_and_import(pkg)
+
+def main():
+    print("[Startup] Checking dependencies...")
+    ensure_dependencies()
+    print("[Startup] All dependencies ready. Launching PokerTool...")
+
+    import poker_main  # run main entry point
+
+if __name__ == "__main__":
+    main()
 
 # Constants
 ROOT = Path(__file__).resolve().parent
