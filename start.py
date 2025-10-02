@@ -10,28 +10,36 @@
 #   summary: Complete rewrite for robust cross-platform dependency management and setup
 # ---
 # POKERTOOL-HEADER-END
+
 """
 Robust cross-platform setup and launcher for PokerTool.
 
 This script can bootstrap the entire project from nothing on Windows, macOS, and Linux.
 Run with: python start.py --all (or just python start.py)
+    Examples:
+    python start.py --all          # Full setup and launch (default)
+    python start.py --self-test    # Run comprehensive self-test (system + tests)
+    python start.py --venv         # Setup virtual environment only
+    python start.py --python       # Install Python dependencies only  
+    python start.py --node         # Install Node dependencies only
+    python start.py --tests        # Run tests only
+    python start.py --validate     # Validate environment setup only
+    python start.py --launch       # Launch application only
 """
 from __future__ import annotations
-
+from pathlib import Path
+from typing import Sequence, Optional, Dict, Any, List
 import os
 import sys
 import subprocess
 import platform
 import shutil
 import venv
-from pathlib import Path
-from typing import Sequence, Optional, Dict, Any, List
 import argparse
 import json
 import subprocess
 import sys
 import importlib
-
 
 # ✅ Dependencies for PokerTool + scraping
 REQUIRED_PACKAGES = [
@@ -42,7 +50,6 @@ REQUIRED_PACKAGES = [
     "playwright",
     "pandas"
 ]
-
 
 def install_and_import(package: str):
     """Ensure a package is installed and importable."""
@@ -69,16 +76,6 @@ def ensure_dependencies():
                 subprocess.check_call([sys.executable, "-m", "playwright", "install"])
         else:
             install_and_import(pkg)
-
-def main():
-    print("[Startup] Checking dependencies...")
-    ensure_dependencies()
-    print("[Startup] All dependencies ready. Launching PokerTool...")
-
-    import poker_main  # run main entry point
-
-if __name__ == "__main__":
-    main()
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -435,21 +432,21 @@ class DependencyManager:
             ('sqlite3', 'SQLite - Database'),
         ]
         
-        success = True
-        for module, description in critical_modules:
-            try:
-                result = subprocess.run([
-                    venv_python, '-c', f'import {module}; print("OK")'
-                ], capture_output=True, text=True, timeout=10)
-                
-                if result.returncode == 0:
-                    self.log(f"✓ {description}")
-                else:
-                    self.log(f"✗ {description} - FAILED")
-                    success = False
-            except Exception as e:
-                self.log(f"✗ {description} - ERROR: {e}")
+    success = True
+    for module, description in critical_modules:
+        try:
+            result = subprocess.run([
+                venv_python, '-c', f'import {module}; print("OK")'
+            ], capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                self.log(f"✓ {description}")
+            else:
+                self.log(f"✗ {description} - FAILED")
                 success = False
+        except Exception as e:
+            self.log(f"✗ {description} - ERROR: {e}")
+            success = False
         
         return success
     
@@ -568,17 +565,7 @@ class PokerToolLauncher:
             
             # Test basic module imports
             smoke_test_code = '''
-try:
-    import sys
-    sys.path.insert(0, "src")
-    # Basic import test - adjust based on your actual module structure
-    print("✓ Basic imports successful")
-    print("✓ Smoke test passed")
-except Exception as e:
-    print(f"✗ Smoke test failed: {e}")
-    sys.exit(1)
-'''
-            
+
             result = subprocess.run([
                 venv_python, '-c', smoke_test_code
             ], capture_output=True, text=True, cwd=ROOT, env=env, timeout=30)
@@ -588,7 +575,7 @@ except Exception as e:
                 return True
             else:
                 self.dependency_manager.log(f"⚠ Smoke test issues: {result.stderr}")
-                return False
+                return False'''
                 
         except Exception as e:
             self.dependency_manager.log(f"⚠ Smoke test error: {e}")
@@ -635,16 +622,7 @@ def main() -> int:
         description="PokerTool Setup and Launcher",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python start.py --all          # Full setup and launch (default)
-  python start.py --self-test    # Run comprehensive self-test (system + tests)
-  python start.py --venv         # Setup virtual environment only
-  python start.py --python       # Install Python dependencies only  
-  python start.py --node         # Install Node dependencies only
-  python start.py --tests        # Run tests only
-  python start.py --validate     # Validate environment setup only
-  python start.py --launch       # Launch application only
-        """
+"""
     )
     
     parser.add_argument('--venv', action='store_true', 
