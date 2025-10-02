@@ -1,485 +1,674 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
-Game Theory Optimal (GTO) deviation engine.
+GTO Deviations Module
+=====================
 
-Provides tooling for analysing profitable deviations from equilibrium
-strategies, including maximum exploitation search, population tendency
-integration, node locking, strategy simplification, and EV gain
-measurement.
+Calculates profitable deviations from Game Theory Optimal (GTO) strategy
+based on opponent tendencies and population biases.
 
-ID: GTO-DEV-001
-Status: INTEGRATED
-Priority: MEDIUM
+This module provides tools for:
+- Maximum exploitation strategy finding
+- Population tendency adjustments
+- Node-locking strategies
+- Strategy simplification
+- Deviation EV calculation
+
+Author: PokerTool Development Team
+Version: 1.0.0
+Last Modified: 2025-10-02
 """
 
 from __future__ import annotations
 
-import math
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Tuple, Any, Callable
+import logging
+from typing import Dict, List, Optional, Set, Tuple, Any
+from dataclasses import dataclass, field
+from enum import Enum
+import json
+import numpy as np
+from collections import defaultdict
 
-try:
-    from src.pokertool.node_locker import NodeLocker, NodeLock
-except ImportError:  # pragma: no cover - fallback for relative imports during packaging
-    from .node_locker import NodeLocker, NodeLock  # type: ignore[attr-defined]
-
-
-# --------------------------------------------------------------------------- #
-# Data models
-# --------------------------------------------------------------------------- #
+logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class PopulationProfile:
-    """
-    Describes population tendencies that can be exploited.
-
-    The `action_bias` mapping introduces additive deltas (positive or negative)
-    to action frequencies before re-normalisation.
-    """
-    name: str
-    action_bias: Dict[str, float]
-    aggression_factor: float = 0.0
-    passivity_factor: float = 0.0
-
-    def apply(self, strategy: Dict[str, float]) -> Dict[str, float]:
-        """Apply population bias to a strategy."""
-        adjusted = {action: max(0.0, freq + self.action_bias.get(action, 0.0))
-                    for action, freq in strategy.items()}
-        total = sum(adjusted.values())
-        if total <= 0.0:
-            # Fall back to uniform distribution if everything cancels out.
-            equal = 1.0 / max(len(strategy), 1)
-            return {action: equal for action in strategy}
-        return {action: freq / total for action, freq in adjusted.items()}
+class ActionType(Enum):
+    """Poker action types."""
+    FOLD = "fold"
+    CHECK = "check"
+    CALL = "call"
+    BET = "bet"
+    RAISE = "raise"
 
 
-@dataclass(frozen=True)
-class DeviationAdjustment:
-    """Represents the delta applied to an action when deviating."""
-    action: str
-    baseline_frequency: float
-    deviation_frequency: float
-    ev_contribution: float
-
-    @property
-    def delta(self) -> float:
-        return self.deviation_frequency - self.baseline_frequency
+class StrategyType(Enum):
+    """Strategy deviation types."""
+    GTO = "gto"
+    EXPLOITATIVE = "exploitative"
+    SIMPLIFIED = "simplified"
+    NODE_LOCKED = "node_locked"
 
 
-@dataclass(frozen=True)
-class DeviationRequest:
-    """
-    Input payload for a deviation computation.
-
-    Attributes:
-        node_id: Unique identifier for the decision node.
-        game_state: Arbitrary state blob passed to solver/engines.
-        baseline_strategy: Equilibrium or current strategy to deviate from.
-        action_evs: Expected value for each action (same keys as strategies).
-        population_profile: Optional profile to bias deviations.
-        simplification_threshold: Minimum probability retained after simplification.
-        max_actions: Optional cap on number of actions kept after simplification.
-        max_shift: Maximum total probability mass allowed to shift away from baseline.
-    """
-    node_id: str
-    game_state: Dict[str, Any]
-    baseline_strategy: Dict[str, float]
-    action_evs: Dict[str, float]
-    population_profile: Optional[PopulationProfile] = None
-    simplification_threshold: float = 0.01
-    max_actions: Optional[int] = 3
-    max_shift: float = 0.40
-    metadata: Dict[str, Any] = field(default_factory=dict)
+@dataclass
+class PopulationTendency:
+    """Population tendency data."""
+    action: ActionType
+    frequency: float  # 0.0 to 1.0
+    sample_size: int
+    confidence: float  # Statistical confidence in the tendency
+    
+    def is_significant(self, threshold: float = 0.7) -> bool:
+        """Check if tendency is statistically significant."""
+        return self.confidence >= threshold and self.sample_size >= 30
 
 
-@dataclass(frozen=True)
-class DeviationResult:
-    """Outcome of a deviation computation."""
-    node_id: str
-    baseline_strategy: Dict[str, float]
-    deviation_strategy: Dict[str, float]
-    adjustments: List[DeviationAdjustment]
-    ev_gain: float
-    exploitability_score: float
-    locked_actions: Dict[str, NodeLock]
-    metadata: Dict[str, Any]
+@dataclass
+class OpponentModel:
+    """Model of opponent's strategy deviations from GTO."""
+    player_id: str
+    tendencies: Dict[str, PopulationTendency] = field(default_factory=dict)
+    overall_vpip: float = 0.25  # Voluntarily Put In Pot
+    overall_pfr: float = 0.18   # Pre-Flop Raise
+    aggression_factor: float = 1.0  # Ratio of bets/raises to calls
+    sample_hands: int = 0
+    
+    def add_tendency(self, situation: str, tendency: PopulationTendency) -> None:
+        """Add or update a tendency for a specific situation."""
+        self.tendencies[situation] = tendency
+    
+    def get_tendency(self, situation: str) -> Optional[PopulationTendency]:
+        """Get tendency for a situation if it exists."""
+        return self.tendencies.get(situation)
+    
+    def is_tight(self) -> bool:
+        """Check if opponent plays tight (VPIP < 20%)."""
+        return self.overall_vpip < 0.20
+    
+    def is_aggressive(self) -> bool:
+        """Check if opponent is aggressive (AF > 2.0)."""
+        return self.aggression_factor > 2.0
+    
+    def get_style(self) -> str:
+        """Get opponent playing style."""
+        tight = self.is_tight()
+        aggressive = self.is_aggressive()
+        
+        if tight and aggressive:
+            return "TAG"  # Tight-Aggressive
+        elif tight and not aggressive:
+            return "Tight-Passive"
+        elif not tight and aggressive:
+            return "LAG"  # Loose-Aggressive
+        else:
+            return "Loose-Passive"
 
+
+@dataclass
+class Deviation:
+    """A profitable deviation from GTO strategy."""
+    situation: str
+    gto_action: ActionType
+    gto_frequency: float
+    exploitative_action: ActionType
+    exploitative_frequency: float
+    ev_gain: float  # Expected value gain in big blinds
+    confidence: float  # Confidence in the deviation (0-1)
+    reasoning: str  # Explanation of why this deviation is profitable
+    
     def to_dict(self) -> Dict[str, Any]:
-        """Serialise the result."""
+        """Convert to dictionary for serialization."""
         return {
-            "node_id": self.node_id,
-            "baseline_strategy": self.baseline_strategy,
-            "deviation_strategy": self.deviation_strategy,
-            "ev_gain": self.ev_gain,
-            "exploitability_score": self.exploitability_score,
-            "locked_actions": {
-                action: lock.to_dict() for action, lock in self.locked_actions.items()
-            },
-            "adjustments": [
-                {
-                    "action": adj.action,
-                    "baseline_frequency": adj.baseline_frequency,
-                    "deviation_frequency": adj.deviation_frequency,
-                    "delta": adj.delta,
-                    "ev_contribution": adj.ev_contribution,
-                }
-                for adj in self.adjustments
-            ],
-            "metadata": self.metadata,
+            'situation': self.situation,
+            'gto_action': self.gto_action.value,
+            'gto_frequency': self.gto_frequency,
+            'exploitative_action': self.exploitative_action.value,
+            'exploitative_frequency': self.exploitative_frequency,
+            'ev_gain': self.ev_gain,
+            'confidence': self.confidence,
+            'reasoning': self.reasoning
         }
 
 
-# --------------------------------------------------------------------------- #
-# Utilities
-# --------------------------------------------------------------------------- #
+class MaximumExploitationFinder:
+    """Finds maximum exploitation strategies against specific opponents."""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__ + '.MaximumExploitationFinder')
+    
+    def find_exploits(
+        self,
+        opponent: OpponentModel,
+        situation: str,
+        gto_strategy: Dict[ActionType, float]
+    ) -> List[Deviation]:
+        """
+        Find profitable deviations from GTO for a given situation.
+        
+        Args:
+            opponent: Opponent model with tendencies
+            situation: Description of the poker situation
+            gto_strategy: GTO frequencies for each action
+            
+        Returns:
+            List of profitable deviations
+        """
+        deviations = []
+        
+        # Get opponent's tendency for this situation
+        tendency = opponent.get_tendency(situation)
+        
+        if not tendency or not tendency.is_significant():
+            self.logger.debug(f"No significant tendency for {situation}")
+            return deviations
+        
+        # Calculate exploitation based on opponent's over/under-frequency
+        for gto_action, gto_freq in gto_strategy.items():
+            # Skip if GTO doesn't use this action much
+            if gto_freq < 0.05:
+                continue
+            
+            # Find counter-strategy
+            exploit = self._find_counter_strategy(
+                gto_action, gto_freq, tendency, opponent
+            )
+            
+            if exploit and exploit.ev_gain > 0.1:  # Minimum 0.1 BB gain
+                deviations.append(exploit)
+        
+        return sorted(deviations, key=lambda d: d.ev_gain, reverse=True)
+    
+    def _find_counter_strategy(
+        self,
+        gto_action: ActionType,
+        gto_freq: float,
+        tendency: PopulationTendency,
+        opponent: OpponentModel
+    ) -> Optional[Deviation]:
+        """Find counter-strategy to opponent's tendency."""
+        
+        # If opponent over-folds, increase aggression
+        if tendency.action == ActionType.FOLD and tendency.frequency > 0.6:
+            ev_gain = self._calculate_fold_exploit_ev(tendency.frequency, gto_freq)
+            return Deviation(
+                situation="",
+                gto_action=gto_action,
+                gto_frequency=gto_freq,
+                exploitative_action=ActionType.BET,
+                exploitative_frequency=min(1.0, gto_freq * 1.5),
+                ev_gain=ev_gain,
+                confidence=tendency.confidence,
+                reasoning=f"Opponent folds {tendency.frequency:.1%} - increase aggression"
+            )
+        
+        # If opponent over-calls, decrease bluffs, increase value bets
+        elif tendency.action == ActionType.CALL and tendency.frequency > 0.5:
+            ev_gain = self._calculate_call_exploit_ev(tendency.frequency, gto_freq)
+            return Deviation(
+                situation="",
+                gto_action=gto_action,
+                gto_frequency=gto_freq,
+                exploitative_action=ActionType.BET,
+                exploitative_frequency=gto_freq * 0.8,  # Fewer bluffs
+                ev_gain=ev_gain,
+                confidence=tendency.confidence,
+                reasoning=f"Opponent calls {tendency.frequency:.1%} - reduce bluffs, bet value hands"
+            )
+        
+        # If opponent over-raises, increase calling range
+        elif tendency.action == ActionType.RAISE and tendency.frequency > 0.3:
+            ev_gain = self._calculate_raise_exploit_ev(tendency.frequency, gto_freq)
+            return Deviation(
+                situation="",
+                gto_action=gto_action,
+                gto_frequency=gto_freq,
+                exploitative_action=ActionType.CALL,
+                exploitative_frequency=min(1.0, gto_freq * 1.3),
+                ev_gain=ev_gain,
+                confidence=tendency.confidence,
+                reasoning=f"Opponent raises {tendency.frequency:.1%} - widen calling range"
+            )
+        
+        return None
+    
+    def _calculate_fold_exploit_ev(self, fold_freq: float, gto_freq: float) -> float:
+        """Calculate EV gain from exploiting over-folding."""
+        # Simple linear model: more folding = more EV from bluffs
+        excess_folds = max(0, fold_freq - 0.5)
+        return excess_folds * 2.0 * (1 - gto_freq)
+    
+    def _calculate_call_exploit_ev(self, call_freq: float, gto_freq: float) -> float:
+        """Calculate EV gain from exploiting over-calling."""
+        excess_calls = max(0, call_freq - 0.4)
+        return excess_calls * 1.5 * gto_freq
+    
+    def _calculate_raise_exploit_ev(self, raise_freq: float, gto_freq: float) -> float:
+        """Calculate EV gain from exploiting over-raising."""
+        excess_raises = max(0, raise_freq - 0.25)
+        return excess_raises * 1.8 * (1 - gto_freq)
+
+
+class NodeLocker:
+    """
+    Implements node-locking strategies to simplify decision trees.
+    
+    Node-locking "locks" certain nodes in the game tree to specific actions,
+    simplifying the strategy while maintaining exploitative power.
+    """
+    
+    def __init__(self):
+        self.locked_nodes: Dict[str, ActionType] = {}
+        self.logger = logging.getLogger(__name__ + '.NodeLocker')
+    
+    def lock_node(self, node_id: str, action: ActionType, reason: str = "") -> None:
+        """Lock a node to always take a specific action."""
+        self.locked_nodes[node_id] = action
+        self.logger.info(f"Locked node {node_id} to {action.value}: {reason}")
+    
+    def unlock_node(self, node_id: str) -> None:
+        """Unlock a previously locked node."""
+        if node_id in self.locked_nodes:
+            del self.locked_nodes[node_id]
+            self.logger.info(f"Unlocked node {node_id}")
+    
+    def is_locked(self, node_id: str) -> bool:
+        """Check if a node is locked."""
+        return node_id in self.locked_nodes
+    
+    def get_action(self, node_id: str) -> Optional[ActionType]:
+        """Get the locked action for a node."""
+        return self.locked_nodes.get(node_id)
+    
+    def apply_locking_strategy(
+        self,
+        opponent: OpponentModel,
+        simplified_threshold: float = 0.15
+    ) -> Dict[str, ActionType]:
+        """
+        Generate node-locking strategy based on opponent model.
+        
+        Locks nodes where opponent has strong tendencies, simplifying decisions.
+        
+        Args:
+            opponent: Opponent model
+            simplified_threshold: Lock nodes where action frequency < threshold
+            
+        Returns:
+            Dictionary of node locks
+        """
+        locks = {}
+        
+        for situation, tendency in opponent.tendencies.items():
+            if not tendency.is_significant():
+                continue
+            
+            # Lock nodes where opponent rarely takes an action
+            if tendency.frequency < simplified_threshold:
+                # Opponent rarely takes this action, so we can simplify
+                counter_action = self._get_counter_action(tendency.action)
+                locks[situation] = counter_action
+                self.logger.debug(
+                    f"Locking {situation} to {counter_action.value} "
+                    f"(opponent {tendency.action.value} only {tendency.frequency:.1%})"
+                )
+            
+            # Lock nodes where opponent almost always takes an action
+            elif tendency.frequency > 0.85:
+                counter_action = self._get_counter_action(tendency.action)
+                locks[situation] = counter_action
+                self.logger.debug(
+                    f"Locking {situation} to {counter_action.value} "
+                    f"(opponent {tendency.action.value} {tendency.frequency:.1%})"
+                )
+        
+        return locks
+    
+    def _get_counter_action(self, action: ActionType) -> ActionType:
+        """Get the best counter-action to an opponent's action."""
+        if action == ActionType.FOLD:
+            return ActionType.BET  # Bet more if they fold often
+        elif action == ActionType.CALL:
+            return ActionType.BET  # Value bet if they call often
+        elif action == ActionType.BET:
+            return ActionType.CALL  # Call more if they bet often
+        elif action == ActionType.RAISE:
+            return ActionType.CALL  # Call more if they raise often
+        else:  # CHECK
+            return ActionType.BET  # Bet if they check often
 
 
 class StrategySimplifier:
-    """Utility for pruning low-probability actions while maintaining normalisation."""
-
-    @staticmethod
+    """Simplifies complex GTO strategies while maintaining EV."""
+    
+    def __init__(self, ev_loss_tolerance: float = 0.05):
+        """
+        Initialize simplifier.
+        
+        Args:
+            ev_loss_tolerance: Maximum EV loss (in BB) acceptable from simplification
+        """
+        self.ev_loss_tolerance = ev_loss_tolerance
+        self.logger = logging.getLogger(__name__ + '.StrategySimplifier')
+    
     def simplify(
-        strategy: Dict[str, float],
-        threshold: float = 0.01,
-        max_actions: Optional[int] = None,
-    ) -> Dict[str, float]:
-        """Remove very small probabilities and optionally cap action count."""
-        filtered = {a: f for a, f in strategy.items() if f >= threshold}
-        if not filtered:
-            # Keep the single best action if everything was below the threshold.
-            best_action = max(strategy.items(), key=lambda item: item[1])[0]
-            filtered = {best_action: 1.0}
-
-        if max_actions is not None and len(filtered) > max_actions:
-            # Keep top-N actions by probability mass.
-            sorted_actions = sorted(filtered.items(), key=lambda item: item[1], reverse=True)
-            filtered = dict(sorted_actions[:max_actions])
-
-        total = sum(filtered.values())
-        return {action: freq / total for action, freq in filtered.items()}
-
-
-class DeviationEVCalculator:
-    """Computes EV differences between strategies."""
-
-    @staticmethod
-    def expected_value(strategy: Dict[str, float], action_evs: Dict[str, float]) -> float:
-        """Return sum(strategy[action] * ev[action])."""
-        return sum(strategy.get(action, 0.0) * action_evs.get(action, 0.0)
-                   for action in action_evs.keys())
-
-    @classmethod
-    def ev_gain(cls,
-                baseline: Dict[str, float],
-                deviated: Dict[str, float],
-                action_evs: Dict[str, float]) -> float:
-        """Compute EV gain from deviating strategy."""
-        return cls.expected_value(deviated, action_evs) - cls.expected_value(baseline, action_evs)
-
-
-# --------------------------------------------------------------------------- #
-# Core engine
-# --------------------------------------------------------------------------- #
-
-
-class GTODeviationEngine:
-    """Main orchestrator for deviation analysis."""
-
-    def __init__(
         self,
-        solver_api: Optional[Any] = None,
-        node_locker: Optional[NodeLocker] = None,
-    ) -> None:
-        self.solver_api = solver_api
-        self.node_locker = node_locker or NodeLocker()
-        self._population_profiles: Dict[str, PopulationProfile] = {}
-
-    # -- population -------------------------------------------------------- #
-
-    def register_population_profile(self, profile: PopulationProfile) -> None:
-        """Add or replace a population profile."""
-        self._population_profiles[profile.name] = profile
-
-    def get_population_profile(self, name: str) -> Optional[PopulationProfile]:
-        """Retrieve registered population profile."""
-        return self._population_profiles.get(name)
-
-    # -- main entry -------------------------------------------------------- #
-
-    def compute_deviation(self, request: DeviationRequest) -> DeviationResult:
-        """Compute the most profitable deviation subject to constraints."""
-        baseline = self._normalise(request.baseline_strategy)
-        action_evs = request.action_evs
-
-        # Step 1: Seed target with population adjustments if provided.
-        target = self._apply_population_profile(request, baseline)
-
-        # Step 2: Run maximum exploitation search by shifting probability mass.
-        exploited = self._max_exploitation(target, action_evs, request.max_shift)
-
-        # Step 3: Apply node locks.
-        adjusted, locks = self.node_locker.apply(request.node_id, exploited)
-
-        # Step 4: Simplify resulting strategy.
-        simplified = StrategySimplifier.simplify(
-            adjusted,
-            threshold=request.simplification_threshold,
-            max_actions=request.max_actions,
+        strategy: Dict[ActionType, float],
+        min_frequency: float = 0.10
+    ) -> Dict[ActionType, float]:
+        """
+        Simplify a mixed strategy by removing low-frequency actions.
+        
+        Args:
+            strategy: Original mixed strategy
+            min_frequency: Minimum frequency to keep an action
+            
+        Returns:
+            Simplified strategy with renormalized frequencies
+        """
+        # Filter out low-frequency actions
+        simplified = {
+            action: freq
+            for action, freq in strategy.items()
+            if freq >= min_frequency
+        }
+        
+        if not simplified:
+            # If all actions filtered out, keep the highest frequency one
+            simplified = {max(strategy.items(), key=lambda x: x[1])[0]: 1.0}
+            return simplified
+        
+        # Renormalize frequencies
+        total = sum(simplified.values())
+        normalized = {
+            action: freq / total
+            for action, freq in simplified.items()
+        }
+        
+        self.logger.debug(
+            f"Simplified strategy from {len(strategy)} to {len(normalized)} actions"
         )
-        # Ensure original action support is preserved for downstream consumers.
-        expanded_strategy: Dict[str, float] = dict(simplified)
-        for action in baseline.keys():
-            expanded_strategy.setdefault(action, 0.0)
-
-        # Step 5: Calculate EV gain and exploitability.
-        ev_gain = DeviationEVCalculator.ev_gain(baseline, expanded_strategy, action_evs)
-        exploitability = self._estimate_exploitability(baseline, expanded_strategy)
-
-        adjustments = self._build_adjustments(
-            baseline, expanded_strategy, action_evs
-        )
-
-        metadata = dict(request.metadata)
-        metadata.update({
-            "population_profile": request.population_profile.name
-            if request.population_profile else None,
-            "ev_baseline": DeviationEVCalculator.expected_value(baseline, action_evs),
-            "ev_deviation": DeviationEVCalculator.expected_value(expanded_strategy, action_evs),
-            "baseline_entropy": self._entropy(baseline),
-            "deviation_entropy": self._entropy(expanded_strategy),
-        })
-
-        return DeviationResult(
-            node_id=request.node_id,
-            baseline_strategy=baseline,
-            deviation_strategy=expanded_strategy,
-            adjustments=adjustments,
-            ev_gain=ev_gain,
-            exploitability_score=exploitability,
-            locked_actions={action: lock for action, lock in locks.items()},
-            metadata=metadata,
-        )
-
-    # -- helpers ----------------------------------------------------------- #
-
-    def _apply_population_profile(
+        
+        return normalized
+    
+    def merge_similar_actions(
         self,
-        request: DeviationRequest,
-        strategy: Dict[str, float],
-    ) -> Dict[str, float]:
-        profile = request.population_profile
-        if profile is None and request.metadata.get("population_profile"):
-            profile = self.get_population_profile(request.metadata["population_profile"])
+        strategy: Dict[ActionType, float]
+    ) -> Dict[ActionType, float]:
+        """
+        Merge similar actions to reduce complexity.
+        
+        For example, merge different bet sizes into a single bet action.
+        """
+        # Merge BET and RAISE into a single "aggressive" action
+        merged = dict(strategy)
+        
+        if ActionType.BET in merged and ActionType.RAISE in merged:
+            bet_freq = merged.get(ActionType.BET, 0)
+            raise_freq = merged.get(ActionType.RAISE, 0)
+            
+            # Keep the more frequent action
+            if bet_freq >= raise_freq:
+                merged[ActionType.BET] = bet_freq + raise_freq
+                del merged[ActionType.RAISE]
+            else:
+                merged[ActionType.RAISE] = bet_freq + raise_freq
+                del merged[ActionType.BET]
+        
+        return merged
 
-        if profile is None:
-            return strategy
 
-        return profile.apply(strategy)
-
-    @staticmethod
-    def _normalise(strategy: Dict[str, float]) -> Dict[str, float]:
+class GTODeviationCalculator:
+    """
+    Main class for calculating profitable GTO deviations.
+    
+    Combines exploitation finding, node locking, and simplification.
+    """
+    
+    def __init__(self):
+        self.exploit_finder = MaximumExploitationFinder()
+        self.node_locker = NodeLocker()
+        self.simplifier = StrategySimplifier()
+        self.logger = logging.getLogger(__name__ + '.GTODeviationCalculator')
+    
+    def calculate_deviations(
+        self,
+        opponent: OpponentModel,
+        situation: str,
+        gto_strategy: Dict[ActionType, float],
+        simplify: bool = True
+    ) -> Tuple[Dict[ActionType, float], List[Deviation]]:
+        """
+        Calculate optimal deviations from GTO for a situation.
+        
+        Args:
+            opponent: Opponent model
+            situation: Poker situation description
+            gto_strategy: GTO mixed strategy
+            simplify: Whether to simplify the strategy
+            
+        Returns:
+            Tuple of (exploitative_strategy, list_of_deviations)
+        """
+        # Find exploitative deviations
+        deviations = self.exploit_finder.find_exploits(
+            opponent, situation, gto_strategy
+        )
+        
+        if not deviations:
+            self.logger.info(f"No profitable deviations found for {situation}")
+            return gto_strategy, []
+        
+        # Build exploitative strategy from deviations
+        exploitative_strategy = self._build_exploitative_strategy(
+            gto_strategy, deviations
+        )
+        
+        # Apply node locking if beneficial
+        if self.node_locker.is_locked(situation):
+            locked_action = self.node_locker.get_action(situation)
+            exploitative_strategy = {locked_action: 1.0}
+        
+        # Simplify if requested
+        if simplify:
+            exploitative_strategy = self.simplifier.simplify(exploitative_strategy)
+        
+        return exploitative_strategy, deviations
+    
+    def _build_exploitative_strategy(
+        self,
+        gto_strategy: Dict[ActionType, float],
+        deviations: List[Deviation]
+    ) -> Dict[ActionType, float]:
+        """Build exploitative mixed strategy from deviations."""
+        strategy = dict(gto_strategy)
+        
+        # Apply highest EV deviation
+        if deviations:
+            best_deviation = deviations[0]
+            
+            # Shift frequency from GTO action to exploitative action
+            shift = min(
+                0.3,  # Max 30% frequency shift
+                strategy.get(best_deviation.gto_action, 0) * 0.5
+            )
+            
+            strategy[best_deviation.gto_action] = \
+                strategy.get(best_deviation.gto_action, 0) - shift
+            strategy[best_deviation.exploitative_action] = \
+                strategy.get(best_deviation.exploitative_action, 0) + shift
+            
+            # Remove zero frequencies
+            strategy = {a: f for a, f in strategy.items() if f > 0.01}
+        
+        # Renormalize
         total = sum(strategy.values())
-        if total <= 0.0:
-            equal = 1.0 / max(len(strategy), 1)
-            return {action: equal for action in strategy}
-        return {action: max(0.0, freq / total) for action, freq in strategy.items()}
-
-    def _max_exploitation(
+        if total > 0:
+            strategy = {a: f / total for a, f in strategy.items()}
+        
+        return strategy
+    
+    def calculate_exploitability(
         self,
-        strategy: Dict[str, float],
-        action_evs: Dict[str, float],
-        max_shift: float,
-    ) -> Dict[str, float]:
-        """
-        Shift probability mass towards higher EV actions while respecting the max_shift.
-
-        A simple heuristic is used: move weight from lowest EV actions towards the highest
-        EV actions proportionally to their EV advantage, capped by max_shift.
-        """
-        if max_shift <= 0.0:
-            return strategy
-
-        ev_pairs = [(action, action_evs.get(action, 0.0)) for action in strategy]
-        ev_sorted = sorted(ev_pairs, key=lambda item: item[1], reverse=True)
-
-        if not ev_sorted:
-            return strategy
-
-        best_action = ev_sorted[0][0]
-        worst_action = ev_sorted[-1][0]
-
-        if best_action == worst_action:
-            return strategy
-
-        deviation = strategy.copy()
-        shift_available = min(max_shift, strategy.get(worst_action, 0.0))
-
-        # Shift from worst to best.
-        deviation[worst_action] = max(0.0, deviation[worst_action] - shift_available)
-        deviation[best_action] = deviation.get(best_action, 0.0) + shift_available
-
-        # Additional proportional redistribution based on EV advantage.
-        total_advantage = sum(
-            max(0.0, ev - action_evs.get(worst_action, 0.0))
-            for _, ev in ev_sorted
-        )
-        if total_advantage > 0:
-            remaining_shift = max_shift - shift_available
-            for action, ev in ev_sorted[1:]:
-                advantage = max(0.0, ev - action_evs.get(worst_action, 0.0))
-                if advantage <= 0 or remaining_shift <= 0:
-                    continue
-                delta = remaining_shift * (advantage / total_advantage)
-                available_pool = sum(
-                    deviation[a] for a, e in ev_sorted if e <= ev and a != action
-                )
-                delta = min(delta, available_pool)
-                deviation[action] = deviation.get(action, 0.0) + delta
-                for pool_action, pool_ev in ev_sorted[::-1]:
-                    if pool_action == action:
-                        continue
-                    reducible = min(deviation[pool_action], delta)
-                    deviation[pool_action] -= reducible
-                    delta -= reducible
-                    if delta <= 1e-9:
-                        break
-                remaining_shift -= max(0.0, remaining_shift * (advantage / total_advantage))
-
-        return self._normalise(deviation)
-
-    @staticmethod
-    def _entropy(strategy: Dict[str, float]) -> float:
-        """Shannon entropy for informational comparison."""
-        entropy = 0.0
-        for freq in strategy.values():
-            if freq > 0:
-                entropy -= freq * math.log(freq, 2)
-        return entropy
-
-    @staticmethod
-    def _estimate_exploitability(
-        baseline: Dict[str, float],
-        deviation: Dict[str, float],
+        strategy: Dict[ActionType, float],
+        opponent: OpponentModel
     ) -> float:
         """
-        Estimate exploitability via L2 distance scaled to [0, 1].
-
-        The further the deviation is from the baseline, the higher the exploitability risk.
+        Calculate how exploitable a strategy is.
+        
+        Lower values indicate less exploitable strategies.
+        
+        Returns:
+            Exploitability score in big blinds
         """
-        actions = set(baseline.keys()) | set(deviation.keys())
-        squared = sum(
-            (baseline.get(action, 0.0) - deviation.get(action, 0.0)) ** 2
-            for action in actions
+        # Simple model: strategies that deviate more from balanced are more exploitable
+        # In real implementation, would use game tree analysis
+        
+        # Check if strategy is balanced (similar frequencies for value/bluff)
+        bet_raise_freq = (
+            strategy.get(ActionType.BET, 0) +
+            strategy.get(ActionType.RAISE, 0)
         )
-        distance = math.sqrt(squared)
-        return min(1.0, distance * math.sqrt(len(actions)))
-
-    @staticmethod
-    def _build_adjustments(
-        baseline: Dict[str, float],
-        deviation: Dict[str, float],
-        action_evs: Dict[str, float],
-    ) -> List[DeviationAdjustment]:
-        adjustments: List[DeviationAdjustment] = []
-        for action in set(baseline.keys()) | set(deviation.keys()):
-            baseline_freq = baseline.get(action, 0.0)
-            deviation_freq = deviation.get(action, 0.0)
-            ev = action_evs.get(action, 0.0)
-            adjustments.append(
-                DeviationAdjustment(
-                    action=action,
-                    baseline_frequency=baseline_freq,
-                    deviation_frequency=deviation_freq,
-                    ev_contribution=ev * (deviation_freq - baseline_freq),
-                )
+        
+        call_freq = strategy.get(ActionType.CALL, 0)
+        fold_freq = strategy.get(ActionType.FOLD, 0)
+        
+        # Balanced strategy has bet/call/fold in reasonable proportions
+        balance_score = abs(bet_raise_freq - 0.4) + abs(call_freq - 0.3) + abs(fold_freq - 0.3)
+        
+        exploitability = balance_score * 2.0  # Scale to BB
+        
+        return exploitability
+    
+    def generate_report(
+        self,
+        opponent: OpponentModel,
+        deviations: List[Deviation]
+    ) -> Dict[str, Any]:
+        """Generate a comprehensive deviation report."""
+        return {
+            'opponent_style': opponent.get_style(),
+            'opponent_vpip': opponent.overall_vpip,
+            'opponent_pfr': opponent.overall_pfr,
+            'opponent_aggression': opponent.aggression_factor,
+            'sample_size': opponent.sample_hands,
+            'deviation_count': len(deviations),
+            'total_ev_gain': sum(d.ev_gain for d in deviations),
+            'top_deviations': [d.to_dict() for d in deviations[:5]],
+            'average_confidence': (
+                sum(d.confidence for d in deviations) / len(deviations)
+                if deviations else 0.0
             )
-        adjustments.sort(key=lambda adj: adj.delta, reverse=True)
-        return adjustments
-
-
-# --------------------------------------------------------------------------- #
-# Ensemble helpers
-# --------------------------------------------------------------------------- #
-
-
-def create_ensemble_engine(
-    deviation_engine: GTODeviationEngine,
-    node_id: str,
-    action_evs_provider: Callable[[Dict[str, Any]], Dict[str, float]],
-    population_profile: Optional[PopulationProfile] = None,
-    decision_type: Any = None,
-) -> Callable[[Dict[str, Any], Any], Any]:
-    """
-    Create an ensemble-compatible engine function.
-
-    Args:
-        deviation_engine: Configured GTODeviationEngine instance.
-        node_id: Identifier for the node we are locking/analysing.
-        action_evs_provider: Function mapping `game_state -> action EVs`.
-        population_profile: Optional fixed profile.
-        decision_type: Desired decision type (defaults to ACTION).
-
-    Returns:
-        Callable suitable for `EnsembleDecisionSystem.register_engine`.
-    """
-    from src.pokertool.ensemble_decision import EngineDecision, DecisionType  # local import
-
-    decision_type = decision_type or DecisionType.ACTION
-
-    def engine(game_state: Dict[str, Any], requested_type: Any) -> EngineDecision:
-        if requested_type != decision_type:
-            raise ValueError(
-                f"GTO deviation engine only supports decision type {decision_type}"
-            )
-
-        baseline = game_state.get("baseline_strategy")
-        if not baseline:
-            raise ValueError("game_state missing 'baseline_strategy' for deviation analysis")
-
-        action_evs = action_evs_provider(game_state)
-
-        request = DeviationRequest(
-            node_id=node_id,
-            game_state=game_state,
-            baseline_strategy=baseline,
-            action_evs=action_evs,
-            population_profile=population_profile,
-            metadata={"source": "ensemble_adapter"},
-        )
-
-        result = deviation_engine.compute_deviation(request)
-
-        if decision_type == DecisionType.ACTION:
-            best_action = max(
-                result.deviation_strategy.items(),
-                key=lambda item: item[1],
-            )[0]
-            value = best_action
-        else:
-            value = result.deviation_strategy
-
-        reasoning = (
-            f"Deviation EV gain: {result.ev_gain:.3f}, "
-            f"exploitability: {result.exploitability_score:.3f}"
-        )
-
-        confidence = max(0.0, min(1.0, 0.5 + result.ev_gain))
-
-        metadata = {
-            "strategy": result.deviation_strategy,
-            "baseline": result.baseline_strategy,
-            "ev_gain": result.ev_gain,
-            "exploitability": result.exploitability_score,
-            "adjustments": [asdict(adj) | {"delta": adj.delta} for adj in result.adjustments],
         }
 
-        return EngineDecision(
-            engine_name="gto_deviation",
-            decision_type=decision_type,
-            value=value,
-            confidence=confidence,
-            reasoning=reasoning,
-            metadata=metadata,
-        )
 
-    return engine
+# Convenience functions
+
+def create_opponent_model(
+    player_id: str,
+    vpip: float = 0.25,
+    pfr: float = 0.18,
+    aggression: float = 1.0
+) -> OpponentModel:
+    """Create a basic opponent model."""
+    return OpponentModel(
+        player_id=player_id,
+        overall_vpip=vpip,
+        overall_pfr=pfr,
+        aggression_factor=aggression
+    )
+
+
+def find_deviations(
+    opponent: OpponentModel,
+    situation: str,
+    gto_strategy: Dict[str, float]
+) -> List[Deviation]:
+    """
+    Quick function to find profitable deviations.
+    
+    Args:
+        opponent: Opponent model
+        situation: Situation description
+        gto_strategy: GTO strategy as dict with action strings as keys
+        
+    Returns:
+        List of profitable deviations
+    """
+    # Convert string keys to ActionType
+    gto_typed = {
+        ActionType(action): freq
+        for action, freq in gto_strategy.items()
+    }
+    
+    calculator = GTODeviationCalculator()
+    _, deviations = calculator.calculate_deviations(
+        opponent, situation, gto_typed
+    )
+    
+    return deviations
+
+
+if __name__ == '__main__':
+    # Example usage
+    logging.basicConfig(level=logging.INFO)
+    
+    print("=== GTO Deviations Calculator ===\n")
+    
+    # Create opponent model (loose-passive fish)
+    opponent = create_opponent_model(
+        player_id="fish123",
+        vpip=0.45,  # Plays 45% of hands
+        pfr=0.08,   # Raises only 8% preflop
+        aggression=0.5  # Very passive
+    )
+    
+    # Add tendency: opponent over-folds to 3-bets
+    opponent.add_tendency(
+        "facing_3bet_preflop",
+        PopulationTendency(
+            action=ActionType.FOLD,
+            frequency=0.75,  # Folds 75% to 3-bets
+            sample_size=50,
+            confidence=0.85
+        )
+    )
+    
+    # GTO strategy: balanced 3-bet range
+    gto_strategy = {
+        ActionType.FOLD: 0.6,
+        ActionType.CALL: 0.2,
+        ActionType.RAISE: 0.2
+    }
+    
+    # Calculate deviations
+    calculator = GTODeviationCalculator()
+    exploit_strategy, deviations = calculator.calculate_deviations(
+        opponent,
+        "facing_3bet_preflop",
+        gto_strategy,
+        simplify=True
+    )
+    
+    print(f"Opponent Style: {opponent.get_style()}")
+    print(f"VPIP: {opponent.overall_vpip:.1%}")
+    print(f"PFR: {opponent.overall_pfr:.1%}")
+    print(f"Aggression: {opponent.aggression_factor:.2f}\n")
+    
+    print("GTO Strategy:")
+    for action, freq in gto_strategy.items():
+        print(f"  {action.value}: {freq:.1%}")
+    
+    print("\nExploitative Strategy:")
+    for action, freq in exploit_strategy.items():
+        print(f"  {action.value}: {freq:.1%}")
+    
+    print(f"\nFound {len(deviations)} profitable deviations:")
+    for dev in deviations:
+        print(f"\n  {dev.exploitative_action.value}: +{dev.ev_gain:.2f} BB")
+        print(f"  Confidence: {dev.confidence:.1%}")
+        print(f"  Reason: {dev.reasoning}")
+    
+    # Generate report
+    report = calculator.generate_report(opponent, deviations)
+    print("\n=== Deviation Report ===")
+    print(json.dumps(report, indent=2))
