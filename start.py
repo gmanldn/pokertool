@@ -212,7 +212,7 @@ class DependencyManager:
         
         self.log(f"Installing Python dependencies from {requirements_file.name}...")
         self.run_command([
-            venv_python, '-m', 'pip', 'install', '-r', str(requirements_file)
+            venv_python, '-m', 'pip', 'install', '--pre', '-r', str(requirements_file)
         ])
         
         # Install additional critical dependencies that might not be in requirements
