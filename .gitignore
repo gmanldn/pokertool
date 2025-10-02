@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*__*
 
 # Specific Python files to ignore
 __init__.py
@@ -42,6 +43,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+.*
 
 # Project-specific legacy
 poker.db
