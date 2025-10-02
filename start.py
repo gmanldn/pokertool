@@ -10,24 +10,34 @@
 #   summary: Complete rewrite for robust cross-platform dependency management and setup
 # ---
 # POKERTOOL-HEADER-END
+
 """
 Robust cross-platform setup and launcher for PokerTool.
 
 This script can bootstrap the entire project from nothing on Windows, macOS, and Linux.
 Run with: python start.py --all (or just python start.py)
+    Examples:
+    python start.py --all          # Full setup and launch (default)
+    python start.py --self-test    # Run comprehensive self-test (system + tests)
+    python start.py --venv         # Setup virtual environment only
+    python start.py --python       # Install Python dependencies only  
+    python start.py --node         # Install Node dependencies only
+    python start.py --tests        # Run tests only
+    python start.py --validate     # Validate environment setup only
+    python start.py --launch       # Launch application only
 """
 from __future__ import annotations
-
+from pathlib import Path
+from typing import Sequence, Optional, Dict, Any, List
 import os
 import sys
 import subprocess
 import platform
 import shutil
 import venv
-from pathlib import Path
-from typing import Sequence, Optional, Dict, Any, List
 import argparse
 import json
+import importlib
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -212,7 +222,7 @@ class DependencyManager:
         
         self.log(f"Installing Python dependencies from {requirements_file.name}...")
         self.run_command([
-            venv_python, '-m', 'pip', 'install', '-r', str(requirements_file)
+            venv_python, '-m', 'pip', 'install', '--pre', '-r', str(requirements_file)
         ])
         
         # Install additional critical dependencies that might not be in requirements
@@ -400,8 +410,7 @@ class DependencyManager:
                 self.log(f"✗ {description} - ERROR: {e}")
                 success = False
         
-        return success
-    
+        return success    
     def _check_file_system(self) -> bool:
         """Check file system structure and permissions."""
         self.log("Checking file system...")
@@ -449,14 +458,8 @@ class PokerToolLauncher:
     def setup_python_path(self) -> Dict[str, str]:
         """Set up the Python path for running the application."""
         env = os.environ.copy()
-        
         python_paths = [str(ROOT), str(SRC_DIR)]
-        existing_path = env.get('PYTHONPATH', '')
-        
-        if existing_path:
-            python_paths.append(existing_path)
-        
-        env['PYTHONPATH'] = os.pathsep.join(python_paths)
+        env['PYTHONPATH'] = os.pathsep.join([str(p) for p in python_paths if p]) + os.pathsep + env.get('PYTHONPATH', '')
         return env
     
     def run_tests(self) -> int:
@@ -516,18 +519,8 @@ class PokerToolLauncher:
             env = self.setup_python_path()
             
             # Test basic module imports
-            smoke_test_code = '''
-try:
-    import sys
-    sys.path.insert(0, "src")
-    # Basic import test - adjust based on your actual module structure
-    print("✓ Basic imports successful")
-    print("✓ Smoke test passed")
-except Exception as e:
-    print(f"✗ Smoke test failed: {e}")
-    sys.exit(1)
-'''
-            
+            smoke_test_code = "import pokertool.utils; print('pokertool.utils OK')"
+
             result = subprocess.run([
                 venv_python, '-c', smoke_test_code
             ], capture_output=True, text=True, cwd=ROOT, env=env, timeout=30)
@@ -584,16 +577,7 @@ def main() -> int:
         description="PokerTool Setup and Launcher",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python start.py --all          # Full setup and launch (default)
-  python start.py --self-test    # Run comprehensive self-test (system + tests)
-  python start.py --venv         # Setup virtual environment only
-  python start.py --python       # Install Python dependencies only  
-  python start.py --node         # Install Node dependencies only
-  python start.py --tests        # Run tests only
-  python start.py --validate     # Validate environment setup only
-  python start.py --launch       # Launch application only
-        """
+"""
     )
     
     parser.add_argument('--venv', action='store_true', 

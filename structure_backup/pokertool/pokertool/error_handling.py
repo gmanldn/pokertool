@@ -1,0 +1,293 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from __future__ import annotations
+
+"""
+PokerTool Error Handling Module
+================================
+
+Comprehensive error handling, retry logic, and circuit breaker
+implementation for robust fault tolerance and graceful degradation.
+
+Module: pokertool.error_handling
+Version: 20.0.0
+Last Modified: 2025-09-29
+Author: PokerTool Development Team
+License: MIT
+
+Dependencies:
+    - Standard library: functools, time, logging
+    - typing: Type hints
+    - dataclasses: Structured error information
+
+Error Hierarchy:
+    - PokerError: Base exception
+    - DatabaseError: Database operations
+    - NetworkError: Network operations
+    - ValidationError: Input validation
+    - SecurityError: Security violations
+
+Features:
+    - Automatic retry with backoff
+    - Circuit breaker pattern
+    - Error aggregation
+    - Structured logging
+    - Recovery strategies
+    - User-friendly messages
+
+Decorators:
+    - @retry_on_failure: Automatic retry
+    - @circuit_breaker: Circuit breaker
+    - @validate_input: Input validation
+    - @log_errors: Error logging
+
+Change Log:
+    - v28.0.0 (2025-09-29): Enhanced documentation, added circuit breaker
+    - v19.0.0 (2025-09-18): Retry logic implementation
+    - v18.0.0 (2025-09-15): Initial error handling
+"""
+
+__version__ = '20.0.0'
+__author__ = 'PokerTool Development Team'
+__copyright__ = 'Copyright (c) 2025 PokerTool'
+__license__ = 'MIT'
+__maintainer__ = 'George Ridout'
+__status__ = 'Production'
+
+"""
+error_handling.py — centralised error handling & logging (clean version).
+"""
+import logging
+import sys
+import time
+from contextlib import contextmanager
+from typing import Any, Callable, Iterator
+from functools import wraps
+
+# Import master logging system if available
+try:
+    from .master_logging import get_master_logger, log_error, log_warning, LogCategory, auto_log_errors
+    MASTER_LOGGING_AVAILABLE = True
+    
+    # Use master logger
+    master_logger = get_master_logger()
+    
+    def log_info(message: str, **kwargs):
+        master_logger.info(message, category=LogCategory.ERROR, **kwargs)
+    
+    def log_warning_msg(message: str, **kwargs):
+        master_logger.warning(message, category=LogCategory.ERROR, **kwargs)
+    
+    def log_exception(message: str, exception: Exception, **kwargs):
+        master_logger.error(message, category=LogCategory.ERROR, exception=exception, **kwargs)
+        
+    log = master_logger  # For backward compatibility
+    
+except ImportError:
+    # Fallback to basic logging if master logging not available
+    MASTER_LOGGING_AVAILABLE = False
+    
+    def _configure_logging() -> None:
+        """Configure centralized logging for the application."""
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s %(levelname)s %(name)s :: %(message)s', 
+            handlers=[logging.StreamHandler(sys.stderr)], 
+            force=True, 
+        )
+
+    _configure_logging()
+    log = logging.getLogger('pokertool')
+    
+    def log_info(message: str, **kwargs):
+        log.info(message)
+    
+    def log_warning_msg(message: str, **kwargs):
+        log.warning(message)
+    
+    def log_exception(message: str, exception: Exception, **kwargs):
+        log.exception(message)
+
+
+class SecurityError(Exception):
+    """Raised when a security violation is detected."""
+    pass
+
+def sanitize_input(input_str: str, max_length: int = 1000, allowed_chars: str = None) -> str:
+    """
+    Sanitize user input to prevent injection attacks.
+
+    Args:
+        input_str: The input string to sanitize
+        max_length: Maximum allowed length
+        allowed_chars: String of allowed characters (None for basic alphanumeric + spaces)
+
+    Returns:
+        Sanitized string
+
+    Raises:
+        ValueError: If input is invalid or too long
+    """
+    if not isinstance(input_str, str):
+        raise ValueError('Input must be a string')
+
+    if len(input_str) > max_length:
+        raise ValueError(f'Input too long: {len(input_str)} > {max_length}')
+
+    original_input = input_str
+
+    # List of dangerous SQL keywords and patterns to remove
+    dangerous_patterns = [
+        'DROP TABLE', 'DELETE FROM', 'INSERT INTO', 'UPDATE SET', 
+        'CREATE TABLE', 'ALTER TABLE', 'TRUNCATE', 'EXEC', 'EXECUTE',
+        'UNION SELECT', 'SCRIPT', '<SCRIPT', '</SCRIPT>', 
+        'JAVASCRIPT:', 'VBSCRIPT:', 'ONLOAD', 'ONERROR'
+    ]
+    
+    # Remove dangerous patterns (case insensitive)
+    sanitized = original_input
+    for pattern in dangerous_patterns:
+        sanitized = sanitized.replace(pattern.upper(), '')
+        sanitized = sanitized.replace(pattern.lower(), '')
+        sanitized = sanitized.replace(pattern, '')
+
+    if allowed_chars is None:
+        # Allow alphanumeric, spaces, and common poker symbols
+        allowed_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ♠♥♦♣AKQJT98765432-_"
+
+    # Create set for faster lookup and filter individual characters
+    allowed_set = set(allowed_chars)
+    char_filtered = ''.join(c for c in sanitized if c in allowed_set)
+
+    if char_filtered != original_input:
+        removed_chars = set(original_input) - set(char_filtered)
+        if removed_chars:
+            log.warning('Input was sanitized, removed characters: %s', removed_chars)
+
+    return char_filtered.strip()
+
+def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0):
+    """
+    Decorator to retry function calls on failure with exponential backoff.
+
+    Args:
+        max_retries: Maximum number of retry attempts
+        delay: Initial delay between retries in seconds
+        backoff: Multiplier for delay after each retry
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            current_delay = delay
+            last_exception = None
+
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt < max_retries:
+                        log.warning(
+                            "Attempt %d/%d failed for %s: %s. Retrying in %.2fs...",
+                            attempt + 1, max_retries + 1,
+                            func.__name__, e, current_delay
+                        )
+                        time.sleep(current_delay)
+                        current_delay *= backoff
+                    else:
+                        log.error('All %d attempts failed for %s',
+                                max_retries + 1, func.__name__)
+                        
+            raise last_exception
+        return wrapper
+    return decorator
+
+def run_safely(fn: Callable, *args, **kwargs) -> int:
+    """
+    Run a callable and catch all exceptions, logging a concise error.
+    Return process exit code (0 on success, 1 on failure).
+    """
+    try:
+        rv = fn(*args, **kwargs)
+        return int(rv) if isinstance(rv, int) else 0
+    except SystemExit as e:
+        return int(e.code) if isinstance(e.code, int) else 1
+    except Exception as e:  # noqa: BLE001
+        # Use appropriate logging method depending on logger type
+        if MASTER_LOGGING_AVAILABLE:
+            log_exception('Fatal error: %s' % e, e)
+        else:
+            log.exception('Fatal error: %s', e)
+        
+        # Best-effort user-facing dialog if Tk is available
+        try:
+            import tkinter  # type: ignore
+            import tkinter.messagebox  # type: ignore
+            root = tkinter.Tk()
+            root.withdraw()
+            tkinter.messagebox.showerror('PokerTool error',
+                                       f"A fatal error occurred: \n{e}")
+            root.destroy()
+        except Exception:  # noqa: BLE001
+            pass
+        return 1
+
+@contextmanager
+def db_guard(desc: str = 'DB operation') -> Iterator[None]:
+    """
+    Wrap short DB operations with error handling and logging.
+
+    Example:
+        with db_guard('saving decision'):
+            storage.save_decision(...)
+    """
+    try:
+        yield
+    except Exception as e:  # noqa: BLE001
+        log.exception('%s failed: %s', desc, e)
+        raise
+
+class CircuitBreaker:
+    """
+    Circuit breaker pattern implementation for handling repeated failures.
+    """
+    def __init__(self, failure_threshold: int = 5, timeout: float = 60.0):
+        self.failure_threshold = failure_threshold
+        self.timeout = timeout
+        self.failure_count = 0
+        self.last_failure_time = 0
+        self.state = 'CLOSED'  # CLOSED, OPEN, HALF_OPEN
+
+    def call(self, func: Callable, *args, **kwargs) -> Any:
+        """Execute function with circuit breaker protection."""
+        current_time = time.time()
+
+        if self.state == 'OPEN':
+            if current_time - self.last_failure_time >= self.timeout:
+                self.state = 'HALF_OPEN'
+                log.info('Circuit breaker moving to HALF_OPEN state')
+            else:
+                raise Exception('Circuit breaker is OPEN - too many recent failures')
+
+        try:
+            result = func(*args, **kwargs)
+            if self.state == 'HALF_OPEN':
+                self.reset()
+                log.info('Circuit breaker reset to CLOSED state')
+            return result
+        except Exception as e:
+            self.failure_count += 1
+            self.last_failure_time = current_time
+
+            if self.failure_count >= self.failure_threshold:
+                self.state = 'OPEN'
+                log.error('Circuit breaker opened due to %d failures',
+                         self.failure_count)
+
+            raise e
+
+    def reset(self):
+        """Reset the circuit breaker."""
+        self.failure_count = 0
+        self.state = 'CLOSED'

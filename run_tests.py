@@ -27,7 +27,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def build_command(args: argparse.Namespace) -> list[str]:
-    command = [sys.executable, "-m", "pytest"]
+    command = [sys.executable, "-m", "pytest", "-m"]
 
     if args.tests:
         command.extend(args.tests)

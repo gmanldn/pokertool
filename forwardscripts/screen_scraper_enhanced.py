@@ -907,13 +907,13 @@ class EnhancedTextRecognizer:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENHANCED INTEGRATION BRIDGE
+# MAIN ENHANCED SCREEN SCRAPER
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class EnhancedScreenScraperBridge:
+class EnhancedPokerScreenScraper:
     """Enhanced bridge between screen scraper and poker assistant."""
     
-    def __init__(self, scraper: EnhancedPokerScreenScraper):
+    def __init__(self, scraper: 'EnhancedScreenScraperBridge'):
         self.scraper = scraper
         self.subscribers = []
         self.state_filter = None
@@ -978,7 +978,8 @@ def test_screen_scraper(site: PokerSite = PokerSite.GENERIC) -> bool:
     
     try:
         # Create scraper
-        scraper = EnhancedPokerScreenScraper(site)
+        scraper_bridge = EnhancedScreenScraperBridge(site)
+        scraper = EnhancedPokerScreenScraper(scraper_bridge)
         
         # Test screenshot capture
         img = scraper.capture_table()
@@ -1086,10 +1087,10 @@ class EnhancedButtonDetector:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# MAIN ENHANCED SCREEN SCRAPER
+# ENHANCED INTEGRATION BRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class EnhancedPokerScreenScraper:
+class EnhancedScreenScraperBridge:
     """Enhanced poker screen scraper with robust error handling."""
     
     def __init__(self, site: PokerSite = PokerSite.GENERIC):

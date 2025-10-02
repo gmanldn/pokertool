@@ -6,8 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from tempfile import TemporaryDirectory
 
-from src.pokertool.coaching_system import CoachingSystem
-from src.pokertool.core import HandAnalysisResult, Position
+from pokertool.coaching_system import CoachingSystem
+from pokertool.core import HandAnalysisResult, Position
 
 
 def create_system(tmp_path: Path) -> CoachingSystem:
