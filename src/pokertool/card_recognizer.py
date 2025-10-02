@@ -1,4 +1,3 @@
-
 # POKERTOOL-HEADER-START
 # ---
 # schema: pokerheader.v1
@@ -33,7 +32,6 @@ try:
     import cv2
     CARD_RECOGNITION_AVAILABLE = True
 except ImportError:
-    logger.warning(\"Card recognition not available - install opencv-python\")
     CARD_RECOGNITION_AVAILABLE = False
     cv2 = None
 
@@ -51,7 +49,6 @@ SUIT_NAMES = {
 
 @dataclass
 class Card:
-    \"\"\"Represents a playing card.\"\"\"
     rank: str
     suit: str
     
