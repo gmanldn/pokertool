@@ -6,7 +6,8 @@ Provides thread-safe utilities and helpers for concurrent operations.
 import threading
 import time
 import logging
-from typing import Any, Callable, Optional, Dict, List, Enum
+from enum import Enum
+from typing import Any, Callable, Optional, Dict, List
 from concurrent.futures import ThreadPoolExecutor, Future
 import functools
 import weakref

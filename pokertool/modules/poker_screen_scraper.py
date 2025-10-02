@@ -3,9 +3,13 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: poker_screen_scraper.py
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
+# version: v29.0.0
+# last_commit: '2025-10-02T18:30:00+00:00'
 # fixes:
+# - date: '2025-10-02'
+#   summary: Fixed screen scraper Chrome capture initialization - defaults to reliable monitor capture
+# - date: '2025-10-02'
+#   summary: Added diagnostic tooling and improved error handling for capture source fallbacks
 # - date: '2025-09-25'
 #   summary: Enhanced enterprise documentation and comprehensive unit tests added
 # ---
@@ -75,10 +79,10 @@ except ImportError:
                 self.suit = suit
                 
         class Suit:
-            SPADE = 'spades'
-            HEART = 'hearts' 
-            DIAMOND = 'diamonds'
-            CLUB = 'clubs'
+            SPADES = 'spades'
+            HEARTS = 'hearts' 
+            DIAMONDS = 'diamonds'
+            CLUBS = 'clubs'
             
         class Position:
             BTN = 'button'
