@@ -4,7 +4,7 @@ Test to verify that PyTorch is installed and meets version requirements.
 """
 
 import pytest
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 def test_torch_import_and_version():
     try:
@@ -12,4 +12,4 @@ def test_torch_import_and_version():
     except ImportError:
         pytest.fail("torch is not installed")
     version = torch.__version__
-    assert LooseVersion(version) >= LooseVersion("2.0.0"), f"torch version {version} is below required >=2.0.0"
+    assert Version(version) >= Version("2.0.0"), f"torch version {version} is below required >=2.0.0"

@@ -3,8 +3,8 @@ Enterprise-Grade Poker Screen Scraper - Betfair Edition (Continuation)
 ========================================================================
 """
 
-        self.betfair_detector = BetfairPokerDetector()
-        self.universal_detector = UniversalPokerDetector()
+self.betfair_detector = BetfairPokerDetector()
+self.universal_detector = UniversalPokerDetector()
         
         # State management
         self.calibrated = False

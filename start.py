@@ -37,45 +37,7 @@ import shutil
 import venv
 import argparse
 import json
-import subprocess
-import sys
 import importlib
-
-# ✅ Dependencies for PokerTool + scraping
-REQUIRED_PACKAGES = [
-    "requests",
-    "beautifulsoup4",
-    "lxml",
-    "selenium",
-    "playwright",
-    "pandas"
-]
-
-def install_and_import(package: str):
-    """Ensure a package is installed and importable."""
-    try:
-        importlib.import_module(package)
-    except ImportError:
-        print(f"[Dependency] {package} not found. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-    finally:
-        try:
-            globals()[package] = importlib.import_module(package)
-        except ImportError:
-            print(f"[Warning] {package} could not be imported even after install.")
-
-def ensure_dependencies():
-    """Check and install all required packages."""
-    for pkg in REQUIRED_PACKAGES:
-        if pkg == "playwright":
-            try:
-                importlib.import_module("playwright")
-            except ImportError:
-                print("[Dependency] Installing Playwright and browsers...")
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "playwright"])
-                subprocess.check_call([sys.executable, "-m", "playwright", "install"])
-        else:
-            install_and_import(pkg)
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -432,24 +394,23 @@ class DependencyManager:
             ('sqlite3', 'SQLite - Database'),
         ]
         
-    success = True
-    for module, description in critical_modules:
-        try:
-            result = subprocess.run([
-                venv_python, '-c', f'import {module}; print("OK")'
-            ], capture_output=True, text=True, timeout=10)
-            
-            if result.returncode == 0:
-                self.log(f"✓ {description}")
-            else:
-                self.log(f"✗ {description} - FAILED")
+        success = True
+        for module, description in critical_modules:
+            try:
+                result = subprocess.run([
+                    venv_python, '-c', f'import {module}; print("OK")'
+                ], capture_output=True, text=True, timeout=10)
+                
+                if result.returncode == 0:
+                    self.log(f"✓ {description}")
+                else:
+                    self.log(f"✗ {description} - FAILED")
+                    success = False
+            except Exception as e:
+                self.log(f"✗ {description} - ERROR: {e}")
                 success = False
-        except Exception as e:
-            self.log(f"✗ {description} - ERROR: {e}")
-            success = False
         
-    return success
-    
+        return success    
     def _check_file_system(self) -> bool:
         """Check file system structure and permissions."""
         self.log("Checking file system...")
@@ -497,14 +458,8 @@ class PokerToolLauncher:
     def setup_python_path(self) -> Dict[str, str]:
         """Set up the Python path for running the application."""
         env = os.environ.copy()
-        
         python_paths = [str(ROOT), str(SRC_DIR)]
-        existing_path = env.get('PYTHONPATH', '')
-        
-        if existing_path:
-            python_paths.append(existing_path)
-        
-        env['PYTHONPATH'] = os.pathsep.join(python_paths)
+        env['PYTHONPATH'] = os.pathsep.join([str(p) for p in python_paths if p]) + os.pathsep + env.get('PYTHONPATH', '')
         return env
     
     def run_tests(self) -> int:
@@ -564,7 +519,7 @@ class PokerToolLauncher:
             env = self.setup_python_path()
             
             # Test basic module imports
-            smoke_test_code = '''
+            smoke_test_code = "import pokertool.utils; print('pokertool.utils OK')"
 
             result = subprocess.run([
                 venv_python, '-c', smoke_test_code
@@ -575,7 +530,7 @@ class PokerToolLauncher:
                 return True
             else:
                 self.dependency_manager.log(f"⚠ Smoke test issues: {result.stderr}")
-                return False'''
+                return False
                 
         except Exception as e:
             self.dependency_manager.log(f"⚠ Smoke test error: {e}")

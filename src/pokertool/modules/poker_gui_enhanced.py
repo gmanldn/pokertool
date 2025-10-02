@@ -16,14 +16,8 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 
-# Ensure the src directory is importable so we can reach the modern package
-ROOT = Path(__file__).resolve().parent
-SRC = ROOT / 'src'
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
 try:
-    from pokertool.gui import (
+    from ..gui import (
         EnhancedPokerAssistant as _EnhancedPokerAssistant,
         EnhancedPokerAssistantFrame,
         VisualCard as _VisualCard,

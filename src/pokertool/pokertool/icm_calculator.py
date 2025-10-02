@@ -71,7 +71,7 @@ class ICMDecision:
     
     action: str
     cEV: float  # Chip EV
-    $EV: float  # Dollar EV (ICM adjusted)
+    dollar_ev: float  # Dollar EV (ICM adjusted)
     risk_premium: float  # Difference between cEV and $EV
     recommended: bool
 
@@ -368,7 +368,7 @@ class ICMCalculator:
         return ICMDecision(
             action=action,
             cEV=chip_ev,
-            $EV=dollar_ev,
+            dollar_ev=dollar_ev,
             risk_premium=risk_premium,
             recommended=recommended
         )
