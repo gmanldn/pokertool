@@ -38,6 +38,79 @@ import venv
 import argparse
 import json
 import importlib
+import sys
+import subprocess
+from pathlib import Path
+
+# --- Ensure torch is installed on boot (macOS safe) ---
+import sys
+import subprocess
+
+def ensure_torch():
+    try:
+        import torch  # noqa
+        print(f"✓ torch already installed (version: {torch.__version__})")
+    except ImportError:
+        print("→ Installing torch (CPU wheel, macOS compatible)...")
+        try:
+            subprocess.check_call([
+                sys.executable,
+                "-m", "pip", "install",
+                "torch==2.1.0",          # pinned stable version
+                "--index-url", "https://download.pytorch.org/whl/cpu"
+            ])
+            import torch
+            print(f"✓ torch installed successfully (version: {torch.__version__})")
+        except Exception as e:
+            print(f"❌ Failed to install torch: {e}")
+
+ensure_torch()
+
+BASE_PATH = Path(__file__).resolve().parent
+
+def run_pip_install(package, extra_args=None):
+    args = [sys.executable, "-m", "pip", "install", package]
+    if extra_args:
+        args.extend(extra_args)
+    try:
+        subprocess.check_call(args)
+        print(f"✓ {package} installed")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to install {package}: {e}")
+
+def ensure_core_shim():
+    core_dir = BASE_PATH / "pokertool" / "core"
+    core_init = core_dir / "__init__.py"
+    if not core_dir.exists():
+        core_dir.mkdir(parents=True)
+    if not core_init.exists():
+        core_init.write_text(
+            '"""Shim for backward compatibility.\n'
+            'Exposes poker_modules as pokertool.core"""\n\n'
+            "from .. import poker_modules as core\n"
+        )
+        print("✓ Created pokertool/core shim")
+
+def ensure_ocr_deps():
+    try:
+        import torch  # noqa
+        print("✓ torch already installed")
+    except ImportError:
+        print("→ Installing torch (CPU wheel)...")
+        run_pip_install("torch", ["--index-url", "https://download.pytorch.org/whl/cpu"])
+    try:
+        import easyocr  # noqa
+        print("✓ easyocr already installed")
+    except ImportError:
+        print("→ Installing easyocr...")
+        run_pip_install("easyocr")
+
+def bootstrap():
+    ensure_core_shim()
+    ensure_ocr_deps()
+    print("✅ PokerTool environment ready")
+
+bootstrap()
 
 # Constants
 ROOT = Path(__file__).resolve().parent
