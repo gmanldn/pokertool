@@ -1186,6 +1186,82 @@ class IntegratedPokerAssistant(tk.Tk):
             self.after(0, lambda: self._update_table_status(status_msg))
             if self.coaching_section:
                 self.after(0, lambda ts=table_state: self.coaching_section.handle_table_state(ts))
+
+            # Mirror the live table state into the manual workspace when autopilot
+            # is active.  This keeps the manual tab synchronized with the
+            # detected game so the user can verify that scraping is keeping up.
+            # Only update if the manual panel is available and valid.
+            if hasattr(self, 'manual_panel') and self.manual_panel:
+                def _update_manual_panel(state=table_state):
+                    try:
+                        # Update players
+                        players_map = self.manual_panel.players
+                        # Create a lookup of seat number to existing PlayerInfo
+                        for seat_info in state.seats:
+                            seat_num = seat_info.seat_number
+                            if seat_num in players_map:
+                                p = players_map[seat_num]
+                                # Active/inactive and hero/dealer flags
+                                p.is_active = bool(seat_info.is_active)
+                                p.stack = float(seat_info.stack_size)
+                                p.is_hero = bool(seat_info.is_hero)
+                                p.is_dealer = bool(seat_info.is_dealer)
+                                # Blind positions (if provided in position field)
+                                pos = (seat_info.position or '').upper()
+                                p.is_sb = pos == 'SB'
+                                p.is_bb = pos == 'BB'
+                                # Reset bet amount; autopilot does not track bets yet
+                                p.bet = 0.0
+                        # Update board cards and hero hole cards on the Table View.
+                        # Convert detected Card objects into tuples for the manual panel state
+                        board_tuples: List[Tuple[str, str]] = []
+                        hero_tuples: List[Tuple[str, str]] = []
+                        for c in state.board_cards:
+                            try:
+                                board_tuples.append((c.rank, c.suit))
+                            except Exception:
+                                pass
+                        for c in state.hero_cards:
+                            try:
+                                hero_tuples.append((c.rank, c.suit))
+                            except Exception:
+                                pass
+                        # Assign board and hole cards on the manual panel
+                        self.manual_panel.board_cards = board_tuples
+                        self.manual_panel.hole_cards = hero_tuples
+
+                        # Convert detected cards into core Card objects for visualization
+                        from pokertool.core import Card as CoreCard  # Late import to avoid cycles
+                        board_cards_objs: List[CoreCard] = []
+                        for c in state.board_cards:
+                            try:
+                                board_cards_objs.append(CoreCard(c.rank, c.suit))
+                            except Exception:
+                                pass
+                        hole_cards_objs: List[CoreCard] = []
+                        for c in state.hero_cards:
+                            try:
+                                hole_cards_objs.append(CoreCard(c.rank, c.suit))
+                            except Exception:
+                                pass
+                        # Update table visualization: pass players, pot size, board and hero cards
+                        # The update_table method expects board_cards as a list of CoreCard objects; hero cards
+                        # can be inferred from players mapping (seat.is_hero) but we provide via hole_cards_objs
+                        self.manual_panel.table_viz.update_table(players_map, state.pot_size, board_cards_objs)
+                        # Manually set hero hole cards within the visualization if supported
+                        try:
+                            self.manual_panel.table_viz.hole_cards = hole_cards_objs  # type: ignore[attr-defined]
+                        except Exception:
+                            pass
+                        # Trigger redraw of manual panel controls
+                        try:
+                            self.manual_panel._update_table()
+                        except Exception:
+                            pass
+                    except Exception as update_err:
+                        print(f"Manual panel update error: {update_err}")
+                # Schedule update on the main thread
+                self.after(0, _update_manual_panel)
             
         except Exception as e:
             print(f"Table state processing error: {e}")

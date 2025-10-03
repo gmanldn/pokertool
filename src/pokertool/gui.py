@@ -325,6 +325,10 @@ class TableVisualization(tk.Canvas):
         self.players: Dict[int, PlayerInfo] = {}
         self.pot_size = 0.0
         self.board_cards: List[Card] = []
+        # List of the hero's hole cards.  When provided, these cards are drawn
+        # near the hero's seat (seat 1) to visually indicate the player's
+        # private cards.  External callers can assign to this list.
+        self.hole_cards: List[Card] = []
 
         # Seat positions for 9-max table (normalized 0-1)
         self.seat_positions = {
@@ -375,6 +379,9 @@ class TableVisualization(tk.Canvas):
         # Draw players
         for seat, player in self.players.items():
             self._draw_player(seat, player, w, h)
+
+        # Draw hero hole cards (if any) after drawing players
+        self._draw_hero_hole_cards(w, h)
 
         # Draw dealer button
         self._draw_dealer_button(w, h)
@@ -472,6 +479,58 @@ class TableVisualization(tk.Canvas):
                 text='D',
                 font=FONTS['subheading'],
                 fill=COLORS['bg_dark']
+            )
+
+    def _draw_hero_hole_cards(self, canvas_w: int, canvas_h: int) -> None:
+        """Draw hero's hole cards near seat 1 if they exist.
+
+        This method draws small card rectangles above the hero's seat (seat 1)
+        using the ranks and suits stored in ``self.hole_cards``.  It is
+        intentionally separate from the board drawing so that private cards
+        remain clearly associated with the hero's seat.
+        """
+        # Only draw if hole cards are supplied
+        if not self.hole_cards:
+            return
+        # Seat 1 must exist in the seat position mapping
+        if 1 not in self.seat_positions:
+            return
+        # Determine center coordinates of seat 1
+        x_ratio, y_ratio = self.seat_positions[1]
+        player_x = int(canvas_w * x_ratio)
+        player_y = int(canvas_h * y_ratio)
+        # Card dimensions and spacing (match board cards)
+        card_width = 50
+        card_height = 70
+        spacing = 10
+        total_width = len(self.hole_cards) * card_width + (len(self.hole_cards) - 1) * spacing
+        start_x = player_x - total_width // 2
+        # Position the cards above the player circle.  Seat circles have a
+        # fixed radius (35), so offset upward by card height + margin.
+        y = player_y - 35 - card_height - 10
+        # Draw each hole card
+        for idx, card in enumerate(self.hole_cards):
+            cx = start_x + idx * (card_width + spacing)
+            # Draw card background
+            self.create_rectangle(
+                cx, y, cx + card_width, y + card_height,
+                fill=COLORS['card_bg'],
+                outline=COLORS['text_primary'],
+                width=2
+            )
+            # Determine suit symbol and color
+            suit_symbols = {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}
+            card_suit = getattr(card, 'suit', '')
+            card_rank = getattr(card, 'rank', '?')
+            symbol = suit_symbols.get(card_suit, '?')
+            suit_color = COLORS['card_red'] if card_suit in ['h', 'd'] else COLORS['card_black']
+            # Draw rank and suit stacked vertically
+            self.create_text(
+                cx + card_width // 2,
+                y + card_height // 2,
+                text=f"{card_rank}\n{symbol}",
+                font=FONTS['card'],
+                fill=suit_color
             )
 
     def _draw_pot(self, center_x: int, center_y: int):
@@ -841,6 +900,22 @@ class EnhancedPokerAssistantFrame(tk.Frame):
                 player.bet = to_call / 2 if to_call > 0 else 1.0
             else:
                 player.bet = 0.0
+
+        # Propagate hero hole cards into the table visualization.  Convert
+        # stored hole card tuples into Card objects so that TableVisualization
+        # can render them.  If conversion fails or there are no hole cards,
+        # assign an empty list.
+        try:
+            hole_cards_obj: List[Card] = []
+            if hasattr(self, 'hole_cards') and self.hole_cards:
+                for rank, suit in self.hole_cards:
+                    try:
+                        hole_cards_obj.append(Card(rank, suit))
+                    except Exception:
+                        pass
+            self.table_viz.hole_cards = hole_cards_obj
+        except Exception:
+            self.table_viz.hole_cards = []
 
         self.table_viz.update_table(self.players, pot, board_cards)
 
