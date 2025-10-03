@@ -215,10 +215,22 @@ class AutopilotControlPanel(tk.Frame):
         self._register_translation(site_label, "autopilot.settings.site")
 
         self.site_var = tk.StringVar(value=self.state.site)
+        # Allow selection of supported poker sites.
+        # Added "BETFAIR" as a first–class option to align with the
+        # Betfair‑optimized screen scraper.  When Betfair is selected the
+        # scraper will use specialized detection tuned for the Betfair client.
         site_combo = ttk.Combobox(
             site_frame,
             textvariable=self.site_var,
-            values=["GENERIC", "POKERSTARS", "PARTYPOKER", "IGNITION", "BOVADA", "CHROME"],
+            values=[
+                "BETFAIR",  # Focus on Betfair first – most accurate detection
+                "GENERIC",
+                "POKERSTARS",
+                "PARTYPOKER",
+                "IGNITION",
+                "BOVADA",
+                "CHROME",
+            ],
             state="readonly",
             width=15,
         )

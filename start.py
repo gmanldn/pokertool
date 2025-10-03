@@ -537,28 +537,45 @@ class PokerToolLauncher:
             return False
     
     def launch_application(self, args: List[str] = None) -> int:
-        """Launch the main PokerTool application."""
+        """Launch the main PokerTool application.
+
+        This implementation tries a series of increasingly permissive launch strategies.
+        The previous approach attempted to run ``-m pokertool``, but the
+        ``pokertool`` package lacks a ``__main__.py`` and cannot be executed
+        directly.  Instead we invoke the CLI module directly via ``-m
+        pokertool.cli``, which exposes the same entry points, followed by
+        fallback scripts.
+        """
         if args is None:
             args = []
         
         venv_python = self.platform.get_venv_python()
         env = self.setup_python_path()
         
-        # Try different launch methods in order of preference
-        launch_methods = [
-            # Method 1: Use -m pokertool
-            [venv_python, '-m', 'pokertool'] + args,
-            # Method 2: Direct CLI script
+        # Define launch methods in priority order.  Each entry is a list of
+        # command components; we append ``args`` to pass through any CLI
+        # arguments supplied to ``start.py``.  Only file-based methods need
+        # existence checks; ``-m`` invocations do not.
+        launch_methods: List[List[str]] = [
+            # Method 1: Invoke the CLI module directly.  Using
+            # ``-m pokertool.cli`` avoids requiring a ``__main__.py`` in the
+            # package and is the preferred way to launch the GUI.
+            [venv_python, '-m', 'pokertool.cli'] + args,
+            # Method 2: Execute the CLI script directly from the source tree.
             [venv_python, str(SRC_DIR / 'pokertool' / 'cli.py')] + args,
-            # Method 3: Legacy scripts
+            # Method 3: Legacy launcher script (launches GUI via ``pokertool.cli``).
+            [venv_python, str(ROOT / 'tools' / 'poker_main.py')] + args,
+            # Method 4: Use ``poker_go.py`` as a last resort (headless scrape mode).
             [venv_python, str(ROOT / 'tools' / 'poker_go.py')] + args,
-            [venv_python, str(ROOT / 'launch_pokertool.py')] + args,
         ]
         
         for method in launch_methods:
-            # Check if the target file exists (skip -m methods)
-            if len(method) > 2 and not method[0].endswith('python') and not Path(method[1]).exists():
-                continue
+            # Skip existence check for ``-m`` invocations (index 1 == '-m').
+            if method[1] != '-m' and len(method) > 2:
+                # The script path is at index 1 for file-based invocations.
+                script_path = Path(method[1])
+                if not script_path.exists():
+                    continue
             
             self.dependency_manager.log(f"Trying launch method: {' '.join(method[:2])}")
             try:

@@ -14,6 +14,7 @@ Key Features:
 
 import logging
 import time
+import re
 import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
@@ -117,97 +118,181 @@ class Card:
 # Detection Engines
 # ============================================================================
 
+# ---------------------------------------------------------------------------
+# Betfair detector constants
+#
+# Customize these ranges and weights if detection is inconsistent.  The
+# BETFAIR_FELT_RANGES specify the expected HSV ranges for the green felt used
+# on Betfair tables.  Multiple ranges allow the detector to be robust to
+# lighting conditions.  Feel free to adjust the bounds or add additional
+# ranges based on your setup.  The weights determine how much each
+# detection strategy contributes to the overall confidence score.
+BETFAIR_FELT_RANGES: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]] = [
+    # Default Betfair felt range (dark green)
+    ((35, 40, 20), (75, 255, 255)),
+    # Slightly lighter green (for bright monitors)
+    ((25, 40, 40), (90, 255, 255)),
+]
+
+FELT_WEIGHT: float = 0.40
+CARD_WEIGHT: float = 0.30
+UI_WEIGHT: float = 0.20
+TEXT_WEIGHT: float = 0.10
+# Additional weight for detecting the characteristic oval/elliptical table
+# shape found in most poker interfaces.  This uses contour fitting to
+# identify a large ellipse and boosts confidence slightly when present.
+ELLIPSE_WEIGHT: float = 0.10
+
+
 class BetfairPokerDetector:
     """Specialized detector for Betfair Poker."""
-    
-    def __init__(self):
-        self.detection_count = 0
-        self.success_count = 0
-    
+
+    def __init__(self) -> None:
+        self.detection_count: int = 0
+        self.success_count: int = 0
+
     def detect(self, image: np.ndarray) -> DetectionResult:
         """
-        Detect Betfair Poker table in image.
-        
-        Strategy:
-        1. Look for Betfair-specific UI elements (colors, logos, layout)
-        2. Check for poker table characteristics (felt color, card positions)
-        3. Verify with template matching on known UI elements
+        Detect Betfair Poker table in the given image using a weighted
+        multi‑strategy approach.  A confidence score is computed based on
+        multiple features (felt color, card shapes, UI elements, text
+        coverage).  The detection is considered positive if the weighted
+        confidence exceeds a configurable threshold.
+
+        Args:
+            image: BGR image captured from screen.
+
+        Returns:
+            DetectionResult indicating whether a poker table was found,
+            confidence score and diagnostic details.
         """
         start_time = time.time()
         self.detection_count += 1
-        
+
+        # Validate input
         if not SCRAPER_DEPENDENCIES_AVAILABLE or image is None or image.size == 0:
             return DetectionResult(False, 0.0, {'error': 'Invalid input'}, 0.0)
-        
+
         try:
-            confidence = 0.0
-            details = {}
-            
-            # Strategy 1: Check for Betfair's distinctive green felt color
-            # Betfair uses a specific shade of green (#0D5D3D or similar)
+            details: Dict[str, Any] = {}
+            # Convert to HSV and grayscale once
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            green_mask = cv2.inRange(hsv, (35, 40, 40), (85, 255, 255))
-            green_ratio = np.count_nonzero(green_mask) / green_mask.size
-            
-            if green_ratio > 0.15:  # At least 15% green (table felt)
-                confidence += 0.4
-                details['green_felt_ratio'] = green_ratio
-            
-            # Strategy 2: Look for card-like rectangles
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # -----------------------------------------------------------------
+            # Strategy 1: Felt color analysis
+            # Compute the combined ratio of pixels within any of the calibrated
+            # Betfair felt ranges.  The ratio is normalised against an expected
+            # coverage (approx 25%) to yield a confidence between 0 and 1.
+            felt_pixels = 0
+            for (lower, upper) in BETFAIR_FELT_RANGES:
+                mask = cv2.inRange(hsv, lower, upper)
+                felt_pixels += np.count_nonzero(mask)
+            felt_ratio = felt_pixels / (hsv.shape[0] * hsv.shape[1])
+            # Expected felt coverage around 25% of the screen on maximized table.
+            felt_conf = min(felt_ratio / 0.25, 1.0)
+            details['felt_ratio'] = felt_ratio
+            details['felt_confidence'] = felt_conf
+
+            # -----------------------------------------------------------------
+            # Strategy 2: Card shape detection
             edges = cv2.Canny(gray, 50, 150)
             contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
             card_like_shapes = 0
             for contour in contours:
                 area = cv2.contourArea(contour)
-                if 500 < area < 5000:  # Card-sized areas
+                if 500 < area < 10000:  # heuristically sized for cards
                     x, y, w, h = cv2.boundingRect(contour)
-                    aspect_ratio = float(w) / h if h > 0 else 0
-                    if 0.6 < aspect_ratio < 0.8:  # Card aspect ratio
+                    if h == 0:
+                        continue
+                    aspect_ratio = float(w) / float(h)
+                    if 0.55 < aspect_ratio < 0.90:
                         card_like_shapes += 1
-            
-            if card_like_shapes >= 2:  # At least 2 cards visible
-                confidence += 0.3
-                details['card_shapes_found'] = card_like_shapes
-            
-            # Strategy 3: Check for button/control elements
-            # Look for circular buttons (typical of poker interfaces)
-            circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 50,
-                                      param1=100, param2=30, minRadius=10, maxRadius=50)
-            
-            if circles is not None and len(circles[0]) >= 3:
-                confidence += 0.2
-                details['ui_buttons_found'] = len(circles[0])
-            
-            # Strategy 4: Look for text regions (player names, pot size, etc.)
-            # This is a simplified check
+            # Confidence scales up to 1.0 once 6 cards are seen (covers flop, turn, river)
+            card_conf = min(card_like_shapes / 6.0, 1.0)
+            details['card_shapes_found'] = card_like_shapes
+            details['card_confidence'] = card_conf
+
+            # -----------------------------------------------------------------
+            # Strategy 3: UI element detection (e.g., dealer button, chip stacks)
+            circles = cv2.HoughCircles(
+                gray,
+                cv2.HOUGH_GRADIENT,
+                dp=1,
+                minDist=50,
+                param1=100,
+                param2=30,
+                minRadius=10,
+                maxRadius=60,
+            )
+            ui_count = len(circles[0]) if circles is not None else 0
+            # Expect roughly 4–16 circular UI elements; normalise accordingly
+            ui_conf = min(ui_count / 8.0, 1.0)
+            details['ui_elements'] = ui_count
+            details['ui_confidence'] = ui_conf
+
+            # -----------------------------------------------------------------
+            # Strategy 4: Text coverage analysis
+            # Simple threshold to count bright pixels (white text) over dark background
             _, binary = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
-            text_regions = cv2.countNonZero(binary) / binary.size
-            
-            if 0.05 < text_regions < 0.3:  # Reasonable amount of text
-                confidence += 0.1
-                details['text_coverage'] = text_regions
-            
-            # Determine if detected
-            detected = confidence >= 0.5
-            
+            text_ratio = cv2.countNonZero(binary) / binary.size
+            # Only assign confidence if text coverage in expected range
+            text_conf = 1.0 if 0.05 < text_ratio < 0.35 else 0.0
+            details['text_coverage'] = text_ratio
+            details['text_confidence'] = text_conf
+
+            # -----------------------------------------------------------------
+            # Strategy 5: Table shape (ellipse) detection
+            # Look for a large elliptical contour which is characteristic of a
+            # poker table.  If found, boost confidence slightly.
+            ellipse_conf = 0.0
+            try:
+                img_area = image.shape[0] * image.shape[1]
+                for contour in contours:
+                    area = cv2.contourArea(contour)
+                    # Consider only large contours (≥10% of screen area)
+                    if area > img_area * 0.10 and len(contour) >= 5:
+                        ellipse = cv2.fitEllipse(contour)
+                        (_, axes, _angle) = ellipse
+                        major = max(axes)
+                        minor = min(axes)
+                        if major > 0:
+                            ratio = minor / major
+                            # Accept reasonable ellipse ratios (0.3-1.5)
+                            if 0.3 < ratio < 1.5:
+                                ellipse_conf = 1.0
+                                break
+            except Exception:
+                ellipse_conf = 0.0
+            details['ellipse_confidence'] = ellipse_conf
+
+            # Aggregate weighted confidence
+            total_confidence = (
+                FELT_WEIGHT * felt_conf
+                + CARD_WEIGHT * card_conf
+                + UI_WEIGHT * ui_conf
+                + TEXT_WEIGHT * text_conf
+                + ELLIPSE_WEIGHT * ellipse_conf
+            )
+            details['total_confidence'] = total_confidence
+
+            # Determine detection based on threshold (default 0.5)
+            detected = total_confidence >= 0.50
             if detected:
                 self.success_count += 1
-                details['strategy'] = 'betfair_multipoint'
-            
+                details['strategy'] = 'betfair_weighted'
+
             time_ms = (time.time() - start_time) * 1000
-            
             return DetectionResult(
                 detected=detected,
-                confidence=confidence,
+                confidence=total_confidence,
                 details=details,
-                time_ms=time_ms
+                time_ms=time_ms,
             )
-            
-        except Exception as e:
-            logger.error(f"Betfair detection error: {e}")
-            return DetectionResult(False, 0.0, {'error': str(e)}, 0.0)
+
+        except Exception as exc:
+            logger.error(f"Betfair detection error: {exc}")
+            return DetectionResult(False, 0.0, {'error': str(exc)}, 0.0)
     
     def get_detection_stats(self) -> Dict[str, Any]:
         """Get detection statistics."""
@@ -490,28 +575,350 @@ class PokerScreenScraper:
             return TableState()
     
     def _extract_pot_size(self, image: np.ndarray) -> float:
-        """Extract pot size from image (placeholder - would use OCR)."""
-        return 0.0
+        """Extract pot size displayed at the center of the table using OCR.
+
+        The pot is typically rendered near the middle of the table on most
+        poker clients.  We sample a central region, enhance it and then run
+        Tesseract to extract numerical values.  If no pot is detected a
+        value of 0.0 is returned.
+
+        Args:
+            image: Screen capture of the table in BGR format.
+
+        Returns:
+            The pot size as a float. Returns 0.0 on failure or if no value
+            could be parsed.
+        """
+        try:
+            if not SCRAPER_DEPENDENCIES_AVAILABLE:
+                return 0.0
+
+            h, w = image.shape[:2]
+            if h == 0 or w == 0:
+                return 0.0
+
+            # Define a central ROI for pot detection (roughly center 30% width x 20% height)
+            roi_w = int(w * 0.3)
+            roi_h = int(h * 0.2)
+            cx = w // 2
+            cy = h // 2
+            x0 = max(cx - roi_w // 2, 0)
+            y0 = max(cy - roi_h // 2, 0)
+            x1 = min(cx + roi_w // 2, w)
+            y1 = min(cy + roi_h // 2, h)
+            roi = image[y0:y1, x0:x1]
+
+            # Convert to grayscale and enhance contrast
+            gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            gray = cv2.bilateralFilter(gray, 9, 75, 75)
+            # Threshold to highlight bright text on darker felt
+            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            # Invert if background is white (rare on poker tables but safe)
+            if np.mean(thresh) > 127:
+                thresh = cv2.bitwise_not(thresh)
+
+            # Run OCR on the ROI
+            config = '--psm 6 -c tessedit_char_whitelist=0123456789$.,'
+            text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
+            if not text:
+                return 0.0
+
+            # Find first occurrence of a number (optionally preceded by a $)
+            match = re.search(r'\$?\s*([0-9][0-9,]*\.?[0-9]*)', text)
+            if match:
+                num_str = match.group(1)
+                # Remove commas and stray dots, then parse
+                num_str = num_str.replace(',', '')
+                try:
+                    return float(num_str)
+                except Exception:
+                    return 0.0
+            return 0.0
+        except Exception as e:
+            logger.debug(f"Pot size extraction error: {e}")
+            return 0.0
     
     def _extract_hero_cards(self, image: np.ndarray) -> List[Card]:
-        """Extract hero's hole cards (placeholder)."""
-        return []
+        """Detect and return the hero's hole cards.
+
+        This method looks for card-like rectangles in the lower portion of the
+        screen, extracts the rank and suit using OCR and simple color
+        heuristics and returns a list of Card objects.  If no cards are
+        detected an empty list is returned.
+        """
+        try:
+            return self._extract_cards_in_region(image, y_start_ratio=0.60, y_end_ratio=0.92)
+        except Exception as e:
+            logger.debug(f"Hero card extraction error: {e}")
+            return []
     
     def _extract_board_cards(self, image: np.ndarray) -> List[Card]:
-        """Extract community cards (placeholder)."""
-        return []
+        """Detect and return the community (board) cards.
+
+        The board is typically displayed across the center of the table.  This
+        method searches for card-like rectangles in a central band of the
+        screen and then extracts rank and suit information using OCR.
+        """
+        try:
+            return self._extract_cards_in_region(image, y_start_ratio=0.25, y_end_ratio=0.60)
+        except Exception as e:
+            logger.debug(f"Board card extraction error: {e}")
+            return []
     
     def _extract_seat_info(self, image: np.ndarray) -> List[SeatInfo]:
-        """Extract seat information (placeholder)."""
-        # Mock data for testing
-        return [
-            SeatInfo(1, is_active=True, stack_size=100.0, is_hero=True),
-            SeatInfo(2, is_active=True, stack_size=150.0),
-            SeatInfo(3, is_active=True, stack_size=200.0),
-            SeatInfo(4, is_active=True, stack_size=75.0),
-            SeatInfo(5, is_active=False),
-            SeatInfo(6, is_active=False),
-        ]
+        """Extract seat information for up to 9 players around the table.
+
+        This method samples regions around the perimeter of the table using
+        normalized seat positions and applies OCR to read player names and
+        stack sizes.  Dealer and blind positions are inferred from the
+        presence of a circular dealer button and the relative order of
+        players.  Seats with no discernible text are considered inactive.
+
+        Args:
+            image: Screen capture of the table in BGR format.
+
+        Returns:
+            A list of SeatInfo objects describing each seat.
+        """
+        seats: List[SeatInfo] = []
+
+        if not SCRAPER_DEPENDENCIES_AVAILABLE:
+            return seats
+
+        try:
+            h, w = image.shape[:2]
+            if h == 0 or w == 0:
+                return seats
+
+            # Convert once to grayscale for circle detection
+            gray_full = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # Detect circular dealer button anywhere on the screen
+            dealer_seat: Optional[int] = None
+            try:
+                circles = cv2.HoughCircles(
+                    gray_full,
+                    cv2.HOUGH_GRADIENT,
+                    dp=1.2,
+                    minDist=50,
+                    param1=100,
+                    param2=30,
+                    minRadius=12,
+                    maxRadius=45,
+                )
+                circle_centers: List[Tuple[int, int]] = []
+                if circles is not None:
+                    for c in circles[0]:
+                        cx, cy, _r = c
+                        circle_centers.append((int(cx), int(cy)))
+            except Exception:
+                circle_centers = []
+
+            # Define seat positions normalized to [0,1] based on TableVisualization layout
+            seat_positions = {
+                1: (0.5, 0.85),   # Bottom center (hero)
+                2: (0.25, 0.82),  # Bottom left
+                3: (0.08, 0.65),  # Left
+                4: (0.08, 0.35),  # Left top
+                5: (0.25, 0.18),  # Top left
+                6: (0.5, 0.15),   # Top center
+                7: (0.75, 0.18),  # Top right
+                8: (0.92, 0.35),  # Right top
+                9: (0.92, 0.65),  # Right
+            }
+
+            # Determine which seat corresponds to detected dealer button by nearest distance
+            if circle_centers:
+                min_dist = float('inf')
+                for seat_num, (xr, yr) in seat_positions.items():
+                    sx = int(w * xr)
+                    sy = int(h * yr)
+                    for (cx, cy) in circle_centers:
+                        dist = (cx - sx) ** 2 + (cy - sy) ** 2
+                        if dist < min_dist:
+                            min_dist = dist
+                            dealer_seat = seat_num
+
+            # Process each seat region for player info
+            for seat_num, (xr, yr) in seat_positions.items():
+                cx = int(w * xr)
+                cy = int(h * yr)
+                roi_w = int(w * 0.18)
+                roi_h = int(h * 0.12)
+                x0 = max(cx - roi_w // 2, 0)
+                y0 = max(cy - roi_h // 2, 0)
+                x1 = min(cx + roi_w // 2, w)
+                y1 = min(cy + roi_h // 2, h)
+                roi = image[y0:y1, x0:x1]
+
+                # OCR for names and stack amounts
+                name = ""
+                stack = 0.0
+                is_active = False
+                try:
+                    roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                    roi_gray = cv2.bilateralFilter(roi_gray, 7, 50, 50)
+                    # Adaptive threshold to highlight text (white on dark background)
+                    thresh = cv2.adaptiveThreshold(
+                        roi_gray,
+                        255,
+                        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                        cv2.THRESH_BINARY_INV,
+                        11,
+                        2,
+                    )
+                    text = pytesseract.image_to_string(thresh, config='--psm 6')  # type: ignore
+                    # Parse numbers for stack
+                    if text:
+                        nums = re.findall(r'[0-9][0-9,.]*', text)
+                        if nums:
+                            # Use the largest or last parsed number.  Remove
+                            # thousands separators (commas) but preserve the
+                            # decimal point so that fractional chip amounts are
+                            # parsed correctly.  If multiple numbers are found,
+                            # choose the one with the most digits.
+                            num_str = sorted(nums, key=lambda s: len(s))[-1]
+                            try:
+                                cleaned = num_str.replace(',', '')
+                                stack = float(cleaned)
+                            except Exception:
+                                # Fall back to integer parsing if float fails
+                                try:
+                                    stack = float(re.sub(r'[^0-9]', '', num_str))
+                                except Exception:
+                                    stack = 0.0
+                        # Parse first word as name if contains letters
+                        words = re.findall(r'[A-Za-z]{2,}', text)
+                        if words:
+                            name = words[0]
+                    # Determine active if we have either name or stack
+                    is_active = bool(name or stack > 0)
+                except Exception as ocr_err:
+                    logger.debug(f"Seat OCR error at seat {seat_num}: {ocr_err}")
+                    is_active = False
+
+                # Determine dealer flag
+                is_dealer = (dealer_seat == seat_num) if dealer_seat is not None else False
+                # Create seat info (position will be assigned later)
+                seat = SeatInfo(
+                    seat_number=seat_num,
+                    is_active=is_active,
+                    player_name=name,
+                    stack_size=stack,
+                    is_hero=(seat_num == 1),
+                    is_dealer=is_dealer,
+                    position="",
+                )
+                seats.append(seat)
+
+            # Assign blind positions (SB/BB) based on dealer seat and active seat order
+            if dealer_seat:
+                active_seats = [s.seat_number for s in seats if s.is_active]
+                if dealer_seat in active_seats and len(active_seats) >= 2:
+                    try:
+                        dealer_idx = active_seats.index(dealer_seat)
+                        sb_seat = active_seats[(dealer_idx + 1) % len(active_seats)]
+                        bb_seat = active_seats[(dealer_idx + 2) % len(active_seats)] if len(active_seats) > 2 else None
+                        for seat in seats:
+                            if seat.seat_number == sb_seat:
+                                seat.position = 'SB'
+                            elif bb_seat and seat.seat_number == bb_seat:
+                                seat.position = 'BB'
+                    except Exception:
+                        pass
+
+            return seats
+        except Exception as e:
+            logger.debug(f"Seat info extraction error: {e}")
+            return seats
+
+    # ---------------------------------------------------------------------
+    # Internal helpers
+    # ---------------------------------------------------------------------
+    def _extract_cards_in_region(self, image: np.ndarray, *, y_start_ratio: float, y_end_ratio: float) -> List[Card]:
+        """Find card-like rectangles within a vertical band of the screen and
+        convert them into Card objects using OCR and simple heuristics.
+
+        Args:
+            image: Input screen capture in BGR format.
+            y_start_ratio: Start of the vertical region as a fraction of image height.
+            y_end_ratio: End of the vertical region as a fraction of image height.
+
+        Returns:
+            A list of Card objects representing the detected cards in left-to-right order.
+        """
+        cards: List[Card] = []
+        if not SCRAPER_DEPENDENCIES_AVAILABLE:
+            return cards
+        try:
+            h, w = image.shape[:2]
+            if h == 0 or w == 0:
+                return cards
+            y0 = int(h * y_start_ratio)
+            y1 = int(h * y_end_ratio)
+            roi = image[y0:y1, :]
+            if roi.size == 0:
+                return cards
+
+            gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            edges = cv2.Canny(blurred, 50, 150)
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            card_rects: List[Tuple[int, int, int, int]] = []
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                if 1500 < area < 30000:  # heuristic bounds for card sizes
+                    x, y, cw, ch = cv2.boundingRect(contour)
+                    aspect = float(cw) / float(ch) if ch > 0 else 0
+                    # Typical card aspect ratio ~0.7 (width/height)
+                    if 0.5 < aspect < 1.0 and 30 < cw < 200 and 40 < ch < 250:
+                        card_rects.append((x, y, cw, ch))
+
+            # Sort cards left to right
+            card_rects.sort(key=lambda r: r[0])
+            for (x, y, cw, ch) in card_rects:
+                # Extract the full card region
+                card_img = roi[y:y + ch, x:x + cw]
+                if card_img.size == 0:
+                    continue
+                # OCR on the top-left quadrant for rank text
+                tl_h = int(ch * 0.4)
+                tl_w = int(cw * 0.4)
+                tl_region = card_img[0:tl_h, 0:tl_w]
+                tl_gray = cv2.cvtColor(tl_region, cv2.COLOR_BGR2GRAY)
+                tl_gray = cv2.resize(tl_gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+                _, tl_thresh = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                # Recognize rank text
+                rank_text = pytesseract.image_to_string(tl_thresh, config='--psm 6 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+                rank = ''
+                if rank_text:
+                    # Clean and take first valid character
+                    match = re.search(r'([0-9AJQKTaajqkt])', rank_text)
+                    if match:
+                        rank_char = match.group(1).upper()
+                        # Normalize tens representation
+                        rank = 'T' if rank_char in ['1', 'T'] else rank_char
+
+                # Determine suit by sampling colors; red suits have high red component
+                suit = ''
+                # Sample central area of the card to reduce noise
+                sample = card_img[int(ch * 0.3):int(ch * 0.7), int(cw * 0.3):int(cw * 0.7)]
+                if sample.size > 0:
+                    mean_color = sample.mean(axis=(0, 1))  # BGR
+                    b_mean, g_mean, r_mean = mean_color[:3]
+                    if r_mean > g_mean + 20 and r_mean > b_mean + 20:
+                        # Redish card -> hearts or diamonds (use hearts)
+                        suit = 'h'
+                    else:
+                        suit = 's'  # treat all non-red as spades for now
+
+                if rank:
+                    cards.append(Card(rank, suit))
+            return cards
+        except Exception as e:
+            logger.debug(f"Card extraction error: {e}")
+            return cards
     
     def _detect_game_stage(self, board_cards: List[Card]) -> str:
         """Detect game stage from board cards."""
