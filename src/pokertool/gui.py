@@ -12,8 +12,8 @@ for poker hand analysis and strategic recommendations. Supports both manual
 input and real-time table monitoring.
 
 Module: pokertool.gui
-Version: 20.0.0
-Last Modified: 2025-09-29
+Version: 20.0.1
+Last Modified: 2025-10-04
 Author: PokerTool Development Team
 License: MIT
 
@@ -40,12 +40,13 @@ Features:
     - Export functionality
 
 Change Log:
+    - v20.0.1 (2025-10-04): Fixed Suit enum case sensitivity bug in fallback definition
     - v28.0.0 (2025-09-29): Enhanced documentation, improved UI
     - v19.0.0 (2025-09-18): Added dark mode support
     - v18.0.0 (2025-09-15): Initial GUI implementation
 """
 
-__version__ = '20.0.0'
+__version__ = '20.0.1'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -88,10 +89,10 @@ except ImportError as e:
 
     class Suit(Enum):
         """Suit enumeration."""
-        spades = 's'
-        hearts = 'h'
-        diamonds = 'd'
-        clubs = 'c'
+        SPADES = 's'
+        HEARTS = 'h'
+        DIAMONDS = 'd'
+        CLUBS = 'c'
 
     class Position(Enum):
         """Position enumeration."""
