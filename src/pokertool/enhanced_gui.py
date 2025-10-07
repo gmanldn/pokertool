@@ -220,11 +220,9 @@ class IntegratedPokerAssistant(tk.Tk):
         self._apply_translations()
         self._init_database()
         
-        # Start background services (includes auto-starting scraper)
-        self._start_background_services()
-        
-        # Start continuous screen update loop
-        self._start_screen_update_loop()
+        # DISABLED: Background services cause Tcl/Tk crashes when accessing widgets from threads
+        # self._start_background_services()
+        # self._start_screen_update_loop()
 
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
