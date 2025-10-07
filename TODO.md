@@ -30,14 +30,138 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | CRITICAL | 0     | 0.0%       |
-| HIGH     | 0     | 0.0%       |
-| MEDIUM   | 0     | 0.0%       |
+| HIGH     | 6     | 60.0%      |
+| MEDIUM   | 4     | 40.0%      |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 0**
+**TOTAL REMAINING TASKS: 10**
 **COMPLETED TASKS: 34**
 
-🎉 **ALL PLANNED TASKS COMPLETED!** 🎉
+Backlog reopened to focus on scraping resilience and predictive accuracy.
+
+---
+
+## New Backlog Tasks
+
+### 1. SCRAPE-010: Adaptive UI Change Detection
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 36
+- **Objective**: Prevent scraper breakage by detecting poker client UI changes before they reach production.
+- **How It Works**: Maintain a baseline library of approved table states, compute perceptual hashes and structural similarity on every scrape, and raise alerts with auto-generated diff masks when deviations exceed thresholds.
+- **Steps to Implement**:
+  - [ ] Assemble 100+ canonical screenshots per supported site and resolution.
+  - [ ] Build a perceptual hashing and SSIM comparison service with threshold tuning per region of interest.
+  - [ ] Integrate diff visualisation into the scraper QA dashboard with auto generated annotations.
+  - [ ] Add CI guardrail to fail builds when the diff score exceeds configured tolerances.
+
+### 2. SCRAPE-011: Multi-Table Layout Segmenter
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 44
+- **Objective**: Reliably isolate individual poker tables, boards, and HUD panels when multiple instances are visible or overlapping.
+- **How It Works**: Train a lightweight segmentation model that produces bounding boxes for tables, cards, chip stacks, and HUD widgets, then feed the cropped regions into the downstream OCR and classifier stages.
+- **Steps to Implement**:
+  - [ ] Curate a labelled dataset of multi-table screenshots with polygons for each region of interest.
+  - [ ] Train and benchmark a YOLOv8n or Segment Anything variant optimised for 1080p inputs.
+  - [ ] Embed the detector in the scraping pipeline with GPU inference and CPU fallback paths.
+  - [ ] Update post-processing to map detected regions to existing extraction modules and unit tests.
+
+### 3. SCRAPE-012: OCR Ensemble and Validator
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 32
+- **Objective**: Increase text recognition accuracy for bet sizes, timers, and player names in noisy environments.
+- **How It Works**: Run multiple OCR engines (Tesseract LSTM, PaddleOCR, custom CTC model) in parallel, aggregate predictions with confidence weighting, and apply lexical validators tailored to poker terminology.
+- **Steps to Implement**:
+  - [ ] Benchmark candidate OCR engines on the current validation corpus and record per-field accuracy.
+  - [ ] Implement ensemble voting with character-level confidence fusion and domain specific correction dictionaries.
+  - [ ] Add a validator module that rejects improbable values and requests re-scan or manual review.
+  - [ ] Extend automated tests with adversarial noise cases and brightness variations.
+
+### 4. PRED-020: Real-Time Model Calibration and Drift Correction
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 28
+- **Objective**: Keep win probability and EV predictions well calibrated as opponent pools evolve.
+- **How It Works**: Monitor live prediction residuals, apply online Platt scaling or isotonic regression updates, and automatically trigger re-training when drift exceeds alert thresholds.
+- **Steps to Implement**:
+  - [ ] Instrument prediction services to log outcomes, probabilities, and calibration metrics per stake level.
+  - [ ] Build an online calibration module with optional warm start from historical models.
+  - [ ] Set up drift detectors (PSI, KL divergence) with alerting to Slack and dashboards.
+  - [ ] Automate small batch fine-tuning jobs and redeployments behind feature flags.
+
+### 5. PRED-021: Confidence-Aware Decision API
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 24
+- **Objective**: Surface calibrated confidence intervals and recommendation strength to the UI and downstream automation.
+- **How It Works**: Extend the inference service to output predictive distributions, compute credible intervals, and propagate uncertainty into decision heuristics and risk controls.
+- **Steps to Implement**:
+  - [ ] Modify model outputs to include logit samples or Monte Carlo dropout estimates for uncertainty.
+  - [ ] Implement interval and risk band calculations aligned with bankroll management policies.
+  - [ ] Update API contracts and protobuf definitions to return confidence metadata.
+  - [ ] Teach the UI and auto-action modules to adjust aggression based on confidence bands.
+
+### 6. PRED-022: Sequential Opponent State Fusion
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 40
+- **Objective**: Improve prediction accuracy by incorporating temporal patterns from recent hands and betting lines.
+- **How It Works**: Introduce a transformer or temporal convolution module that consumes sequences of scraped actions, stack sizes, and timing tells to produce richer state embeddings for the decision model.
+- **Steps to Implement**:
+  - [ ] Aggregate a rolling window dataset of sequential hand histories sourced from the scraper feeds.
+  - [ ] Prototype multiple sequence models (TST, Temporal Fusion Transformer) and compare predictive lift.
+  - [ ] Integrate the best model into the prediction service with caching for per-player states.
+  - [ ] Validate latency impact and add ablation tests to guard against regressions.
+
+### 7. SCRAPE-013: GPU Accelerated Preprocessing Pipeline
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 30
+- **Objective**: Reduce preprocessing latency for high resolution captures while improving colour and geometric normalisation.
+- **How It Works**: Offload denoising, deskewing, and colour correction to OpenCL/CUDA kernels with automatic fallbacks to CPU when GPU resources are unavailable.
+- **Steps to Implement**:
+  - [ ] Profile current preprocessing stages to identify the heaviest kernels per platform.
+  - [ ] Implement GPU versions of blur, CLAHE, and perspective correction operations.
+  - [ ] Create a capability detector that selects GPU or CPU pipelines at runtime.
+  - [ ] Add integration tests measuring throughput and accuracy parity across hardware.
+
+### 8. SCRAPE-014: Automated Scrape QA Harness
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 26
+- **Objective**: Catch scraping regressions quickly by replaying curated screenshots through the full extraction stack.
+- **How It Works**: Build a harness that loads labelled screenshot suites, runs the scraper end-to-end, compares structured output to truth data, and produces diff reports with heatmaps.
+- **Steps to Implement**:
+  - [ ] Gather and annotate a benchmark suite spanning stakes, themes, and lighting conditions.
+  - [ ] Implement the harness with parallel execution and deterministic seeding.
+  - [ ] Generate HTML or markdown reports with per-field accuracy metrics and visual overlays.
+  - [ ] Wire the harness into CI and nightly cron jobs with alert thresholds.
+
+### 9. DATA-030: Synthetic Scrape Data Generator
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 34
+- **Objective**: Expand training coverage for rare layouts and exotic themes without requiring manual screenshot collection.
+- **How It Works**: Use Blender or generative diffusion models to create parameterised poker table scenes, render them with varied lighting and fonts, and auto-generate ground truth labels.
+- **Steps to Implement**:
+  - [ ] Create a scene graph template for poker tables with configurable assets and camera angles.
+  - [ ] Script batch rendering with randomised textures, badge positions, and localisation variants.
+  - [ ] Export machine readable labels for card values, chip counts, and UI elements.
+  - [ ] Mix synthetic data into training pipelines and track lift versus purely real data.
+
+### 10. PRED-023: Active Learning Feedback Loop
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 22
+- **Objective**: Continuously improve prediction models by collecting targeted human feedback on low-confidence situations.
+- **How It Works**: Detect uncertain predictions, queue them for expert review inside the analysis UI, capture corrected labels, and prioritise them in the next training cycle.
+- **Steps to Implement**:
+  - [ ] Define uncertainty thresholds and triage rules for surfacing review candidates.
+  - [ ] Build annotation widgets in the HUD or web console to collect expert decisions and rationales.
+  - [ ] Store labelled events with metadata for retraining and bias audits.
+  - [ ] Automate weekly active learning batches and report model lift after incorporating feedback.
 
 ---
 
