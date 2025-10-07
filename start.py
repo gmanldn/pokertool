@@ -564,8 +564,9 @@ class PokerToolLauncher:
         """Set up the Python path for running the application."""
         env = os.environ.copy()
         # Do NOT include ROOT to avoid numpy import conflicts
+        # Set clean PYTHONPATH (don't append to existing to avoid conflicts)
         python_paths = [str(SRC_DIR)]
-        env['PYTHONPATH'] = os.pathsep.join([str(p) for p in python_paths if p]) + os.pathsep + env.get('PYTHONPATH', '')
+        env['PYTHONPATH'] = os.pathsep.join(python_paths)
         return env
     
     def run_tests(self) -> int:
@@ -697,15 +698,18 @@ class PokerToolLauncher:
                                 # Create enhanced environment for system Python
                                 enhanced_env = env.copy()
                                 
-                                # Add virtual environment packages to Python path FIRST (critical for numpy)
-                                venv_site_packages = str(VENV_DIR / 'lib' / 'python3.13' / 'site-packages')
+                                # Find actual site-packages directory in venv dynamically
+                                import glob
+                                site_packages_pattern = str(VENV_DIR / 'lib' / 'python*' / 'site-packages')
+                                site_packages_dirs = glob.glob(site_packages_pattern)
                                 
                                 # Create clean PYTHONPATH with venv packages first to avoid conflicts
                                 # IMPORTANT: Do NOT include ROOT to avoid numpy import conflicts
-                                python_paths = [
-                                    venv_site_packages,  # Virtual env packages MUST be first
-                                    str(SRC_DIR),        # Source code second
-                                ]
+                                python_paths = [str(SRC_DIR)]  # Source code
+                                
+                                # Add venv site-packages if found
+                                if site_packages_dirs:
+                                    python_paths.insert(0, site_packages_dirs[0])  # Virtual env packages MUST be first
                                 
                                 # Set clean PYTHONPATH (don't append to existing to avoid conflicts)
                                 enhanced_env['PYTHONPATH'] = os.pathsep.join(python_paths)
