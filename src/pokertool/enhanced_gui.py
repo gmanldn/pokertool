@@ -573,10 +573,6 @@ class IntegratedPokerAssistant(tk.Tk):
             else:
                 self.notebook.select(built_tabs[0][0])
         
-        # Force notebook to update and display tabs
-        self.notebook.update_idletasks()
-        self.update()
-        
         print(f"UI built successfully with {len(built_tabs)} tabs")
     
     def _build_fallback_tab_content(self, parent: tk.Widget, tab_name: str, error_message: str) -> None:
