@@ -141,6 +141,7 @@ class DependencyManager:
                 'description': 'Deep learning framework',
                 'skip_python_versions': [(3, 13)],  # Not available for Python 3.13 yet
                 'fallback_packages': ['torch-cpu', 'torch==2.0.1+cpu'],
+                'skip_auto_install': True,  # Very slow to install, skip during validation
             },
             'onnxruntime': {
                 'install_command': 'onnxruntime',
@@ -158,12 +159,14 @@ class DependencyManager:
                 'install_command': 'easyocr',
                 'is_critical': False,
                 'description': 'Advanced OCR',
-                'requires': ['torch']  # Requires torch
+                'requires': ['torch'],  # Requires torch
+                'skip_auto_install': True,  # Very slow to install, skip during validation
             },
             'paddlepaddle': {
                 'install_command': 'paddlepaddle',
                 'is_critical': False,
                 'description': 'PaddlePaddle ML framework (torch alternative)',
+                'skip_auto_install': True,  # Very slow to install (timeouts), skip during validation
             },
             # macOS specific
             'pyobjc-framework-Quartz': {
