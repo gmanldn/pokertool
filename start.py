@@ -700,10 +700,10 @@ class PokerToolLauncher:
                                 venv_site_packages = str(VENV_DIR / 'lib' / 'python3.13' / 'site-packages')
                                 
                                 # Create clean PYTHONPATH with venv packages first to avoid conflicts
+                                # IMPORTANT: Do NOT include ROOT to avoid numpy import conflicts
                                 python_paths = [
                                     venv_site_packages,  # Virtual env packages MUST be first
-                                    str(SRC_DIR),        # Source code second  
-                                    str(ROOT),           # Project root last
+                                    str(SRC_DIR),        # Source code second
                                 ]
                                 
                                 # Set clean PYTHONPATH (don't append to existing to avoid conflicts)
