@@ -8,6 +8,7 @@ __pycache__/
 __init__.py
 __main__.py
 !pokertool/modules/__init__.py
+!torch/__init__.py
 
 # Distribution / build
 build/

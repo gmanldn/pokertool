@@ -58,6 +58,48 @@ class SetupError(Exception):
     """Custom exception for setup errors."""
     pass
 
+# Early dependency validation
+def _validate_dependencies_upfront(verbose: bool = True) -> bool:
+    """Validate all dependencies upfront before any module loading."""
+    if verbose:
+        print("\n" + "=" * 60)
+        print("🔍 POKERTOOL DEPENDENCY VALIDATION")
+        print("=" * 60)
+    
+    try:
+        # Add src to path for dependency manager import
+        if str(SRC_DIR) not in sys.path:
+            sys.path.insert(0, str(SRC_DIR))
+        
+        from pokertool.dependency_manager import validate_system
+        
+        # Run comprehensive validation
+        report = validate_system(verbose=verbose, auto_install=True)
+        
+        # Save report for debugging
+        report_file = ROOT / 'dependency_report.json'
+        try:
+            from pokertool.dependency_manager import get_dependency_manager
+            get_dependency_manager().save_report(str(report_file))
+        except Exception:
+            pass  # Non-critical if save fails
+        
+        if report.critical_missing:
+            if verbose:
+                print(f"\n❌ CRITICAL DEPENDENCIES MISSING: {', '.join(report.critical_missing)}")
+                print("Cannot proceed without these dependencies.")
+            return False
+        else:
+            if verbose:
+                print(f"\n✅ ALL DEPENDENCIES VALIDATED! ({report.summary['available']} available)")
+            return True
+            
+    except Exception as e:
+        if verbose:
+            print(f"\n⚠️ Dependency validation failed: {e}")
+            print("Proceeding with basic validation...")
+        return True  # Don't block startup if validation system fails
+
 class PlatformManager:
     """Handles platform-specific operations."""
     
@@ -603,11 +645,7 @@ class PokerToolLauncher:
         """Launch the main PokerTool application.
 
         This implementation tries a series of increasingly permissive launch strategies.
-        The previous approach attempted to run ``-m pokertool``, but the
-        ``pokertool`` package lacks a ``__main__.py`` and cannot be executed
-        directly.  Instead we invoke the CLI module directly via ``-m
-        pokertool.cli``, which exposes the same entry points, followed by
-        fallback scripts.
+        If GUI is requested but tkinter isn't available in venv, try system Python.
         """
         if args is None:
             args = []
@@ -617,20 +655,81 @@ class PokerToolLauncher:
         venv_python = self.platform.get_venv_python()
         env = self.setup_python_path()
         
-        # Define launch methods in priority order.  Each entry is a list of
-        # command components; we append ``args`` to pass through any CLI
-        # arguments supplied to ``start.py``.  Only file-based methods need
-        # existence checks; ``-m`` invocations do not.
+        # Check if GUI is requested and if tkinter is available in venv
+        gui_requested = 'gui' in args or len(args) == 0
+        if gui_requested:
+            # Test tkinter availability in venv
+            try:
+                result = subprocess.run([
+                    venv_python, '-c', 'import tkinter; tkinter.Tcl().eval("package require Tk")'
+                ], capture_output=True, timeout=5)
+                tkinter_available_in_venv = result.returncode == 0
+            except:
+                tkinter_available_in_venv = False
+            
+            # If tkinter not available in venv, try system Python
+            if not tkinter_available_in_venv:
+                self.dependency_manager.log("Tkinter not available in venv, trying system Python...")
+                system_python_candidates = []
+                
+                if IS_MACOS:
+                    system_python_candidates = ['/usr/bin/python3', '/usr/local/bin/python3']
+                elif IS_LINUX:
+                    system_python_candidates = ['/usr/bin/python3', '/usr/local/bin/python3']
+                else:  # Windows
+                    system_python_candidates = ['python', 'python3']
+                
+                for sys_python in system_python_candidates:
+                    if not shutil.which(sys_python) and not Path(sys_python).exists():
+                        continue
+                    
+                    try:
+                        # Test if system Python has tkinter
+                        result = subprocess.run([
+                            sys_python, '-c', 'import tkinter; tkinter.Tcl().eval("package require Tk")'
+                        ], capture_output=True, timeout=5)
+                        
+                        if result.returncode == 0:
+                            self.dependency_manager.log(f"Found working tkinter in system Python: {sys_python}")
+                            # Use system Python for GUI but setup proper PYTHONPATH for venv access
+                            try:
+                                # Create enhanced environment for system Python
+                                enhanced_env = env.copy()
+                                
+                                # Add virtual environment packages to Python path FIRST (critical for numpy)
+                                venv_site_packages = str(VENV_DIR / 'lib' / 'python3.13' / 'site-packages')
+                                
+                                # Create clean PYTHONPATH with venv packages first to avoid conflicts
+                                python_paths = [
+                                    venv_site_packages,  # Virtual env packages MUST be first
+                                    str(SRC_DIR),        # Source code second  
+                                    str(ROOT),           # Project root last
+                                ]
+                                
+                                # Set clean PYTHONPATH (don't append to existing to avoid conflicts)
+                                enhanced_env['PYTHONPATH'] = os.pathsep.join(python_paths)
+                                enhanced_env['TK_SILENCE_DEPRECATION'] = '1'  # Suppress tkinter deprecation warning
+                                
+                                self.dependency_manager.log("Starting GUI with enhanced PYTHONPATH for venv access")
+                                result = subprocess.run([
+                                    sys_python, str(SRC_DIR / 'pokertool' / 'cli.py')
+                                ] + args, cwd=ROOT, env=enhanced_env)
+                                return result.returncode
+                            except Exception as e:
+                                self.dependency_manager.log(f"System Python GUI launch failed: {e}")
+                                break
+                    except:
+                        continue
+        
+        # Define launch methods in priority order for venv Python
         launch_methods: List[List[str]] = [
-            # Method 1: Invoke the CLI module directly.  Using
-            # ``-m pokertool.cli`` avoids requiring a ``__main__.py`` in the
-            # package and is the preferred way to launch the GUI.
+            # Method 1: Invoke the CLI module directly
             [venv_python, '-m', 'pokertool.cli'] + args,
-            # Method 2: Execute the CLI script directly from the source tree.
+            # Method 2: Execute the CLI script directly from the source tree
             [venv_python, str(SRC_DIR / 'pokertool' / 'cli.py')] + args,
-            # Method 3: Legacy launcher script (launches GUI via ``pokertool.cli``).
+            # Method 3: Legacy launcher script
             [venv_python, str(ROOT / 'tools' / 'poker_main.py')] + args,
-            # Method 4: Use ``poker_go.py`` as a last resort (headless scrape mode).
+            # Method 4: Use poker_go.py as a last resort (headless scrape mode)
             [venv_python, str(ROOT / 'tools' / 'poker_go.py')] + args,
         ]
         
@@ -756,6 +855,12 @@ def main() -> int:
         # Launch application
         if args.all or args.launch:
             if return_code == 0:  # Only launch if previous steps succeeded
+                # COMPREHENSIVE DEPENDENCY VALIDATION BEFORE LAUNCH
+                dependency_manager.log("Running comprehensive dependency validation...")
+                if not _validate_dependencies_upfront(verbose=not args.quiet):
+                    dependency_manager.log("❌ Critical dependencies missing, cannot launch")
+                    return 1
+                
                 dependency_manager.log("Launching PokerTool...")
                 return_code = launcher.launch_application(unknown_args)
         

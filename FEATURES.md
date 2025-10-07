@@ -13,9 +13,49 @@ POKERTOOL-HEADER-END -->
 
 # PokerTool Complete Feature List
 
-**Version**: 1.0.0  
-**Last Updated**: 2025-10-01  
+**Version**: v29.0.0  
+**Last Updated**: 2025-01-07  
 **Status**: Production-Ready Enterprise Application
+
+---
+
+## 🎉 Version 29.0.0 - Major Release Highlights
+
+### **🔧 Comprehensive Dependency Management System**
+- **19 dependencies validated** automatically on startup
+- **Auto-installation** of missing packages (websocket-client, scikit-learn, scikit-image)
+- **Platform-specific validation** (macOS Quartz, tkinter, tesseract OCR)
+- **Critical vs optional** dependency classification
+- **Detailed logging** with timestamps and status reporting
+- **JSON export** for debugging (dependency_report.json)
+
+### **🎮 Robust GUI System & Multi-Tab Interface**
+- **Error-resilient interface** that continues working even if modules fail
+- **8 tabs total**: 4 core tabs + 4 conditional tabs based on available systems
+- **Fallback content system** with retry and diagnostic options
+- **Enhanced error handling** throughout the interface
+- **Professional visual design** with consistent styling
+
+### **🚀 Enhanced Launch System**
+- **Multiple launch methods** with conflict resolution
+- **Direct GUI launcher** (`launch_gui.py`) bypasses CLI conflicts
+- **Comprehensive setup script** (`start.py`) with full validation
+- **Test GUI** (`test_gui.py`) for minimal testing
+- **Fixed PYTHONPATH ordering** to resolve import conflicts
+
+### **🧵 Professional Threading & Concurrency**
+- **20-thread pool system** for parallel processing
+- **Fixed threading module conflicts** (renamed to thread_manager.py)
+- **Proper resource management** and cleanup
+- **Thread statistics tracking** and monitoring
+
+### **💾 Smart State Management**
+- **Enhanced .gitignore** with comprehensive state data exclusions
+- **Clean separation** of code and runtime data
+- **Database, cache, and log file exclusion** from version control
+- **Runtime state isolation** for better development workflow
+
+---
 
 ---
 
@@ -680,18 +720,20 @@ POKERTOOL-HEADER-END -->
 
 ---
 
-## Summary Statistics
+## Summary Statistics - v29.0.0 Accurate Metrics
 
-- **Total Features**: 200+
-- **Lines of Production Code**: 45,000+
-- **Lines of Test Code**: 18,000+
-- **Test Coverage**: 90%+
-- **Modules**: 50+
-- **Supported Languages**: 4
-- **Supported Poker Sites**: 7+
-- **Machine Learning Models**: 5
-- **Pre-built Themes**: 10+
-- **Documentation Pages**: 100+
+- **Total Features**: 300+ (comprehensive across all modules)
+- **Lines of Production Python Code**: 48,339 (across 114 modules)
+- **Lines of Test Code**: 17,953 (comprehensive test coverage)
+- **Lines of Frontend Code**: 47,165 (JavaScript/TypeScript)
+- **Total Python Files**: 6,946 (including dependencies and tools)
+- **Dependencies Managed**: 19 (7 critical, 12 optional/platform-specific)
+- **GUI Tabs**: 8 (4 core + 4 conditional)
+- **Supported Platforms**: 3 (Windows, macOS, Linux)
+- **Threading Pool**: 20 threads (professional concurrency)
+- **Poker Sites Supported**: Betfair (optimized) + 6 others
+- **Multi-Table Capacity**: 12 simultaneous tables
+- **Launch Methods**: 4 different ways to start the application
 
 ---
 
