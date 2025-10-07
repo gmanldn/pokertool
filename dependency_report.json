@@ -148,13 +148,37 @@
       "error_message": "Not available for Python 3.13",
       "install_command": "torch --extra-index-url https://download.pytorch.org/whl/cpu"
     },
-    "easyocr": {
-      "name": "easyocr",
-      "status": "dependency_missing",
+    "onnxruntime": {
+      "name": "onnxruntime",
+      "status": "available",
+      "version": "1.23.0",
+      "is_critical": false,
+      "error_message": null,
+      "install_command": null
+    },
+    "tensorflow-lite": {
+      "name": "tensorflow-lite",
+      "status": "missing",
       "version": null,
       "is_critical": false,
-      "error_message": "Requires torch which is not available",
+      "error_message": null,
+      "install_command": "tensorflow==2.15.0"
+    },
+    "easyocr": {
+      "name": "easyocr",
+      "status": "missing",
+      "version": null,
+      "is_critical": false,
+      "error_message": null,
       "install_command": "easyocr"
+    },
+    "paddlepaddle": {
+      "name": "paddlepaddle",
+      "status": "missing",
+      "version": null,
+      "is_critical": false,
+      "error_message": null,
+      "install_command": "paddlepaddle"
     }
   },
   "platform_info": {
@@ -166,15 +190,15 @@
     "python_executable": "/Users/georgeridout/Documents/github/pokertool/.venv/bin/python"
   },
   "summary": {
-    "total": 19,
-    "available": 14,
-    "missing": 3,
+    "total": 22,
+    "available": 15,
+    "missing": 6,
     "errors": 0,
-    "skipped": 2
+    "skipped": 1
   },
   "recommendations": [
     "Optional enhancements available: websocket-client, scikit-learn, scikit-image"
   ],
   "critical_missing": [],
-  "timestamp": "2025-10-07 21:26:48"
+  "timestamp": "2025-10-07 22:44:28"
 }
