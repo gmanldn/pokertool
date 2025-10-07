@@ -287,64 +287,10 @@ class DependencyManager:
                 self.run_command([venv_python, '-m', 'pip', 'install', dep])
             except SetupError:
                 self.log(f"Warning: Failed to install {dep}")
-
-        self.install_optional_dependencies(venv_python)
-
-    def install_optional_dependencies(self, venv_python: str) -> None:
-        """Install optional heavy dependencies when supported."""
-
-        py_major_minor = sys.version_info[:2]
-        torch_skip_reason = None
-        if py_major_minor >= (3, 13):
-            torch_skip_reason = (
-                "PyTorch wheels are not yet available for Python "
-                f"{py_major_minor[0]}.{py_major_minor[1]}"
-            )
-
-        optional_deps: List[Dict[str, Any]] = [
-            {
-                'name': 'torch',
-                'module': 'torch',
-                'install_args': [
-                    venv_python, '-m', 'pip', 'install',
-                    '--extra-index-url', 'https://download.pytorch.org/whl/cpu',
-                    'torch'
-                ],
-                'skip_reason': torch_skip_reason,
-            },
-            {
-                'name': 'easyocr',
-                'module': 'easyocr',
-                'install_args': [venv_python, '-m', 'pip', 'install', 'easyocr'],
-                'skip_reason': None,
-                'precondition': (
-                    lambda: _module_available('torch')
-                ),
-                'precondition_reason': 'torch is required for easyocr',
-            },
-        ]
-
-        for dep in optional_deps:
-            if dep.get('skip_reason'):
-                self.log(f"Skipping optional dependency {dep['name']}: {dep['skip_reason']}")
-                continue
-
-            precondition = dep.get('precondition')
-            if precondition and not precondition():
-                reason = dep.get('precondition_reason', 'precondition not met')
-                self.log(f"Skipping {dep['name']}: {reason}")
-                continue
-
-            if _module_available(dep['module']):
-                self.log(f"Optional dependency '{dep['name']}' already available")
-                continue
-
-            self.log(f"Installing optional dependency: {dep['name']}")
-            try:
-                self.run_command(dep['install_args'])
-                self.log(f"Optional dependency '{dep['name']}' installed")
-            except SetupError as exc:
-                self.log(f"Warning: Failed to install optional dependency {dep['name']}: {exc}")
+        
+        # Note: Optional heavy dependencies (torch, easyocr, paddlepaddle, etc.) 
+        # are now managed by dependency_manager.py during validation with skip_auto_install=True
+        # to avoid long installation times. Users can install them manually if needed.
     
     def check_node_available(self) -> bool:
         """Check if Node.js is available."""
@@ -716,9 +662,10 @@ class PokerToolLauncher:
                                 enhanced_env['TK_SILENCE_DEPRECATION'] = '1'  # Suppress tkinter deprecation warning
                                 
                                 self.dependency_manager.log("Starting GUI with enhanced PYTHONPATH for venv access")
+                                # Change cwd to SRC_DIR to prevent ROOT from being in sys.path
                                 result = subprocess.run([
                                     sys_python, str(SRC_DIR / 'pokertool' / 'cli.py')
-                                ] + args, cwd=ROOT, env=enhanced_env)
+                                ] + args, cwd=SRC_DIR, env=enhanced_env)
                                 return result.returncode
                             except Exception as e:
                                 self.dependency_manager.log(f"System Python GUI launch failed: {e}")
