@@ -56,10 +56,54 @@ except ImportError:
     pyautogui = None
 from collections import defaultdict
 
-from .core import Card, parse_card
-from .threading import get_thread_pool, TaskPriority
-from .error_handling import retry_on_failure
-from .hud_overlay import HUDOverlay
+# Import core functionality with fallbacks
+try:
+    from .core import Card, parse_card
+except ImportError:
+    # Fallback implementations
+    class Card:
+        pass
+    def parse_card(card_str):
+        return Card()
+
+try:
+    from .threading import get_thread_pool, TaskPriority
+except ImportError:
+    # Fallback implementations
+    from concurrent.futures import ThreadPoolExecutor
+    from enum import Enum
+    
+    class TaskPriority(Enum):
+        HIGH = 0
+        NORMAL = 1
+        LOW = 2
+    
+    def get_thread_pool():
+        return ThreadPoolExecutor(max_workers=4)
+
+try:
+    from .error_handling import retry_on_failure
+except ImportError:
+    # Simple fallback decorator
+    def retry_on_failure(max_retries=3):
+        def decorator(func):
+            return func
+        return decorator
+
+try:
+    from .hud_overlay import HUDOverlay
+except ImportError:
+    # Fallback implementation
+    class HUDOverlay:
+        def __init__(self):
+            pass
+        def hide(self):
+            pass
+        def update_stats(self, data):
+            pass
+        def highlight(self):
+            pass
+
 # Import scraper functionality
 try:
     from pokertool.modules.poker_screen_scraper import PokerScreenScraper as PokerScraper
@@ -72,8 +116,23 @@ except ImportError:
             return {}
         def execute_action(self, window_handle, action):
             pass
-from .gto_solver import GameState, Strategy, get_gto_solver
-from .ml_opponent_modeling import get_opponent_modeling_system
+
+try:
+    from .gto_solver import GameState, Strategy, get_gto_solver
+except ImportError:
+    # Fallback implementations
+    class GameState:
+        pass
+    class Strategy:
+        pass
+    def get_gto_solver():
+        return None
+
+try:
+    from .ml_opponent_modeling import get_opponent_modeling_system
+except ImportError:
+    def get_opponent_modeling_system():
+        return None
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +216,7 @@ class TableManager:
         self.max_tables = max_tables
         self.tables: Dict[str, TableWindow] = {}
         self.active_table_id: Optional[str] = None
-        self.layout = TableLayout.TILE_2x2
+        self.layout = TableLayout.TILE_2x2  # Default will be overridden by config
         self.custom_layout_config: Dict[str, Any] = {}
         
         # Threading
@@ -177,7 +236,7 @@ class TableManager:
         self.hotkeys: Dict[str, HotkeyAction] = {}
         self.global_hotkeys_enabled = True
         
-        # Settings
+        # Settings - Initialize with defaults first
         self.settings = {
             'auto_tile': True,
             'auto_focus': True,
@@ -193,10 +252,60 @@ class TableManager:
             'preserve_aspect_ratio': True
         }
         
+        # Load configuration after settings are initialized
+        self._load_config()
+        
         logger.info(f"Table manager initialized (max tables: {max_tables})")
         
         # Initialize default hotkeys
         self._setup_default_hotkeys()
+    
+    def _load_config(self):
+        """Load configuration from poker_config.json."""
+        config_path = Path(__file__).parent.parent.parent / 'poker_config.json'
+        
+        try:
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                
+                # Load multi-table specific settings
+                multi_table_config = config.get('multi_table', {})
+                
+                if multi_table_config.get('enabled', True):
+                    # Update max tables
+                    self.max_tables = multi_table_config.get('max_tables', self.max_tables)
+                    
+                    # Update settings from config
+                    config_settings = {
+                        'auto_tile': multi_table_config.get('auto_tile', True),
+                        'auto_focus': multi_table_config.get('auto_focus', True),
+                        'focus_on_action': multi_table_config.get('focus_on_action', True),
+                        'highlight_active': multi_table_config.get('highlight_active', True),
+                        'sound_alerts': multi_table_config.get('sound_alerts', True),
+                        'preserve_aspect_ratio': multi_table_config.get('preserve_aspect_ratio', True),
+                        'table_spacing': multi_table_config.get('table_spacing', 10),
+                        'screen_margins': multi_table_config.get('screen_margins', [20, 20, 20, 20])
+                    }
+                    
+                    self.settings.update(config_settings)
+                    
+                    # Set optimal layout based on startup preference
+                    startup_layout = multi_table_config.get('startup_layout', 'auto_optimize')
+                    if startup_layout == 'auto_optimize':
+                        # Will be determined dynamically when tables are added
+                        self.auto_focus = True
+                        self.focus_on_action = True
+                    
+                    # Update hotkeys setting
+                    self.global_hotkeys_enabled = multi_table_config.get('hotkeys_enabled', True)
+                    
+                    logger.info("Multi-table configuration loaded successfully")
+                else:
+                    logger.info("Multi-table support disabled in configuration")
+                    
+        except Exception as e:
+            logger.warning(f"Could not load configuration: {e}. Using defaults.")
     
     def _setup_default_hotkeys(self):
         """Setup default hotkey bindings."""
