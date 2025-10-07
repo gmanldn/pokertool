@@ -25,6 +25,7 @@ import os
 import time
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 from typing import NamedTuple
@@ -207,6 +208,7 @@ class AdaptiveUIDetector:
 
         self.baselines: Dict[str, BaselineState] = {}
         self._load_existing_baselines()
+        self._write_manifest()
 
         self._stats: Dict[str, float] = {
             "total_comparisons": 0,
@@ -307,10 +309,15 @@ class AdaptiveUIDetector:
     # ------------------------------------------------------------------ #
 
     def _load_existing_baselines(self) -> None:
+        skip_files = {"detection_config.json", "baseline_manifest.json", "baselines_index.json"}
         for meta_file in self.baseline_dir.glob("*.json"):
+            if meta_file.name in skip_files:
+                continue
             try:
                 with open(meta_file, "r", encoding="utf-8") as handle:
                     payload = json.load(handle)
+                if "baseline_id" not in payload:
+                    continue
                 baseline = BaselineState.from_dict(payload)
                 if Path(baseline.file_path).exists():
                     self.baselines[baseline.baseline_id] = baseline
@@ -354,6 +361,7 @@ class AdaptiveUIDetector:
         self.baselines[baseline_id] = baseline
         self._enforce_baseline_limit(site_name)
         self._persist_baseline(baseline)
+        self._write_manifest()
 
         logger.info("Added baseline %s for %s (%s)", baseline_id, site_name, resolution)
         return baseline_id
@@ -390,6 +398,8 @@ class AdaptiveUIDetector:
             logger.debug("Pruned baseline %s", baseline_id)
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed to prune baseline %s: %s", baseline_id, exc)
+        finally:
+            self._write_manifest()
 
     def _persist_baseline(self, baseline: BaselineState) -> None:
         meta_path = self.baseline_dir / f"{baseline.baseline_id}.json"
@@ -656,6 +666,51 @@ class AdaptiveUIDetector:
             self._stats["matches_found"] += 1
         if result.critical_changes:
             self._stats["changes_detected"] += 1
+
+    # ------------------------------------------------------------------ #
+    # Baseline export utilities
+    # ------------------------------------------------------------------ #
+
+    def export_manifest(self, manifest_path: Optional[str] = None, pretty: bool = True) -> Dict[str, Any]:
+        timestamp = datetime.now(timezone.utc).isoformat()
+        manifest = {
+            "generated_at": timestamp,
+            "baseline_count": len(self.baselines),
+            "baselines": [],
+            "sites": {},
+        }
+
+        for baseline in sorted(self.baselines.values(), key=lambda b: b.created_at):
+            entry = {
+                "baseline_id": baseline.baseline_id,
+                "site_name": baseline.site_name,
+                "resolution": baseline.resolution,
+                "theme": baseline.theme,
+                "file_name": Path(baseline.file_path).name,
+                "created_at": baseline.created_at,
+                "metadata": baseline.metadata,
+            }
+            manifest["baselines"].append(entry)
+
+            site_key = baseline.site_name.lower()
+            res_key = baseline.resolution.lower()
+            site_bucket = manifest["sites"].setdefault(site_key, {})
+            site_bucket.setdefault(res_key, []).append(baseline.baseline_id)
+
+        target_path = Path(manifest_path) if manifest_path else (self.baseline_dir / "baseline_manifest.json")
+        with open(target_path, "w", encoding="utf-8") as handle:
+            if pretty:
+                json.dump(manifest, handle, indent=2)
+            else:
+                json.dump(manifest, handle)
+
+        return manifest
+
+    def _write_manifest(self) -> None:
+        try:
+            self.export_manifest()
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Failed to write baseline manifest: %s", exc)
 
     # ------------------------------------------------------------------ #
     # Reporting utilities
