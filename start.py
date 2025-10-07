@@ -563,7 +563,8 @@ class PokerToolLauncher:
     def setup_python_path(self) -> Dict[str, str]:
         """Set up the Python path for running the application."""
         env = os.environ.copy()
-        python_paths = [str(ROOT), str(SRC_DIR)]
+        # Do NOT include ROOT to avoid numpy import conflicts
+        python_paths = [str(SRC_DIR)]
         env['PYTHONPATH'] = os.pathsep.join([str(p) for p in python_paths if p]) + os.pathsep + env.get('PYTHONPATH', '')
         return env
     
