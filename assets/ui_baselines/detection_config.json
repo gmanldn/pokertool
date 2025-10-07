@@ -1,0 +1,71 @@
+{
+  "default_ssim_threshold": 0.85,
+  "default_hash_threshold": 10,
+  "sites": {
+    "betfair": {
+      "regions": [
+        {
+          "name": "pot_area",
+          "x": 0.4,
+          "y": 0.3,
+          "width": 0.2,
+          "height": 0.1,
+          "importance": 2.0,
+          "threshold_ssim": 0.9,
+          "threshold_hash": 8
+        },
+        {
+          "name": "hero_cards",
+          "x": 0.4,
+          "y": 0.7,
+          "width": 0.2,
+          "height": 0.15,
+          "importance": 3.0,
+          "threshold_ssim": 0.95,
+          "threshold_hash": 5
+        },
+        {
+          "name": "board_cards",
+          "x": 0.3,
+          "y": 0.4,
+          "width": 0.4,
+          "height": 0.15,
+          "importance": 2.5,
+          "threshold_ssim": 0.9,
+          "threshold_hash": 6
+        },
+        {
+          "name": "action_buttons",
+          "x": 0.6,
+          "y": 0.8,
+          "width": 0.35,
+          "height": 0.15,
+          "importance": 2.0,
+          "threshold_ssim": 0.8,
+          "threshold_hash": 12
+        }
+      ]
+    },
+    "generic": {
+      "regions": [
+        {
+          "name": "center_area",
+          "x": 0.25,
+          "y": 0.25,
+          "width": 0.5,
+          "height": 0.5,
+          "importance": 1.5,
+          "threshold_ssim": 0.8,
+          "threshold_hash": 15
+        }
+      ]
+    }
+  },
+  "alert_thresholds": {
+    "minor_change": 0.15,
+    "major_change": 0.3,
+    "critical_change": 0.5
+  },
+  "ci_failure_threshold": 0.4,
+  "ci_enabled": true
+}

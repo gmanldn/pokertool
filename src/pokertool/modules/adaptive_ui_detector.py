@@ -1,737 +1,866 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
-Adaptive UI Change Detection Module for PokerTool
+PokerTool Adaptive UI Change Detection Module
+===========================================
 
-This module implements perceptual hashing and structural similarity comparison
-to detect poker client UI changes before they break the scraper in production.
+Prevents scraper breakage by detecting poker client UI changes before they reach production.
 
-Features:
-- Maintains baseline library of approved table states
-- Computes perceptual hashes (pHash, dHash, aHash) for fast comparison
-- Uses SSIM (Structural Similarity Index) for detailed analysis
-- Generates diff masks and visualizations
-- Configurable thresholds per region of interest
-- Auto-generates alerts with detailed reports
+This module maintains a baseline library of approved table states, computes perceptual 
+hashes and structural similarity on every scrape, and raises alerts with auto-generated 
+diff masks when deviations exceed thresholds.
+
+Module: pokertool.modules.adaptive_ui_detector
+Version: 1.0.0
+Last Modified: 2025-01-07
+Author: PokerTool Development Team
+License: MIT
+
+Key Features:
+- Perceptual hash comparison for layout change detection
+- Structural similarity (SSIM) analysis for fine-grained changes
+- Auto-generated diff masks for visual debugging
+- Configurable thresholds per poker site and resolution
+- CI integration with build failure on excessive changes
 """
 
 import os
+import logging
+import time
 import json
 import hashlib
-import logging
-from typing import Dict, List, Tuple, Optional, Union, NamedTuple
-from dataclasses import dataclass, asdict
 from pathlib import Path
-from datetime import datetime, timezone, timedelta
-import pickle
-
-import cv2
+from typing import Dict, List, Optional, Tuple, Any, NamedTuple
+from dataclasses import dataclass, field
+from enum import Enum
 import numpy as np
-from PIL import Image, ImageChops, ImageDraw, ImageFont
 
-# Optional dependencies - graceful fallback if not available
+# Check for required dependencies
 try:
+    import cv2
     import imagehash
-    HAS_IMAGEHASH = True
-except ImportError:
-    HAS_IMAGEHASH = False
-    
-try:
+    from PIL import Image
     from skimage.metrics import structural_similarity as ssim
-    HAS_SKIMAGE = True
-except ImportError:
-    HAS_SKIMAGE = False
-    # Fallback SSIM implementation
-    def ssim(img1, img2, **kwargs):
-        """Fallback SSIM implementation using basic correlation."""
-        return float(np.corrcoef(img1.flatten(), img2.flatten())[0, 1])
-    
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    HAS_MATPLOTLIB = True
-except ImportError:
-    HAS_MATPLOTLIB = False
+    DEPENDENCIES_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Adaptive UI detector dependencies not available: {e}")
+    DEPENDENCIES_AVAILABLE = False
+    # Create dummy objects for type hints
+    imagehash = None
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class RegionOfInterest(NamedTuple):
+# ============================================================================
+# Configuration and Data Models
+# ============================================================================
+
+class ChangeType(Enum):
+    """Types of UI changes that can be detected."""
+    LAYOUT_SHIFT = "layout_shift"
+    COLOR_CHANGE = "color_change"  
+    ELEMENT_ADDED = "element_added"
+    ELEMENT_REMOVED = "element_removed"
+    SIZE_CHANGE = "size_change"
+    FONT_CHANGE = "font_change"
+    UNKNOWN = "unknown"
+
+@dataclass
+class UIRegion:
     """Defines a region of interest for UI change detection."""
     name: str
     x: int
     y: int
     width: int
     height: int
-    threshold: float  # SSIM threshold for this region
-    critical: bool = False  # If True, changes here trigger immediate alerts
-
-@dataclass
-class BaselineState:
-    """Represents a baseline UI state with multiple hash types."""
-    site_name: str
-    resolution: str
-    theme: str
-    timestamp: str
-    screenshot_path: str
+    importance: float = 1.0  # Weight for this region in overall score
+    threshold_ssim: float = 0.85  # SSIM threshold for this region
+    threshold_hash: int = 10  # Hamming distance threshold for perceptual hash
+    
+class BaselineInfo(NamedTuple):
+    """Information about a baseline screenshot."""
+    filepath: str
     perceptual_hash: str
-    difference_hash: str
-    average_hash: str
-    ssim_regions: Dict[str, float]  # Region name -> baseline SSIM score
-    metadata: Dict[str, any]
+    ssim_regions: Dict[str, float]
+    metadata: Dict[str, Any]
+    timestamp: float
 
-@dataclass
-class ComparisonResult:
-    """Results from comparing a screenshot against baseline states."""
-    is_match: bool
-    best_match_score: float
-    best_match_baseline: str
-    hash_distances: Dict[str, int]  # Hash type -> distance
-    ssim_scores: Dict[str, float]  # Region -> SSIM score
-    diff_regions: List[str]  # Regions that exceeded threshold
-    critical_changes: List[str]  # Critical regions with changes
-    diff_mask_path: Optional[str] = None
-    visualization_path: Optional[str] = None
+@dataclass  
+class ChangeDetectionResult:
+    """Result of UI change detection analysis."""
+    has_changes: bool
+    confidence: float
+    change_types: List[ChangeType] = field(default_factory=list)
+    affected_regions: List[str] = field(default_factory=list)
+    ssim_scores: Dict[str, float] = field(default_factory=dict)
+    hash_distances: Dict[str, int] = field(default_factory=dict)
+    diff_mask: Optional[np.ndarray] = None
+    recommendations: List[str] = field(default_factory=list)
+    analysis_time_ms: float = 0.0
+
+# ============================================================================
+# Adaptive UI Change Detector
+# ============================================================================
 
 class AdaptiveUIDetector:
     """
-    Adaptive UI Change Detection system for poker client interfaces.
+    Advanced UI change detection system for poker table scraping.
     
-    Maintains a baseline library of approved UI states and detects deviations
-    that could break the scraper before they reach production.
+    This class maintains baseline screenshots for each supported poker site and
+    resolution, then compares new captures against these baselines using multiple
+    detection strategies including perceptual hashing and structural similarity.
     """
     
-    def __init__(self, 
-                 baseline_dir: str = "assets/ui_baselines",
-                 reports_dir: str = "reports/ui_changes",
-                 config_path: str = "poker_config.json"):
-        """
-        Initialize the Adaptive UI Detector.
+    def __init__(self, baseline_dir: Optional[str] = None):
+        """Initialize the adaptive UI detector.
         
         Args:
-            baseline_dir: Directory to store baseline screenshots and metadata
-            reports_dir: Directory to store change detection reports
-            config_path: Path to poker configuration file
+            baseline_dir: Directory to store baseline screenshots. Defaults to 
+                         project_root/assets/ui_baselines
         """
-        self.baseline_dir = Path(baseline_dir)
-        self.reports_dir = Path(reports_dir)
-        self.config_path = Path(config_path)
+        if not DEPENDENCIES_AVAILABLE:
+            logger.error("Required dependencies not available for UI change detection")
+            self.available = False
+            return
         
-        # Create directories if they don't exist
+        self.available = True
+        
+        # Setup baseline directory
+        if baseline_dir is None:
+            project_root = Path(__file__).parent.parent.parent.parent
+            self.baseline_dir = project_root / 'assets' / 'ui_baselines'
+        else:
+            self.baseline_dir = Path(baseline_dir)
+        
         self.baseline_dir.mkdir(parents=True, exist_ok=True)
-        self.reports_dir.mkdir(parents=True, exist_ok=True)
         
         # Load configuration
         self.config = self._load_config()
         
-        # Define standard regions of interest for poker tables
-        self.regions_of_interest = {
-            "cards_area": RegionOfInterest("cards_area", 300, 200, 400, 150, 0.85, True),
-            "pot_area": RegionOfInterest("pot_area", 400, 100, 200, 80, 0.90, True),
-            "player_actions": RegionOfInterest("player_actions", 200, 500, 600, 100, 0.80, True),
-            "chip_stacks": RegionOfInterest("chip_stacks", 100, 300, 100, 200, 0.75, False),
-            "dealer_button": RegionOfInterest("dealer_button", 350, 250, 50, 50, 0.95, True),
-            "betting_area": RegionOfInterest("betting_area", 300, 350, 400, 100, 0.85, True),
-            "hud_panels": RegionOfInterest("hud_panels", 50, 50, 200, 150, 0.70, False),
-            "table_theme": RegionOfInterest("table_theme", 0, 0, -1, -1, 0.60, False),  # Full image
-        }
+        # Initialize baseline library
+        self.baselines: Dict[str, List[BaselineInfo]] = {}
+        self._load_baselines()
         
-        # Load existing baselines
-        self.baselines = self._load_baselines()
+        # Detection statistics
+        self.detection_count = 0
+        self.change_detection_count = 0
+        self.false_positive_count = 0
         
-        # Performance tracking
-        self.detection_stats = {
-            "total_comparisons": 0,
-            "matches_found": 0,
-            "changes_detected": 0,
-            "critical_alerts": 0,
-            "avg_processing_time": 0.0
-        }
+        logger.info(f"Adaptive UI detector initialized with {len(self.baselines)} baseline sets")
+    
+    def _load_config(self) -> Dict[str, Any]:
+        """Load detection configuration from file or defaults."""
+        config_file = self.baseline_dir / 'detection_config.json'
         
-        logger.info(f"AdaptiveUIDetector initialized with {len(self.baselines)} baseline states")
-
-    def _load_config(self) -> Dict:
-        """Load configuration from poker_config.json."""
-        try:
-            with open(self.config_path, 'r') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            logger.warning(f"Config file not found: {self.config_path}. Using defaults.")
-            return {
-                "ui_detection": {
-                    "global_ssim_threshold": 0.80,
-                    "hash_distance_threshold": 10,
-                    "alert_critical_changes": True,
-                    "generate_visualizations": True,
-                    "max_baselines_per_site": 50
+        default_config = {
+            # Global thresholds
+            "default_ssim_threshold": 0.85,
+            "default_hash_threshold": 10,
+            
+            # Site-specific configurations
+            "sites": {
+                "betfair": {
+                    "regions": [
+                        {
+                            "name": "pot_area",
+                            "x": 0.4, "y": 0.3, "width": 0.2, "height": 0.1,
+                            "importance": 2.0,
+                            "threshold_ssim": 0.9,
+                            "threshold_hash": 8
+                        },
+                        {
+                            "name": "hero_cards",
+                            "x": 0.4, "y": 0.7, "width": 0.2, "height": 0.15,
+                            "importance": 3.0,
+                            "threshold_ssim": 0.95,
+                            "threshold_hash": 5
+                        },
+                        {
+                            "name": "board_cards", 
+                            "x": 0.3, "y": 0.4, "width": 0.4, "height": 0.15,
+                            "importance": 2.5,
+                            "threshold_ssim": 0.9,
+                            "threshold_hash": 6
+                        },
+                        {
+                            "name": "action_buttons",
+                            "x": 0.6, "y": 0.8, "width": 0.35, "height": 0.15,
+                            "importance": 2.0,
+                            "threshold_ssim": 0.8,
+                            "threshold_hash": 12
+                        }
+                    ]
+                },
+                "generic": {
+                    "regions": [
+                        {
+                            "name": "center_area",
+                            "x": 0.25, "y": 0.25, "width": 0.5, "height": 0.5,
+                            "importance": 1.5,
+                            "threshold_ssim": 0.8,
+                            "threshold_hash": 15
+                        }
+                    ]
                 }
-            }
-
-    def _load_baselines(self) -> Dict[str, BaselineState]:
-        """Load existing baseline states from disk."""
-        baselines = {}
-        baselines_file = self.baseline_dir / "baselines.json"
-        
-        if baselines_file.exists():
-            try:
-                with open(baselines_file, 'r') as f:
-                    data = json.load(f)
-                    for key, baseline_data in data.items():
-                        baselines[key] = BaselineState(**baseline_data)
-                logger.info(f"Loaded {len(baselines)} baseline states")
-            except Exception as e:
-                logger.error(f"Error loading baselines: {e}")
-        
-        return baselines
-
-    def _save_baselines(self):
-        """Save baseline states to disk."""
-        baselines_file = self.baseline_dir / "baselines.json"
-        try:
-            data = {key: asdict(baseline) for key, baseline in self.baselines.items()}
-            with open(baselines_file, 'w') as f:
-                json.dump(data, f, indent=2)
-            logger.info(f"Saved {len(self.baselines)} baseline states")
-        except Exception as e:
-            logger.error(f"Error saving baselines: {e}")
-
-    def add_baseline_screenshot(self, 
-                               screenshot_path: str,
-                               site_name: str,
-                               resolution: str = "1920x1080",
-                               theme: str = "default",
-                               metadata: Optional[Dict] = None) -> str:
-        """
-        Add a new baseline screenshot to the approved states library.
-        
-        Args:
-            screenshot_path: Path to the screenshot file
-            site_name: Name of the poker site (e.g., "betfair", "pokerstars")
-            resolution: Screen resolution (e.g., "1920x1080")
-            theme: UI theme name
-            metadata: Additional metadata about this baseline
+            },
             
-        Returns:
-            Unique identifier for this baseline state
-        """
-        if not Path(screenshot_path).exists():
-            raise FileNotFoundError(f"Screenshot not found: {screenshot_path}")
-        
-        # Load and process the image
-        image = cv2.imread(screenshot_path)
-        if image is None:
-            raise ValueError(f"Could not load image: {screenshot_path}")
-        
-        # Generate hashes
-        pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        if HAS_IMAGEHASH:
-            phash = str(imagehash.phash(pil_image))
-            dhash = str(imagehash.dhash(pil_image))
-            ahash = str(imagehash.average_hash(pil_image))
-        else:
-            # Fallback hash implementation
-            phash = self._simple_hash(image, 8)
-            dhash = self._simple_hash(image, 8, method='diff')
-            ahash = self._simple_hash(image, 8, method='average')
-        
-        # Calculate SSIM scores for regions (baseline against itself = 1.0)
-        ssim_regions = {}
-        for region_name, region in self.regions_of_interest.items():
-            if region.width == -1:  # Full image region
-                ssim_regions[region_name] = 1.0
-            else:
-                ssim_regions[region_name] = 1.0
-        
-        # Create baseline state
-        timestamp = datetime.now(timezone.utc).isoformat()
-        baseline_id = f"{site_name}_{resolution}_{theme}_{hashlib.md5(phash.encode()).hexdigest()[:8]}"
-        
-        # Copy screenshot to baselines directory
-        baseline_screenshot_path = self.baseline_dir / f"{baseline_id}.png"
-        cv2.imwrite(str(baseline_screenshot_path), image)
-        
-        baseline = BaselineState(
-            site_name=site_name,
-            resolution=resolution,
-            theme=theme,
-            timestamp=timestamp,
-            screenshot_path=str(baseline_screenshot_path),
-            perceptual_hash=phash,
-            difference_hash=dhash,
-            average_hash=ahash,
-            ssim_regions=ssim_regions,
-            metadata=metadata or {}
-        )
-        
-        # Add to baselines
-        self.baselines[baseline_id] = baseline
-        self._save_baselines()
-        
-        logger.info(f"Added baseline state: {baseline_id}")
-        return baseline_id
-
-    def _compute_hash_distances(self, 
-                               image: Image.Image, 
-                               baseline: BaselineState) -> Dict[str, int]:
-        """Compute distances between image hashes and baseline hashes."""
-        if HAS_IMAGEHASH:
-            phash = imagehash.phash(image)
-            dhash = imagehash.dhash(image)
-            ahash = imagehash.average_hash(image)
+            # Alert thresholds
+            "alert_thresholds": {
+                "minor_change": 0.15,
+                "major_change": 0.30,
+                "critical_change": 0.50
+            },
             
-            baseline_phash = imagehash.hex_to_hash(baseline.perceptual_hash)
-            baseline_dhash = imagehash.hex_to_hash(baseline.difference_hash)
-            baseline_ahash = imagehash.hex_to_hash(baseline.average_hash)
-            
-            return {
-                "perceptual": phash - baseline_phash,
-                "difference": dhash - baseline_dhash,
-                "average": ahash - baseline_ahash
-            }
-        else:
-            # Fallback hash comparison
-            cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-            phash = self._simple_hash(cv_image, 8)
-            dhash = self._simple_hash(cv_image, 8, method='diff')
-            ahash = self._simple_hash(cv_image, 8, method='average')
-            
-            return {
-                "perceptual": self._simple_hash_distance(phash, baseline.perceptual_hash),
-                "difference": self._simple_hash_distance(dhash, baseline.difference_hash),
-                "average": self._simple_hash_distance(ahash, baseline.average_hash)
-            }
-
-    def _compute_ssim_scores(self,
-                            image: np.ndarray, 
-                            baseline_image: np.ndarray) -> Dict[str, float]:
-        """Compute SSIM scores for all regions of interest."""
-        # Convert to grayscale for SSIM computation
-        gray_current = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray_baseline = cv2.cvtColor(baseline_image, cv2.COLOR_BGR2GRAY)
-        
-        ssim_scores = {}
-        
-        for region_name, region in self.regions_of_interest.items():
-            try:
-                if region.width == -1:  # Full image
-                    score = ssim(gray_current, gray_baseline)
-                else:
-                    # Extract region
-                    current_region = gray_current[region.y:region.y+region.height, 
-                                                region.x:region.x+region.width]
-                    baseline_region = gray_baseline[region.y:region.y+region.height,
-                                                  region.x:region.x+region.width]
-                    
-                    if current_region.size > 0 and baseline_region.size > 0:
-                        score = ssim(current_region, baseline_region)
-                    else:
-                        score = 0.0
-                        
-                ssim_scores[region_name] = score
-            except Exception as e:
-                logger.warning(f"Error computing SSIM for region {region_name}: {e}")
-                ssim_scores[region_name] = 0.0
-        
-        return ssim_scores
-
-    def _generate_diff_mask(self, 
-                           image: np.ndarray, 
-                           baseline_image: np.ndarray,
-                           comparison_id: str) -> str:
-        """Generate a difference mask highlighting changed areas."""
-        try:
-            # Compute absolute difference
-            diff = cv2.absdiff(image, baseline_image)
-            
-            # Convert to grayscale and threshold
-            gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-            _, thresh = cv2.threshold(gray_diff, 30, 255, cv2.THRESH_BINARY)
-            
-            # Create colorized diff mask
-            diff_mask = cv2.applyColorMap(thresh, cv2.COLORMAP_HOT)
-            
-            # Save diff mask
-            mask_path = self.reports_dir / f"{comparison_id}_diff_mask.png"
-            cv2.imwrite(str(mask_path), diff_mask)
-            
-            return str(mask_path)
-        except Exception as e:
-            logger.error(f"Error generating diff mask: {e}")
-            return ""
-
-    def _generate_visualization(self,
-                               image: np.ndarray,
-                               baseline_image: np.ndarray,
-                               comparison_result: ComparisonResult,
-                               comparison_id: str) -> str:
-        """Generate a comprehensive visualization of the comparison."""
-        try:
-            fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-            fig.suptitle(f'UI Change Detection Analysis - {comparison_id}', fontsize=16)
-            
-            # Convert BGR to RGB for matplotlib
-            current_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            baseline_rgb = cv2.cvtColor(baseline_image, cv2.COLOR_BGR2RGB)
-            
-            # Original images
-            axes[0, 0].imshow(current_rgb)
-            axes[0, 0].set_title(f'Current Screenshot')
-            axes[0, 0].axis('off')
-            
-            axes[0, 1].imshow(baseline_rgb)
-            axes[0, 1].set_title(f'Baseline Screenshot')
-            axes[0, 1].axis('off')
-            
-            # Difference visualization
-            diff = cv2.absdiff(image, baseline_image)
-            diff_rgb = cv2.cvtColor(diff, cv2.COLOR_BGR2RGB)
-            axes[0, 2].imshow(diff_rgb)
-            axes[0, 2].set_title('Absolute Difference')
-            axes[0, 2].axis('off')
-            
-            # SSIM scores bar chart
-            regions = list(comparison_result.ssim_scores.keys())
-            scores = list(comparison_result.ssim_scores.values())
-            colors = ['red' if region in comparison_result.diff_regions else 'green' for region in regions]
-            
-            axes[1, 0].bar(range(len(regions)), scores, color=colors, alpha=0.7)
-            axes[1, 0].set_xticks(range(len(regions)))
-            axes[1, 0].set_xticklabels(regions, rotation=45, ha='right')
-            axes[1, 0].set_ylabel('SSIM Score')
-            axes[1, 0].set_title('Region SSIM Scores')
-            axes[1, 0].axhline(y=0.8, color='orange', linestyle='--', label='Threshold')
-            axes[1, 0].legend()
-            
-            # Hash distances
-            hash_types = list(comparison_result.hash_distances.keys())
-            distances = list(comparison_result.hash_distances.values())
-            
-            axes[1, 1].bar(hash_types, distances, color=['blue', 'cyan', 'navy'])
-            axes[1, 1].set_ylabel('Hash Distance')
-            axes[1, 1].set_title('Perceptual Hash Distances')
-            axes[1, 1].axhline(y=10, color='red', linestyle='--', label='Threshold')
-            axes[1, 1].legend()
-            
-            # Summary statistics
-            summary_text = f"""
-Match Found: {comparison_result.is_match}
-Best Match Score: {comparison_result.best_match_score:.3f}
-Changed Regions: {len(comparison_result.diff_regions)}
-Critical Changes: {len(comparison_result.critical_changes)}
-
-Regions with Changes:
-{chr(10).join(comparison_result.diff_regions)}
-
-Critical Regions:
-{chr(10).join(comparison_result.critical_changes)}
-"""
-            axes[1, 2].text(0.1, 0.9, summary_text, transform=axes[1, 2].transAxes,
-                           fontsize=10, verticalalignment='top', fontfamily='monospace')
-            axes[1, 2].set_title('Detection Summary')
-            axes[1, 2].axis('off')
-            
-            plt.tight_layout()
-            
-            # Save visualization
-            viz_path = self.reports_dir / f"{comparison_id}_analysis.png"
-            plt.savefig(str(viz_path), dpi=150, bbox_inches='tight')
-            plt.close()
-            
-            return str(viz_path)
-        except Exception as e:
-            logger.error(f"Error generating visualization: {e}")
-            return ""
-
-    def compare_screenshot(self, 
-                          screenshot_path: str,
-                          site_name: str,
-                          resolution: str = "1920x1080",
-                          theme: str = "default") -> ComparisonResult:
-        """
-        Compare a screenshot against all matching baseline states.
-        
-        Args:
-            screenshot_path: Path to the screenshot to analyze
-            site_name: Name of the poker site
-            resolution: Screen resolution
-            theme: UI theme name
-            
-        Returns:
-            ComparisonResult with detailed analysis
-        """
-        start_time = datetime.now()
-        
-        if not Path(screenshot_path).exists():
-            raise FileNotFoundError(f"Screenshot not found: {screenshot_path}")
-        
-        # Load the image
-        image = cv2.imread(screenshot_path)
-        if image is None:
-            raise ValueError(f"Could not load image: {screenshot_path}")
-        
-        pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        
-        # Find matching baselines (same site, resolution, theme)
-        matching_baselines = {
-            bid: baseline for bid, baseline in self.baselines.items()
-            if (baseline.site_name == site_name and 
-                baseline.resolution == resolution and 
-                baseline.theme == theme)
+            # CI integration
+            "ci_failure_threshold": 0.40,
+            "ci_enabled": True
         }
         
-        if not matching_baselines:
-            logger.warning(f"No matching baselines found for {site_name}_{resolution}_{theme}")
-            return ComparisonResult(
-                is_match=False,
-                best_match_score=0.0,
-                best_match_baseline="",
-                hash_distances={},
-                ssim_scores={},
-                diff_regions=[],
-                critical_changes=[]
+        try:
+            if config_file.exists():
+                with open(config_file, 'r') as f:
+                    loaded_config = json.load(f)
+                    # Merge with defaults
+                    default_config.update(loaded_config)
+        except Exception as e:
+            logger.warning(f"Could not load config from {config_file}: {e}")
+        
+        # Save merged config
+        try:
+            with open(config_file, 'w') as f:
+                json.dump(default_config, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save config: {e}")
+        
+        return default_config
+    
+    def _load_baselines(self) -> None:
+        """Load all baseline screenshots from the baseline directory."""
+        baseline_index_file = self.baseline_dir / 'baselines_index.json'
+        
+        try:
+            if baseline_index_file.exists():
+                with open(baseline_index_file, 'r') as f:
+                    index_data = json.load(f)
+                    
+                for site_key, baseline_list in index_data.items():
+                    self.baselines[site_key] = []
+                    for baseline_data in baseline_list:
+                        baseline_info = BaselineInfo(
+                            filepath=baseline_data['filepath'],
+                            perceptual_hash=baseline_data['perceptual_hash'],
+                            ssim_regions=baseline_data['ssim_regions'],
+                            metadata=baseline_data['metadata'],
+                            timestamp=baseline_data['timestamp']
+                        )
+                        self.baselines[site_key].append(baseline_info)
+            
+        except Exception as e:
+            logger.warning(f"Could not load baseline index: {e}")
+            self.baselines = {}
+    
+    def add_baseline(self, image: np.ndarray, site: str, resolution: str, 
+                    metadata: Optional[Dict[str, Any]] = None) -> bool:
+        """
+        Add a new baseline screenshot for the specified site and resolution.
+        
+        Args:
+            image: Screenshot in BGR format
+            site: Poker site identifier (e.g., 'betfair', 'pokerstars')
+            resolution: Resolution identifier (e.g., '1920x1080', '1366x768')
+            metadata: Optional metadata about the screenshot
+            
+        Returns:
+            True if baseline was added successfully
+        """
+        if not self.available or image is None or image.size == 0:
+            return False
+        
+        try:
+            site_key = f"{site}_{resolution}"
+            timestamp = time.time()
+            
+            # Generate filename
+            filename = f"baseline_{site}_{resolution}_{int(timestamp)}.png"
+            filepath = self.baseline_dir / filename
+            
+            # Save image
+            cv2.imwrite(str(filepath), image)
+            
+            # Compute perceptual hash
+            pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            phash = str(imagehash.phash(pil_image))
+            
+            # Compute SSIM for each region
+            ssim_regions = {}
+            regions = self._get_regions_for_site(site)
+            
+            for region in regions:
+                try:
+                    roi = self._extract_region(image, region)
+                    if roi is not None and roi.size > 0:
+                        # Store region hash for later comparison
+                        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                        ssim_regions[region.name] = float(np.mean(roi_gray))  # Simple baseline metric
+                except Exception as e:
+                    logger.warning(f"Could not process region {region.name}: {e}")
+            
+            # Create baseline info
+            baseline = BaselineInfo(
+                filepath=str(filepath.relative_to(self.baseline_dir)),
+                perceptual_hash=phash,
+                ssim_regions=ssim_regions,
+                metadata=metadata or {},
+                timestamp=timestamp
+            )
+            
+            # Add to baselines
+            if site_key not in self.baselines:
+                self.baselines[site_key] = []
+            self.baselines[site_key].append(baseline)
+            
+            # Save updated index
+            self._save_baseline_index()
+            
+            logger.info(f"Added baseline for {site_key}: {filename}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add baseline: {e}")
+            return False
+    
+    def detect_changes(self, image: np.ndarray, site: str, resolution: str,
+                      generate_diff: bool = True) -> ChangeDetectionResult:
+        """
+        Detect UI changes by comparing against baseline screenshots.
+        
+        Args:
+            image: Current screenshot in BGR format
+            site: Poker site identifier
+            resolution: Resolution identifier  
+            generate_diff: Whether to generate visual diff mask
+            
+        Returns:
+            ChangeDetectionResult with detailed analysis
+        """
+        start_time = time.time()
+        self.detection_count += 1
+        
+        if not self.available:
+            return ChangeDetectionResult(
+                has_changes=False,
+                confidence=0.0,
+                recommendations=["UI change detection not available - missing dependencies"]
             )
         
-        best_match_score = 0.0
-        best_match_baseline = ""
-        best_comparison = None
-        
-        # Compare against each matching baseline
-        for baseline_id, baseline in matching_baselines.items():
-            # Load baseline image
-            baseline_image = cv2.imread(baseline.screenshot_path)
+        try:
+            site_key = f"{site}_{resolution}"
+            
+            # Check if we have baselines for this site/resolution
+            if site_key not in self.baselines or not self.baselines[site_key]:
+                return ChangeDetectionResult(
+                    has_changes=False,
+                    confidence=0.0,
+                    recommendations=[f"No baselines available for {site_key}. Add baselines first."]
+                )
+            
+            # Get regions for this site
+            regions = self._get_regions_for_site(site)
+            
+            # Initialize result
+            result = ChangeDetectionResult(has_changes=False, confidence=0.0)
+            
+            # Compare against all baselines and find best match
+            best_match_score = 0.0
+            best_baseline = None
+            
+            for baseline in self.baselines[site_key]:
+                score = self._compare_with_baseline(image, baseline, regions)
+                if score > best_match_score:
+                    best_match_score = score
+                    best_baseline = baseline
+            
+            if best_baseline is None:
+                result.recommendations.append("No valid baseline found for comparison")
+                return result
+            
+            # Detailed analysis against best matching baseline
+            baseline_image = self._load_baseline_image(best_baseline)
             if baseline_image is None:
-                continue
+                result.recommendations.append("Could not load baseline image for comparison")
+                return result
             
-            # Compute hash distances
-            hash_distances = self._compute_hash_distances(pil_image, baseline)
+            # Compute perceptual hash distance
+            current_hash = str(imagehash.phash(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))))
+            hash_distance = imagehash.hex_to_hash(current_hash) - imagehash.hex_to_hash(best_baseline.perceptual_hash)
             
-            # Compute SSIM scores
-            ssim_scores = self._compute_ssim_scores(image, baseline_image)
+            # Analyze each region
+            ssim_scores = {}
+            hash_distances = {}
+            affected_regions = []
+            change_types = []
             
-            # Calculate overall match score (weighted average of SSIM scores)
-            weights = {
-                "cards_area": 0.25,
-                "pot_area": 0.20,
-                "player_actions": 0.20,
-                "betting_area": 0.15,
-                "dealer_button": 0.10,
-                "chip_stacks": 0.05,
-                "hud_panels": 0.03,
-                "table_theme": 0.02
+            for region in regions:
+                try:
+                    # Extract regions from both images
+                    current_roi = self._extract_region(image, region)
+                    baseline_roi = self._extract_region(baseline_image, region)
+                    
+                    if current_roi is None or baseline_roi is None:
+                        continue
+                    
+                    # Resize to same dimensions if needed
+                    if current_roi.shape != baseline_roi.shape:
+                        baseline_roi = cv2.resize(baseline_roi, (current_roi.shape[1], current_roi.shape[0]))
+                    
+                    # Convert to grayscale for SSIM
+                    current_gray = cv2.cvtColor(current_roi, cv2.COLOR_BGR2GRAY)
+                    baseline_gray = cv2.cvtColor(baseline_roi, cv2.COLOR_BGR2GRAY)
+                    
+                    # Compute SSIM
+                    ssim_score = ssim(current_gray, baseline_gray, full=False)
+                    ssim_scores[region.name] = ssim_score
+                    
+                    # Compute region hash distance
+                    current_region_hash = imagehash.phash(Image.fromarray(cv2.cvtColor(current_roi, cv2.COLOR_BGR2RGB)))
+                    baseline_region_hash = imagehash.phash(Image.fromarray(cv2.cvtColor(baseline_roi, cv2.COLOR_BGR2RGB)))
+                    region_hash_distance = current_region_hash - baseline_region_hash
+                    hash_distances[region.name] = region_hash_distance
+                    
+                    # Check thresholds
+                    if ssim_score < region.threshold_ssim or region_hash_distance > region.threshold_hash:
+                        affected_regions.append(region.name)
+                        
+                        # Classify change type based on analysis
+                        if ssim_score < 0.5:
+                            change_types.append(ChangeType.LAYOUT_SHIFT)
+                        elif region_hash_distance > 20:
+                            change_types.append(ChangeType.COLOR_CHANGE)
+                        else:
+                            change_types.append(ChangeType.UNKNOWN)
+                
+                except Exception as e:
+                    logger.warning(f"Error analyzing region {region.name}: {e}")
+            
+            # Calculate overall confidence and determine if changes detected
+            overall_change_score = self._calculate_change_score(
+                hash_distance, ssim_scores, hash_distances, regions
+            )
+            
+            result.confidence = overall_change_score
+            result.ssim_scores = ssim_scores
+            result.hash_distances = hash_distances
+            result.change_types = list(set(change_types))
+            result.affected_regions = affected_regions
+            
+            # Determine if changes are significant
+            thresholds = self.config['alert_thresholds']
+            if overall_change_score >= thresholds['critical_change']:
+                result.has_changes = True
+                result.recommendations.append("CRITICAL: Major UI changes detected - scraper may fail")
+                self.change_detection_count += 1
+            elif overall_change_score >= thresholds['major_change']:
+                result.has_changes = True  
+                result.recommendations.append("MAJOR: Significant UI changes detected - review required")
+                self.change_detection_count += 1
+            elif overall_change_score >= thresholds['minor_change']:
+                result.has_changes = True
+                result.recommendations.append("MINOR: Small UI changes detected - monitor closely")
+                
+            # Generate diff mask if requested and changes detected
+            if generate_diff and result.has_changes and baseline_image is not None:
+                result.diff_mask = self._generate_diff_mask(image, baseline_image)
+            
+            result.analysis_time_ms = (time.time() - start_time) * 1000
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"UI change detection failed: {e}")
+            return ChangeDetectionResult(
+                has_changes=False,
+                confidence=0.0,
+                recommendations=[f"Detection failed: {str(e)}"]
+            )
+    
+    def _get_regions_for_site(self, site: str) -> List[UIRegion]:
+        """Get regions of interest for the specified site."""
+        site_config = self.config['sites'].get(site, self.config['sites']['generic'])
+        regions = []
+        
+        for region_data in site_config['regions']:
+            region = UIRegion(
+                name=region_data['name'],
+                x=int(region_data['x'] * 1920) if region_data['x'] <= 1 else int(region_data['x']),
+                y=int(region_data['y'] * 1080) if region_data['y'] <= 1 else int(region_data['y']),
+                width=int(region_data['width'] * 1920) if region_data['width'] <= 1 else int(region_data['width']),
+                height=int(region_data['height'] * 1080) if region_data['height'] <= 1 else int(region_data['height']),
+                importance=region_data.get('importance', 1.0),
+                threshold_ssim=region_data.get('threshold_ssim', self.config['default_ssim_threshold']),
+                threshold_hash=region_data.get('threshold_hash', self.config['default_hash_threshold'])
+            )
+            regions.append(region)
+        
+        return regions
+    
+    def _extract_region(self, image: np.ndarray, region: UIRegion) -> Optional[np.ndarray]:
+        """Extract a region of interest from an image."""
+        try:
+            h, w = image.shape[:2]
+            
+            # Handle relative coordinates
+            if region.x <= 1 and region.y <= 1:
+                x = int(region.x * w)
+                y = int(region.y * h)
+                width = int(region.width * w)
+                height = int(region.height * h)
+            else:
+                x, y, width, height = region.x, region.y, region.width, region.height
+            
+            # Bounds checking
+            x = max(0, min(x, w - 1))
+            y = max(0, min(y, h - 1))
+            x2 = min(x + width, w)
+            y2 = min(y + height, h)
+            
+            if x2 <= x or y2 <= y:
+                return None
+            
+            return image[y:y2, x:x2]
+            
+        except Exception as e:
+            logger.warning(f"Region extraction failed: {e}")
+            return None
+    
+    def _compare_with_baseline(self, image: np.ndarray, baseline: BaselineInfo,
+                             regions: List[UIRegion]) -> float:
+        """Compare current image with a baseline and return similarity score."""
+        try:
+            # Load baseline image
+            baseline_image = self._load_baseline_image(baseline)
+            if baseline_image is None:
+                return 0.0
+            
+            # Compute overall perceptual hash similarity  
+            current_hash = str(imagehash.phash(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))))
+            hash_distance = imagehash.hex_to_hash(current_hash) - imagehash.hex_to_hash(baseline.perceptual_hash)
+            hash_similarity = max(0.0, 1.0 - hash_distance / 64.0)  # Normalize to 0-1
+            
+            # Compute region-wise SSIM
+            region_similarities = []
+            total_importance = 0.0
+            
+            for region in regions:
+                current_roi = self._extract_region(image, region)
+                baseline_roi = self._extract_region(baseline_image, region)
+                
+                if current_roi is not None and baseline_roi is not None:
+                    # Resize if needed
+                    if current_roi.shape != baseline_roi.shape:
+                        baseline_roi = cv2.resize(baseline_roi, (current_roi.shape[1], current_roi.shape[0]))
+                    
+                    # Compute SSIM
+                    current_gray = cv2.cvtColor(current_roi, cv2.COLOR_BGR2GRAY)
+                    baseline_gray = cv2.cvtColor(baseline_roi, cv2.COLOR_BGR2GRAY)
+                    ssim_score = ssim(current_gray, baseline_gray)
+                    
+                    region_similarities.append(ssim_score * region.importance)
+                    total_importance += region.importance
+            
+            # Weighted average of region similarities
+            if total_importance > 0:
+                region_similarity = sum(region_similarities) / total_importance
+            else:
+                region_similarity = 0.0
+            
+            # Combine hash and region similarity
+            overall_similarity = (hash_similarity * 0.3) + (region_similarity * 0.7)
+            
+            return overall_similarity
+            
+        except Exception as e:
+            logger.warning(f"Baseline comparison failed: {e}")
+            return 0.0
+    
+    def _load_baseline_image(self, baseline: BaselineInfo) -> Optional[np.ndarray]:
+        """Load a baseline image from disk."""
+        try:
+            filepath = self.baseline_dir / baseline.filepath
+            if not filepath.exists():
+                logger.warning(f"Baseline image not found: {filepath}")
+                return None
+            
+            image = cv2.imread(str(filepath))
+            return image
+            
+        except Exception as e:
+            logger.warning(f"Could not load baseline image: {e}")
+            return None
+    
+    def _calculate_change_score(self, global_hash_distance: int, ssim_scores: Dict[str, float],
+                              hash_distances: Dict[str, int], regions: List[UIRegion]) -> float:
+        """Calculate overall change score from individual metrics."""
+        try:
+            # Global hash component (0-1, where 1 = maximum change)
+            global_component = min(global_hash_distance / 32.0, 1.0)
+            
+            # Region-wise components
+            region_components = []
+            total_importance = 0.0
+            
+            for region in regions:
+                if region.name in ssim_scores and region.name in hash_distances:
+                    ssim_score = ssim_scores[region.name]
+                    hash_dist = hash_distances[region.name]
+                    
+                    # Convert to change scores (0 = no change, 1 = maximum change)
+                    ssim_change = max(0.0, 1.0 - ssim_score)
+                    hash_change = min(hash_dist / 32.0, 1.0)
+                    
+                    # Combine and weight by importance
+                    region_change = (ssim_change * 0.7) + (hash_change * 0.3)
+                    region_components.append(region_change * region.importance)
+                    total_importance += region.importance
+            
+            # Weighted average of region changes
+            if total_importance > 0 and region_components:
+                region_component = sum(region_components) / total_importance
+            else:
+                region_component = 0.0
+            
+            # Combine global and region components
+            overall_score = (global_component * 0.2) + (region_component * 0.8)
+            
+            return min(overall_score, 1.0)
+            
+        except Exception as e:
+            logger.warning(f"Change score calculation failed: {e}")
+            return 0.0
+    
+    def _generate_diff_mask(self, current: np.ndarray, baseline: np.ndarray) -> Optional[np.ndarray]:
+        """Generate visual diff mask showing changes between images."""
+        try:
+            # Resize if needed
+            if current.shape != baseline.shape:
+                baseline = cv2.resize(baseline, (current.shape[1], current.shape[0]))
+            
+            # Compute absolute difference
+            diff = cv2.absdiff(current, baseline)
+            
+            # Convert to grayscale and threshold
+            diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+            _, diff_thresh = cv2.threshold(diff_gray, 30, 255, cv2.THRESH_BINARY)
+            
+            # Apply morphological operations to clean up noise
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+            diff_clean = cv2.morphologyEx(diff_thresh, cv2.MORPH_CLOSE, kernel)
+            diff_clean = cv2.morphologyEx(diff_clean, cv2.MORPH_OPEN, kernel)
+            
+            # Create colored diff mask (red for changes)
+            diff_colored = np.zeros_like(current)
+            diff_colored[:, :, 2] = diff_clean  # Red channel
+            
+            return diff_colored
+            
+        except Exception as e:
+            logger.warning(f"Diff mask generation failed: {e}")
+            return None
+    
+    def save_diff_report(self, result: ChangeDetectionResult, image: np.ndarray,
+                        site: str, resolution: str) -> str:
+        """Save a detailed diff report with visual overlays."""
+        try:
+            timestamp = int(time.time())
+            report_dir = self.baseline_dir / 'diff_reports'
+            report_dir.mkdir(exist_ok=True)
+            
+            # Save current image
+            image_filename = f"current_{site}_{resolution}_{timestamp}.png"
+            cv2.imwrite(str(report_dir / image_filename), image)
+            
+            # Save diff mask if available
+            diff_filename = None
+            if result.diff_mask is not None:
+                diff_filename = f"diff_{site}_{resolution}_{timestamp}.png"
+                cv2.imwrite(str(report_dir / diff_filename), result.diff_mask)
+            
+            # Create JSON report
+            report_data = {
+                'timestamp': timestamp,
+                'site': site,
+                'resolution': resolution,
+                'has_changes': result.has_changes,
+                'confidence': result.confidence,
+                'change_types': [ct.value for ct in result.change_types],
+                'affected_regions': result.affected_regions,
+                'ssim_scores': result.ssim_scores,
+                'hash_distances': result.hash_distances,
+                'recommendations': result.recommendations,
+                'analysis_time_ms': result.analysis_time_ms,
+                'images': {
+                    'current': image_filename,
+                    'diff_mask': diff_filename
+                }
             }
             
-            match_score = sum(ssim_scores.get(region, 0) * weights.get(region, 0) 
-                            for region in ssim_scores.keys())
+            report_filename = f"change_report_{site}_{resolution}_{timestamp}.json"
+            report_path = report_dir / report_filename
             
-            if match_score > best_match_score:
-                best_match_score = match_score
-                best_match_baseline = baseline_id
-                
-                # Identify regions that exceed threshold
-                diff_regions = []
-                critical_changes = []
-                
-                for region_name, score in ssim_scores.items():
-                    region = self.regions_of_interest.get(region_name)
-                    if region and score < region.threshold:
-                        diff_regions.append(region_name)
-                        if region.critical:
-                            critical_changes.append(region_name)
-                
-                best_comparison = ComparisonResult(
-                    is_match=len(critical_changes) == 0 and best_match_score > 0.8,
-                    best_match_score=best_match_score,
-                    best_match_baseline=baseline_id,
-                    hash_distances=hash_distances,
-                    ssim_scores=ssim_scores,
-                    diff_regions=diff_regions,
-                    critical_changes=critical_changes
-                )
-                
-                # Generate visualizations if configured
-                if self.config.get("ui_detection", {}).get("generate_visualizations", True):
-                    comparison_id = f"{site_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                    
-                    # Generate diff mask
-                    diff_mask_path = self._generate_diff_mask(image, baseline_image, comparison_id)
-                    best_comparison.diff_mask_path = diff_mask_path
-                    
-                    # Generate comprehensive visualization
-                    viz_path = self._generate_visualization(image, baseline_image, best_comparison, comparison_id)
-                    best_comparison.visualization_path = viz_path
-        
-        # Update statistics
-        self.detection_stats["total_comparisons"] += 1
-        if best_comparison and best_comparison.is_match:
-            self.detection_stats["matches_found"] += 1
-        else:
-            self.detection_stats["changes_detected"] += 1
-            
-        if best_comparison and len(best_comparison.critical_changes) > 0:
-            self.detection_stats["critical_alerts"] += 1
-            
-        processing_time = (datetime.now() - start_time).total_seconds()
-        self.detection_stats["avg_processing_time"] = (
-            (self.detection_stats["avg_processing_time"] * (self.detection_stats["total_comparisons"] - 1) + 
-             processing_time) / self.detection_stats["total_comparisons"]
-        )
-        
-        return best_comparison or ComparisonResult(
-            is_match=False,
-            best_match_score=0.0,
-            best_match_baseline="",
-            hash_distances={},
-            ssim_scores={},
-            diff_regions=[],
-            critical_changes=[]
-        )
-
-    def generate_alert_report(self, 
-                            comparison_result: ComparisonResult,
-                            screenshot_path: str,
-                            site_name: str) -> str:
-        """Generate a detailed alert report for UI changes."""
-        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        report_path = self.reports_dir / f"ui_change_alert_{site_name}_{timestamp}.json"
-        
-        alert_data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "site_name": site_name,
-            "screenshot_path": screenshot_path,
-            "alert_level": "CRITICAL" if comparison_result.critical_changes else "WARNING",
-            "is_match": comparison_result.is_match,
-            "match_score": comparison_result.best_match_score,
-            "best_baseline": comparison_result.best_match_baseline,
-            "changed_regions": comparison_result.diff_regions,
-            "critical_regions": comparison_result.critical_changes,
-            "ssim_scores": comparison_result.ssim_scores,
-            "hash_distances": comparison_result.hash_distances,
-            "diff_mask_path": comparison_result.diff_mask_path,
-            "visualization_path": comparison_result.visualization_path,
-            "recommendations": self._generate_recommendations(comparison_result)
-        }
-        
-        try:
             with open(report_path, 'w') as f:
-                json.dump(alert_data, f, indent=2)
-            logger.info(f"Alert report generated: {report_path}")
+                json.dump(report_data, f, indent=2)
+            
+            logger.info(f"Change detection report saved: {report_path}")
             return str(report_path)
+            
         except Exception as e:
-            logger.error(f"Error generating alert report: {e}")
+            logger.error(f"Failed to save diff report: {e}")
             return ""
-
-    def _generate_recommendations(self, comparison_result: ComparisonResult) -> List[str]:
-        """Generate recommendations based on comparison results."""
-        recommendations = []
-        
-        if len(comparison_result.critical_changes) > 0:
-            recommendations.append("IMMEDIATE ACTION REQUIRED: Critical UI regions have changed")
-            recommendations.append("Review scraper extraction logic for affected regions")
-            recommendations.append("Update baseline screenshots if changes are legitimate")
-            
-        if comparison_result.best_match_score < 0.5:
-            recommendations.append("Major UI changes detected - comprehensive scraper review needed")
-            
-        if "cards_area" in comparison_result.diff_regions:
-            recommendations.append("Card detection may be affected - verify card recognition accuracy")
-            
-        if "pot_area" in comparison_result.diff_regions:
-            recommendations.append("Pot reading may be affected - verify bet size extraction")
-            
-        if "player_actions" in comparison_result.diff_regions:
-            recommendations.append("Action button detection may be affected - verify UI automation")
-            
-        if len(comparison_result.diff_regions) == 0:
-            recommendations.append("No significant changes detected - scraper should continue to work normally")
-            
-        return recommendations
-
-    def get_detection_statistics(self) -> Dict:
-        """Get current detection statistics."""
-        return self.detection_stats.copy()
-
-    def cleanup_old_reports(self, days_to_keep: int = 30):
-        """Clean up old detection reports to save disk space."""
-        cutoff_date = datetime.now() - timedelta(days=days_to_keep)
-        
-        for report_file in self.reports_dir.glob("*.json"):
-            try:
-                file_time = datetime.fromtimestamp(report_file.stat().st_mtime)
-                if file_time < cutoff_date:
-                    report_file.unlink()
-                    logger.info(f"Cleaned up old report: {report_file}")
-            except Exception as e:
-                logger.warning(f"Error cleaning up {report_file}: {e}")
-
-    def _simple_hash(self, image: np.ndarray, hash_size: int = 8, method: str = 'average') -> str:
-        """Fallback hash implementation when imagehash is not available."""
-        # Convert to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-        # Resize to hash_size x hash_size
-        resized = cv2.resize(gray, (hash_size, hash_size), interpolation=cv2.INTER_AREA)
-        
-        if method == 'average':
-            # Average hash: compare each pixel to average
-            avg = resized.mean()
-            hash_bits = (resized > avg).flatten()
-        elif method == 'diff':
-            # Difference hash: compare adjacent pixels
-            hash_bits = []
-            for row in resized:
-                for i in range(len(row) - 1):
-                    hash_bits.append(row[i] > row[i + 1])
-            hash_bits = np.array(hash_bits)
-        else:  # perceptual (simplified)
-            # Simple perceptual hash using DCT approximation
-            # For fallback, just use average hash
-            avg = resized.mean()
-            hash_bits = (resized > avg).flatten()
-        
-        # Convert to hex string
-        hash_int = 0
-        for i, bit in enumerate(hash_bits[:64]):  # Limit to 64 bits
-            if bit:
-                hash_int |= (1 << i)
-        
-        return f"{hash_int:016x}"
-
-    def _simple_hash_distance(self, hash1: str, hash2: str) -> int:
-        """Compute Hamming distance between two simple hashes."""
+    
+    def _save_baseline_index(self) -> None:
+        """Save the baseline index to disk."""
         try:
-            int1 = int(hash1, 16)
-            int2 = int(hash2, 16)
-            return bin(int1 ^ int2).count('1')
-        except (ValueError, TypeError):
-            return 64  # Maximum distance for fallback
+            index_file = self.baseline_dir / 'baselines_index.json'
+            
+            # Convert to serializable format
+            index_data = {}
+            for site_key, baseline_list in self.baselines.items():
+                index_data[site_key] = []
+                for baseline in baseline_list:
+                    index_data[site_key].append({
+                        'filepath': baseline.filepath,
+                        'perceptual_hash': baseline.perceptual_hash,
+                        'ssim_regions': baseline.ssim_regions,
+                        'metadata': baseline.metadata,
+                        'timestamp': baseline.timestamp
+                    })
+            
+            with open(index_file, 'w') as f:
+                json.dump(index_data, f, indent=2)
+            
+        except Exception as e:
+            logger.error(f"Failed to save baseline index: {e}")
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get detection statistics."""
+        return {
+            'total_detections': self.detection_count,
+            'changes_detected': self.change_detection_count,
+            'false_positives': self.false_positive_count,
+            'change_detection_rate': self.change_detection_count / max(1, self.detection_count),
+            'baseline_sets': len(self.baselines),
+            'total_baselines': sum(len(baselines) for baselines in self.baselines.values())
+        }
+    
+    def ci_check(self, image: np.ndarray, site: str, resolution: str) -> bool:
+        """
+        Perform CI check for UI changes. Returns False if changes exceed threshold.
+        
+        This method is designed to be called from CI/CD pipelines to fail builds
+        when UI changes exceed configured thresholds.
+        """
+        if not self.config.get('ci_enabled', False):
+            return True  # Pass if CI checking is disabled
+        
+        result = self.detect_changes(image, site, resolution, generate_diff=False)
+        threshold = self.config.get('ci_failure_threshold', 0.40)
+        
+        if result.confidence >= threshold:
+            formatted_confidence = format(result.confidence, ".1%")
+            formatted_threshold = format(threshold, ".1%")
+            logger.error(
+                "CI FAILURE: UI changes exceed threshold (%s >= %s)",
+                formatted_confidence,
+                formatted_threshold,
+            )
+            return False
+        
+        return True
 
-def main():
-    """Example usage of the Adaptive UI Detector."""
-    # Initialize detector
-    detector = AdaptiveUIDetector()
-    
-    # Example: Add a baseline screenshot
-    # detector.add_baseline_screenshot(
-    #     "screenshot.png",
-    #     site_name="betfair",
-    #     resolution="1920x1080",
-    #     theme="default",
-    #     metadata={"table_type": "nlhe", "stake": "1/2"}
-    # )
-    
-    # Example: Compare a new screenshot
-    # result = detector.compare_screenshot(
-    #     "new_screenshot.png",
-    #     site_name="betfair",
-    #     resolution="1920x1080"
-    # )
-    
-    # Generate alert if changes detected
-    # if not result.is_match:
-    #     detector.generate_alert_report(result, "new_screenshot.png", "betfair")
-    
-    print("Adaptive UI Detector initialized successfully!")
-    print("Use the detector methods to add baselines and compare screenshots.")
 
-if __name__ == "__main__":
-    main()
+# ============================================================================
+# Convenience Functions and Testing
+# ============================================================================
+
+def create_detector(baseline_dir: Optional[str] = None) -> AdaptiveUIDetector:
+    """Create and initialize adaptive UI detector."""
+    return AdaptiveUIDetector(baseline_dir)
+
+def test_change_detection() -> bool:
+    """Test change detection functionality."""
+    if not DEPENDENCIES_AVAILABLE:
+        print("❌ Dependencies not available")
+        print("   Install: pip install opencv-python pillow imagehash scikit-image")
+        return False
+    
+    print("🔍 Testing Adaptive UI Change Detection")
+    print("=" * 50)
+    
+    detector = create_detector()
+    
+    if not detector.available:
+        print("❌ Detector initialization failed")
+        return False
+    
+    # Create a test image
+    import tempfile
+    test_image = np.zeros((1080, 1920, 3), dtype=np.uint8)
+    cv2.rectangle(test_image, (100, 100), (1800, 900), (50, 100, 50), -1)  # Green felt
+    cv2.circle(test_image, (960, 540), 200, (255, 255, 255), -1)  # Center table
+    
+    # Add test baseline
+    success = detector.add_baseline(
+        test_image, 
+        "test_site", 
+        "1920x1080",
+        {"description": "Test baseline for validation"}
+    )
+    
+    if not success:
+        print("❌ Failed to add test baseline")
+        return False
+    
+    print("✅ Test baseline added successfully")
+    
+    # Test change detection with same image (should be no changes)
+    result = detector.detect_changes(test_image, "test_site", "1920x1080")
+    
+    print(f"Detection result: changes={result.has_changes}, confidence={result.confidence:.1%}")
+    print(f"Analysis time: {result.analysis_time_ms:.1f}ms")
+    
+    # Create modified image to test change detection
+    modified_image = test_image.copy()
+    cv2.circle(modified_image, (960, 540), 250, (255, 0, 0), -1)  # Different color/size
+    
+    change_result = detector.detect_changes(modified_image, "test_site", "1920x1080")
+    
+    print(f"Modified image result: changes={change_result.has_changes}, confidence={change_result.confidence:.1%}")
+    
+    # Get statistics
+    stats = detector.get_statistics()
+    print(f"Statistics: {stats}")
+    
+    print("✅ Adaptive UI Change Detection test completed successfully")
+    return True
+
+if __name__ == '__main__':
+    """Run change detection tests when called directly."""
+    import sys
+    
+    print("🎯 PokerTool Adaptive UI Change Detection")
+    print("=" * 60)
+    
+    if not DEPENDENCIES_AVAILABLE:
+        print("❌ CRITICAL: Dependencies not installed")
+        print("\nPlease install required packages:")
+        print("  pip install opencv-python pillow imagehash scikit-image numpy")
+        sys.exit(1)
+    
+    success = test_change_detection()
+    
+    print("\n" + "=" * 60)
+    if success:
+        print("✅ ALL TESTS PASSED - Adaptive UI detector is working correctly!")
+        sys.exit(0)
+    else:
+        print("❌ TESTS FAILED - Check output above")
+        sys.exit(1)

@@ -1,0 +1,15 @@
+{
+  "test_site_1920x1080": [
+    {
+      "filepath": "baseline_test_site_1920x1080_1759870911.png",
+      "perceptual_hash": "ddd522d5082f2b2b",
+      "ssim_regions": {
+        "center_area": 121.65182098765432
+      },
+      "metadata": {
+        "description": "Test baseline for validation"
+      },
+      "timestamp": 1759870911.481498
+    }
+  ]
+}

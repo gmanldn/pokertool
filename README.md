@@ -1,6 +1,8 @@
-        <!-- POKERTOOL-HEADER-START
-        ---
-        schema: pokerheader.v1
+# PokerTool v29.0.0 — Advanced Poker Assistant
+
+<!-- POKERTOOL-HEADER-START
+---
+schema: pokerheader.v1
 project: pokertool
 file: README.md
 version: v28.0.0
@@ -9,14 +11,13 @@ fixes:
 - Merged duplicate root readmes into a single canonical README.md
 - date: '2025-09-25'
   summary: Enhanced enterprise documentation and comprehensive unit tests added
-        ---
-        POKERTOOL-HEADER-END -->
-
-# PokerTool v29.0.0 — Advanced Poker Assistant
+---
+POKERTOOL-HEADER-END -->
 
 PokerTool is a comprehensive, professional-grade poker analysis and automation toolkit. It features a robust GUI, advanced dependency management, multi-table support, and intelligent screen scraping capabilities.
 
 **📊 Project Statistics:**
+
 - **48,339** lines of production Python code across **114** modules
 - **17,953** lines of comprehensive test code  
 - **47,165** lines of JavaScript/TypeScript frontend code
@@ -31,6 +32,7 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 ---
 
 ## Contents
+
 - [🚀 Quick Start](#-quick-start)
 - [🎯 Key Features](#-key-features)
 - [📋 System Requirements](#-system-requirements)
@@ -47,6 +49,7 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 ## 🚀 Quick Start
 
 ### **🏆 Primary Method: Comprehensive Setup (Recommended)**
+
 ```bash
 # The ONLY recommended way to launch PokerTool
 python start.py
@@ -60,6 +63,7 @@ python start.py
 ```
 
 ### **🔧 Advanced Setup Options**
+
 ```bash
 # Virtual environment only
 python start.py --venv
@@ -75,6 +79,7 @@ python start.py --launch
 ```
 
 ### **⚡ Quick Validation**
+
 ```bash
 # Check all dependencies
 python src/pokertool/dependency_manager.py
@@ -89,6 +94,7 @@ python test_gui.py    # Minimal test interface
 ## 🎯 Key Features
 
 ### **✅ Version 29.0.0 Improvements:**
+
 - **🔍 Comprehensive Dependency Validation** - Validates all 19 dependencies upfront
 - **🎮 Robust Multi-Tab GUI** - Error-resilient interface with fallback content
 - **🛠 Enhanced Launch System** - Multiple launch methods with conflict resolution
@@ -97,6 +103,7 @@ python test_gui.py    # Minimal test interface
 - **💾 Smart State Management** - Clean separation of code and runtime data
 
 ### **Core Capabilities:**
+
 - **Advanced Hand Analysis** - GTO solver with equity calculations
 - **Multi-Table Support** - Manage up to 12 tables simultaneously
 - **Screen Scraping** - Real-time table state detection (Betfair optimized)
@@ -111,11 +118,13 @@ python test_gui.py    # Minimal test interface
 ## 📋 System Requirements
 
 ### **Supported Platforms:**
+
 - ✅ **macOS** 10.15+ (Catalina and later)
 - ✅ **Linux** (Ubuntu 18.04+, CentOS 7+, Fedora 30+)
 - ✅ **Windows** 10/11
 
 ### **Dependencies Automatically Validated:**
+
 - **Python 3.8-3.12** (Python 3.13 supported with limited features)
 - **Critical:** numpy, opencv-python, Pillow, pytesseract, mss, requests
 - **System:** tkinter, tesseract-ocr
@@ -123,6 +132,7 @@ python test_gui.py    # Minimal test interface
 - **macOS:** pyobjc-framework-Quartz
 
 ### **System Tools:**
+
 - **macOS:** `brew install python-tk tesseract`
 - **Linux:** `apt install python3-tk tesseract-ocr`
 - **Windows:** Usually included with Python
@@ -132,6 +142,7 @@ python test_gui.py    # Minimal test interface
 ## 💻 Installation Methods
 
 ### **🏆 Recommended: Automatic Setup**
+
 ```bash
 # Complete setup with dependency validation
 python start.py --all
@@ -141,6 +152,7 @@ python start.py --all
 ```
 
 ### **⚡ Quick Launch Options**
+
 ```bash
 # Direct GUI (bypasses CLI conflicts)
 python launch_gui.py
@@ -156,6 +168,7 @@ python src/pokertool/dependency_manager.py
 ```
 
 ### **🔧 Advanced Options**
+
 ```bash
 # Setup virtual environment only
 python start.py --venv
@@ -178,6 +191,7 @@ python start.py --validate
 ## 🎮 GUI Interface
 
 ### **Enhanced Multi-Tab Interface:**
+
 - **🎯 Autopilot Tab** - Automated play with real-time monitoring
 - **🎮 Manual Play** - Manual poker analysis and decision support
 - **📊 Analysis** - Hand analysis and statistical tools
@@ -188,6 +202,7 @@ python start.py --validate
 - **👥 Community** - Forums, challenges, and knowledge sharing
 
 ### **Key Features:**
+
 - **Robust Error Handling** - Continues working even if some modules fail
 - **Fallback Content** - Shows helpful error messages with retry options
 - **Conditional Loading** - Only loads tabs for available systems
@@ -199,6 +214,7 @@ python start.py --validate
 ## 🔧 Dependency Management
 
 ### **Comprehensive Validation System:**
+
 PokerTool v29.0.0 includes a sophisticated dependency management system:
 
 ```bash
@@ -207,6 +223,7 @@ python src/pokertool/dependency_manager.py
 ```
 
 **Features:**
+
 - ✅ **19 dependencies validated** with detailed status reporting
 - ✅ **Automatic installation** of missing packages
 - ✅ **Platform-specific checking** (macOS Quartz, Linux packages, Windows compatibility)
@@ -215,7 +232,8 @@ python src/pokertool/dependency_manager.py
 - ✅ **Version checking** and compatibility validation
 
 **Sample Output:**
-```
+
+```text
 📊 DEPENDENCY VALIDATION REPORT
 Total dependencies: 19
 ✅ Available: 14 (All critical dependencies)
@@ -224,45 +242,13 @@ Total dependencies: 19
 ⏭️  Skipped: 2 (Platform-specific)
 🎉 All critical dependencies are available! PokerTool is ready to run.
 ```
-# PokerTool — Modular Poker Assistant
-
-PokerTool is a modular toolkit for helping players make better live poker decisions. It combines a desktop GUI, core hand-eval/odds logic, table state helpers, and optional screen‑scraping utilities.
-
-This README consolidates the content from the previous **`README.md`** and **`README 2.md`** into one canonical document.
-
----
-
-## Contents
-- [Key Capabilities](#key-capabilities)
-- [Repository Layout](#repository-layout)
-- [Quick Start](#quick-start)
-- [GUI Usage](#gui-usage)
-- [Screen Scraper (Optional)](#screen-scraper-optional)
-- [Command Line](#command-line)
-- [Configuration](#configuration)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Development Notes](#development-notes)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## Key Capabilities
-- **Core poker logic**: card/rank enums, hand parsing, equity/outs helpers, and situation advice.
-- **GUI**: a single enhanced poker GUI with quick tips, ranges, and table input.
-- **Self-healing utilities**: scan & auto-fix common syntax issues before launch.
-- **Screen scraping** *(optional)*: setup to extract table state from supported UIs.
-- **Test/validation harness**: integration and security validation tests.
-- **Logging**: single rolling log for tests and validation with retention policy.
-
-> Tip: keep **one** GUI (the enhanced GUI) enabled; remove/ignore legacy GUI entry points.
 
 ---
 
 ## 📊 Screen Scraping
 
 ### **🎯 Advanced Screen Capture System**
+
 PokerTool features intelligent screen scraping with Betfair-optimized detection:
 
 ```bash
@@ -275,6 +261,7 @@ python src/pokertool/dependency_manager.py
 ```
 
 **Capabilities:**
+
 - **Real-time table detection** - Continuously monitors for poker tables
 - **OCR text recognition** - Extracts pot sizes, stack sizes, and player actions
 - **Multi-table support** - Track up to 12 tables simultaneously
@@ -283,6 +270,7 @@ python src/pokertool/dependency_manager.py
 - **Screenshot testing** - Built-in capture verification tools
 
 **Dependencies Automatically Checked:**
+
 - ✅ **mss** - Screen capture library
 - ✅ **pytesseract** - OCR functionality  
 - ✅ **opencv-python** - Computer vision processing
@@ -294,6 +282,7 @@ python src/pokertool/dependency_manager.py
 ## 🛠 Development
 
 ### **Architecture & Code Quality**
+
 - **Modular Design**: 114 Python modules with clear separation of concerns
 - **Type Safety**: Comprehensive type hints across 48,339 lines of code
 - **Error Handling**: Robust exception handling with graceful degradation
@@ -301,6 +290,7 @@ python src/pokertool/dependency_manager.py
 - **Documentation**: Extensive docstrings and API documentation
 
 ### **Key Development Tools**
+
 ```bash
 # Comprehensive system test
 python start.py --self-test
@@ -316,6 +306,7 @@ python tools/poker_go.py --check-only
 ```
 
 ### **Module Structure**
+
 - **📁 src/pokertool/core/** - Core poker engine and hand analysis
 - **📁 src/pokertool/modules/** - Screen scraping and specialized tools
 - **📁 src/pokertool/enhanced_gui_components/** - GUI components and styling
@@ -327,12 +318,14 @@ python tools/poker_go.py --check-only
 ## 📖 Documentation
 
 ### **Available Documentation:**
+
 - **README.md** - This comprehensive overview
 - **FEATURES.md** - Complete feature list with technical details
 - **docs/** - Additional technical documentation
 - **Inline Documentation** - Extensive docstrings throughout codebase
 
 ### **Getting Help:**
+
 - **Built-in Diagnostics** - GUI includes diagnostic tools for troubleshooting
 - **Dependency Validation** - Automatic checking and resolution guidance
 - **Error Recovery** - Fallback systems with clear error messages
@@ -343,6 +336,7 @@ python tools/poker_go.py --check-only
 ## 🤝 Contributing
 
 ### **Development Workflow:**
+
 ```bash
 # Clone and setup
 git clone https://github.com/gmanldn/pokertool.git
@@ -360,6 +354,7 @@ git push origin feature/your-feature
 ```
 
 ### **Code Standards:**
+
 - **Type Hints**: Required for all public APIs
 - **Documentation**: Docstrings for all modules and functions
 - **Testing**: Tests required for new features
@@ -367,6 +362,7 @@ git push origin feature/your-feature
 - **Dependency Management**: Use the validation system
 
 ### **Supported Contributions:**
+
 - 🐛 Bug fixes and improvements
 - ✨ New features and enhancements  
 - 📖 Documentation updates
@@ -385,6 +381,7 @@ This project is released under the **Apache 2.0** license. See [LICENSE](LICENSE
 ## 🏆 Enterprise Features
 
 ### **Production Readiness:**
+
 - ✅ **Zero-downtime deployment** capabilities
 - ✅ **Professional error handling** with fallback systems
 - ✅ **Comprehensive logging** and monitoring
@@ -393,6 +390,7 @@ This project is released under the **Apache 2.0** license. See [LICENSE](LICENSE
 - ✅ **Enterprise-grade architecture** with modular design
 
 ### **Performance Metrics:**
+
 - **Startup Time**: < 3 seconds with full validation
 - **Memory Usage**: ~200-500MB depending on features enabled
 - **Thread Pool**: 20 concurrent threads for parallel processing
