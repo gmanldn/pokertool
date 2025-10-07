@@ -11,8 +11,8 @@ This module provides functionality for cli operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.cli
-Version: 20.0.0
-Last Modified: 2025-09-29
+Version: 21.0.0
+Last Modified: 2025-10-04
 Author: PokerTool Development Team
 License: MIT
 
@@ -21,12 +21,13 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
-    - v28.0.0 (2025-09-29): Enhanced documentation
+    - v21.0.0 (2025-10-04): Enhanced GUI is now the ONLY GUI (removed fallback)
+    - v20.0.0 (2025-09-29): Enhanced documentation
     - v19.0.0 (2025-09-18): Bug fixes and improvements
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '20.0.0'
+__version__ = '21.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -49,7 +50,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog='pokertool', description='PokerTool CLI')
     sub = parser.add_subparsers(dest='cmd')
 
-    sub.add_parser('gui', help='Launch the Tkinter GUI')
+    sub.add_parser('gui', help='Launch the Enhanced Tkinter GUI')
     sub.add_parser('scrape', help='Run the screen scraper (headless)')
     sub.add_parser('test', help='Run basic functionality tests')
 
@@ -75,29 +76,33 @@ def main(argv=None):
             logger.info('Falling back to test mode...')
             return run_test_mode()
         
-        # Import GUI only after tkinter check passes
-        gui_module = None
+        # Import ONLY the enhanced GUI (no fallback)
+        logger.info('🚀 Launching Enhanced PokerTool GUI...')
         try:
-            from . import enhanced_gui as gui_module
-        except ImportError:
-            logger.warning('Enhanced GUI unavailable, falling back to legacy interface')
-            try:
-                from . import gui as gui_module
-            except ImportError as e:
-                logger.error(f'GUI import failed: {e}')
-                return 1
-
-        try:
-            if hasattr(gui_module, 'main'):
-                return gui_module.main()
-            if hasattr(gui_module, 'run'):
-                return gui_module.run()
-        except Exception as e:
-            logger.error(f'GUI startup failed: {e}')
+            from . import enhanced_gui
+            
+            # Run the enhanced GUI
+            if hasattr(enhanced_gui, 'main'):
+                return enhanced_gui.main()
+            elif hasattr(enhanced_gui, 'run'):
+                return enhanced_gui.run()
+            else:
+                # Create and run IntegratedPokerAssistant directly
+                logger.info('Starting IntegratedPokerAssistant...')
+                app = enhanced_gui.IntegratedPokerAssistant()
+                app.mainloop()
+                return 0
+                
+        except ImportError as e:
+            logger.error(f'Enhanced GUI module not found: {e}')
+            logger.error('The enhanced GUI is required. Please ensure all dependencies are installed.')
+            logger.info('Run: python start.py --all')
             return 1
-
-        logger.error('GUI module missing entry point (main/run)')
-        return 1
+        except Exception as e:
+            logger.error(f'Enhanced GUI startup failed: {e}')
+            import traceback
+            traceback.print_exc()
+            return 1
     
     elif args.cmd == 'scrape':
         try:
@@ -150,7 +155,7 @@ def run_test_mode():
         logger.error(f'❌ Poker analysis failed: {e}')
     
     logger.info('=' * 40)
-    logger.info('Test mode completed. Use "pokertool gui" to launch GUI (if tkinter is available).')
+    logger.info('Test mode completed. Use "pokertool gui" to launch Enhanced GUI (if tkinter is available).')
     logger.info('Use "pokertool scrape" for headless screen scraping functionality.')
     
     return 0
