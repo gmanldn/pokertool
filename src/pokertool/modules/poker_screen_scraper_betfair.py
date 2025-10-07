@@ -15,6 +15,7 @@ Key Features:
 import logging
 import time
 import re
+from copy import deepcopy
 import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
@@ -70,6 +71,8 @@ class SeatInfo:
     stack_size: float = 0.0
     is_hero: bool = False
     is_dealer: bool = False
+    is_small_blind: bool = False
+    is_big_blind: bool = False
     position: str = ""
 
 
@@ -86,6 +89,10 @@ class TableState:
     hero_cards: List = field(default_factory=list)
     board_cards: List = field(default_factory=list)
     seats: List[SeatInfo] = field(default_factory=list)
+    hero_seat: Optional[int] = None
+    dealer_seat: Optional[int] = None
+    small_blind_seat: Optional[int] = None
+    big_blind_seat: Optional[int] = None
     active_players: int = 0
     stage: str = "unknown"
     
@@ -564,6 +571,20 @@ class PokerScreenScraper:
             state.seats = self._extract_seat_info(image)
             state.active_players = sum(1 for seat in state.seats if seat.is_active)
             state.stage = self._detect_game_stage(state.board_cards)
+
+            if state.seats:
+                hero = next((seat for seat in state.seats if seat.is_hero), None)
+                if hero:
+                    state.hero_seat = hero.seat_number
+                dealer = next((seat for seat in state.seats if seat.is_dealer or seat.position == 'BTN'), None)
+                if dealer:
+                    state.dealer_seat = dealer.seat_number
+                sb = next((seat for seat in state.seats if seat.is_small_blind or seat.position == 'SB'), None)
+                if sb:
+                    state.small_blind_seat = sb.seat_number
+                bb = next((seat for seat in state.seats if seat.is_big_blind or seat.position == 'BB'), None)
+                if bb:
+                    state.big_blind_seat = bb.seat_number
             
             logger.info(f"[TABLE ANALYSIS] ✓ Table analyzed: {details.get('site', 'unknown')}, "
                        f"players:{state.active_players}, pot:${state.pot_size}")
@@ -813,6 +834,11 @@ class PokerScreenScraper:
 
             # Assign blind positions (SB/BB) based on dealer seat and active seat order
             if dealer_seat:
+                for seat in seats:
+                    if seat.seat_number == dealer_seat:
+                        seat.is_dealer = True
+                        if not seat.position:
+                            seat.position = 'BTN'
                 active_seats = [s.seat_number for s in seats if s.is_active]
                 if dealer_seat in active_seats and len(active_seats) >= 2:
                     try:
@@ -822,10 +848,18 @@ class PokerScreenScraper:
                         for seat in seats:
                             if seat.seat_number == sb_seat:
                                 seat.position = 'SB'
+                                seat.is_small_blind = True
                             elif bb_seat and seat.seat_number == bb_seat:
                                 seat.position = 'BB'
+                                seat.is_big_blind = True
                     except Exception:
                         pass
+
+            for seat in seats:
+                if seat.is_dealer and seat.position == "":
+                    seat.position = 'BTN'
+                seat.is_small_blind = seat.position == 'SB'
+                seat.is_big_blind = seat.position == 'BB'
 
             return seats
         except Exception as e:
