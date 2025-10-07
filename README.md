@@ -277,6 +277,24 @@ python src/pokertool/dependency_manager.py
 - ✅ **tesseract-ocr** - System OCR engine
 - ✅ **Pillow** - Image processing
 
+### **🗂 Baseline Library Ingestion**
+
+Maintain high scraper fidelity by curating up-to-date UI baselines:
+
+```bash
+# Ingest a directory of annotated screenshots into the baseline library
+python tools/ui_baseline_ingest.py screenshots/betfair --site betfair --recursive \
+    --metadata capture_tool=obs build=2025.10
+
+# Inspect the generated manifest and curated samples
+open assets/ui_baselines/baseline_manifest.json
+```
+
+- **Automatic manifest generation** keeps CI dashboards aligned with available baselines.
+- **Metadata enrichment** (`--metadata` / `--metadata-file`) tags stakes, themes, or capture tooling.
+- **Raw captures preserved** in `assets/ui_baselines/raw_samples/` for audit and reprocessing.
+- Fully compatible with the adaptive detector—new baselines appear without restarting services.
+
 ---
 
 ## 🛠 Development
