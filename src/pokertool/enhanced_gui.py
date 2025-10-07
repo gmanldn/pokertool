@@ -332,7 +332,14 @@ class IntegratedPokerAssistant(tk.Tk):
     def _setup_styles(self):
         """Configure ttk styles."""
         style = ttk.Style()
-        style.theme_use('clam')
+        # Use default theme on macOS for better compatibility
+        if sys.platform == 'darwin':
+            try:
+                style.theme_use('aqua')  # Native macOS theme
+            except:
+                style.theme_use('default')
+        else:
+            style.theme_use('clam')
         
         # Enhanced button styles
         style.configure('Autopilot.TButton',
@@ -344,6 +351,10 @@ class IntegratedPokerAssistant(tk.Tk):
                        font=FONTS['body'],
                        background=COLORS['accent_primary'],
                        foreground=COLORS['text_primary'])
+        
+        # Explicitly configure Notebook tab styling to ensure visibility
+        style.configure('TNotebook', background=COLORS['bg_dark'])
+        style.configure('TNotebook.Tab', padding=[10, 5])
 
     # Translation helpers -------------------------------------------------
     def _register_widget_translation(
