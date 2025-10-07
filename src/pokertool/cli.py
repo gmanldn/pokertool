@@ -35,8 +35,9 @@ __maintainer__ = 'George Ridout'
 __status__ = 'Production'
 
 import argparse
-import sys
 import logging
+import sys
+from typing import Optional, Tuple
 
 # Set up basic logging for CLI
 logging.basicConfig(
@@ -44,6 +45,22 @@ logging.basicConfig(
     format='%(levelname)s: %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+def _is_tk_ready() -> Tuple[bool, Optional[str]]:
+    """Check whether Tk can be imported and the GUI toolkit is available."""
+
+    try:
+        import tkinter
+    except Exception as exc:  # pragma: no cover - platform dependent
+        return False, str(exc)
+
+    try:
+        interp = tkinter.Tcl()
+        interp.eval('package require Tk')
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
 
 def main(argv=None):
     """Main CLI entry point."""
@@ -57,22 +74,12 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.cmd in (None, 'gui'):
-        # Check if tkinter is available before importing GUI
-        try:
-            import tkinter
-            # Silent availability check without showing a demo window
-            root = tkinter.Tk()
-            try:
-                root.withdraw()
-                root.update_idletasks()
-            finally:
-                root.destroy()
-        except Exception as e:
-            logger.error(f'GUI not available: {e}')
-            logger.info('Tkinter is not available on this system.')
-            logger.info('On macOS, you may need to install tkinter with:')
-            logger.info('  brew install python-tk')
-            logger.info('Or use Anaconda/Miniconda which includes tkinter.')
+        gui_ready, tk_reason = _is_tk_ready()
+        if not gui_ready:
+            logger.error(f'GUI not available: {tk_reason}')
+            logger.info('Tkinter runtime is not ready on this system.')
+            logger.info('On macOS, install with: brew install python-tk')
+            logger.info('On Linux, ensure tk/tcl packages are installed.')
             logger.info('Falling back to test mode...')
             return run_test_mode()
         
