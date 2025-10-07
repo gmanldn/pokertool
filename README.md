@@ -12,6 +12,200 @@ fixes:
         ---
         POKERTOOL-HEADER-END -->
 
+# PokerTool v29.0.0 — Advanced Poker Assistant
+
+PokerTool is a comprehensive, professional-grade poker analysis and automation toolkit. It features a robust GUI, advanced dependency management, multi-table support, and intelligent screen scraping capabilities.
+
+**Latest Version:** v29.0.0 - Complete Dependency Validation & Robust GUI System  
+**Release Date:** January 2025  
+**Status:** Production Ready ✅
+
+---
+
+## Contents
+- [🚀 Quick Start](#-quick-start)
+- [🎯 Key Features](#-key-features)
+- [📋 System Requirements](#-system-requirements)
+- [💻 Installation Methods](#-installation-methods)
+- [🎮 GUI Interface](#-gui-interface)
+- [🔧 Dependency Management](#-dependency-management)
+- [📊 Screen Scraping](#-screen-scraping)
+- [🛠 Development](#-development)
+- [📖 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
+
+---
+
+## 🚀 Quick Start
+
+### **Method 1: Automatic Setup (Recommended)**
+```bash
+# Full setup with dependency validation
+python start.py
+
+# Or for direct GUI launch (fastest)
+python launch_gui.py
+```
+
+### **Method 2: Manual Setup**
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install dependencies with validation
+python start.py --python
+
+# Launch GUI
+python launch_gui.py
+```
+
+### **Method 3: Quick Test**
+```bash
+# Minimal test interface
+python test_gui.py
+```
+
+---
+
+## 🎯 Key Features
+
+### **✅ Version 29.0.0 Improvements:**
+- **🔍 Comprehensive Dependency Validation** - Validates all 19 dependencies upfront
+- **🎮 Robust Multi-Tab GUI** - Error-resilient interface with fallback content
+- **🛠 Enhanced Launch System** - Multiple launch methods with conflict resolution
+- **📊 Real-time Screen Scraping** - Advanced table detection and analysis
+- **🧵 Professional Threading** - 20-thread pool with proper management
+- **💾 Smart State Management** - Clean separation of code and runtime data
+
+### **Core Capabilities:**
+- **Advanced Hand Analysis** - GTO solver with equity calculations
+- **Multi-Table Support** - Manage up to 12 tables simultaneously
+- **Screen Scraping** - Real-time table state detection (Betfair optimized)
+- **Opponent Modeling** - ML-based opponent pattern recognition
+- **Coaching System** - Integrated learning and improvement tools
+- **Analytics Dashboard** - Session tracking and performance metrics
+- **Gamification** - Achievement system and progress tracking
+- **Community Features** - Forums, challenges, and knowledge sharing
+
+---
+
+## 📋 System Requirements
+
+### **Supported Platforms:**
+- ✅ **macOS** 10.15+ (Catalina and later)
+- ✅ **Linux** (Ubuntu 18.04+, CentOS 7+, Fedora 30+)
+- ✅ **Windows** 10/11
+
+### **Dependencies Automatically Validated:**
+- **Python 3.8-3.12** (Python 3.13 supported with limited features)
+- **Critical:** numpy, opencv-python, Pillow, pytesseract, mss, requests
+- **System:** tkinter, tesseract-ocr
+- **Optional:** torch, scikit-learn, pandas, websocket-client
+- **macOS:** pyobjc-framework-Quartz
+
+### **System Tools:**
+- **macOS:** `brew install python-tk tesseract`
+- **Linux:** `apt install python3-tk tesseract-ocr`
+- **Windows:** Usually included with Python
+
+---
+
+## 💻 Installation Methods
+
+### **🏆 Recommended: Automatic Setup**
+```bash
+# Complete setup with dependency validation
+python start.py --all
+
+# Validates all dependencies, installs missing packages,
+# sets up virtual environment, and launches GUI
+```
+
+### **⚡ Quick Launch Options**
+```bash
+# Direct GUI (bypasses CLI conflicts)
+python launch_gui.py
+
+# Full setup + validation + launch
+python start.py
+
+# Minimal test interface
+python test_gui.py
+
+# Dependency validation only
+python src/pokertool/dependency_manager.py
+```
+
+### **🔧 Advanced Options**
+```bash
+# Setup virtual environment only
+python start.py --venv
+
+# Install Python dependencies only
+python start.py --python
+
+# Install Node.js dependencies only  
+python start.py --node
+
+# Run comprehensive system test
+python start.py --self-test
+
+# Validate environment only
+python start.py --validate
+```
+
+---
+
+## 🎮 GUI Interface
+
+### **Enhanced Multi-Tab Interface:**
+- **🎯 Autopilot Tab** - Automated play with real-time monitoring
+- **🎮 Manual Play** - Manual poker analysis and decision support
+- **📊 Analysis** - Hand analysis and statistical tools
+- **🎓 Coaching** - Learning system with progress tracking
+- **⚙️ Settings** - Configuration and preferences
+- **📈 Analytics** - Session statistics and performance metrics
+- **🏆 Gamification** - Achievements, badges, and progress
+- **👥 Community** - Forums, challenges, and knowledge sharing
+
+### **Key Features:**
+- **Robust Error Handling** - Continues working even if some modules fail
+- **Fallback Content** - Shows helpful error messages with retry options
+- **Conditional Loading** - Only loads tabs for available systems
+- **Diagnostic Tools** - Built-in troubleshooting and system information
+- **Real-time Updates** - Live table monitoring and status updates
+
+---
+
+## 🔧 Dependency Management
+
+### **Comprehensive Validation System:**
+PokerTool v29.0.0 includes a sophisticated dependency management system:
+
+```bash
+# Run dependency validation
+python src/pokertool/dependency_manager.py
+```
+
+**Features:**
+- ✅ **19 dependencies validated** with detailed status reporting
+- ✅ **Automatic installation** of missing packages
+- ✅ **Platform-specific checking** (macOS Quartz, Linux packages, Windows compatibility)
+- ✅ **Critical vs optional** dependency classification
+- ✅ **JSON reporting** for debugging and system analysis
+- ✅ **Version checking** and compatibility validation
+
+**Sample Output:**
+```
+📊 DEPENDENCY VALIDATION REPORT
+Total dependencies: 19
+✅ Available: 14 (All critical dependencies)
+❌ Missing: 3 (Optional only - auto-installing)
+⚠️  Errors: 0
+⏭️  Skipped: 2 (Platform-specific)
+🎉 All critical dependencies are available! PokerTool is ready to run.
+```
 # PokerTool — Modular Poker Assistant
 
 PokerTool is a modular toolkit for helping players make better live poker decisions. It combines a desktop GUI, core hand-eval/odds logic, table state helpers, and optional screen‑scraping utilities.
