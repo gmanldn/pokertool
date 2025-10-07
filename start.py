@@ -38,6 +38,11 @@ import venv
 import argparse
 import json
 import importlib
+from importlib import util as importlib_util
+
+def _module_available(module_name: str) -> bool:
+    """Return True if the module can be imported."""
+    return importlib_util.find_spec(module_name) is not None
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -240,6 +245,64 @@ class DependencyManager:
                 self.run_command([venv_python, '-m', 'pip', 'install', dep])
             except SetupError:
                 self.log(f"Warning: Failed to install {dep}")
+
+        self.install_optional_dependencies(venv_python)
+
+    def install_optional_dependencies(self, venv_python: str) -> None:
+        """Install optional heavy dependencies when supported."""
+
+        py_major_minor = sys.version_info[:2]
+        torch_skip_reason = None
+        if py_major_minor >= (3, 13):
+            torch_skip_reason = (
+                "PyTorch wheels are not yet available for Python "
+                f"{py_major_minor[0]}.{py_major_minor[1]}"
+            )
+
+        optional_deps: List[Dict[str, Any]] = [
+            {
+                'name': 'torch',
+                'module': 'torch',
+                'install_args': [
+                    venv_python, '-m', 'pip', 'install',
+                    '--extra-index-url', 'https://download.pytorch.org/whl/cpu',
+                    'torch'
+                ],
+                'skip_reason': torch_skip_reason,
+            },
+            {
+                'name': 'easyocr',
+                'module': 'easyocr',
+                'install_args': [venv_python, '-m', 'pip', 'install', 'easyocr'],
+                'skip_reason': None,
+                'precondition': (
+                    lambda: _module_available('torch')
+                ),
+                'precondition_reason': 'torch is required for easyocr',
+            },
+        ]
+
+        for dep in optional_deps:
+            if dep.get('skip_reason'):
+                self.log(f"Skipping optional dependency {dep['name']}: {dep['skip_reason']}")
+                continue
+
+            precondition = dep.get('precondition')
+            if precondition and not precondition():
+                reason = dep.get('precondition_reason', 'precondition not met')
+                self.log(f"Skipping {dep['name']}: {reason}")
+                continue
+
+            if _module_available(dep['module']):
+                self.log(f"Optional dependency '{dep['name']}' already available")
+                continue
+
+            self.log(f"Installing optional dependency: {dep['name']}")
+            try:
+                self.run_command(dep['install_args'])
+                self.log(f"Optional dependency '{dep['name']}' installed")
+            except SetupError as exc:
+                self.log(f"Warning: Failed to install optional dependency {dep['name']}: {exc}")
     
     def check_node_available(self) -> bool:
         """Check if Node.js is available."""
@@ -548,6 +611,8 @@ class PokerToolLauncher:
         """
         if args is None:
             args = []
+        if not args:
+            args = ['gui']
         
         venv_python = self.platform.get_venv_python()
         env = self.setup_python_path()

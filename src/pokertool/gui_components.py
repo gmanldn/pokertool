@@ -4,15 +4,14 @@
 from __future__ import annotations
 
 """
-PokerTool GUI Application
-==========================
+PokerTool GUI Components Library
+=================================
 
-Tkinter-based desktop GUI application providing an intuitive interface
-for poker hand analysis and strategic recommendations. Supports both manual
-input and real-time table monitoring.
+Reusable Tkinter GUI components for poker hand analysis and visualization.
+This module provides the building blocks used by the enhanced GUI interface.
 
-Module: pokertool.gui
-Version: 20.0.1
+Module: pokertool.gui_components
+Version: 21.0.0
 Last Modified: 2025-10-04
 Author: PokerTool Development Team
 License: MIT
@@ -22,31 +21,31 @@ Dependencies:
     - PIL/Pillow: Image handling for card graphics
     - threading: Async UI updates
 
-GUI Components:
-    - Main window with menu bar
-    - Card selection interface
-    - Position selector
-    - Hand analysis display
-    - History viewer
-    - Settings dialog
-    - HUD overlay system
+Exported Components:
+    - VisualCard: Interactive card widget
+    - CardSelectionPanel: Card grid selector
+    - TableVisualization: Poker table canvas renderer
+    - EnhancedPokerAssistantFrame: Embeddable manual play workspace
+    - PlayerInfo: Player state dataclass
+    - COLORS: Color scheme dictionary
+    - FONTS: Font definitions dictionary
 
 Features:
     - Drag-and-drop card selection
-    - Real-time strength visualization
-    - Hand history tracking
+    - Real-time table visualization
+    - 9-max table layout support
     - Customizable themes
-    - Keyboard shortcuts
-    - Export functionality
+    - Responsive canvas rendering
 
 Change Log:
+    - v21.0.0 (2025-10-04): Refactored from gui.py - removed standalone window classes
     - v20.0.1 (2025-10-04): Fixed Suit enum case sensitivity bug in fallback definition
     - v28.0.0 (2025-09-29): Enhanced documentation, improved UI
     - v19.0.0 (2025-09-18): Added dark mode support
     - v18.0.0 (2025-09-15): Initial GUI implementation
 """
 
-__version__ = '20.0.1'
+__version__ = '21.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -54,18 +53,14 @@ __maintainer__ = 'George Ridout'
 __status__ = 'Production'
 
 import tkinter as tk
-from tkinter import ttk, messagebox, font
-import json
-import sqlite3
+from tkinter import ttk, messagebox
 from datetime import datetime
-from typing import List, Optional, Dict, Set, Tuple
+from typing import List, Optional, Dict, Tuple
 from dataclasses import dataclass
-from pathlib import Path
-import threading
 
 # Import error handling functions from the existing module
 try:
-    from .error_handling import sanitize_input, log, run_safely, retry_on_failure, CircuitBreaker
+    from .error_handling import sanitize_input, log, run_safely
     from .storage import get_secure_db, SecurityError
 except ImportError:
     # Fallback if modules not available
@@ -74,7 +69,6 @@ except ImportError:
     def run_safely(func): return func()
     def get_secure_db(): return None
     class SecurityError(Exception): pass
-    class CircuitBreaker: pass
 
 # Try to import poker modules
 try:
@@ -146,6 +140,7 @@ FONTS = {
     'button': ('Arial', 14, 'bold'),
     'analysis': ('Consolas', 14)
 }
+
 
 class VisualCard(tk.Frame):
     """A visual representation of a playing card that can be clicked."""
@@ -225,6 +220,7 @@ class VisualCard(tk.Frame):
         else:
             self.set_selected(self.selected)
 
+
 class CardSelectionPanel(tk.Frame):
     """Panel for visual card selection."""
 
@@ -297,6 +293,7 @@ class CardSelectionPanel(tk.Frame):
             if card_str in self.cards:
                 self.cards[card_str].set_disabled(disabled)
 
+
 @dataclass
 class PlayerInfo:
     """Information about a player at the table."""
@@ -310,6 +307,7 @@ class PlayerInfo:
     is_sb: bool = False
     is_bb: bool = False
     has_acted: bool = False
+
 
 class TableVisualization(tk.Canvas):
     """Enhanced poker table visualization."""
@@ -591,6 +589,7 @@ class TableVisualization(tk.Canvas):
         self.pot_size = pot
         self.board_cards = board
         self._draw_table()
+
 
 class EnhancedPokerAssistantFrame(tk.Frame):
     """Embeddable manual play workspace used by the enhanced poker assistant."""
@@ -942,64 +941,3 @@ class EnhancedPokerAssistantFrame(tk.Frame):
         except Exception as e:
             print(f'Database initialization failed: {e}')
             self.secure_db = None
-
-
-class EnhancedPokerAssistant(tk.Tk):
-    """Standalone top-level window that hosts the manual play workspace."""
-
-    def __init__(self):
-        super().__init__()
-
-        self.title('🎰 Poker Assistant - Enhanced Edition')
-        self.geometry('1400x900')
-        self.minsize(1200, 800)
-        self.configure(bg=COLORS['bg_dark'])
-
-        self._frame = EnhancedPokerAssistantFrame(self, auto_pack=True)
-        self._setup_window()
-        self._bind_events()
-
-    def _setup_window(self):  # pragma: no cover - legacy hook
-        """Compatibility hook for older launchers."""
-
-    def _bind_events(self):  # pragma: no cover - legacy hook
-        """Compatibility hook for older launchers."""
-
-    def __getattr__(self, name: str):
-        frame = self.__dict__.get('_frame')
-        if frame is not None and hasattr(frame, name):
-            return getattr(frame, name)
-        raise AttributeError(name)
-
-    def __setattr__(self, name: str, value):
-        if name == '_frame' or '_frame' not in self.__dict__:
-            super().__setattr__(name, value)
-        elif hasattr(self._frame, name):
-            setattr(self._frame, name, value)
-        else:
-            super().__setattr__(name, value)
-
-    def destroy(self):
-        self._frame.destroy()
-        super().destroy()
-
-
-SecureGUI = EnhancedPokerAssistant
-
-def main() -> int:
-    """Main GUI entry point."""
-    def create_and_run_gui():
-        """Create and run the GUI."""
-        gui = EnhancedPokerAssistant()
-        gui.mainloop()
-        return 0
-
-    return run_safely(create_and_run_gui)
-
-# Legacy function names for backward compatibility
-def run() -> int:
-    """Legacy entry point."""
-    return main()
-
-if __name__ == '__main__':
-    raise SystemExit(main())

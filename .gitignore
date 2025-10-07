@@ -80,7 +80,7 @@ backups/
 *.log
 *.log.*
 logs/
-master_log.txt
+*master_log.txt
 poker_log.txt
 scraper_log.txt
 api_log.txt
