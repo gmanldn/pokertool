@@ -46,32 +46,42 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 
 ## 🚀 Quick Start
 
-### **Method 1: Automatic Setup (Recommended)**
+### **🏆 Primary Method: Comprehensive Setup (Recommended)**
 ```bash
-# Full setup with dependency validation
+# The ONLY recommended way to launch PokerTool
 python start.py
 
-# Or for direct GUI launch (fastest)
-python launch_gui.py
+# This single command handles everything:
+# • Validates all 19 dependencies
+# • Installs missing packages automatically  
+# • Sets up virtual environment if needed
+# • Resolves import conflicts
+# • Launches robust multi-tab GUI
 ```
 
-### **Method 2: Manual Setup**
+### **🔧 Advanced Setup Options**
 ```bash
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+# Virtual environment only
+python start.py --venv
 
-# Install dependencies with validation
+# Dependencies only (no GUI)
 python start.py --python
 
-# Launch GUI
-python launch_gui.py
+# Full system validation
+python start.py --self-test
+
+# Launch GUI only (after setup)
+python start.py --launch
 ```
 
-### **Method 3: Quick Test**
+### **⚡ Quick Validation**
 ```bash
-# Minimal test interface
-python test_gui.py
+# Check all dependencies
+python src/pokertool/dependency_manager.py
+
+# Alternative launchers (for development only)
+python launch_gui.py  # Direct GUI (bypasses validation)
+python test_gui.py    # Minimal test interface
 ```
 
 ---

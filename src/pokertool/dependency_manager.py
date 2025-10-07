@@ -134,18 +134,34 @@ class DependencyManager:
                 'is_critical': False,
                 'description': 'Advanced image processing'
             },
-            # Optional heavy dependencies
+            # Optional heavy dependencies with fallbacks
             'torch': {
                 'install_command': 'torch --extra-index-url https://download.pytorch.org/whl/cpu',
                 'is_critical': False,
                 'description': 'Deep learning framework',
                 'skip_python_versions': [(3, 13)],  # Not available for Python 3.13 yet
+                'fallback_packages': ['torch-cpu', 'torch==2.0.1+cpu'],
+            },
+            'onnxruntime': {
+                'install_command': 'onnxruntime',
+                'is_critical': False,
+                'description': 'ONNX Runtime for ML inference (torch alternative)',
+            },
+            'tensorflow-lite': {
+                'install_command': 'tensorflow==2.15.0',
+                'is_critical': False, 
+                'description': 'TensorFlow for ML processing (torch alternative)',
             },
             'easyocr': {
                 'install_command': 'easyocr',
                 'is_critical': False,
                 'description': 'Advanced OCR',
                 'requires': ['torch']  # Requires torch
+            },
+            'paddlepaddle': {
+                'install_command': 'paddlepaddle',
+                'is_critical': False,
+                'description': 'PaddlePaddle ML framework (torch alternative)',
             },
             # macOS specific
             'pyobjc-framework-Quartz': {

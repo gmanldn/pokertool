@@ -504,6 +504,11 @@ class PokerScreenScraper:
         
         # No detection
         total_time = (time.time() - start_time) * 1000
+        # Only log periodically to avoid terminal spam
+        if hasattr(self, '_last_detection_log'):
+            if time.time() - self._last_detection_log < 5.0:  # Only log every 5 seconds
+                return
+        self._last_detection_log = time.time()
         logger.debug(f"[NO DETECTION] No poker table found (checked in {total_time:.1f}ms)")
         
         betfair_conf = betfair_result.confidence if self.site == PokerSite.BETFAIR else 0.0
