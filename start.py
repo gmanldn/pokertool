@@ -38,79 +38,11 @@ import venv
 import argparse
 import json
 import importlib
-import sys
-import subprocess
-from pathlib import Path
+from importlib import util as importlib_util
 
-# --- Ensure torch is installed on boot (macOS safe) ---
-import sys
-import subprocess
-
-def ensure_torch():
-    try:
-        import torch  # noqa
-        print(f"✓ torch already installed (version: {torch.__version__})")
-    except ImportError:
-        print("→ Installing torch (CPU wheel, macOS compatible)...")
-        try:
-            subprocess.check_call([
-                sys.executable,
-                "-m", "pip", "install",
-                "torch==2.1.0",          # pinned stable version
-                "--index-url", "https://download.pytorch.org/whl/cpu"
-            ])
-            import torch
-            print(f"✓ torch installed successfully (version: {torch.__version__})")
-        except Exception as e:
-            print(f"❌ Failed to install torch: {e}")
-
-ensure_torch()
-
-BASE_PATH = Path(__file__).resolve().parent
-
-def run_pip_install(package, extra_args=None):
-    args = [sys.executable, "-m", "pip", "install", package]
-    if extra_args:
-        args.extend(extra_args)
-    try:
-        subprocess.check_call(args)
-        print(f"✓ {package} installed")
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to install {package}: {e}")
-
-def ensure_core_shim():
-    core_dir = BASE_PATH / "pokertool" / "core"
-    core_init = core_dir / "__init__.py"
-    if not core_dir.exists():
-        core_dir.mkdir(parents=True)
-    if not core_init.exists():
-        core_init.write_text(
-            '"""Shim for backward compatibility.\n'
-            'Exposes poker_modules as pokertool.core"""\n\n'
-            "from .. import poker_modules as core\n"
-        )
-        print("✓ Created pokertool/core shim")
-
-def ensure_ocr_deps():
-    try:
-        import torch  # noqa
-        print("✓ torch already installed")
-    except ImportError:
-        print("→ Installing torch (CPU wheel)...")
-        run_pip_install("torch", ["--index-url", "https://download.pytorch.org/whl/cpu"])
-    try:
-        import easyocr  # noqa
-        print("✓ easyocr already installed")
-    except ImportError:
-        print("→ Installing easyocr...")
-        run_pip_install("easyocr")
-
-def bootstrap():
-    ensure_core_shim()
-    ensure_ocr_deps()
-    print("✅ PokerTool environment ready")
-
-bootstrap()
+def _module_available(module_name: str) -> bool:
+    """Return True if the module can be imported."""
+    return importlib_util.find_spec(module_name) is not None
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -313,6 +245,64 @@ class DependencyManager:
                 self.run_command([venv_python, '-m', 'pip', 'install', dep])
             except SetupError:
                 self.log(f"Warning: Failed to install {dep}")
+
+        self.install_optional_dependencies(venv_python)
+
+    def install_optional_dependencies(self, venv_python: str) -> None:
+        """Install optional heavy dependencies when supported."""
+
+        py_major_minor = sys.version_info[:2]
+        torch_skip_reason = None
+        if py_major_minor >= (3, 13):
+            torch_skip_reason = (
+                "PyTorch wheels are not yet available for Python "
+                f"{py_major_minor[0]}.{py_major_minor[1]}"
+            )
+
+        optional_deps: List[Dict[str, Any]] = [
+            {
+                'name': 'torch',
+                'module': 'torch',
+                'install_args': [
+                    venv_python, '-m', 'pip', 'install',
+                    '--extra-index-url', 'https://download.pytorch.org/whl/cpu',
+                    'torch'
+                ],
+                'skip_reason': torch_skip_reason,
+            },
+            {
+                'name': 'easyocr',
+                'module': 'easyocr',
+                'install_args': [venv_python, '-m', 'pip', 'install', 'easyocr'],
+                'skip_reason': None,
+                'precondition': (
+                    lambda: _module_available('torch')
+                ),
+                'precondition_reason': 'torch is required for easyocr',
+            },
+        ]
+
+        for dep in optional_deps:
+            if dep.get('skip_reason'):
+                self.log(f"Skipping optional dependency {dep['name']}: {dep['skip_reason']}")
+                continue
+
+            precondition = dep.get('precondition')
+            if precondition and not precondition():
+                reason = dep.get('precondition_reason', 'precondition not met')
+                self.log(f"Skipping {dep['name']}: {reason}")
+                continue
+
+            if _module_available(dep['module']):
+                self.log(f"Optional dependency '{dep['name']}' already available")
+                continue
+
+            self.log(f"Installing optional dependency: {dep['name']}")
+            try:
+                self.run_command(dep['install_args'])
+                self.log(f"Optional dependency '{dep['name']}' installed")
+            except SetupError as exc:
+                self.log(f"Warning: Failed to install optional dependency {dep['name']}: {exc}")
     
     def check_node_available(self) -> bool:
         """Check if Node.js is available."""
@@ -621,6 +611,8 @@ class PokerToolLauncher:
         """
         if args is None:
             args = []
+        if not args:
+            args = ['gui']
         
         venv_python = self.platform.get_venv_python()
         env = self.setup_python_path()
