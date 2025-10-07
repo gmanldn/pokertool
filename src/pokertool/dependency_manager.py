@@ -146,11 +146,13 @@ class DependencyManager:
                 'install_command': 'onnxruntime',
                 'is_critical': False,
                 'description': 'ONNX Runtime for ML inference (torch alternative)',
+                'skip_auto_install': True,  # Very slow to install, skip during validation
             },
             'tensorflow-lite': {
                 'install_command': 'tensorflow==2.15.0',
                 'is_critical': False, 
                 'description': 'TensorFlow for ML processing (torch alternative)',
+                'skip_auto_install': True,  # Very slow to install, skip during validation
             },
             'easyocr': {
                 'install_command': 'easyocr',
@@ -376,11 +378,16 @@ class DependencyManager:
         for name, config in self.python_dependencies.items():
             dep_info = self.check_python_module(name, config)
             
-            if dep_info.status == 'missing' and self.auto_install and dep_info.install_command:
+            # Skip auto-install for packages marked as slow
+            skip_auto_install = config.get('skip_auto_install', False)
+            
+            if dep_info.status == 'missing' and self.auto_install and dep_info.install_command and not skip_auto_install:
                 self.log(f"Attempting to install missing package: {name}")
                 if self.install_python_package(name, dep_info.install_command):
                     # Re-check after installation
                     dep_info = self.check_python_module(name, config)
+            elif dep_info.status == 'missing' and skip_auto_install:
+                self.log(f"Skipping auto-install for {name} (marked as slow installation)")
             
             if dep_info.is_critical:
                 python_deps[name] = dep_info
