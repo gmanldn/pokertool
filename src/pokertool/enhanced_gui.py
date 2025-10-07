@@ -573,6 +573,10 @@ class IntegratedPokerAssistant(tk.Tk):
             else:
                 self.notebook.select(built_tabs[0][0])
         
+        # Force notebook to update and display tabs
+        self.notebook.update_idletasks()
+        self.update()
+        
         print(f"UI built successfully with {len(built_tabs)} tabs")
     
     def _build_fallback_tab_content(self, parent: tk.Widget, tab_name: str, error_message: str) -> None:
@@ -2036,21 +2040,21 @@ Platform: {sys.platform}
 
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""
+        # IMMEDIATE QUIT - don't wait for cleanup
         try:
-            # Stop update loop first
-            self._stop_screen_update_loop()
-            
-            if self.autopilot_active:
-                self.autopilot_active = False
-                self._stop_autopilot()
-        except Exception as e:
-            print(f'Shutdown error: {e}')
-        finally:
-            self._stop_enhanced_screen_scraper()
-            if self._locale_listener_token is not None:
-                unregister_locale_listener(self._locale_listener_token)
-                self._locale_listener_token = None
-            self.destroy()
+            # Try quick cleanup but don't block
+            self._screen_update_running = False
+            self.autopilot_active = False
+        except:
+            pass
+        
+        # Force quit immediately
+        self.quit()
+        self.destroy()
+        
+        # Force exit the entire program
+        import os
+        os._exit(0)
 
 
 # Main application entry point
