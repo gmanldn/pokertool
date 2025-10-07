@@ -58,6 +58,48 @@ class SetupError(Exception):
     """Custom exception for setup errors."""
     pass
 
+# Early dependency validation
+def _validate_dependencies_upfront(verbose: bool = True) -> bool:
+    """Validate all dependencies upfront before any module loading."""
+    if verbose:
+        print("\n" + "=" * 60)
+        print("🔍 POKERTOOL DEPENDENCY VALIDATION")
+        print("=" * 60)
+    
+    try:
+        # Add src to path for dependency manager import
+        if str(SRC_DIR) not in sys.path:
+            sys.path.insert(0, str(SRC_DIR))
+        
+        from pokertool.dependency_manager import validate_system
+        
+        # Run comprehensive validation
+        report = validate_system(verbose=verbose, auto_install=True)
+        
+        # Save report for debugging
+        report_file = ROOT / 'dependency_report.json'
+        try:
+            from pokertool.dependency_manager import get_dependency_manager
+            get_dependency_manager().save_report(str(report_file))
+        except Exception:
+            pass  # Non-critical if save fails
+        
+        if report.critical_missing:
+            if verbose:
+                print(f"\n❌ CRITICAL DEPENDENCIES MISSING: {', '.join(report.critical_missing)}")
+                print("Cannot proceed without these dependencies.")
+            return False
+        else:
+            if verbose:
+                print(f"\n✅ ALL DEPENDENCIES VALIDATED! ({report.summary['available']} available)")
+            return True
+            
+    except Exception as e:
+        if verbose:
+            print(f"\n⚠️ Dependency validation failed: {e}")
+            print("Proceeding with basic validation...")
+        return True  # Don't block startup if validation system fails
+
 class PlatformManager:
     """Handles platform-specific operations."""
     
@@ -649,11 +691,29 @@ class PokerToolLauncher:
                         
                         if result.returncode == 0:
                             self.dependency_manager.log(f"Found working tkinter in system Python: {sys_python}")
-                            # Use system Python for GUI but keep env with PYTHONPATH
+                            # Use system Python for GUI but setup proper PYTHONPATH for venv access
                             try:
+                                # Create enhanced environment for system Python
+                                enhanced_env = env.copy()
+                                
+                                # Add virtual environment packages to Python path FIRST (critical for numpy)
+                                venv_site_packages = str(VENV_DIR / 'lib' / 'python3.13' / 'site-packages')
+                                
+                                # Create clean PYTHONPATH with venv packages first to avoid conflicts
+                                python_paths = [
+                                    venv_site_packages,  # Virtual env packages MUST be first
+                                    str(SRC_DIR),        # Source code second  
+                                    str(ROOT),           # Project root last
+                                ]
+                                
+                                # Set clean PYTHONPATH (don't append to existing to avoid conflicts)
+                                enhanced_env['PYTHONPATH'] = os.pathsep.join(python_paths)
+                                enhanced_env['TK_SILENCE_DEPRECATION'] = '1'  # Suppress tkinter deprecation warning
+                                
+                                self.dependency_manager.log("Starting GUI with enhanced PYTHONPATH for venv access")
                                 result = subprocess.run([
                                     sys_python, str(SRC_DIR / 'pokertool' / 'cli.py')
-                                ] + args, cwd=ROOT, env=env)
+                                ] + args, cwd=ROOT, env=enhanced_env)
                                 return result.returncode
                             except Exception as e:
                                 self.dependency_manager.log(f"System Python GUI launch failed: {e}")
@@ -795,6 +855,12 @@ def main() -> int:
         # Launch application
         if args.all or args.launch:
             if return_code == 0:  # Only launch if previous steps succeeded
+                # COMPREHENSIVE DEPENDENCY VALIDATION BEFORE LAUNCH
+                dependency_manager.log("Running comprehensive dependency validation...")
+                if not _validate_dependencies_upfront(verbose=not args.quiet):
+                    dependency_manager.log("❌ Critical dependencies missing, cannot launch")
+                    return 1
+                
                 dependency_manager.log("Launching PokerTool...")
                 return_code = launcher.launch_application(unknown_args)
         

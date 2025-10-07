@@ -67,7 +67,8 @@ except ImportError:
         return Card()
 
 try:
-    from .threading import get_thread_pool, TaskPriority
+    from .thread_manager import get_thread_manager
+    from .concurrency import get_thread_pool, TaskPriority
 except ImportError:
     # Fallback implementations
     from concurrent.futures import ThreadPoolExecutor

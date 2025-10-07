@@ -434,7 +434,7 @@ class IntegratedPokerAssistant(tk.Tk):
         pass
     
     def _build_ui(self):
-        """Build the integrated user interface."""
+        """Build the integrated user interface with robust error handling."""
         # Main container with notebook tabs
         main_container = tk.Frame(self, bg=COLORS['bg_dark'])
         main_container.pack(fill='both', expand=True, padx=10, pady=10)
@@ -443,54 +443,278 @@ class IntegratedPokerAssistant(tk.Tk):
         self.notebook = ttk.Notebook(main_container)
         self.notebook.pack(fill='both', expand=True)
         
-        # Autopilot tab (most prominent)
-        autopilot_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(autopilot_frame, text=translate('tab.autopilot'))
-        self._register_tab_title(autopilot_frame, 'tab.autopilot')
-        self._build_autopilot_tab(autopilot_frame)
+        # Define all tabs with their builders and fallback handlers
+        tabs_config = [
+            {
+                'name': 'autopilot',
+                'title_key': 'tab.autopilot',
+                'title_fallback': 'Autopilot',
+                'builder': self._build_autopilot_tab,
+                'required': True  # Always build this one
+            },
+            {
+                'name': 'manual_play',
+                'title_key': 'tab.manual_play', 
+                'title_fallback': 'Manual Play',
+                'builder': self._build_manual_play_tab,
+                'required': True
+            },
+            {
+                'name': 'analysis',
+                'title_key': 'tab.analysis',
+                'title_fallback': 'Analysis',
+                'builder': self._build_analysis_tab,
+                'required': True
+            },
+            {
+                'name': 'coaching',
+                'title_key': 'tab.coaching',
+                'title_fallback': 'Coaching',
+                'builder': self._build_coaching_tab,
+                'required': False,
+                'condition': lambda: self.coaching_system is not None
+            },
+            {
+                'name': 'settings',
+                'title_key': 'tab.settings',
+                'title_fallback': 'Settings',
+                'builder': self._build_settings_tab,
+                'required': True
+            },
+            {
+                'name': 'analytics',
+                'title_key': None,
+                'title_fallback': 'Analytics',
+                'builder': self._build_analytics_tab,
+                'required': False,
+                'condition': lambda: self.analytics_dashboard is not None
+            },
+            {
+                'name': 'gamification',
+                'title_key': None,
+                'title_fallback': 'Gamification',
+                'builder': self._build_gamification_tab,
+                'required': False,
+                'condition': lambda: self.gamification_engine is not None
+            },
+            {
+                'name': 'community',
+                'title_key': None,
+                'title_fallback': 'Community',
+                'builder': self._build_community_tab,
+                'required': False,
+                'condition': lambda: self.community_platform is not None
+            }
+        ]
         
-        # Manual play tab
-        manual_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(manual_frame, text=translate('tab.manual_play'))
-        self._register_tab_title(manual_frame, 'tab.manual_play')
-        self.manual_tab = manual_frame
-        self._build_manual_play_tab(manual_frame)
+        # Build tabs with robust error handling
+        built_tabs = []
+        for tab_config in tabs_config:
+            try:
+                # Check if tab should be built
+                if not tab_config['required']:
+                    condition = tab_config.get('condition')
+                    if condition and not condition():
+                        print(f"Skipping {tab_config['name']} tab - condition not met")
+                        continue
+                
+                # Create tab frame
+                frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
+                
+                # Get title
+                title = tab_config['title_fallback']
+                if tab_config['title_key']:
+                    try:
+                        title = translate(tab_config['title_key'])
+                    except:
+                        pass  # Use fallback title
+                
+                # Add to notebook
+                self.notebook.add(frame, text=title)
+                
+                # Register translation if key provided
+                if tab_config['title_key']:
+                    try:
+                        self._register_tab_title(frame, tab_config['title_key'])
+                    except Exception as e:
+                        print(f"Translation registration failed for {tab_config['name']}: {e}")
+                
+                # Build tab content with error handling
+                try:
+                    tab_config['builder'](frame)
+                    print(f"✓ Successfully built {tab_config['name']} tab")
+                except Exception as tab_error:
+                    print(f"Error building {tab_config['name']} tab: {tab_error}")
+                    # Create fallback content
+                    self._build_fallback_tab_content(frame, tab_config['name'], str(tab_error))
+                
+                # Store reference for special tabs
+                if tab_config['name'] == 'manual_play':
+                    self.manual_tab = frame
+                
+                built_tabs.append((frame, tab_config['name']))
+                
+            except Exception as e:
+                print(f"Failed to create {tab_config['name']} tab: {e}")
+                # Continue with other tabs even if one fails
+                continue
         
-        # Analysis tab
-        analysis_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(analysis_frame, text=translate('tab.analysis'))
-        self._register_tab_title(analysis_frame, 'tab.analysis')
-        self._build_analysis_tab(analysis_frame)
+        # Make autopilot tab active by default (if it was built)
+        if built_tabs:
+            # Find autopilot tab or use first tab
+            autopilot_frame = None
+            for frame, name in built_tabs:
+                if name == 'autopilot':
+                    autopilot_frame = frame
+                    break
+            
+            if autopilot_frame:
+                self.notebook.select(autopilot_frame)
+            else:
+                self.notebook.select(built_tabs[0][0])
         
-        # Coaching tab
-        coaching_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(coaching_frame, text=translate('tab.coaching'))
-        self._register_tab_title(coaching_frame, 'tab.coaching')
-        self._build_coaching_tab(coaching_frame)
-
-        # Settings tab
-        settings_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(settings_frame, text=translate('tab.settings'))
-        self._register_tab_title(settings_frame, 'tab.settings')
-        self._build_settings_tab(settings_frame)
-
-        # Analytics tab
-        analytics_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(analytics_frame, text='Analytics')
-        self._build_analytics_tab(analytics_frame)
-
-        # Gamification tab
-        gamification_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(gamification_frame, text='Gamification')
-        self._build_gamification_tab(gamification_frame)
-
-        # Community tab
-        community_frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
-        self.notebook.add(community_frame, text='Community')
-        self._build_community_tab(community_frame)
+        print(f"UI built successfully with {len(built_tabs)} tabs")
+    
+    def _build_fallback_tab_content(self, parent: tk.Widget, tab_name: str, error_message: str) -> None:
+        """Build fallback content for tabs that failed to load properly."""
+        # Main error display
+        error_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
+        error_frame.pack(fill='both', expand=True, padx=20, pady=20)
         
-        # Make autopilot tab active by default
-        self.notebook.select(autopilot_frame)
+        # Title
+        title_label = tk.Label(
+            error_frame,
+            text=f"{tab_name.title().replace('_', ' ')} Tab - Error",
+            font=FONTS['title'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['accent_warning']
+        )
+        title_label.pack(pady=(0, 20))
+        
+        # Error message
+        error_text = tk.Text(
+            error_frame,
+            font=FONTS['body'],
+            bg=COLORS['bg_light'],
+            fg=COLORS['text_primary'],
+            wrap='word',
+            height=8,
+            state='disabled'
+        )
+        error_text.pack(fill='both', expand=True, pady=(0, 20))
+        
+        # Insert error details
+        error_text.config(state='normal')
+        error_text.insert('1.0', f"This tab could not be loaded due to an error:\n\n{error_message}\n\n")
+        error_text.insert(tk.END, "Possible solutions:\n")
+        error_text.insert(tk.END, "• Check that all required dependencies are installed\n")
+        error_text.insert(tk.END, "• Restart the application\n")
+        error_text.insert(tk.END, "• Check the console for additional error messages\n")
+        error_text.insert(tk.END, f"• The {tab_name} functionality may require additional setup\n")
+        error_text.config(state='disabled')
+        
+        # Action buttons frame
+        buttons_frame = tk.Frame(error_frame, bg=COLORS['bg_dark'])
+        buttons_frame.pack(fill='x', pady=(10, 0))
+        
+        # Retry button
+        retry_button = tk.Button(
+            buttons_frame,
+            text="Retry Tab Loading",
+            font=FONTS['body'],
+            bg=COLORS['accent_primary'],
+            fg=COLORS['text_primary'],
+            command=lambda: self._retry_tab_loading(parent, tab_name)
+        )
+        retry_button.pack(side='left', padx=(0, 10))
+        
+        # Diagnostic button
+        diagnostic_button = tk.Button(
+            buttons_frame,
+            text="Show Diagnostics",
+            font=FONTS['body'],
+            bg=COLORS['accent_warning'],
+            fg=COLORS['bg_dark'],
+            command=lambda: self._show_tab_diagnostics(tab_name, error_message)
+        )
+        diagnostic_button.pack(side='left')
+        
+        print(f"✓ Created fallback content for {tab_name} tab")
+    
+    def _retry_tab_loading(self, parent: tk.Widget, tab_name: str) -> None:
+        """Attempt to retry loading a failed tab."""
+        try:
+            # Clear the current content
+            for widget in parent.winfo_children():
+                widget.destroy()
+            
+            # Find the appropriate builder method
+            builder_method = getattr(self, f'_build_{tab_name}_tab', None)
+            if builder_method and callable(builder_method):
+                builder_method(parent)
+                print(f"✓ Successfully retried loading {tab_name} tab")
+            else:
+                # If no builder method, create a simple message
+                tk.Label(
+                    parent,
+                    text=f"{tab_name.title().replace('_', ' ')} tab is not available",
+                    font=FONTS['title'],
+                    bg=COLORS['bg_dark'],
+                    fg=COLORS['text_secondary']
+                ).pack(expand=True)
+                
+        except Exception as retry_error:
+            print(f"Failed to retry {tab_name} tab: {retry_error}")
+            # Show the error again
+            self._build_fallback_tab_content(parent, tab_name, str(retry_error))
+    
+    def _show_tab_diagnostics(self, tab_name: str, error_message: str) -> None:
+        """Show diagnostic information for a failed tab."""
+        diagnostic_info = f"""
+Tab Diagnostics: {tab_name}
+{'='*50}
+
+Error: {error_message}
+
+Module Status:
+- GUI_MODULES_LOADED: {GUI_MODULES_LOADED}
+- SCREEN_SCRAPER_LOADED: {SCREEN_SCRAPER_LOADED}  
+- ENHANCED_SCRAPER_LOADED: {ENHANCED_SCRAPER_LOADED}
+
+Available Systems:
+- coaching_system: {self.coaching_system is not None}
+- analytics_dashboard: {self.analytics_dashboard is not None}
+- gamification_engine: {self.gamification_engine is not None}
+- community_platform: {self.community_platform is not None}
+
+Python Version: {sys.version}
+Platform: {sys.platform}
+"""
+        
+        # Create diagnostic window
+        diagnostic_window = tk.Toplevel(self)
+        diagnostic_window.title(f"Diagnostics: {tab_name}")
+        diagnostic_window.geometry("600x400")
+        diagnostic_window.configure(bg=COLORS['bg_dark'])
+        
+        # Diagnostic text
+        diagnostic_text = tk.Text(
+            diagnostic_window,
+            font=('Courier', 10),
+            bg=COLORS['bg_light'],
+            fg=COLORS['text_primary'],
+            wrap='word'
+        )
+        diagnostic_text.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Add scrollbar
+        scrollbar = tk.Scrollbar(diagnostic_text)
+        scrollbar.pack(side='right', fill='y')
+        diagnostic_text.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=diagnostic_text.yview)
+        
+        diagnostic_text.insert('1.0', diagnostic_info)
+        diagnostic_text.config(state='disabled')
     
     def _build_autopilot_tab(self, parent):
         """Build the autopilot control tab."""
