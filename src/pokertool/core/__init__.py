@@ -141,7 +141,7 @@ class Position(Enum):
         return self.category() == "Late"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Card:
     """Immutable representation of a playing card."""
 

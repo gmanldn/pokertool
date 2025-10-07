@@ -86,7 +86,11 @@ def main(argv=None):
         # Import ONLY the enhanced GUI (no fallback)
         logger.info('🚀 Launching Enhanced PokerTool GUI...')
         try:
-            from . import enhanced_gui
+            # Try relative import first, then absolute import as fallback
+            try:
+                from . import enhanced_gui
+            except ImportError:
+                import pokertool.enhanced_gui as enhanced_gui
             
             # Run the enhanced GUI
             if hasattr(enhanced_gui, 'main'):
