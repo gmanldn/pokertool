@@ -11,21 +11,21 @@
 # ---
 # POKERTOOL-HEADER-END
 export type {
-	ITelemetryProvider,
-	TelemetrySettings,
+    ITelemetryProvider,
+    TelemetrySettings,
 } from "./providers/ITelemetryProvider"
 export { PostHogTelemetryProvider } from "./providers/PostHogTelemetryProvider"
 export {
-	type TelemetryProviderConfig,
-	TelemetryProviderFactory,
-	type TelemetryProviderType,
+    type TelemetryProviderConfig,
+    TelemetryProviderFactory,
+    type TelemetryProviderType,
 } from "./TelemetryProviderFactory"
 
 // Export the enums for terminal telemetry
 export {
-	TerminalHangStage,
-	TerminalOutputFailureReason,
-	TerminalUserInterventionAction,
+    TerminalHangStage,
+    TerminalOutputFailureReason,
+    TerminalUserInterventionAction,
 } from "./TelemetryService"
 
 // Create a singleton instance for easy access throughout the application
@@ -39,29 +39,29 @@ let _telemetryServiceInstance: TelemetryService | null = null
  * @returns TelemetryService instance
  */
 export async function getTelemetryService(): Promise<TelemetryService> {
-	if (!_telemetryServiceInstance) {
-		_telemetryServiceInstance = await TelemetryService.create()
-	}
-	return _telemetryServiceInstance
+    if (!_telemetryServiceInstance) {
+        _telemetryServiceInstance = await TelemetryService.create()
+    }
+    return _telemetryServiceInstance
 }
 
 /**
  * Reset the telemetry service instance (useful for testing)
  */
 export function resetTelemetryService(): void {
-	_telemetryServiceInstance = null
+    _telemetryServiceInstance = null
 }
 
 export const telemetryService = new Proxy({} as TelemetryService, {
-	get(_target, prop, _receiver) {
-		// Return a function that will call the method on the actual service
-		return async (...args: any[]) => {
-			const service: TelemetryService = await getTelemetryService()
-			const method = Reflect.get(service, prop, service)
-			if (typeof method === "function") {
-				return method.apply(service, args)
-			}
-			return method
-		}
-	},
+    get(_target, prop, _receiver) {
+        // Return a function that will call the method on the actual service
+        return async (...args: any[]) => {
+            const service: TelemetryService = await getTelemetryService()
+            const method = Reflect.get(service, prop, service)
+            if (typeof method === "function") {
+                return method.apply(service, args)
+            }
+            return method
+        }
+    },
 })

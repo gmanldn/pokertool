@@ -21,9 +21,9 @@ import { ServerConfigSchema } from "./schemas"
 export type Transport = StdioClientTransport | SSEClientTransport | StreamableHTTPClientTransport
 
 export type McpConnection = {
-	server: McpServer
-	client: Client
-	transport: Transport
+    server: McpServer
+    client: Client
+    transport: Transport
 }
 
 export type McpTransportType = "stdio" | "sse" | "http"

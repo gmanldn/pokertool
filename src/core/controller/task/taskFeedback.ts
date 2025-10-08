@@ -21,20 +21,20 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function taskFeedback(controller: Controller, request: StringRequest): Promise<Empty> {
-	if (!request.value) {
-		console.warn("taskFeedback: Missing feedback type value")
-		return Empty.create()
-	}
+    if (!request.value) {
+        console.warn("taskFeedback: Missing feedback type value")
+        return Empty.create()
+    }
 
-	try {
-		if (controller.task?.ulid) {
-			telemetryService.captureTaskFeedback(controller.task.ulid, request.value as any)
-		} else {
-			console.warn("taskFeedback: No active task to receive feedback")
-		}
-	} catch (error) {
-		console.error("Error in taskFeedback handler:", error)
-	}
+    try {
+        if (controller.task?.ulid) {
+            telemetryService.captureTaskFeedback(controller.task.ulid, request.value as any)
+        } else {
+            console.warn("taskFeedback: No active task to receive feedback")
+        }
+    } catch (error) {
+        console.error("Error in taskFeedback handler:", error)
+    }
 
-	return Empty.create()
+    return Empty.create()
 }

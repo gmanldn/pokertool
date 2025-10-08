@@ -19,10 +19,10 @@
  * Feature flags settings that control how feature flags are retrieved
  */
 export interface FeatureFlagsSettings {
-	/** Whether feature flags are enabled */
-	enabled: boolean
-	/** Optional timeout for feature flag requests */
-	timeout?: number
+    /** Whether feature flags are enabled */
+    enabled: boolean
+    /** Optional timeout for feature flag requests */
+    timeout?: number
 }
 
 /**
@@ -30,34 +30,34 @@ export interface FeatureFlagsSettings {
  * Any feature flags provider must implement this interface
  */
 export interface IFeatureFlagsProvider {
-	/**
-	 * Get a feature flag value
-	 * @param flagName The feature flag key
-	 * @returns Promise resolving to the flag value (boolean, string, or undefined)
-	 */
-	getFeatureFlag(flagName: string): Promise<boolean | string | undefined>
+    /**
+     * Get a feature flag value
+     * @param flagName The feature flag key
+     * @returns Promise resolving to the flag value (boolean, string, or undefined)
+     */
+    getFeatureFlag(flagName: string): Promise<boolean | string | undefined>
 
-	/**
-	 * Get the feature flag payload for advanced use cases
-	 * @param flagName The feature flag key
-	 * @returns Promise resolving to the feature flag payload or null if not found
-	 */
-	getFeatureFlagPayload(flagName: string): Promise<unknown>
+    /**
+     * Get the feature flag payload for advanced use cases
+     * @param flagName The feature flag key
+     * @returns Promise resolving to the feature flag payload or null if not found
+     */
+    getFeatureFlagPayload(flagName: string): Promise<unknown>
 
-	/**
-	 * Check if the provider is enabled and ready
-	 * @returns Boolean indicating whether the provider is enabled
-	 */
-	isEnabled(): boolean
+    /**
+     * Check if the provider is enabled and ready
+     * @returns Boolean indicating whether the provider is enabled
+     */
+    isEnabled(): boolean
 
-	/**
-	 * Get current feature flags settings
-	 * @returns Current feature flags settings
-	 */
-	getSettings(): FeatureFlagsSettings
+    /**
+     * Get current feature flags settings
+     * @returns Current feature flags settings
+     */
+    getSettings(): FeatureFlagsSettings
 
-	/**
-	 * Clean up resources when the provider is disposed
-	 */
-	dispose(): Promise<void>
+    /**
+     * Clean up resources when the provider is disposed
+     */
+    dispose(): Promise<void>
 }

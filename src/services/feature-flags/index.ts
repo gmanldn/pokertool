@@ -11,9 +11,9 @@
 # ---
 # POKERTOOL-HEADER-END
 export {
-	type FeatureFlagsProviderConfig,
-	FeatureFlagsProviderFactory,
-	type FeatureFlagsProviderType,
+    type FeatureFlagsProviderConfig,
+    FeatureFlagsProviderFactory,
+    type FeatureFlagsProviderType,
 } from "./FeatureFlagsProviderFactory"
 export { FeatureFlagsService } from "./FeatureFlagsService"
 export type { FeatureFlagsSettings, IFeatureFlagsProvider } from "./providers/IFeatureFlagsProvider"
@@ -30,25 +30,25 @@ let _featureFlagsServiceInstance: FeatureFlagsService | null = null
  * @returns FeatureFlagsService instance
  */
 export function getFeatureFlagsService(): FeatureFlagsService {
-	if (!_featureFlagsServiceInstance) {
-		const provider = FeatureFlagsProviderFactory.createProvider({
-			type: "posthog",
-		})
-		_featureFlagsServiceInstance = new FeatureFlagsService(provider)
-	}
-	return _featureFlagsServiceInstance
+    if (!_featureFlagsServiceInstance) {
+        const provider = FeatureFlagsProviderFactory.createProvider({
+            type: "posthog",
+        })
+        _featureFlagsServiceInstance = new FeatureFlagsService(provider)
+    }
+    return _featureFlagsServiceInstance
 }
 
 /**
  * Reset the feature flags service instance (useful for testing)
  */
 export function resetFeatureFlagsService(): void {
-	_featureFlagsServiceInstance = null
+    _featureFlagsServiceInstance = null
 }
 
 export const featureFlagsService = new Proxy({} as FeatureFlagsService, {
-	get(_target, prop, _receiver) {
-		const service = getFeatureFlagsService()
-		return Reflect.get(service, prop, service)
-	},
+    get(_target, prop, _receiver) {
+        const service = getFeatureFlagsService()
+        return Reflect.get(service, prop, service)
+    },
 })

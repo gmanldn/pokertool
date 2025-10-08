@@ -26,14 +26,14 @@ const _DEFAULT_CACHE_TTL_SECONDS = 900
 const rateLimitPatterns = [/got status: 429/i, /429 Too Many Requests/i, /rate limit exceeded/i, /too many requests/i]
 
 interface GeminiHandlerOptions extends CommonApiHandlerOptions {
-	isVertex?: boolean
-	vertexProjectId?: string
-	vertexRegion?: string
-	geminiApiKey?: string
-	geminiBaseUrl?: string
-	thinkingBudgetTokens?: number
-	apiModelId?: string
-	ulid?: string
+    isVertex?: boolean
+    vertexProjectId?: string
+    vertexRegion?: string
+    geminiApiKey?: string
+    geminiBaseUrl?: string
+    thinkingBudgetTokens?: number
+    apiModelId?: string
+    ulid?: string
 }
 
 /**
@@ -57,428 +57,428 @@ interface GeminiHandlerOptions extends CommonApiHandlerOptions {
  * 4. Separating immediate costs from ongoing costs to avoid double-counting
  */
 export class GeminiHandler implements ApiHandler {
-	private options: GeminiHandlerOptions
-	private client: GoogleGenAI | undefined
+    private options: GeminiHandlerOptions
+    private client: GoogleGenAI | undefined
 
-	constructor(options: GeminiHandlerOptions) {
-		// Store the options
-		this.options = options
-	}
+    constructor(options: GeminiHandlerOptions) {
+        // Store the options
+        this.options = options
+    }
 
-	private ensureClient(): GoogleGenAI {
-		if (!this.client) {
-			const options = this.options as GeminiHandlerOptions
+    private ensureClient(): GoogleGenAI {
+        if (!this.client) {
+            const options = this.options as GeminiHandlerOptions
 
-			if (options.isVertex) {
-				// Initialize with Vertex AI configuration
-				const project = this.options.vertexProjectId ?? "not-provided"
-				const location = this.options.vertexRegion ?? "not-provided"
+            if (options.isVertex) {
+                // Initialize with Vertex AI configuration
+                const project = this.options.vertexProjectId ?? "not-provided"
+                const location = this.options.vertexRegion ?? "not-provided"
 
-				try {
-					this.client = new GoogleGenAI({
-						vertexai: true,
-						project,
-						location,
-					})
-				} catch (error) {
-					throw new Error(`Error creating Gemini Vertex AI client: ${error.message}`)
-				}
-			} else {
-				// Initialize with standard API key
-				if (!options.geminiApiKey) {
-					throw new Error("API key is required for Google Gemini when not using Vertex AI")
-				}
+                try {
+                    this.client = new GoogleGenAI({
+                        vertexai: true,
+                        project,
+                        location,
+                    })
+                } catch (error) {
+                    throw new Error(`Error creating Gemini Vertex AI client: ${error.message}`)
+                }
+            } else {
+                // Initialize with standard API key
+                if (!options.geminiApiKey) {
+                    throw new Error("API key is required for Google Gemini when not using Vertex AI")
+                }
 
-				try {
-					this.client = new GoogleGenAI({ apiKey: options.geminiApiKey })
-				} catch (error) {
-					throw new Error(`Error creating Gemini client: ${error.message}`)
-				}
-			}
-		}
-		return this.client
-	}
+                try {
+                    this.client = new GoogleGenAI({ apiKey: options.geminiApiKey })
+                } catch (error) {
+                    throw new Error(`Error creating Gemini client: ${error.message}`)
+                }
+            }
+        }
+        return this.client
+    }
 
-	/**
-	 * Creates a message using the Gemini API with implicit caching.
-	 *
-	 * Cost accounting:
-	 * - Immediate costs (returned in the usage object): Input tokens, output tokens, cache read costs
-	 *
-	 * @param systemPrompt The system prompt to use for the message
-	 * @param messages The conversation history to include in the message
-	 * @returns An async generator that yields chunks of the response with accurate immediate costs
-	 */
-	@withRetry({
-		maxRetries: 4,
-		baseDelay: 2000,
-		maxDelay: 15000,
-	})
-	async *createMessage(systemPrompt: string, messages: Anthropic.Messages.MessageParam[]): ApiStream {
-		const client = this.ensureClient()
-		const { id: modelId, info } = this.getModel()
-		const contents = messages.map(convertAnthropicMessageToGemini)
+    /**
+     * Creates a message using the Gemini API with implicit caching.
+     *
+     * Cost accounting:
+     * - Immediate costs (returned in the usage object): Input tokens, output tokens, cache read costs
+     *
+     * @param systemPrompt The system prompt to use for the message
+     * @param messages The conversation history to include in the message
+     * @returns An async generator that yields chunks of the response with accurate immediate costs
+     */
+    @withRetry({
+        maxRetries: 4,
+        baseDelay: 2000,
+        maxDelay: 15000,
+    })
+    async *createMessage(systemPrompt: string, messages: Anthropic.Messages.MessageParam[]): ApiStream {
+        const client = this.ensureClient()
+        const { id: modelId, info } = this.getModel()
+        const contents = messages.map(convertAnthropicMessageToGemini)
 
-		// Configure thinking budget if supported
-		const thinkingBudget = this.options.thinkingBudgetTokens ?? 0
-		const _maxBudget = info.thinkingConfig?.maxBudget ?? 0
+        // Configure thinking budget if supported
+        const thinkingBudget = this.options.thinkingBudgetTokens ?? 0
+        const _maxBudget = info.thinkingConfig?.maxBudget ?? 0
 
-		// Set up base generation config
-		const requestConfig: GenerateContentConfig = {
-			// Add base URL if configured
-			httpOptions: this.options.geminiBaseUrl ? { baseUrl: this.options.geminiBaseUrl } : undefined,
-			...{ systemInstruction: systemPrompt },
-			// Set temperature (default to 0)
-			temperature: 0,
-		}
+        // Set up base generation config
+        const requestConfig: GenerateContentConfig = {
+            // Add base URL if configured
+            httpOptions: this.options.geminiBaseUrl ? { baseUrl: this.options.geminiBaseUrl } : undefined,
+            ...{ systemInstruction: systemPrompt },
+            // Set temperature (default to 0)
+            temperature: 0,
+        }
 
-		// Add thinking config if the model supports it
-		if (thinkingBudget > 0) {
-			requestConfig.thinkingConfig = {
-				thinkingBudget: thinkingBudget,
-				includeThoughts: true,
-			}
-		}
+        // Add thinking config if the model supports it
+        if (thinkingBudget > 0) {
+            requestConfig.thinkingConfig = {
+                thinkingBudget: thinkingBudget,
+                includeThoughts: true,
+            }
+        }
 
-		// Generate content using the configured parameters
-		const sdkCallStartTime = Date.now()
-		let sdkFirstChunkTime: number | undefined
-		let ttftSdkMs: number | undefined
-		let apiSuccess = false
-		let apiError: string | undefined
-		let promptTokens = 0
-		let outputTokens = 0
-		let cacheReadTokens = 0
-		let thoughtsTokenCount = 0 // Initialize thought token counts
-		let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined
+        // Generate content using the configured parameters
+        const sdkCallStartTime = Date.now()
+        let sdkFirstChunkTime: number | undefined
+        let ttftSdkMs: number | undefined
+        let apiSuccess = false
+        let apiError: string | undefined
+        let promptTokens = 0
+        let outputTokens = 0
+        let cacheReadTokens = 0
+        let thoughtsTokenCount = 0 // Initialize thought token counts
+        let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined
 
-		try {
-			const result = await client.models.generateContentStream({
-				model: modelId,
-				contents: contents,
-				config: {
-					...requestConfig,
-				},
-			})
+        try {
+            const result = await client.models.generateContentStream({
+                model: modelId,
+                contents: contents,
+                config: {
+                    ...requestConfig,
+                },
+            })
 
-			let isFirstSdkChunk = true
-			for await (const chunk of result) {
-				if (isFirstSdkChunk) {
-					sdkFirstChunkTime = Date.now()
-					ttftSdkMs = sdkFirstChunkTime - sdkCallStartTime
-					isFirstSdkChunk = false
-				}
+            let isFirstSdkChunk = true
+            for await (const chunk of result) {
+                if (isFirstSdkChunk) {
+                    sdkFirstChunkTime = Date.now()
+                    ttftSdkMs = sdkFirstChunkTime - sdkCallStartTime
+                    isFirstSdkChunk = false
+                }
 
-				// Handle thinking content from Gemini's response
-				const candidateForThoughts = chunk?.candidates?.[0]
-				const partsForThoughts = candidateForThoughts?.content?.parts
-				let thoughts = "" // Initialize as empty string
+                // Handle thinking content from Gemini's response
+                const candidateForThoughts = chunk?.candidates?.[0]
+                const partsForThoughts = candidateForThoughts?.content?.parts
+                let thoughts = "" // Initialize as empty string
 
-				if (partsForThoughts) {
-					// This ensures partsForThoughts is a Part[] array
-					for (const part of partsForThoughts) {
-						const { thought, text } = part as Part
-						if (thought && text) {
-							// Ensure part.text exists
-							// Handle the thought part
-							thoughts += text + "\n" // Append thought and a newline
-						}
-					}
-				}
+                if (partsForThoughts) {
+                    // This ensures partsForThoughts is a Part[] array
+                    for (const part of partsForThoughts) {
+                        const { thought, text } = part as Part
+                        if (thought && text) {
+                            // Ensure part.text exists
+                            // Handle the thought part
+                            thoughts += text + "\n" // Append thought and a newline
+                        }
+                    }
+                }
 
-				if (thoughts.trim() !== "") {
-					yield {
-						type: "reasoning",
-						reasoning: thoughts.trim(),
-					}
-					thoughts = "" // Reset thoughts after yielding
-				}
+                if (thoughts.trim() !== "") {
+                    yield {
+                        type: "reasoning",
+                        reasoning: thoughts.trim(),
+                    }
+                    thoughts = "" // Reset thoughts after yielding
+                }
 
-				if (chunk.text) {
-					yield {
-						type: "text",
-						text: chunk.text,
-					}
-				}
+                if (chunk.text) {
+                    yield {
+                        type: "text",
+                        text: chunk.text,
+                    }
+                }
 
-				if (chunk.usageMetadata) {
-					lastUsageMetadata = chunk.usageMetadata
-					promptTokens = lastUsageMetadata.promptTokenCount ?? promptTokens
-					outputTokens = lastUsageMetadata.candidatesTokenCount ?? outputTokens
-					thoughtsTokenCount = lastUsageMetadata.thoughtsTokenCount ?? thoughtsTokenCount
-					cacheReadTokens = lastUsageMetadata.cachedContentTokenCount ?? cacheReadTokens
-				}
-			}
-			apiSuccess = true
+                if (chunk.usageMetadata) {
+                    lastUsageMetadata = chunk.usageMetadata
+                    promptTokens = lastUsageMetadata.promptTokenCount ?? promptTokens
+                    outputTokens = lastUsageMetadata.candidatesTokenCount ?? outputTokens
+                    thoughtsTokenCount = lastUsageMetadata.thoughtsTokenCount ?? thoughtsTokenCount
+                    cacheReadTokens = lastUsageMetadata.cachedContentTokenCount ?? cacheReadTokens
+                }
+            }
+            apiSuccess = true
 
-			if (lastUsageMetadata) {
-				const totalCost = this.calculateCost({
-					info,
-					inputTokens: promptTokens,
-					outputTokens,
-					thoughtsTokenCount,
-					cacheReadTokens,
-				})
-				yield {
-					type: "usage",
-					inputTokens: promptTokens - cacheReadTokens,
-					outputTokens,
-					thoughtsTokenCount,
-					cacheReadTokens,
-					cacheWriteTokens: 0,
-					totalCost,
-				}
-			}
-		} catch (error) {
-			apiSuccess = false
-			// Let the error propagate to be handled by withRetry or Task.ts
-			// Telemetry will be sent in the finally block.
-			if (error instanceof Error) {
-				apiError = error.message
+            if (lastUsageMetadata) {
+                const totalCost = this.calculateCost({
+                    info,
+                    inputTokens: promptTokens,
+                    outputTokens,
+                    thoughtsTokenCount,
+                    cacheReadTokens,
+                })
+                yield {
+                    type: "usage",
+                    inputTokens: promptTokens - cacheReadTokens,
+                    outputTokens,
+                    thoughtsTokenCount,
+                    cacheReadTokens,
+                    cacheWriteTokens: 0,
+                    totalCost,
+                }
+            }
+        } catch (error) {
+            apiSuccess = false
+            // Let the error propagate to be handled by withRetry or Task.ts
+            // Telemetry will be sent in the finally block.
+            if (error instanceof Error) {
+                apiError = error.message
 
-				if (error instanceof ApiError) {
-					if (error.status === 429) {
-						// The API includes more details in the message
-						// https://github.com/googleapis/js-genai/blob/v1.11.0/src/_api_client.ts#L758
-						const response = this.attemptParse(error.message)
+                if (error instanceof ApiError) {
+                    if (error.status === 429) {
+                        // The API includes more details in the message
+                        // https://github.com/googleapis/js-genai/blob/v1.11.0/src/_api_client.ts#L758
+                        const response = this.attemptParse(error.message)
 
-						if (response && response.error) {
-							const responseBody = this.attemptParse(response.error.message)
+                        if (response && response.error) {
+                            const responseBody = this.attemptParse(response.error.message)
 
-							if (responseBody.error) {
-								const detail = responseBody.error.details?.find(
-									(d: any) => d["@type"] === "type.googleapis.com/google.rpc.RetryInfo",
-								)
+                            if (responseBody.error) {
+                                const detail = responseBody.error.details?.find(
+                                    (d: any) => d["@type"] === "type.googleapis.com/google.rpc.RetryInfo",
+                                )
 
-								const detailedError = new RetriableError(
-									apiError,
-									this.parseRetryDelay(detail?.retryDelay) || undefined,
-									{
-										cause: error,
-									},
-								)
-								throw detailedError
-							}
-						}
+                                const detailedError = new RetriableError(
+                                    apiError,
+                                    this.parseRetryDelay(detail?.retryDelay) || undefined,
+                                    {
+                                        cause: error,
+                                    },
+                                )
+                                throw detailedError
+                            }
+                        }
 
-						throw new RetriableError(apiError, undefined, { cause: error })
-					}
+                        throw new RetriableError(apiError, undefined, { cause: error })
+                    }
 
-					// Fallback in case Gemini throws a rate limit error without a 429 status code
-					// https://github.com/cline/cline/pull/5205#discussion_r2311761559
-					const isRateLimit = rateLimitPatterns.some((pattern) => pattern.test(error.message))
-					if (isRateLimit) {
-						throw new RetriableError(apiError, undefined, { cause: error })
-					}
-				}
-			} else {
-				apiError = String(error)
-			}
+                    // Fallback in case Gemini throws a rate limit error without a 429 status code
+                    // https://github.com/cline/cline/pull/5205#discussion_r2311761559
+                    const isRateLimit = rateLimitPatterns.some((pattern) => pattern.test(error.message))
+                    if (isRateLimit) {
+                        throw new RetriableError(apiError, undefined, { cause: error })
+                    }
+                }
+            } else {
+                apiError = String(error)
+            }
 
-			throw error
-		} finally {
-			const sdkCallEndTime = Date.now()
-			const totalDurationSdkMs = sdkCallEndTime - sdkCallStartTime
-			const cacheHit = cacheReadTokens > 0
-			const cacheHitPercentage = promptTokens > 0 ? (cacheReadTokens / promptTokens) * 100 : undefined
-			const throughputTokensPerSecSdk =
-				totalDurationSdkMs > 0 && outputTokens > 0 ? outputTokens / (totalDurationSdkMs / 1000) : undefined
+            throw error
+        } finally {
+            const sdkCallEndTime = Date.now()
+            const totalDurationSdkMs = sdkCallEndTime - sdkCallStartTime
+            const cacheHit = cacheReadTokens > 0
+            const cacheHitPercentage = promptTokens > 0 ? (cacheReadTokens / promptTokens) * 100 : undefined
+            const throughputTokensPerSecSdk =
+                totalDurationSdkMs > 0 && outputTokens > 0 ? outputTokens / (totalDurationSdkMs / 1000) : undefined
 
-			if (this.options.ulid) {
-				telemetryService.captureGeminiApiPerformance(this.options.ulid, modelId, {
-					ttftSec: ttftSdkMs !== undefined ? ttftSdkMs / 1000 : undefined,
-					totalDurationSec: totalDurationSdkMs / 1000,
-					promptTokens,
-					outputTokens,
-					cacheReadTokens,
-					cacheHit,
-					cacheHitPercentage,
-					apiSuccess,
-					apiError,
-					throughputTokensPerSec: throughputTokensPerSecSdk,
-				})
-			} else {
-				console.warn("GeminiHandler: ulid not available for telemetry in createMessage.")
-			}
-		}
-	}
+            if (this.options.ulid) {
+                telemetryService.captureGeminiApiPerformance(this.options.ulid, modelId, {
+                    ttftSec: ttftSdkMs !== undefined ? ttftSdkMs / 1000 : undefined,
+                    totalDurationSec: totalDurationSdkMs / 1000,
+                    promptTokens,
+                    outputTokens,
+                    cacheReadTokens,
+                    cacheHit,
+                    cacheHitPercentage,
+                    apiSuccess,
+                    apiError,
+                    throughputTokensPerSec: throughputTokensPerSecSdk,
+                })
+            } else {
+                console.warn("GeminiHandler: ulid not available for telemetry in createMessage.")
+            }
+        }
+    }
 
-	/**
-	 * Calculate the immediate dollar cost of the API call based on token usage and model pricing.
-	 *
-	 * This method accounts for the immediate costs of the API call:
-	 * - Input token costs (for uncached tokens)
-	 * - Output token costs
-	 * - Cache read costs
-	 * - Gemini implicit caching has no write costs
-	 *
-	 */
-	public calculateCost({
-		info,
-		inputTokens,
-		outputTokens,
-		thoughtsTokenCount = 0,
-		cacheReadTokens = 0,
-	}: {
-		info: ModelInfo
-		inputTokens: number
-		outputTokens: number
-		thoughtsTokenCount: number
-		cacheReadTokens?: number
-	}) {
-		// Exit early if any required pricing information is missing
-		if (!info.inputPrice || !info.outputPrice) {
-			return undefined
-		}
+    /**
+     * Calculate the immediate dollar cost of the API call based on token usage and model pricing.
+     *
+     * This method accounts for the immediate costs of the API call:
+     * - Input token costs (for uncached tokens)
+     * - Output token costs
+     * - Cache read costs
+     * - Gemini implicit caching has no write costs
+     *
+     */
+    public calculateCost({
+        info,
+        inputTokens,
+        outputTokens,
+        thoughtsTokenCount = 0,
+        cacheReadTokens = 0,
+    }: {
+        info: ModelInfo
+        inputTokens: number
+        outputTokens: number
+        thoughtsTokenCount: number
+        cacheReadTokens?: number
+    }) {
+        // Exit early if any required pricing information is missing
+        if (!info.inputPrice || !info.outputPrice) {
+            return undefined
+        }
 
-		let inputPrice = info.inputPrice
-		let outputPrice = info.outputPrice
-		// Right now, we only show the immediate costs of caching and not the ongoing costs of storing the cache
-		let cacheReadsPrice = info.cacheReadsPrice ?? 0
+        let inputPrice = info.inputPrice
+        let outputPrice = info.outputPrice
+        // Right now, we only show the immediate costs of caching and not the ongoing costs of storing the cache
+        let cacheReadsPrice = info.cacheReadsPrice ?? 0
 
-		// If there's tiered pricing then adjust prices based on the input tokens used
-		if (info.tiers) {
-			const tier = info.tiers.find((tier) => inputTokens <= tier.contextWindow)
-			if (tier) {
-				inputPrice = tier.inputPrice ?? inputPrice
-				outputPrice = tier.outputPrice ?? outputPrice
-				cacheReadsPrice = tier.cacheReadsPrice ?? cacheReadsPrice
-			}
-		}
+        // If there's tiered pricing then adjust prices based on the input tokens used
+        if (info.tiers) {
+            const tier = info.tiers.find((tier) => inputTokens <= tier.contextWindow)
+            if (tier) {
+                inputPrice = tier.inputPrice ?? inputPrice
+                outputPrice = tier.outputPrice ?? outputPrice
+                cacheReadsPrice = tier.cacheReadsPrice ?? cacheReadsPrice
+            }
+        }
 
-		// Subtract the cached input tokens from the total input tokens
-		const uncachedInputTokens = inputTokens - (cacheReadTokens ?? 0)
+        // Subtract the cached input tokens from the total input tokens
+        const uncachedInputTokens = inputTokens - (cacheReadTokens ?? 0)
 
-		// Calculate immediate costs only
+        // Calculate immediate costs only
 
-		// 1. Input token costs (for uncached tokens)
-		const inputTokensCost = inputPrice * (uncachedInputTokens / 1_000_000)
+        // 1. Input token costs (for uncached tokens)
+        const inputTokensCost = inputPrice * (uncachedInputTokens / 1_000_000)
 
-		// 2. Output token costs
-		const responseTokensCost = outputPrice * ((outputTokens + thoughtsTokenCount) / 1_000_000)
+        // 2. Output token costs
+        const responseTokensCost = outputPrice * ((outputTokens + thoughtsTokenCount) / 1_000_000)
 
-		// 3. Cache read costs (immediate)
-		const cacheReadCost = (cacheReadTokens ?? 0) > 0 ? cacheReadsPrice * ((cacheReadTokens ?? 0) / 1_000_000) : 0
+        // 3. Cache read costs (immediate)
+        const cacheReadCost = (cacheReadTokens ?? 0) > 0 ? cacheReadsPrice * ((cacheReadTokens ?? 0) / 1_000_000) : 0
 
-		// Calculate total immediate cost (excluding cache write/storage costs)
-		const totalCost = inputTokensCost + responseTokensCost + cacheReadCost
+        // Calculate total immediate cost (excluding cache write/storage costs)
+        const totalCost = inputTokensCost + responseTokensCost + cacheReadCost
 
-		// Create the trace object for debugging
-		const trace: Record<string, { price: number; tokens: number; cost: number }> = {
-			input: { price: inputPrice, tokens: uncachedInputTokens, cost: inputTokensCost },
-			output: { price: outputPrice, tokens: outputTokens, cost: responseTokensCost },
-		}
+        // Create the trace object for debugging
+        const trace: Record<string, { price: number; tokens: number; cost: number }> = {
+            input: { price: inputPrice, tokens: uncachedInputTokens, cost: inputTokensCost },
+            output: { price: outputPrice, tokens: outputTokens, cost: responseTokensCost },
+        }
 
-		// Only include cache read costs in the trace (cache write costs are tracked separately)
-		if ((cacheReadTokens ?? 0) > 0) {
-			trace.cacheRead = { price: cacheReadsPrice, tokens: cacheReadTokens ?? 0, cost: cacheReadCost }
-		}
+        // Only include cache read costs in the trace (cache write costs are tracked separately)
+        if ((cacheReadTokens ?? 0) > 0) {
+            trace.cacheRead = { price: cacheReadsPrice, tokens: cacheReadTokens ?? 0, cost: cacheReadCost }
+        }
 
-		// console.log(`[GeminiHandler] calculateCost -> ${totalCost}`, trace)
-		return totalCost
-	}
+        // console.log(`[GeminiHandler] calculateCost -> ${totalCost}`, trace)
+        return totalCost
+    }
 
-	/**
-	 * Get the model ID and info for the current configuration
-	 */
-	getModel(): { id: GeminiModelId; info: ModelInfo } {
-		const modelId = this.options.apiModelId
-		if (modelId && modelId in geminiModels) {
-			const id = modelId as GeminiModelId
-			return { id, info: geminiModels[id] }
-		}
-		return {
-			id: geminiDefaultModelId,
-			info: geminiModels[geminiDefaultModelId],
-		}
-	}
+    /**
+     * Get the model ID and info for the current configuration
+     */
+    getModel(): { id: GeminiModelId; info: ModelInfo } {
+        const modelId = this.options.apiModelId
+        if (modelId && modelId in geminiModels) {
+            const id = modelId as GeminiModelId
+            return { id, info: geminiModels[id] }
+        }
+        return {
+            id: geminiDefaultModelId,
+            info: geminiModels[geminiDefaultModelId],
+        }
+    }
 
-	/**
-	 * Count tokens in content using the Gemini API
-	 */
-	async countTokens(content: Array<any>): Promise<number> {
-		try {
-			const client = this.ensureClient()
-			const { id: model } = this.getModel()
+    /**
+     * Count tokens in content using the Gemini API
+     */
+    async countTokens(content: Array<any>): Promise<number> {
+        try {
+            const client = this.ensureClient()
+            const { id: model } = this.getModel()
 
-			// Convert content to Gemini format
-			const geminiContent = content.map((block) => {
-				if (typeof block === "string") {
-					return { text: block }
-				}
-				return { text: JSON.stringify(block) }
-			})
+            // Convert content to Gemini format
+            const geminiContent = content.map((block) => {
+                if (typeof block === "string") {
+                    return { text: block }
+                }
+                return { text: JSON.stringify(block) }
+            })
 
-			// Use Gemini's token counting API
-			const response = await client.models.countTokens({
-				model,
-				contents: [{ parts: geminiContent }],
-			})
+            // Use Gemini's token counting API
+            const response = await client.models.countTokens({
+                model,
+                contents: [{ parts: geminiContent }],
+            })
 
-			if (response.totalTokens === undefined) {
-				console.warn("Gemini token counting returned undefined, using fallback")
-				return this.estimateTokens(content)
-			}
+            if (response.totalTokens === undefined) {
+                console.warn("Gemini token counting returned undefined, using fallback")
+                return this.estimateTokens(content)
+            }
 
-			return response.totalTokens
-		} catch (error) {
-			console.warn("Gemini token counting failed, using fallback", error)
-			return this.estimateTokens(content)
-		}
-	}
+            return response.totalTokens
+        } catch (error) {
+            console.warn("Gemini token counting failed, using fallback", error)
+            return this.estimateTokens(content)
+        }
+    }
 
-	/**
-	 * Fallback token estimation method
-	 */
-	private estimateTokens(content: Array<any>): number {
-		// Simple estimation: ~4 characters per token
-		const totalChars = content.reduce((total, block) => {
-			if (typeof block === "string") {
-				return total + block.length
-			} else if (block && typeof block === "object") {
-				// Safely stringify the object
-				try {
-					const jsonStr = JSON.stringify(block)
-					return total + jsonStr.length
-				} catch (e) {
-					console.warn("Failed to stringify block for token estimation", e)
-					return total
-				}
-			}
-			return total
-		}, 0)
+    /**
+     * Fallback token estimation method
+     */
+    private estimateTokens(content: Array<any>): number {
+        // Simple estimation: ~4 characters per token
+        const totalChars = content.reduce((total, block) => {
+            if (typeof block === "string") {
+                return total + block.length
+            } else if (block && typeof block === "object") {
+                // Safely stringify the object
+                try {
+                    const jsonStr = JSON.stringify(block)
+                    return total + jsonStr.length
+                } catch (e) {
+                    console.warn("Failed to stringify block for token estimation", e)
+                    return total
+                }
+            }
+            return total
+        }, 0)
 
-		return Math.ceil(totalChars / 4)
-	}
+        return Math.ceil(totalChars / 4)
+    }
 
-	private parseRetryDelay(retryAfter?: string): number {
-		if (!retryAfter) {
-			return 0
-		}
+    private parseRetryDelay(retryAfter?: string): number {
+        if (!retryAfter) {
+            return 0
+        }
 
-		const unit = retryAfter.at(-1)
-		const value = parseInt(retryAfter, 10)
+        const unit = retryAfter.at(-1)
+        const value = parseInt(retryAfter, 10)
 
-		if (Number.isNaN(value)) {
-			return 0
-		}
+        if (Number.isNaN(value)) {
+            return 0
+        }
 
-		if (unit === "s") {
-			return value
-		} else if (unit === "m") {
-			return value * 60 // Convert minutes to seconds
-		} else if (unit === "h") {
-			return value * 60 * 60 // Convert hours to seconds
-		}
+        if (unit === "s") {
+            return value
+        } else if (unit === "m") {
+            return value * 60 // Convert minutes to seconds
+        } else if (unit === "h") {
+            return value * 60 * 60 // Convert hours to seconds
+        }
 
-		return value
-	}
+        return value
+    }
 
-	private attemptParse(str: string) {
-		try {
-			return JSON.parse(str)
-		} catch (_) {
-			return null
-		}
-	}
+    private attemptParse(str: string) {
+        try {
+            return JSON.parse(str)
+        } catch (_) {
+            return null
+        }
+    }
 }

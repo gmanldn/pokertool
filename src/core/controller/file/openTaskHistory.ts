@@ -22,10 +22,10 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function openTaskHistory(_controller: Controller, request: StringRequest): Promise<Empty> {
-	const globalStoragePath = HostProvider.get().globalStorageFsPath
-	const taskHistoryPath = path.join(globalStoragePath, "tasks", request.value, "api_conversation_history.json")
-	if (request.value) {
-		openFileIntegration(taskHistoryPath)
-	}
-	return Empty.create()
+    const globalStoragePath = HostProvider.get().globalStorageFsPath
+    const taskHistoryPath = path.join(globalStoragePath, "tasks", request.value, "api_conversation_history.json")
+    if (request.value) {
+        openFileIntegration(taskHistoryPath)
+    }
+    return Empty.create()
 }

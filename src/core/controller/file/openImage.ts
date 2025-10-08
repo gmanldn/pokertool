@@ -21,8 +21,8 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function openImage(_controller: Controller, request: StringRequest): Promise<Empty> {
-	if (request.value) {
-		await openImageIntegration(request.value)
-	}
-	return Empty.create()
+    if (request.value) {
+        await openImageIntegration(request.value)
+    }
+    return Empty.create()
 }

@@ -16,10 +16,10 @@ import type { ClineToolSpec } from "../spec"
 import { TASK_PROGRESS_PARAMETER } from "../types"
 
 const nextGen: ClineToolSpec = {
-	variant: ModelFamily.NEXT_GEN,
-	id: ClineDefaultTool.WEB_FETCH,
-	name: "web_fetch",
-	description: `Fetches content from a specified URL and processes into markdown
+    variant: ModelFamily.NEXT_GEN,
+    id: ClineDefaultTool.WEB_FETCH,
+    name: "web_fetch",
+    description: `Fetches content from a specified URL and processes into markdown
 - Takes a URL as input
 - Fetches the URL content, converts HTML to markdown
 - Use this tool when you need to retrieve and analyze web content
@@ -27,15 +27,15 @@ const nextGen: ClineToolSpec = {
 - The URL must be a fully-formed valid URL
 - HTTP URLs will be automatically upgraded to HTTPS
 - This tool is read-only and does not modify any files`,
-	parameters: [
-		{
-			name: "url",
-			required: true,
-			instruction: "The URL to fetch content from",
-			usage: "https://example.com/docs",
-		},
-		TASK_PROGRESS_PARAMETER,
-	],
+    parameters: [
+        {
+            name: "url",
+            required: true,
+            instruction: "The URL to fetch content from",
+            usage: "https://example.com/docs",
+        },
+        TASK_PROGRESS_PARAMETER,
+    ],
 }
 
 const gpt = { ...nextGen, variant: ModelFamily.GPT }

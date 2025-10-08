@@ -8,11 +8,11 @@ import { StateServiceClient } from "@/services/grpc-client"
  * @throws Error if the update fails
  */
 export async function updateAutoApproveSettings(settings: AutoApprovalSettings) {
-	try {
-		const protoSettings = convertAutoApprovalSettingsToProto(settings)
-		await StateServiceClient.updateAutoApprovalSettings(protoSettings)
-	} catch (error) {
-		console.error("Failed to update auto approval settings:", error)
-		throw error
-	}
+    try {
+        const protoSettings = convertAutoApprovalSettingsToProto(settings)
+        await StateServiceClient.updateAutoApprovalSettings(protoSettings)
+    } catch (error) {
+        console.error("Failed to update auto approval settings:", error)
+        throw error
+    }
 }

@@ -36,29 +36,29 @@ import { write_to_file_variants } from "./write_to_file"
  * to allow all tool sets be available at build time.
  */
 export function registerClineToolSets(): void {
-	// Collect all variants from all tools
-	const allToolVariants = [
-		...access_mcp_resource_variants,
-		...ask_followup_question_variants,
-		...attempt_completion_variants,
-		...browser_action_variants,
-		...execute_command_variants,
-		...focus_chain_variants,
-		...list_code_definition_names_variants,
-		...list_files_variants,
-		...load_mcp_documentation_variants,
-		...new_task_variants,
-		...plan_mode_respond_variants,
-		...read_file_variants,
-		...replace_in_file_variants,
-		...search_files_variants,
-		...use_mcp_tool_variants,
-		...web_fetch_variants,
-		...write_to_file_variants,
-	]
+    // Collect all variants from all tools
+    const allToolVariants = [
+        ...access_mcp_resource_variants,
+        ...ask_followup_question_variants,
+        ...attempt_completion_variants,
+        ...browser_action_variants,
+        ...execute_command_variants,
+        ...focus_chain_variants,
+        ...list_code_definition_names_variants,
+        ...list_files_variants,
+        ...load_mcp_documentation_variants,
+        ...new_task_variants,
+        ...plan_mode_respond_variants,
+        ...read_file_variants,
+        ...replace_in_file_variants,
+        ...search_files_variants,
+        ...use_mcp_tool_variants,
+        ...web_fetch_variants,
+        ...write_to_file_variants,
+    ]
 
-	// Register each variant
-	allToolVariants.forEach((v) => {
-		ClineToolSet.register(v)
-	})
+    // Register each variant
+    allToolVariants.forEach((v) => {
+        ClineToolSet.register(v)
+    })
 }

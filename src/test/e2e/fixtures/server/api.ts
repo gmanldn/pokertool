@@ -11,29 +11,29 @@
 # ---
 # POKERTOOL-HEADER-END
 export const E2E_REGISTERED_MOCK_ENDPOINTS = {
-	"/api/v1": {
-		GET: [
-			"/generation",
-			"/organizations/{orgId}/balance",
-			"/organizations/{orgId}/members/{memberId}/usages",
-			"/users/me",
-			"/users/{userId}/balance",
-			"/users/{userId}/usages",
-			"/users/{userId}/payments",
-		],
-		POST: ["/chat/completions"],
-		PUT: ["/users/active-account"],
-	},
-	"/.test": {
-		GET: [],
-		POST: ["/auth", "/setUserBalance", "/setUserHasOrganization", "/setOrgBalance"],
-		PUT: [],
-	},
-	"/health": {
-		POST: [],
-		GET: ["/", "/ping"],
-		PUT: [],
-	},
+    "/api/v1": {
+        GET: [
+            "/generation",
+            "/organizations/{orgId}/balance",
+            "/organizations/{orgId}/members/{memberId}/usages",
+            "/users/me",
+            "/users/{userId}/balance",
+            "/users/{userId}/usages",
+            "/users/{userId}/payments",
+        ],
+        POST: ["/chat/completions"],
+        PUT: ["/users/active-account"],
+    },
+    "/.test": {
+        GET: [],
+        POST: ["/auth", "/setUserBalance", "/setUserHasOrganization", "/setOrgBalance"],
+        PUT: [],
+    },
+    "/health": {
+        POST: [],
+        GET: ["/", "/ping"],
+        PUT: [],
+    },
 }
 
 const replace_in_file = `I successfully replaced "john" with "cline" in the test.ts file. The change has been completed and the file now contains:
@@ -85,7 +85,7 @@ export const name = "cline"
 </replace_in_file>`
 
 export const E2E_MOCK_API_RESPONSES = {
-	DEFAULT: "Hello! I'm a mock Cline API response.",
-	REPLACE_REQUEST: replace_in_file,
-	EDIT_REQUEST: edit_request,
+    DEFAULT: "Hello! I'm a mock Cline API response.",
+    REPLACE_REQUEST: replace_in_file,
+    EDIT_REQUEST: edit_request,
 }

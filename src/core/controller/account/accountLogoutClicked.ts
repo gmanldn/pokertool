@@ -22,7 +22,7 @@ import type { Controller } from "../index"
  * @returns Empty response
  */
 export async function accountLogoutClicked(controller: Controller, _request: EmptyRequest): Promise<Empty> {
-	await controller.handleSignOut()
-	await AuthService.getInstance().handleDeauth()
-	return Empty.create({})
+    await controller.handleSignOut()
+    await AuthService.getInstance().handleDeauth()
+    return Empty.create({})
 }

@@ -21,16 +21,16 @@ import type { Controller } from "../index"
  * @returns Empty response
  */
 export async function setUserOrganization(controller: Controller, request: UserOrganizationUpdateRequest): Promise<Empty> {
-	try {
-		if (!controller.accountService) {
-			throw new Error("Account service not available")
-		}
+    try {
+        if (!controller.accountService) {
+            throw new Error("Account service not available")
+        }
 
-		// Switch to the specified organization using the account service
-		await controller.accountService.switchAccount(request.organizationId)
+        // Switch to the specified organization using the account service
+        await controller.accountService.switchAccount(request.organizationId)
 
-		return Empty.create({})
-	} catch (error) {
-		throw error
-	}
+        return Empty.create({})
+    } catch (error) {
+        throw error
+    }
 }

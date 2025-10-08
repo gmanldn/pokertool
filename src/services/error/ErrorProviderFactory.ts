@@ -24,8 +24,8 @@ export type ErrorProviderType = "posthog" | "no-op"
  * Configuration for error providers
  */
 export interface ErrorProviderConfig {
-	type: ErrorProviderType
-	config: PostHogClientConfig
+    type: ErrorProviderType
+    config: PostHogClientConfig
 }
 
 /**
@@ -33,40 +33,40 @@ export interface ErrorProviderConfig {
  * Allows easy switching between different error tracking providers
  */
 export class ErrorProviderFactory {
-	/**
-	 * Creates an error provider based on the provided configuration
-	 * @param config Configuration for the error provider
-	 * @returns IErrorProvider instance
-	 */
-	public static async createProvider(config: ErrorProviderConfig): Promise<IErrorProvider> {
-		switch (config.type) {
-			case "posthog": {
-				const hasValidPostHogConfig = isPostHogConfigValid(config.config)
-				const errorTrackingApiKey = config.config.errorTrackingApiKey
-				return hasValidPostHogConfig && errorTrackingApiKey
-					? await new PostHogErrorProvider({
-							apiKey: errorTrackingApiKey,
-							errorTrackingApiKey: errorTrackingApiKey,
-							host: config.config.host,
-							uiHost: config.config.uiHost,
-						}).initialize()
-					: new NoOpErrorProvider() // Fallback to no-op provider
-			}
-			default:
-				return new NoOpErrorProvider()
-		}
-	}
+    /**
+     * Creates an error provider based on the provided configuration
+     * @param config Configuration for the error provider
+     * @returns IErrorProvider instance
+     */
+    public static async createProvider(config: ErrorProviderConfig): Promise<IErrorProvider> {
+        switch (config.type) {
+            case "posthog": {
+                const hasValidPostHogConfig = isPostHogConfigValid(config.config)
+                const errorTrackingApiKey = config.config.errorTrackingApiKey
+                return hasValidPostHogConfig && errorTrackingApiKey
+                    ? await new PostHogErrorProvider({
+                            apiKey: errorTrackingApiKey,
+                            errorTrackingApiKey: errorTrackingApiKey,
+                            host: config.config.host,
+                            uiHost: config.config.uiHost,
+                        }).initialize()
+                    : new NoOpErrorProvider() // Fallback to no-op provider
+            }
+            default:
+                return new NoOpErrorProvider()
+        }
+    }
 
-	/**
-	 * Gets the default error provider configuration
-	 * @returns Default configuration using PostHog
-	 */
-	public static getDefaultConfig(): ErrorProviderConfig {
-		return {
-			type: "posthog",
-			config: posthogConfig,
-		}
-	}
+    /**
+     * Gets the default error provider configuration
+     * @returns Default configuration using PostHog
+     */
+    public static getDefaultConfig(): ErrorProviderConfig {
+        return {
+            type: "posthog",
+            config: posthogConfig,
+        }
+    }
 }
 
 /**
@@ -74,32 +74,32 @@ export class ErrorProviderFactory {
  * or for testing purposes
  */
 class NoOpErrorProvider implements IErrorProvider {
-	public logException(error: Error | ClineError, _properties?: Record<string, unknown>): void {
-		// Use console.error directly to avoid potential infinite recursion through Logger
-		console.error("[NoOpErrorProvider]", error.message || String(error))
-	}
+    public logException(error: Error | ClineError, _properties?: Record<string, unknown>): void {
+        // Use console.error directly to avoid potential infinite recursion through Logger
+        console.error("[NoOpErrorProvider]", error.message || String(error))
+    }
 
-	public logMessage(
-		message: string,
-		level?: "error" | "warning" | "log" | "debug" | "info",
-		properties?: Record<string, unknown>,
-	): void {
-		console.log("[NoOpErrorProvider]", { message, level, properties })
-	}
+    public logMessage(
+        message: string,
+        level?: "error" | "warning" | "log" | "debug" | "info",
+        properties?: Record<string, unknown>,
+    ): void {
+        console.log("[NoOpErrorProvider]", { message, level, properties })
+    }
 
-	public isEnabled(): boolean {
-		return true
-	}
+    public isEnabled(): boolean {
+        return true
+    }
 
-	public getSettings() {
-		return {
-			enabled: true,
-			hostEnabled: true,
-			level: "all" as const,
-		}
-	}
+    public getSettings() {
+        return {
+            enabled: true,
+            hostEnabled: true,
+            level: "all" as const,
+        }
+    }
 
-	public async dispose(): Promise<void> {
-		console.info("[NoOpErrorProvider] Disposing")
-	}
+    public async dispose(): Promise<void> {
+        console.info("[NoOpErrorProvider] Disposing")
+    }
 }

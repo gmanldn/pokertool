@@ -31,14 +31,14 @@ export interface BenchmarkRun {
 }
 
 export interface Case {
-	case_id: string
-	run_id: string
-	created_at: string
-	description: string
-	system_prompt_hash: string
-	task_id: string
-	tokens_in_context: number
-	file_hash?: string
+    case_id: string
+    run_id: string
+    created_at: string
+    description: string
+    system_prompt_hash: string
+    task_id: string
+    tokens_in_context: number
+    file_hash?: string
 }
 
 export interface Result {

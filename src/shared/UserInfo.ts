@@ -11,8 +11,8 @@
 # ---
 # POKERTOOL-HEADER-END
 export interface UserInfo {
-	displayName?: string
-	email?: string
-	photoUrl?: string
-	apiBaseUrl?: string // Base URL for API requests
+    displayName?: string
+    email?: string
+    photoUrl?: string
+    apiBaseUrl?: string // Base URL for API requests
 }

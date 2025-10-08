@@ -16,11 +16,11 @@ import type { ClineToolSpec } from "../spec"
 
 // HACK: Placeholder to act as tool dependency
 const generic: ClineToolSpec = {
-	variant: ModelFamily.GENERIC,
-	id: ClineDefaultTool.TODO,
-	name: "focus_chain",
-	description: "",
-	contextRequirements: (context) => context.focusChainSettings?.enabled === true,
+    variant: ModelFamily.GENERIC,
+    id: ClineDefaultTool.TODO,
+    name: "focus_chain",
+    description: "",
+    contextRequirements: (context) => context.focusChainSettings?.enabled === true,
 }
 
 const nextGen = { ...generic, variant: ModelFamily.NEXT_GEN }

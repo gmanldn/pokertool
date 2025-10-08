@@ -11,8 +11,8 @@
 # ---
 # POKERTOOL-HEADER-END
 export interface OcaConfig {
-	client_id: string
-	idcs_url: string
-	scopes: string
-	ports: number[]
+    client_id: string
+    idcs_url: string
+    scopes: string
+    ports: number[]
 }

@@ -11,16 +11,16 @@
 # ---
 # POKERTOOL-HEADER-END
 export interface PostHogClientConfig {
-	/**
-	 * The main API key for PostHog telemetry service.
-	 */
-	apiKey?: string | undefined
-	/**
-	 * The API key for PostHog used only for error tracking service.
-	 */
-	errorTrackingApiKey?: string | undefined
-	host: string
-	uiHost: string
+    /**
+     * The main API key for PostHog telemetry service.
+     */
+    apiKey?: string | undefined
+    /**
+     * The API key for PostHog used only for error tracking service.
+     */
+    errorTrackingApiKey?: string | undefined
+    host: string
+    uiHost: string
 }
 
 /**
@@ -28,8 +28,8 @@ export interface PostHogClientConfig {
  * Must contains api keys for both telemetry and error tracking.
  */
 export interface PostHogClientValidConfig extends PostHogClientConfig {
-	apiKey: string
-	errorTrackingApiKey: string
+    apiKey: string
+    errorTrackingApiKey: string
 }
 
 /**
@@ -47,23 +47,23 @@ const useDevEnv = process.env.IS_DEV === "true" || process.env.CLINE_ENVIRONMENT
  * NOTE: The development environment variables should be retrieved from 1password shared vault.
  */
 export const posthogConfig: PostHogClientConfig = {
-	apiKey: process.env.TELEMETRY_SERVICE_API_KEY,
-	errorTrackingApiKey: process.env.ERROR_SERVICE_API_KEY,
-	host: "https://data.cline.bot",
-	uiHost: useDevEnv ? "https://us.i.posthog.com" : "https://us.posthog.com",
+    apiKey: process.env.TELEMETRY_SERVICE_API_KEY,
+    errorTrackingApiKey: process.env.ERROR_SERVICE_API_KEY,
+    host: "https://data.cline.bot",
+    uiHost: useDevEnv ? "https://us.i.posthog.com" : "https://us.posthog.com",
 }
 
 const isTestEnv = process.env.E2E_TEST === "true" || process.env.IS_TEST === "true"
 
 export function isPostHogConfigValid(config: PostHogClientConfig): config is PostHogClientValidConfig {
-	// Allow invalid config in test environment to enable mocking and stubbing
-	if (isTestEnv) {
-		return false
-	}
-	return (
-		typeof config.apiKey === "string" &&
-		typeof config.errorTrackingApiKey === "string" &&
-		typeof config.host === "string" &&
-		typeof config.uiHost === "string"
-	)
+    // Allow invalid config in test environment to enable mocking and stubbing
+    if (isTestEnv) {
+        return false
+    }
+    return (
+        typeof config.apiKey === "string" &&
+        typeof config.errorTrackingApiKey === "string" &&
+        typeof config.host === "string" &&
+        typeof config.uiHost === "string"
+    )
 }

@@ -38,95 +38,95 @@ import { TASK_CALLBACKS_KEYS, TASK_CONFIG_KEYS, TASK_SERVICES_KEYS } from "../ut
  * Strongly-typed configuration object passed to tool handlers
  */
 export interface TaskConfig {
-	// Core identifiers
-	taskId: string
-	ulid: string
-	cwd: string
-	mode: Mode
-	strictPlanModeEnabled: boolean
-	yoloModeToggled: boolean
-	context: vscode.ExtensionContext
+    // Core identifiers
+    taskId: string
+    ulid: string
+    cwd: string
+    mode: Mode
+    strictPlanModeEnabled: boolean
+    yoloModeToggled: boolean
+    context: vscode.ExtensionContext
 
-	// Multi-workspace support (optional for backward compatibility)
-	workspaceManager?: WorkspaceRootManager
-	isMultiRootEnabled?: boolean
+    // Multi-workspace support (optional for backward compatibility)
+    workspaceManager?: WorkspaceRootManager
+    isMultiRootEnabled?: boolean
 
-	// State management
-	taskState: TaskState
-	messageState: MessageStateHandler
+    // State management
+    taskState: TaskState
+    messageState: MessageStateHandler
 
-	// API and services
-	api: ApiHandler
-	services: TaskServices
+    // API and services
+    api: ApiHandler
+    services: TaskServices
 
-	// Settings
-	autoApprovalSettings: AutoApprovalSettings
-	autoApprover: AutoApprove
-	browserSettings: BrowserSettings
-	focusChainSettings: FocusChainSettings
+    // Settings
+    autoApprovalSettings: AutoApprovalSettings
+    autoApprover: AutoApprove
+    browserSettings: BrowserSettings
+    focusChainSettings: FocusChainSettings
 
-	// Callbacks (strongly typed)
-	callbacks: TaskCallbacks
+    // Callbacks (strongly typed)
+    callbacks: TaskCallbacks
 
-	// Tool coordination
-	coordinator: ToolExecutorCoordinator
+    // Tool coordination
+    coordinator: ToolExecutorCoordinator
 }
 
 /**
  * All services available to tool handlers
  */
 export interface TaskServices {
-	mcpHub: McpHub
-	browserSession: BrowserSession
-	urlContentFetcher: UrlContentFetcher
-	diffViewProvider: DiffViewProvider
-	fileContextTracker: FileContextTracker
-	clineIgnoreController: ClineIgnoreController
-	contextManager: ContextManager
-	stateManager: StateManager
+    mcpHub: McpHub
+    browserSession: BrowserSession
+    urlContentFetcher: UrlContentFetcher
+    diffViewProvider: DiffViewProvider
+    fileContextTracker: FileContextTracker
+    clineIgnoreController: ClineIgnoreController
+    contextManager: ContextManager
+    stateManager: StateManager
 }
 
 /**
  * All callback functions available to tool handlers
  */
 export interface TaskCallbacks {
-	say: (type: ClineSay, text?: string, images?: string[], files?: string[], partial?: boolean) => Promise<number | undefined>
+    say: (type: ClineSay, text?: string, images?: string[], files?: string[], partial?: boolean) => Promise<number | undefined>
 
-	ask: (
-		type: ClineAsk,
-		text?: string,
-		partial?: boolean,
-	) => Promise<{
-		response: ClineAskResponse
-		text?: string
-		images?: string[]
-		files?: string[]
-	}>
+    ask: (
+        type: ClineAsk,
+        text?: string,
+        partial?: boolean,
+    ) => Promise<{
+        response: ClineAskResponse
+        text?: string
+        images?: string[]
+        files?: string[]
+    }>
 
-	saveCheckpoint: (isAttemptCompletionMessage?: boolean, completionMessageTs?: number) => Promise<void>
+    saveCheckpoint: (isAttemptCompletionMessage?: boolean, completionMessageTs?: number) => Promise<void>
 
-	sayAndCreateMissingParamError: (toolName: ClineDefaultTool, paramName: string, relPath?: string) => Promise<any>
+    sayAndCreateMissingParamError: (toolName: ClineDefaultTool, paramName: string, relPath?: string) => Promise<any>
 
-	removeLastPartialMessageIfExistsWithType: (type: "ask" | "say", askOrSay: ClineAsk | ClineSay) => Promise<void>
+    removeLastPartialMessageIfExistsWithType: (type: "ask" | "say", askOrSay: ClineAsk | ClineSay) => Promise<void>
 
-	executeCommandTool: (command: string, timeoutSeconds: number | undefined) => Promise<[boolean, any]>
+    executeCommandTool: (command: string, timeoutSeconds: number | undefined) => Promise<[boolean, any]>
 
-	doesLatestTaskCompletionHaveNewChanges: () => Promise<boolean>
+    doesLatestTaskCompletionHaveNewChanges: () => Promise<boolean>
 
-	updateFCListFromToolResponse: (taskProgress: string | undefined) => Promise<void>
+    updateFCListFromToolResponse: (taskProgress: string | undefined) => Promise<void>
 
-	shouldAutoApproveTool: (toolName: ClineDefaultTool) => boolean | [boolean, boolean]
-	shouldAutoApproveToolWithPath: (toolName: ClineDefaultTool, path?: string) => Promise<boolean>
+    shouldAutoApproveTool: (toolName: ClineDefaultTool) => boolean | [boolean, boolean]
+    shouldAutoApproveToolWithPath: (toolName: ClineDefaultTool, path?: string) => Promise<boolean>
 
-	// Additional callbacks for task management
-	postStateToWebview: () => Promise<void>
-	reinitExistingTaskFromId: (taskId: string) => Promise<void>
-	cancelTask: () => Promise<void>
-	updateTaskHistory: (update: any) => Promise<any[]>
+    // Additional callbacks for task management
+    postStateToWebview: () => Promise<void>
+    reinitExistingTaskFromId: (taskId: string) => Promise<void>
+    cancelTask: () => Promise<void>
+    updateTaskHistory: (update: any) => Promise<any[]>
 
-	applyLatestBrowserSettings: () => Promise<BrowserSession>
+    applyLatestBrowserSettings: () => Promise<BrowserSession>
 
-	switchToActMode: () => Promise<boolean>
+    switchToActMode: () => Promise<boolean>
 }
 
 /**
@@ -134,37 +134,37 @@ export interface TaskCallbacks {
  * Automatically derives expected keys from the interface definitions
  */
 export function validateTaskConfig(config: any): asserts config is TaskConfig {
-	if (!config) {
-		throw new Error("TaskConfig is null or undefined")
-	}
+    if (!config) {
+        throw new Error("TaskConfig is null or undefined")
+    }
 
-	// Validate all expected keys exist
-	for (const key of TASK_CONFIG_KEYS) {
-		if (!(key in config)) {
-			throw new Error(`Missing ${key} in TaskConfig`)
-		}
-	}
+    // Validate all expected keys exist
+    for (const key of TASK_CONFIG_KEYS) {
+        if (!(key in config)) {
+            throw new Error(`Missing ${key} in TaskConfig`)
+        }
+    }
 
-	// Special validation for boolean type
-	if (typeof config.strictPlanModeEnabled !== "boolean") {
-		throw new Error("strictPlanModeEnabled must be a boolean in TaskConfig")
-	}
+    // Special validation for boolean type
+    if (typeof config.strictPlanModeEnabled !== "boolean") {
+        throw new Error("strictPlanModeEnabled must be a boolean in TaskConfig")
+    }
 
-	// Validate services object
-	if (config.services) {
-		for (const key of TASK_SERVICES_KEYS) {
-			if (!(key in config.services)) {
-				throw new Error(`Missing services.${key} in TaskConfig`)
-			}
-		}
-	}
+    // Validate services object
+    if (config.services) {
+        for (const key of TASK_SERVICES_KEYS) {
+            if (!(key in config.services)) {
+                throw new Error(`Missing services.${key} in TaskConfig`)
+            }
+        }
+    }
 
-	// Validate callbacks object
-	if (config.callbacks) {
-		for (const key of TASK_CALLBACKS_KEYS) {
-			if (typeof config.callbacks[key] !== "function") {
-				throw new Error(`Missing or invalid callbacks.${key} in TaskConfig (must be a function)`)
-			}
-		}
-	}
+    // Validate callbacks object
+    if (config.callbacks) {
+        for (const key of TASK_CALLBACKS_KEYS) {
+            if (typeof config.callbacks[key] !== "function") {
+                throw new Error(`Missing or invalid callbacks.${key} in TaskConfig (must be a function)`)
+            }
+        }
+    }
 }

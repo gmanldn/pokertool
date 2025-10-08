@@ -14,15 +14,15 @@ import { TemplateEngine } from "../../templates/TemplateEngine"
 import type { PromptVariant, SystemPromptContext } from "../../types"
 
 export async function getToolUseFormattingSection(_variant: PromptVariant, context: SystemPromptContext): Promise<string> {
-	// Return the placeholder that will be replaced with actual tools
-	const template = TOOL_USE_FORMATTING_TEMPLATE_TEXT
+    // Return the placeholder that will be replaced with actual tools
+    const template = TOOL_USE_FORMATTING_TEMPLATE_TEXT
 
-	const focusChainEnabled = context.focusChainSettings?.enabled
+    const focusChainEnabled = context.focusChainSettings?.enabled
 
-	const templateEngine = new TemplateEngine()
-	return templateEngine.resolve(template, context, {
-		FOCUS_CHATIN_FORMATTING: focusChainEnabled ? FOCUS_CHATIN_FORMATTING_TEMPLATE : "",
-	})
+    const templateEngine = new TemplateEngine()
+    return templateEngine.resolve(template, context, {
+        FOCUS_CHATIN_FORMATTING: focusChainEnabled ? FOCUS_CHATIN_FORMATTING_TEMPLATE : "",
+    })
 }
 
 const FOCUS_CHATIN_FORMATTING_TEMPLATE = `<task_progress>

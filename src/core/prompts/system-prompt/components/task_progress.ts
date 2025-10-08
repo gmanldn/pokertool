@@ -37,11 +37,11 @@ Example:
 </execute_command>`
 
 export async function getUpdatingTaskProgress(variant: PromptVariant, context: SystemPromptContext): Promise<string | undefined> {
-	if (!context.focusChainSettings?.enabled) {
-		return undefined
-	}
+    if (!context.focusChainSettings?.enabled) {
+        return undefined
+    }
 
-	const template = variant.componentOverrides?.[SystemPromptSection.TASK_PROGRESS]?.template || UPDATING_TASK_PROGRESS
+    const template = variant.componentOverrides?.[SystemPromptSection.TASK_PROGRESS]?.template || UPDATING_TASK_PROGRESS
 
-	return new TemplateEngine().resolve(template, context, {})
+    return new TemplateEngine().resolve(template, context, {})
 }

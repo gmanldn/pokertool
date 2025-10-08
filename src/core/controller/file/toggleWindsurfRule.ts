@@ -21,21 +21,21 @@ import type { Controller } from "../index"
  * @returns The updated Windsurf rule toggles
  */
 export async function toggleWindsurfRule(controller: Controller, request: ToggleWindsurfRuleRequest): Promise<ClineRulesToggles> {
-	const { rulePath, enabled } = request
+    const { rulePath, enabled } = request
 
-	if (!rulePath || typeof enabled !== "boolean") {
-		console.error("toggleWindsurfRule: Missing or invalid parameters", {
-			rulePath,
-			enabled: typeof enabled === "boolean" ? enabled : `Invalid: ${typeof enabled}`,
-		})
-		throw new Error("Missing or invalid parameters for toggleWindsurfRule")
-	}
+    if (!rulePath || typeof enabled !== "boolean") {
+        console.error("toggleWindsurfRule: Missing or invalid parameters", {
+            rulePath,
+            enabled: typeof enabled === "boolean" ? enabled : `Invalid: ${typeof enabled}`,
+        })
+        throw new Error("Missing or invalid parameters for toggleWindsurfRule")
+    }
 
-	// Update the toggles
-	const toggles = controller.stateManager.getWorkspaceStateKey("localWindsurfRulesToggles")
-	toggles[rulePath] = enabled
-	controller.stateManager.setWorkspaceState("localWindsurfRulesToggles", toggles)
+    // Update the toggles
+    const toggles = controller.stateManager.getWorkspaceStateKey("localWindsurfRulesToggles")
+    toggles[rulePath] = enabled
+    controller.stateManager.setWorkspaceState("localWindsurfRulesToggles", toggles)
 
-	// Return the toggles directly
-	return ClineRulesToggles.create({ toggles: toggles })
+    // Return the toggles directly
+    return ClineRulesToggles.create({ toggles: toggles })
 }

@@ -25,24 +25,24 @@ const activeSubscriptions = new Map<string, StreamingResponseHandler<Empty>>()
  * @param requestId The request ID for cleanup
  */
 export async function subscribeToAccountButtonClicked(
-	controller: Controller,
-	_request: EmptyRequest,
-	responseStream: StreamingResponseHandler<Empty>,
-	requestId?: string,
+    controller: Controller,
+    _request: EmptyRequest,
+    responseStream: StreamingResponseHandler<Empty>,
+    requestId?: string,
 ): Promise<void> {
-	const controllerId = controller.id
+    const controllerId = controller.id
 
-	// Store subscription with controller ID
-	activeSubscriptions.set(controllerId, responseStream)
+    // Store subscription with controller ID
+    activeSubscriptions.set(controllerId, responseStream)
 
-	// Register cleanup
-	const cleanup = () => {
-		activeSubscriptions.delete(controllerId)
-	}
+    // Register cleanup
+    const cleanup = () => {
+        activeSubscriptions.delete(controllerId)
+    }
 
-	if (requestId) {
-		getRequestRegistry().registerRequest(requestId, cleanup, { type: "account_button_subscription" }, responseStream)
-	}
+    if (requestId) {
+        getRequestRegistry().registerRequest(requestId, cleanup, { type: "account_button_subscription" }, responseStream)
+    }
 }
 
 /**
@@ -50,18 +50,18 @@ export async function subscribeToAccountButtonClicked(
  * @param controllerId The ID of the controller to send the event to
  */
 export async function sendAccountButtonClickedEvent(controllerId: string): Promise<void> {
-	const responseStream = activeSubscriptions.get(controllerId)
+    const responseStream = activeSubscriptions.get(controllerId)
 
-	if (!responseStream) {
-		console.log(`No active subscription for controller ${controllerId}`)
-		return
-	}
+    if (!responseStream) {
+        console.log(`No active subscription for controller ${controllerId}`)
+        return
+    }
 
-	try {
-		const event: Empty = Empty.create({})
-		await responseStream(event, false)
-	} catch (error) {
-		console.error(`Error sending account button clicked event to controller ${controllerId}:`, error)
-		activeSubscriptions.delete(controllerId)
-	}
+    try {
+        const event: Empty = Empty.create({})
+        await responseStream(event, false)
+    } catch (error) {
+        console.error(`Error sending account button clicked event to controller ${controllerId}:`, error)
+        activeSubscriptions.delete(controllerId)
+    }
 }

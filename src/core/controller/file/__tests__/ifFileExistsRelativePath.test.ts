@@ -19,95 +19,95 @@ import * as sinon from "sinon"
 import { ifFileExistsRelativePath } from "../ifFileExistsRelativePath"
 
 describe("ifFileExistsRelativePath", () => {
-	let sandbox: sinon.SinonSandbox
-	let mockController: Controller
-	let getWorkspacePathStub: sinon.SinonStub
-	let consoleErrorStub: sinon.SinonStub
+    let sandbox: sinon.SinonSandbox
+    let mockController: Controller
+    let getWorkspacePathStub: sinon.SinonStub
+    let consoleErrorStub: sinon.SinonStub
 
-	beforeEach(() => {
-		sandbox = sinon.createSandbox()
+    beforeEach(() => {
+        sandbox = sinon.createSandbox()
 
-		// Create a mock controller
-		mockController = {} as any
+        // Create a mock controller
+        mockController = {} as any
 
-		// Stub getWorkspacePath utility
-		getWorkspacePathStub = sandbox.stub(pathUtils, "getWorkspacePath")
+        // Stub getWorkspacePath utility
+        getWorkspacePathStub = sandbox.stub(pathUtils, "getWorkspacePath")
 
-		// Stub console.error to prevent test output pollution
-		consoleErrorStub = sandbox.stub(console, "error")
-	})
+        // Stub console.error to prevent test output pollution
+        consoleErrorStub = sandbox.stub(console, "error")
+    })
 
-	afterEach(() => {
-		sandbox.restore()
-	})
+    afterEach(() => {
+        sandbox.restore()
+    })
 
-	it("should return BooleanResponse with boolean value", async () => {
-		getWorkspacePathStub.resolves("/workspace")
+    it("should return BooleanResponse with boolean value", async () => {
+        getWorkspacePathStub.resolves("/workspace")
 
-		const request = StringRequest.create({
-			value: "src/test.ts",
-		})
+        const request = StringRequest.create({
+            value: "src/test.ts",
+        })
 
-		const result = await ifFileExistsRelativePath(mockController, request)
+        const result = await ifFileExistsRelativePath(mockController, request)
 
-		// The result should be a BooleanResponse object
-		expect(result).to.have.property("value")
-		expect(typeof result.value).to.equal("boolean")
-	})
+        // The result should be a BooleanResponse object
+        expect(result).to.have.property("value")
+        expect(typeof result.value).to.equal("boolean")
+    })
 
-	it("should return false and log error when no workspace path is available", async () => {
-		const noWorkspaceScenarios = [null, undefined]
+    it("should return false and log error when no workspace path is available", async () => {
+        const noWorkspaceScenarios = [null, undefined]
 
-		for (const workspaceValue of noWorkspaceScenarios) {
-			getWorkspacePathStub.resolves(workspaceValue)
-			consoleErrorStub.resetHistory()
+        for (const workspaceValue of noWorkspaceScenarios) {
+            getWorkspacePathStub.resolves(workspaceValue)
+            consoleErrorStub.resetHistory()
 
-			const request = StringRequest.create({
-				value: "src/test.ts",
-			})
+            const request = StringRequest.create({
+                value: "src/test.ts",
+            })
 
-			const result = await ifFileExistsRelativePath(mockController, request)
+            const result = await ifFileExistsRelativePath(mockController, request)
 
-			expect(result).to.deep.equal(BooleanResponse.create({ value: false }))
-			expect(consoleErrorStub.called).to.be.true
-		}
-	})
+            expect(result).to.deep.equal(BooleanResponse.create({ value: false }))
+            expect(consoleErrorStub.called).to.be.true
+        }
+    })
 
-	it("should return false when path is invalid", async () => {
-		getWorkspacePathStub.resolves("/workspace")
+    it("should return false when path is invalid", async () => {
+        getWorkspacePathStub.resolves("/workspace")
 
-		const invalidPaths = ["", undefined]
+        const invalidPaths = ["", undefined]
 
-		for (const invalidPath of invalidPaths) {
-			const request = StringRequest.create({
-				value: invalidPath,
-			})
+        for (const invalidPath of invalidPaths) {
+            const request = StringRequest.create({
+                value: invalidPath,
+            })
 
-			const result = await ifFileExistsRelativePath(mockController, request)
+            const result = await ifFileExistsRelativePath(mockController, request)
 
-			expect(result).to.deep.equal(BooleanResponse.create({ value: false }))
-		}
-	})
+            expect(result).to.deep.equal(BooleanResponse.create({ value: false }))
+        }
+    })
 
-	it("should handle valid relative paths correctly", async () => {
-		getWorkspacePathStub.resolves("/workspace")
+    it("should handle valid relative paths correctly", async () => {
+        getWorkspacePathStub.resolves("/workspace")
 
-		// Test with valid workspace-relative paths only
-		const validPaths = ["src/file.ts", "./src/file.ts", "package.json", ".gitignore", "src/components/ui/Button/Button.tsx"]
+        // Test with valid workspace-relative paths only
+        const validPaths = ["src/file.ts", "./src/file.ts", "package.json", ".gitignore", "src/components/ui/Button/Button.tsx"]
 
-		for (const testPath of validPaths) {
-			const request = StringRequest.create({
-				value: testPath,
-			})
+        for (const testPath of validPaths) {
+            const request = StringRequest.create({
+                value: testPath,
+            })
 
-			const result = await ifFileExistsRelativePath(mockController, request)
+            const result = await ifFileExistsRelativePath(mockController, request)
 
-			// Each should return a BooleanResponse
-			expect(result).to.have.property("value")
-			expect(typeof result.value).to.equal("boolean")
-		}
+            // Each should return a BooleanResponse
+            expect(result).to.have.property("value")
+            expect(typeof result.value).to.equal("boolean")
+        }
 
-		// Verify that getWorkspacePath was called for each path
-		expect(getWorkspacePathStub.callCount).to.equal(validPaths.length)
-	})
+        // Verify that getWorkspacePath was called for each path
+        expect(getWorkspacePathStub.callCount).to.equal(validPaths.length)
+    })
 })

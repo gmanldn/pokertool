@@ -34,48 +34,48 @@ Usage:
 }
 </arguments>
 ${
-	focusChainSettings.enabled
-		? `<task_progress>
+    focusChainSettings.enabled
+        ? `<task_progress>
 Checklist here (optional)
 </task_progress>`
-		: ""
+        : ""
 }
 </use_mcp_tool>
  */
 
 const generic: ClineToolSpec = {
-	variant: ModelFamily.GENERIC,
-	id: ClineDefaultTool.MCP_USE,
-	name: "use_mcp_tool",
-	description:
-		"Request to use a tool provided by a connected MCP server. Each MCP server can provide multiple tools with different capabilities. Tools have defined input schemas that specify required and optional parameters.",
-	contextRequirements: (context) => context.mcpHub !== undefined && context.mcpHub !== null,
-	parameters: [
-		{
-			name: "server_name",
-			required: true,
-			instruction: "The name of the MCP server providing the tool",
-			usage: "server name here",
-		},
-		{
-			name: "tool_name",
-			required: true,
-			instruction: "The name of the tool to execute",
-			usage: "tool name here",
-		},
-		{
-			name: "arguments",
-			required: true,
-			instruction: "A JSON object containing the tool's input parameters, following the tool's input schema",
-			usage: `
+    variant: ModelFamily.GENERIC,
+    id: ClineDefaultTool.MCP_USE,
+    name: "use_mcp_tool",
+    description:
+        "Request to use a tool provided by a connected MCP server. Each MCP server can provide multiple tools with different capabilities. Tools have defined input schemas that specify required and optional parameters.",
+    contextRequirements: (context) => context.mcpHub !== undefined && context.mcpHub !== null,
+    parameters: [
+        {
+            name: "server_name",
+            required: true,
+            instruction: "The name of the MCP server providing the tool",
+            usage: "server name here",
+        },
+        {
+            name: "tool_name",
+            required: true,
+            instruction: "The name of the tool to execute",
+            usage: "tool name here",
+        },
+        {
+            name: "arguments",
+            required: true,
+            instruction: "A JSON object containing the tool's input parameters, following the tool's input schema",
+            usage: `
 {
   "param1": "value1",
   "param2": "value2"
 }
 `,
-		},
-		TASK_PROGRESS_PARAMETER,
-	],
+        },
+        TASK_PROGRESS_PARAMETER,
+    ],
 }
 
 const nextGen = { ...generic, variant: ModelFamily.NEXT_GEN }

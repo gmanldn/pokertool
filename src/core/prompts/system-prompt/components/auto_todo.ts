@@ -26,14 +26,14 @@ The system automatically manages todo lists to help track task progress:
 - Focus on creating actionable, meaningful steps rather than granular technical details`
 
 export async function getTodoListSection(variant: PromptVariant, context: SystemPromptContext): Promise<string | undefined> {
-	if (!context.focusChainSettings?.enabled) {
-		return undefined
-	}
+    if (!context.focusChainSettings?.enabled) {
+        return undefined
+    }
 
-	const template = variant.componentOverrides?.[SystemPromptSection.TODO]?.template || TODO_LIST_TEMPLATE_TEXT
+    const template = variant.componentOverrides?.[SystemPromptSection.TODO]?.template || TODO_LIST_TEMPLATE_TEXT
 
-	const templateEngine = new TemplateEngine()
-	return templateEngine.resolve(template, context, {
-		// Add any todo-specific placeholders here
-	})
+    const templateEngine = new TemplateEngine()
+    return templateEngine.resolve(template, context, {
+        // Add any todo-specific placeholders here
+    })
 }

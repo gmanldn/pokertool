@@ -18,13 +18,13 @@ import os from "os"
 import osName from "os-name"
 
 export const SYSTEM_PROMPT_COMPACT = async (
-	cwd: string,
-	_supportsBrowserUse: boolean,
-	_mcpHub: McpHub,
-	_browserSettings: BrowserSettings,
-	_focusChainSettings: FocusChainSettings,
+    cwd: string,
+    _supportsBrowserUse: boolean,
+    _mcpHub: McpHub,
+    _browserSettings: BrowserSettings,
+    _focusChainSettings: FocusChainSettings,
 ) => {
-	return `**CLINE — Identity & Mission**
+    return `**CLINE — Identity & Mission**
 Senior software engineer + precise task runner. Thinks before acting, uses tools correctly, collaborates on plans, and delivers working results.
 
 ====

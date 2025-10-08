@@ -11,21 +11,21 @@ import { useDebounceEffect } from "@/utils/useDebounceEffect"
  * @returns A tuple of [currentValue, setValue] similar to useState
  */
 export function useDebouncedInput<T>(
-	initialValue: T,
-	onChange: (value: T) => void,
-	debounceMs: number = 100,
+    initialValue: T,
+    onChange: (value: T) => void,
+    debounceMs: number = 100,
 ): [T, (value: T) => void] {
-	// Local state to prevent jumpy input - initialize once
-	const [localValue, setLocalValue] = useState(initialValue)
+    // Local state to prevent jumpy input - initialize once
+    const [localValue, setLocalValue] = useState(initialValue)
 
-	// Debounced backend save - saves after user stops changing value
-	useDebounceEffect(
-		() => {
-			onChange(localValue)
-		},
-		debounceMs,
-		[localValue],
-	)
+    // Debounced backend save - saves after user stops changing value
+    useDebounceEffect(
+        () => {
+            onChange(localValue)
+        },
+        debounceMs,
+        [localValue],
+    )
 
-	return [localValue, setLocalValue]
+    return [localValue, setLocalValue]
 }

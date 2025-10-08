@@ -23,33 +23,33 @@ import type { Controller } from "../index"
  * @returns Empty response
  */
 export async function updateApiConfigurationProto(
-	controller: Controller,
-	request: UpdateApiConfigurationRequest,
+    controller: Controller,
+    request: UpdateApiConfigurationRequest,
 ): Promise<Empty> {
-	try {
-		if (!request.apiConfiguration) {
-			console.log("[APICONFIG: updateApiConfigurationProto] API configuration is required")
-			throw new Error("API configuration is required")
-		}
+    try {
+        if (!request.apiConfiguration) {
+            console.log("[APICONFIG: updateApiConfigurationProto] API configuration is required")
+            throw new Error("API configuration is required")
+        }
 
-		// Convert proto ApiConfiguration to application ApiConfiguration
-		const appApiConfiguration = convertProtoToApiConfiguration(request.apiConfiguration)
+        // Convert proto ApiConfiguration to application ApiConfiguration
+        const appApiConfiguration = convertProtoToApiConfiguration(request.apiConfiguration)
 
-		// Update the API configuration in storage
-		controller.stateManager.setApiConfiguration(appApiConfiguration)
+        // Update the API configuration in storage
+        controller.stateManager.setApiConfiguration(appApiConfiguration)
 
-		// Update the task's API handler if there's an active task
-		if (controller.task) {
-			const currentMode = await controller.getCurrentMode()
-			controller.task.api = buildApiHandler({ ...appApiConfiguration, ulid: controller.task.ulid }, currentMode)
-		}
+        // Update the task's API handler if there's an active task
+        if (controller.task) {
+            const currentMode = await controller.getCurrentMode()
+            controller.task.api = buildApiHandler({ ...appApiConfiguration, ulid: controller.task.ulid }, currentMode)
+        }
 
-		// Post updated state to webview
-		await controller.postStateToWebview()
+        // Post updated state to webview
+        await controller.postStateToWebview()
 
-		return Empty.create()
-	} catch (error) {
-		console.error(`Failed to update API configuration: ${error}`)
-		throw error
-	}
+        return Empty.create()
+    } catch (error) {
+        console.error(`Failed to update API configuration: ${error}`)
+        throw error
+    }
 }

@@ -22,20 +22,20 @@ import { Controller } from "../index"
  * @returns The detected Chrome path and whether it's bundled
  */
 export async function getDetectedChromePath(controller: Controller, _: EmptyRequest): Promise<ChromePath> {
-	try {
-		const browserSettings = controller.stateManager.getGlobalSettingsKey("browserSettings")
-		const browserSession = new BrowserSession(controller.context, browserSettings)
-		const result = await browserSession.getDetectedChromePath()
+    try {
+        const browserSettings = controller.stateManager.getGlobalSettingsKey("browserSettings")
+        const browserSession = new BrowserSession(controller.context, browserSettings)
+        const result = await browserSession.getDetectedChromePath()
 
-		return ChromePath.create({
-			path: result.path,
-			isBundled: result.isBundled,
-		})
-	} catch (error) {
-		console.error("Error getting detected Chrome path:", error)
-		return ChromePath.create({
-			path: "",
-			isBundled: false,
-		})
-	}
+        return ChromePath.create({
+            path: result.path,
+            isBundled: result.isBundled,
+        })
+    } catch (error) {
+        console.error("Error getting detected Chrome path:", error)
+        return ChromePath.create({
+            path: "",
+            isBundled: false,
+        })
+    }
 }

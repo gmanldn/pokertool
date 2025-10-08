@@ -35,13 +35,13 @@ import type { Controller } from "../index"
  *   .catch(error => console.error("Failed to execute quick win:", error))
  */
 export async function executeQuickWin(controller: Controller, request: ExecuteQuickWinRequest): Promise<Empty> {
-	try {
-		const { command, title } = request
-		console.log(`Received executeQuickWin: command='${command}', title='${title}'`)
-		await controller.initTask(title)
-		return Empty.create({})
-	} catch (error) {
-		console.error("Failed to execute quick win:", error)
-		throw error
-	}
+    try {
+        const { command, title } = request
+        console.log(`Received executeQuickWin: command='${command}', title='${title}'`)
+        await controller.initTask(title)
+        return Empty.create({})
+    } catch (error) {
+        console.error("Failed to execute quick win:", error)
+        throw error
+    }
 }

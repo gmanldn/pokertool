@@ -22,7 +22,7 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function updateTelemetrySetting(controller: Controller, request: TelemetrySettingRequest): Promise<Empty> {
-	const telemetrySetting = convertProtoTelemetrySettingToDomain(request.setting)
-	await controller.updateTelemetrySetting(telemetrySetting)
-	return Empty.create()
+    const telemetrySetting = convertProtoTelemetrySettingToDomain(request.setting)
+    await controller.updateTelemetrySetting(telemetrySetting)
+    return Empty.create()
 }

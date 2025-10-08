@@ -18,22 +18,22 @@ import { TASK_PROGRESS_PARAMETER } from "../types"
 const id = ClineDefaultTool.FILE_EDIT
 
 const generic: ClineToolSpec = {
-	variant: ModelFamily.GENERIC,
-	id,
-	name: "replace_in_file",
-	description:
-		"Request to replace sections of content in an existing file using SEARCH/REPLACE blocks that define exact changes to specific parts of the file. This tool should be used when you need to make targeted changes to specific parts of a file.",
-	parameters: [
-		{
-			name: "path",
-			required: true,
-			instruction: `The path of the file to modify (relative to the current working directory {{CWD}})`,
-			usage: "File path here",
-		},
-		{
-			name: "diff",
-			required: true,
-			instruction: `One or more SEARCH/REPLACE blocks following this exact format:
+    variant: ModelFamily.GENERIC,
+    id,
+    name: "replace_in_file",
+    description:
+        "Request to replace sections of content in an existing file using SEARCH/REPLACE blocks that define exact changes to specific parts of the file. This tool should be used when you need to make targeted changes to specific parts of a file.",
+    parameters: [
+        {
+            name: "path",
+            required: true,
+            instruction: `The path of the file to modify (relative to the current working directory {{CWD}})`,
+            usage: "File path here",
+        },
+        {
+            name: "diff",
+            required: true,
+            instruction: `One or more SEARCH/REPLACE blocks following this exact format:
   \`\`\`
   ------- SEARCH
   [exact content to find]
@@ -57,10 +57,10 @@ const generic: ClineToolSpec = {
   4. Special operations:
      * To move code: Use two SEARCH/REPLACE blocks (one to delete from original + one to insert at new location)
      * To delete code: Use empty REPLACE section`,
-			usage: "Search and replace blocks here",
-		},
-		TASK_PROGRESS_PARAMETER,
-	],
+            usage: "Search and replace blocks here",
+        },
+        TASK_PROGRESS_PARAMETER,
+    ],
 }
 
 const nextGen = { ...generic, variant: ModelFamily.NEXT_GEN }

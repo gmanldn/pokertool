@@ -53,44 +53,44 @@ const XS_OBJECTIVES = `EXECUTION FLOW
 - When all steps succeed and are confirmed, call attempt_completion (optional demo command).`
 
 export const xsComponentOverrides: PromptVariant["componentOverrides"] = {
-	[SystemPromptSection.AGENT_ROLE]: {
-		template:
-			"You are Cline, a senior software engineer + precise task runner. Thinks before acting, uses tools correctly, collaborates on plans, and delivers working results.",
-	},
-	[SystemPromptSection.TOOL_USE]: {
-		enabled: false, // XS variant includes tools inline in the template
-	},
-	[SystemPromptSection.TOOLS]: {
-		enabled: false, // XS variant includes tools inline in the template
-	},
-	[SystemPromptSection.MCP]: {
-		enabled: false, // XS variant includes MCP tools inline in the template
-	},
-	[SystemPromptSection.TODO]: {
-		enabled: false,
-	},
-	[SystemPromptSection.RULES]: {
-		template: XS_RULES,
-	},
-	[SystemPromptSection.ACT_VS_PLAN]: {
-		template: XS_ACT_PLAN_MODE,
-	},
-	[SystemPromptSection.CAPABILITIES]: {
-		template: XS_CAPABILITIES,
-	},
-	[SystemPromptSection.OBJECTIVE]: {
-		template: XS_OBJECTIVES,
-	},
-	[SystemPromptSection.EDITING_FILES]: {
-		template: XS_EDITING_FILES,
-	},
-	[SystemPromptSection.SYSTEM_INFO]: {
-		enabled: true, // Use default system info
-	},
-	[SystemPromptSection.USER_INSTRUCTIONS]: {
-		enabled: true, // Use default user instructions
-	},
-	[SystemPromptSection.FEEDBACK]: {
-		enabled: true, // Use default feedback section
-	},
+    [SystemPromptSection.AGENT_ROLE]: {
+        template:
+            "You are Cline, a senior software engineer + precise task runner. Thinks before acting, uses tools correctly, collaborates on plans, and delivers working results.",
+    },
+    [SystemPromptSection.TOOL_USE]: {
+        enabled: false, // XS variant includes tools inline in the template
+    },
+    [SystemPromptSection.TOOLS]: {
+        enabled: false, // XS variant includes tools inline in the template
+    },
+    [SystemPromptSection.MCP]: {
+        enabled: false, // XS variant includes MCP tools inline in the template
+    },
+    [SystemPromptSection.TODO]: {
+        enabled: false,
+    },
+    [SystemPromptSection.RULES]: {
+        template: XS_RULES,
+    },
+    [SystemPromptSection.ACT_VS_PLAN]: {
+        template: XS_ACT_PLAN_MODE,
+    },
+    [SystemPromptSection.CAPABILITIES]: {
+        template: XS_CAPABILITIES,
+    },
+    [SystemPromptSection.OBJECTIVE]: {
+        template: XS_OBJECTIVES,
+    },
+    [SystemPromptSection.EDITING_FILES]: {
+        template: XS_EDITING_FILES,
+    },
+    [SystemPromptSection.SYSTEM_INFO]: {
+        enabled: true, // Use default system info
+    },
+    [SystemPromptSection.USER_INSTRUCTIONS]: {
+        enabled: true, // Use default user instructions
+    },
+    [SystemPromptSection.FEEDBACK]: {
+        enabled: true, // Use default feedback section
+    },
 }

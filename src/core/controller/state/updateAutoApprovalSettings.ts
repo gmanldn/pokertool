@@ -22,22 +22,22 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function updateAutoApprovalSettings(controller: Controller, request: AutoApprovalSettingsRequest): Promise<Empty> {
-	const currentSettings = (await controller.getStateToPostToWebview()).autoApprovalSettings
-	const incomingVersion = request.version
-	const currentVersion = currentSettings?.version ?? 1
+    const currentSettings = (await controller.getStateToPostToWebview()).autoApprovalSettings
+    const incomingVersion = request.version
+    const currentVersion = currentSettings?.version ?? 1
 
-	// Only update if incoming version is higher
-	if (incomingVersion > currentVersion) {
-		const settings = convertProtoToAutoApprovalSettings(request)
+    // Only update if incoming version is higher
+    if (incomingVersion > currentVersion) {
+        const settings = convertProtoToAutoApprovalSettings(request)
 
-		controller.stateManager.setGlobalState("autoApprovalSettings", settings)
+        controller.stateManager.setGlobalState("autoApprovalSettings", settings)
 
-		if (controller.task) {
-			controller.task.updateAutoApprovalSettings(settings)
-		}
+        if (controller.task) {
+            controller.task.updateAutoApprovalSettings(settings)
+        }
 
-		await controller.postStateToWebview()
-	}
+        await controller.postStateToWebview()
+    }
 
-	return Empty.create()
+    return Empty.create()
 }

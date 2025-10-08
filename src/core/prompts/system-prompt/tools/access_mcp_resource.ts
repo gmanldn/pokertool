@@ -33,27 +33,27 @@ Checklist here (optional)
  */
 
 const generic: ClineToolSpec = {
-	variant: ModelFamily.GENERIC,
-	id: ClineDefaultTool.MCP_ACCESS,
-	name: "access_mcp_resource",
-	description:
-		"Request to access a resource provided by a connected MCP server. Resources represent data sources that can be used as context, such as files, API responses, or system information.",
-	contextRequirements: (context) => context.mcpHub !== undefined && context.mcpHub !== null,
-	parameters: [
-		{
-			name: "server_name",
-			required: true,
-			instruction: "The name of the MCP server providing the resource",
-			usage: "server name here",
-		},
-		{
-			name: "uri",
-			required: true,
-			instruction: "The URI identifying the specific resource to access",
-			usage: "resource URI here",
-		},
-		TASK_PROGRESS_PARAMETER,
-	],
+    variant: ModelFamily.GENERIC,
+    id: ClineDefaultTool.MCP_ACCESS,
+    name: "access_mcp_resource",
+    description:
+        "Request to access a resource provided by a connected MCP server. Resources represent data sources that can be used as context, such as files, API responses, or system information.",
+    contextRequirements: (context) => context.mcpHub !== undefined && context.mcpHub !== null,
+    parameters: [
+        {
+            name: "server_name",
+            required: true,
+            instruction: "The name of the MCP server providing the resource",
+            usage: "server name here",
+        },
+        {
+            name: "uri",
+            required: true,
+            instruction: "The URI identifying the specific resource to access",
+            usage: "resource URI here",
+        },
+        TASK_PROGRESS_PARAMETER,
+    ],
 }
 
 const nextGen = { ...generic, variant: ModelFamily.NEXT_GEN }

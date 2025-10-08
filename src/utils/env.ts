@@ -21,12 +21,12 @@ import { HostProvider } from "@/hosts/host-provider"
  * @throws Error if the operation fails
  */
 export async function writeTextToClipboard(text: string): Promise<void> {
-	try {
-		await HostProvider.env.clipboardWriteText(StringRequest.create({ value: text }))
-	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error)
-		throw new Error(`Failed to write to clipboard: ${errorMessage}`)
-	}
+    try {
+        await HostProvider.env.clipboardWriteText(StringRequest.create({ value: text }))
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        throw new Error(`Failed to write to clipboard: ${errorMessage}`)
+    }
 }
 
 /**
@@ -35,13 +35,13 @@ export async function writeTextToClipboard(text: string): Promise<void> {
  * @throws Error if the operation fails
  */
 export async function readTextFromClipboard(): Promise<string> {
-	try {
-		const response = await HostProvider.env.clipboardReadText(EmptyRequest.create({}))
-		return response.value
-	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error)
-		throw new Error(`Failed to read from clipboard: ${errorMessage}`)
-	}
+    try {
+        const response = await HostProvider.env.clipboardReadText(EmptyRequest.create({}))
+        return response.value
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        throw new Error(`Failed to read from clipboard: ${errorMessage}`)
+    }
 }
 
 /**
@@ -51,6 +51,6 @@ export async function readTextFromClipboard(): Promise<string> {
  * @throws Error if the operation fails
  */
 export async function openExternal(url: string): Promise<void> {
-	console.log("Opening browser:", url)
-	await open(url)
+    console.log("Opening browser:", url)
+    await open(url)
 }

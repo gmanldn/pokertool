@@ -22,16 +22,16 @@ import type { Controller } from "../index"
  * @returns McpServers response with list of all MCP servers
  */
 export async function getLatestMcpServers(controller: Controller, _request: Empty): Promise<McpServers> {
-	try {
-		// Get sorted servers from mcpHub using the RPC variant
-		const mcpServers = (await controller.mcpHub?.getLatestMcpServersRPC()) || []
+    try {
+        // Get sorted servers from mcpHub using the RPC variant
+        const mcpServers = (await controller.mcpHub?.getLatestMcpServersRPC()) || []
 
-		// Convert to proto format
-		const protoServers = convertMcpServersToProtoMcpServers(mcpServers)
+        // Convert to proto format
+        const protoServers = convertMcpServersToProtoMcpServers(mcpServers)
 
-		return McpServers.create({ mcpServers: protoServers })
-	} catch (error) {
-		console.error("Error fetching latest MCP servers:", error)
-		throw error
-	}
+        return McpServers.create({ mcpServers: protoServers })
+    } catch (error) {
+        console.error("Error fetching latest MCP servers:", error)
+        throw error
+    }
 }

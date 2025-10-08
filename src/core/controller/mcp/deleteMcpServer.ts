@@ -22,16 +22,16 @@ import type { Controller } from "../index"
  * @returns The list of remaining MCP servers after deletion
  */
 export async function deleteMcpServer(controller: Controller, request: StringRequest): Promise<McpServers> {
-	try {
-		// Call the RPC variant to delete the server and get updated server list
-		const mcpServers = (await controller.mcpHub?.deleteServerRPC(request.value)) || []
+    try {
+        // Call the RPC variant to delete the server and get updated server list
+        const mcpServers = (await controller.mcpHub?.deleteServerRPC(request.value)) || []
 
-		// Convert application types to protobuf types
-		const protoServers = convertMcpServersToProtoMcpServers(mcpServers)
+        // Convert application types to protobuf types
+        const protoServers = convertMcpServersToProtoMcpServers(mcpServers)
 
-		return McpServers.create({ mcpServers: protoServers })
-	} catch (error) {
-		console.error(`Failed to delete MCP server: ${error}`)
-		throw error
-	}
+        return McpServers.create({ mcpServers: protoServers })
+    } catch (error) {
+        console.error(`Failed to delete MCP server: ${error}`)
+        throw error
+    }
 }

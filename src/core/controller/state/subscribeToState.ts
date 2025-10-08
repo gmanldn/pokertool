@@ -27,36 +27,36 @@ const activeStateSubscriptions = new Map<string, StreamingResponseHandler<State>
  * @param requestId The ID of the request (passed by the gRPC handler)
  */
 export async function subscribeToState(
-	controller: Controller,
-	_request: EmptyRequest,
-	responseStream: StreamingResponseHandler<State>,
-	requestId?: string,
+    controller: Controller,
+    _request: EmptyRequest,
+    responseStream: StreamingResponseHandler<State>,
+    requestId?: string,
 ): Promise<void> {
-	const controllerId = controller.id
+    const controllerId = controller.id
 
-	// Send the initial state
-	const initialState = await controller.getStateToPostToWebview()
-	const initialStateJson = JSON.stringify(initialState)
+    // Send the initial state
+    const initialState = await controller.getStateToPostToWebview()
+    const initialStateJson = JSON.stringify(initialState)
 
-	//console.log(`[DEBUG] set up state subscription for controller ${controllerId}`)
+    //console.log(`[DEBUG] set up state subscription for controller ${controllerId}`)
 
-	await responseStream({
-		stateJson: initialStateJson,
-	})
+    await responseStream({
+        stateJson: initialStateJson,
+    })
 
-	// Add this subscription to the active subscriptions with the controller ID
-	activeStateSubscriptions.set(controllerId, responseStream)
+    // Add this subscription to the active subscriptions with the controller ID
+    activeStateSubscriptions.set(controllerId, responseStream)
 
-	// Register cleanup when the connection is closed
-	const cleanup = () => {
-		activeStateSubscriptions.delete(controllerId)
-		//console.log(`[DEBUG] Cleaned up state subscription for controller ${controllerId}`)
-	}
+    // Register cleanup when the connection is closed
+    const cleanup = () => {
+        activeStateSubscriptions.delete(controllerId)
+        //console.log(`[DEBUG] Cleaned up state subscription for controller ${controllerId}`)
+    }
 
-	// Register the cleanup function with the request registry if we have a requestId
-	if (requestId) {
-		getRequestRegistry().registerRequest(requestId, cleanup, { type: "state_subscription" }, responseStream)
-	}
+    // Register the cleanup function with the request registry if we have a requestId
+    if (requestId) {
+        getRequestRegistry().registerRequest(requestId, cleanup, { type: "state_subscription" }, responseStream)
+    }
 }
 
 /**
@@ -65,26 +65,26 @@ export async function subscribeToState(
  * @param state The state to send
  */
 export async function sendStateUpdate(controllerId: string, state: ExtensionState): Promise<void> {
-	// Get the subscription for this specific controller
-	const responseStream = activeStateSubscriptions.get(controllerId)
+    // Get the subscription for this specific controller
+    const responseStream = activeStateSubscriptions.get(controllerId)
 
-	if (!responseStream) {
-		console.log(`[DEBUG] No active state subscription for controller ${controllerId}`)
-		return
-	}
+    if (!responseStream) {
+        console.log(`[DEBUG] No active state subscription for controller ${controllerId}`)
+        return
+    }
 
-	try {
-		const stateJson = JSON.stringify(state)
-		await responseStream(
-			{
-				stateJson,
-			},
-			false, // Not the last message
-		)
-		//console.log(`[DEBUG] sending followup state to controller ${controllerId}`, stateJson.length, "chars")
-	} catch (error) {
-		console.error(`Error sending state update to controller ${controllerId}:`, error)
-		// Remove the subscription if there was an error
-		activeStateSubscriptions.delete(controllerId)
-	}
+    try {
+        const stateJson = JSON.stringify(state)
+        await responseStream(
+            {
+                stateJson,
+            },
+            false, // Not the last message
+        )
+        //console.log(`[DEBUG] sending followup state to controller ${controllerId}`, stateJson.length, "chars")
+    } catch (error) {
+        console.error(`Error sending state update to controller ${controllerId}:`, error)
+        // Remove the subscription if there was an error
+        activeStateSubscriptions.delete(controllerId)
+    }
 }

@@ -22,15 +22,15 @@ import type { Controller } from "../index"
  * @returns A response indicating success or failure
  */
 export async function toggleMcpServer(controller: Controller, request: ToggleMcpServerRequest): Promise<McpServers> {
-	try {
-		const mcpServers = await controller.mcpHub?.toggleServerDisabledRPC(request.serverName, request.disabled)
+    try {
+        const mcpServers = await controller.mcpHub?.toggleServerDisabledRPC(request.serverName, request.disabled)
 
-		// Convert from McpServer[] to ProtoMcpServer[] ensuring all required fields are set
-		const protoServers = convertMcpServersToProtoMcpServers(mcpServers)
+        // Convert from McpServer[] to ProtoMcpServer[] ensuring all required fields are set
+        const protoServers = convertMcpServersToProtoMcpServers(mcpServers)
 
-		return McpServers.create({ mcpServers: protoServers })
-	} catch (error) {
-		console.error(`Failed to toggle MCP server ${request.serverName}:`, error)
-		throw error
-	}
+        return McpServers.create({ mcpServers: protoServers })
+    } catch (error) {
+        console.error(`Failed to toggle MCP server ${request.serverName}:`, error)
+        throw error
+    }
 }

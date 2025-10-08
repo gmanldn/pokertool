@@ -6,9 +6,9 @@ import { useFeatureFlagEnabled } from "posthog-js/react"
  * proper extension functionality regardless of user privacy preferences
  */
 export const useHasFeatureFlag = (flagName: string): boolean => {
-	const flagEnabled = useFeatureFlagEnabled(flagName)
-	if (flagEnabled && typeof flagEnabled === "boolean") {
-		return flagEnabled
-	}
-	return false
+    const flagEnabled = useFeatureFlagEnabled(flagName)
+    if (flagEnabled && typeof flagEnabled === "boolean") {
+        return flagEnabled
+    }
+    return false
 }

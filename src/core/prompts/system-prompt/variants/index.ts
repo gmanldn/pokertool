@@ -35,25 +35,25 @@ import { config as xsConfig } from "./xs/config"
  * This registry allows for loading variant configurations.
  */
 export const VARIANT_CONFIGS = {
-	/**
-	 * Generic variant - Fallback for all model types
-	 * Optimized for broad compatibility and stable performance
-	 */
-	[ModelFamily.GENERIC]: genericConfig,
-	/**
-	 * Next-gen variant - Advanced models with enhanced capabilities
-	 * Includes additional features like feedback loops and web fetching
-	 */
-	[ModelFamily.NEXT_GEN]: nextGenConfig,
-	/**
-	 * GPT-5 variant
-	 */
-	[ModelFamily.GPT_5]: gpt5Config,
-	/**
-	 * XS variant - Compact models with limited context windows
-	 * Streamlined for efficiency with essential tools only
-	 */
-	[ModelFamily.XS]: xsConfig,
+    /**
+     * Generic variant - Fallback for all model types
+     * Optimized for broad compatibility and stable performance
+     */
+    [ModelFamily.GENERIC]: genericConfig,
+    /**
+     * Next-gen variant - Advanced models with enhanced capabilities
+     * Includes additional features like feedback loops and web fetching
+     */
+    [ModelFamily.NEXT_GEN]: nextGenConfig,
+    /**
+     * GPT-5 variant
+     */
+    [ModelFamily.GPT_5]: gpt5Config,
+    /**
+     * XS variant - Compact models with limited context windows
+     * Streamlined for efficiency with essential tools only
+     */
+    [ModelFamily.XS]: xsConfig,
 } as const
 
 /**
@@ -66,14 +66,14 @@ export type VariantId = keyof typeof VARIANT_CONFIGS
  * Helper function to get all available variant IDs
  */
 export function getAvailableVariants(): VariantId[] {
-	return Object.keys(VARIANT_CONFIGS) as VariantId[]
+    return Object.keys(VARIANT_CONFIGS) as VariantId[]
 }
 
 /**
  * Helper function to check if a variant ID is valid
  */
 export function isValidVariantId(id: string): id is VariantId {
-	return id in VARIANT_CONFIGS
+    return id in VARIANT_CONFIGS
 }
 
 /**
@@ -82,7 +82,7 @@ export function isValidVariantId(id: string): id is VariantId {
  * @returns Variant configuration
  */
 export function loadVariantConfig(variantId: VariantId) {
-	return VARIANT_CONFIGS[variantId]
+    return VARIANT_CONFIGS[variantId]
 }
 
 /**
@@ -90,5 +90,5 @@ export function loadVariantConfig(variantId: VariantId) {
  * @returns A map of all variant configurations
  */
 export function loadAllVariantConfigs() {
-	return VARIANT_CONFIGS
+    return VARIANT_CONFIGS
 }

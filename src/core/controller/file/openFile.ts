@@ -21,8 +21,8 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function openFile(_controller: Controller, request: StringRequest): Promise<Empty> {
-	if (request.value) {
-		openFileIntegration(request.value)
-	}
-	return Empty.create()
+    if (request.value) {
+        openFileIntegration(request.value)
+    }
+    return Empty.create()
 }

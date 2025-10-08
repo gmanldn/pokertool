@@ -31,34 +31,34 @@ import { getUserInstructions } from "./user_instructions"
  * to make all tools available for use.
  */
 export function getSystemPromptComponents() {
-	return [
-		{ id: SystemPromptSection.AGENT_ROLE, fn: getAgentRoleSection },
-		{ id: SystemPromptSection.SYSTEM_INFO, fn: getSystemInfo },
-		{ id: SystemPromptSection.MCP, fn: getMcp },
-		{ id: SystemPromptSection.TODO, fn: getTodoListSection },
-		{
-			id: SystemPromptSection.USER_INSTRUCTIONS,
-			fn: getUserInstructions,
-		},
-		{ id: SystemPromptSection.TOOL_USE, fn: getToolUseSection },
-		{
-			id: SystemPromptSection.EDITING_FILES,
-			fn: getEditingFilesSection,
-		},
-		{
-			id: SystemPromptSection.CAPABILITIES,
-			fn: getCapabilitiesSection,
-		},
-		{ id: SystemPromptSection.RULES, fn: getRulesSection },
-		{ id: SystemPromptSection.OBJECTIVE, fn: getObjectiveSection },
-		{
-			id: SystemPromptSection.ACT_VS_PLAN,
-			fn: getActVsPlanModeSection,
-		},
-		{
-			id: SystemPromptSection.FEEDBACK,
-			fn: getFeedbackSection,
-		},
-		{ id: SystemPromptSection.TASK_PROGRESS, fn: getUpdatingTaskProgress },
-	]
+    return [
+        { id: SystemPromptSection.AGENT_ROLE, fn: getAgentRoleSection },
+        { id: SystemPromptSection.SYSTEM_INFO, fn: getSystemInfo },
+        { id: SystemPromptSection.MCP, fn: getMcp },
+        { id: SystemPromptSection.TODO, fn: getTodoListSection },
+        {
+            id: SystemPromptSection.USER_INSTRUCTIONS,
+            fn: getUserInstructions,
+        },
+        { id: SystemPromptSection.TOOL_USE, fn: getToolUseSection },
+        {
+            id: SystemPromptSection.EDITING_FILES,
+            fn: getEditingFilesSection,
+        },
+        {
+            id: SystemPromptSection.CAPABILITIES,
+            fn: getCapabilitiesSection,
+        },
+        { id: SystemPromptSection.RULES, fn: getRulesSection },
+        { id: SystemPromptSection.OBJECTIVE, fn: getObjectiveSection },
+        {
+            id: SystemPromptSection.ACT_VS_PLAN,
+            fn: getActVsPlanModeSection,
+        },
+        {
+            id: SystemPromptSection.FEEDBACK,
+            fn: getFeedbackSection,
+        },
+        { id: SystemPromptSection.TASK_PROGRESS, fn: getUpdatingTaskProgress },
+    ]
 }

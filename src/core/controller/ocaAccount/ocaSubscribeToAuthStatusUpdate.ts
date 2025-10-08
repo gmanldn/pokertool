@@ -17,10 +17,10 @@ import { Controller } from ".."
 import { StreamingResponseHandler } from "../grpc-handler"
 
 export async function ocaSubscribeToAuthStatusUpdate(
-	_controller: Controller,
-	request: EmptyRequest,
-	responseStream: StreamingResponseHandler<OcaAuthState>,
-	requestId?: string,
+    _controller: Controller,
+    request: EmptyRequest,
+    responseStream: StreamingResponseHandler<OcaAuthState>,
+    requestId?: string,
 ): Promise<void> {
-	return OcaAuthService.getInstance().subscribeToAuthStatusUpdate(request, responseStream, requestId)
+    return OcaAuthService.getInstance().subscribeToAuthStatusUpdate(request, responseStream, requestId)
 }

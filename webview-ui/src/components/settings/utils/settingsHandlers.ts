@@ -9,32 +9,32 @@ import { StateServiceClient } from "@/services/grpc-client"
  * @throws Error if the value is invalid for the field
  */
 const convertToProtoValue = (field: keyof UpdateSettingsRequest, value: any): any => {
-	if (field === "openaiReasoningEffort" && typeof value === "string") {
-		switch (value) {
-			case "minimal":
-				return OpenaiReasoningEffort.MINIMAL
-			case "low":
-				return OpenaiReasoningEffort.LOW
-			case "medium":
-				return OpenaiReasoningEffort.MEDIUM
-			case "high":
-				return OpenaiReasoningEffort.HIGH
-			default:
-				throw new Error(`Invalid OpenAI reasoning effort value: ${value}`)
-		}
-	} else if (field === "mcpDisplayMode" && typeof value === "string") {
-		switch (value) {
-			case "rich":
-				return McpDisplayMode.RICH
-			case "plain":
-				return McpDisplayMode.PLAIN
-			case "markdown":
-				return McpDisplayMode.MARKDOWN
-			default:
-				throw new Error(`Invalid MCP display mode value: ${value}`)
-		}
-	}
-	return value
+    if (field === "openaiReasoningEffort" && typeof value === "string") {
+        switch (value) {
+            case "minimal":
+                return OpenaiReasoningEffort.MINIMAL
+            case "low":
+                return OpenaiReasoningEffort.LOW
+            case "medium":
+                return OpenaiReasoningEffort.MEDIUM
+            case "high":
+                return OpenaiReasoningEffort.HIGH
+            default:
+                throw new Error(`Invalid OpenAI reasoning effort value: ${value}`)
+        }
+    } else if (field === "mcpDisplayMode" && typeof value === "string") {
+        switch (value) {
+            case "rich":
+                return McpDisplayMode.RICH
+            case "plain":
+                return McpDisplayMode.PLAIN
+            case "markdown":
+                return McpDisplayMode.MARKDOWN
+            default:
+                throw new Error(`Invalid MCP display mode value: ${value}`)
+        }
+    }
+    return value
 }
 
 /**
@@ -44,12 +44,12 @@ const convertToProtoValue = (field: keyof UpdateSettingsRequest, value: any): an
  * @param value - The new value for the field
  */
 export const updateSetting = (field: keyof UpdateSettingsRequest, value: any) => {
-	const updateRequest: Partial<UpdateSettingsRequest> = {}
+    const updateRequest: Partial<UpdateSettingsRequest> = {}
 
-	const convertedValue = convertToProtoValue(field, value)
-	updateRequest[field] = convertedValue
+    const convertedValue = convertToProtoValue(field, value)
+    updateRequest[field] = convertedValue
 
-	StateServiceClient.updateSettings(UpdateSettingsRequest.create(updateRequest)).catch((error) => {
-		console.error(`Failed to update setting ${field}:`, error)
-	})
+    StateServiceClient.updateSettings(UpdateSettingsRequest.create(updateRequest)).catch((error) => {
+        console.error(`Failed to update setting ${field}:`, error)
+    })
 }

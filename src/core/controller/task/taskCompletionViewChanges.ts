@@ -20,14 +20,14 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function taskCompletionViewChanges(controller: Controller, request: Int64Request): Promise<Empty> {
-	try {
-		if (request.value && controller.task) {
-			// presentMultifileDiff is optional on ICheckpointManager, so capture then optionally invoke
-			await controller.task.checkpointManager?.presentMultifileDiff?.(request.value, true)
-		}
-		return Empty.create()
-	} catch (error) {
-		console.error("Error in taskCompletionViewChanges handler:", error)
-		throw error
-	}
+    try {
+        if (request.value && controller.task) {
+            // presentMultifileDiff is optional on ICheckpointManager, so capture then optionally invoke
+            await controller.task.checkpointManager?.presentMultifileDiff?.(request.value, true)
+        }
+        return Empty.create()
+    } catch (error) {
+        console.error("Error in taskCompletionViewChanges handler:", error)
+        throw error
+    }
 }

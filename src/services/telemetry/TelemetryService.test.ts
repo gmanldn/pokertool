@@ -25,239 +25,239 @@ import { NoOpTelemetryProvider, TelemetryProviderFactory, TelemetryProviderType 
 import { TelemetryService } from "./TelemetryService"
 
 describe("Telemetry system is abstracted and can easily switch between providers", () => {
-	// Setup and teardown for HostProvider mocking
-	before(() => {
-		setVscodeHostProviderMock()
-	})
+    // Setup and teardown for HostProvider mocking
+    before(() => {
+        setVscodeHostProviderMock()
+    })
 
-	after(() => {
-		// Reset HostProvider after tests
-		HostProvider.reset()
-	})
-	const MOCK_USER_INFO = {
-		id: "test-user-123",
-		email: "test@example.com",
-		displayName: "Test User",
-		createdAt: new Date().toISOString(),
-		organizations: [],
-	}
-	const MOCK_METADATA = {
-		extension_version: "1.2.3",
-		platform: "Test-IDE",
-		platform_version: "9.8.7-abc",
-		os_type: "win32",
-		os_version: "Windows 10 Pro",
-		is_dev: "",
-	}
+    after(() => {
+        // Reset HostProvider after tests
+        HostProvider.reset()
+    })
+    const MOCK_USER_INFO = {
+        id: "test-user-123",
+        email: "test@example.com",
+        displayName: "Test User",
+        createdAt: new Date().toISOString(),
+        organizations: [],
+    }
+    const MOCK_METADATA = {
+        extension_version: "1.2.3",
+        platform: "Test-IDE",
+        platform_version: "9.8.7-abc",
+        os_type: "win32",
+        os_version: "Windows 10 Pro",
+        is_dev: "",
+    }
 
-	describe("Telemetry Service", () => {
-		it("should include correct metadata with telemetry events", async () => {
-			const noOpProvider = await TelemetryProviderFactory.createProvider({
-				type: "no-op",
-			})
+    describe("Telemetry Service", () => {
+        it("should include correct metadata with telemetry events", async () => {
+            const noOpProvider = await TelemetryProviderFactory.createProvider({
+                type: "no-op",
+            })
 
-			// Spy on the provider's log method to verify metadata
-			const logSpy = sinon.spy(noOpProvider, "log")
-			const identifyUserSpy = sinon.spy(noOpProvider, "identifyUser")
+            // Spy on the provider's log method to verify metadata
+            const logSpy = sinon.spy(noOpProvider, "log")
+            const identifyUserSpy = sinon.spy(noOpProvider, "identifyUser")
 
-			const telemetryService = new TelemetryService(noOpProvider, MOCK_METADATA)
+            const telemetryService = new TelemetryService(noOpProvider, MOCK_METADATA)
 
-			// Reset the spy to ignore the initial telemetry event from constructor
-			logSpy.resetHistory()
+            // Reset the spy to ignore the initial telemetry event from constructor
+            logSpy.resetHistory()
 
-			// Test that metadata is included in events
-			telemetryService.captureTaskCreated("task-456", "openai")
+            // Test that metadata is included in events
+            telemetryService.captureTaskCreated("task-456", "openai")
 
-			// Verify that log was called with correct arguments
-			assert.ok(logSpy.calledOnce, "Log should be called once")
-			const [eventName, properties] = logSpy.firstCall.args
-			assert.strictEqual(eventName, "task.created", "Event name should be task.created")
-			assert.deepStrictEqual(
-				properties,
-				{
-					ulid: "task-456",
-					apiProvider: "openai",
-					...MOCK_METADATA,
-				},
-				"Task created event should include only the expected metadata properties",
-			)
+            // Verify that log was called with correct arguments
+            assert.ok(logSpy.calledOnce, "Log should be called once")
+            const [eventName, properties] = logSpy.firstCall.args
+            assert.strictEqual(eventName, "task.created", "Event name should be task.created")
+            assert.deepStrictEqual(
+                properties,
+                {
+                    ulid: "task-456",
+                    apiProvider: "openai",
+                    ...MOCK_METADATA,
+                },
+                "Task created event should include only the expected metadata properties",
+            )
 
-			// Test identify includes metadata
-			telemetryService.identifyAccount(MOCK_USER_INFO)
+            // Test identify includes metadata
+            telemetryService.identifyAccount(MOCK_USER_INFO)
 
-			assert.ok(identifyUserSpy.calledOnce, "IdentifyUser should be called once")
-			const [userInfo, metadata] = identifyUserSpy.firstCall.args
-			assert.deepStrictEqual(userInfo, MOCK_USER_INFO, "User info should match")
-			assert.deepStrictEqual(metadata, MOCK_METADATA, "Identify user should include only the expected metadata properties")
+            assert.ok(identifyUserSpy.calledOnce, "IdentifyUser should be called once")
+            const [userInfo, metadata] = identifyUserSpy.firstCall.args
+            assert.deepStrictEqual(userInfo, MOCK_USER_INFO, "User info should match")
+            assert.deepStrictEqual(metadata, MOCK_METADATA, "Identify user should include only the expected metadata properties")
 
-			// Test direct provider calls don't include metadata
-			noOpProvider.log("direct_event", { custom: "data" })
-			assert.ok(logSpy.calledWith("direct_event", { custom: "data" }), "Direct provider log should not add metadata")
+            // Test direct provider calls don't include metadata
+            noOpProvider.log("direct_event", { custom: "data" })
+            assert.ok(logSpy.calledWith("direct_event", { custom: "data" }), "Direct provider log should not add metadata")
 
-			// Restore spies
-			logSpy.restore()
-			identifyUserSpy.restore()
+            // Restore spies
+            logSpy.restore()
+            identifyUserSpy.restore()
 
-			await noOpProvider.dispose()
-		})
-	})
-	describe("PostHog Provider", () => {
-		it("should create PostHog provider and track events", async () => {
-			console.log("=== Testing PostHog Provider ===")
-			const posthogProvider = await TelemetryProviderFactory.createProvider({
-				type: "posthog",
-			})
+            await noOpProvider.dispose()
+        })
+    })
+    describe("PostHog Provider", () => {
+        it("should create PostHog provider and track events", async () => {
+            console.log("=== Testing PostHog Provider ===")
+            const posthogProvider = await TelemetryProviderFactory.createProvider({
+                type: "posthog",
+            })
 
-			const posthogTelemetryService = new TelemetryService(posthogProvider, MOCK_METADATA)
+            const posthogTelemetryService = new TelemetryService(posthogProvider, MOCK_METADATA)
 
-			// Test various telemetry methods
-			posthogTelemetryService.captureTaskCreated("task-123", "anthropic")
-			posthogTelemetryService.identifyAccount(MOCK_USER_INFO)
-			posthogTelemetryService.captureTaskCompleted("task-123")
-			posthogTelemetryService.captureModelSelected("claude-3", "anthropic", "task-123")
+            // Test various telemetry methods
+            posthogTelemetryService.captureTaskCreated("task-123", "anthropic")
+            posthogTelemetryService.identifyAccount(MOCK_USER_INFO)
+            posthogTelemetryService.captureTaskCompleted("task-123")
+            posthogTelemetryService.captureModelSelected("claude-3", "anthropic", "task-123")
 
-			// Test provider methods directly
-			posthogProvider.log("test_event", { test: "property" })
-			posthogProvider.identifyUser(MOCK_USER_INFO, { additional: "data" })
-			posthogProvider.setOptIn(true)
+            // Test provider methods directly
+            posthogProvider.log("test_event", { test: "property" })
+            posthogProvider.identifyUser(MOCK_USER_INFO, { additional: "data" })
+            posthogProvider.setOptIn(true)
 
-			// Verify provider state
-			const isEnabled = posthogProvider.isEnabled()
-			const settings = posthogProvider.getSettings()
+            // Verify provider state
+            const isEnabled = posthogProvider.isEnabled()
+            const settings = posthogProvider.getSettings()
 
-			console.log("PostHog Provider enabled:", isEnabled)
-			console.log("PostHog Provider settings:", settings)
+            console.log("PostHog Provider enabled:", isEnabled)
+            console.log("PostHog Provider settings:", settings)
 
-			await posthogProvider.dispose()
-		})
-	})
+            await posthogProvider.dispose()
+        })
+    })
 
-	describe("No-Op Provider", () => {
-		it("should create No-Op provider and handle all operations safely", async () => {
-			console.log("\n=== Testing No-Op Provider ===")
-			const noOpProvider = await TelemetryProviderFactory.createProvider({
-				type: "no-op",
-			})
+    describe("No-Op Provider", () => {
+        it("should create No-Op provider and handle all operations safely", async () => {
+            console.log("\n=== Testing No-Op Provider ===")
+            const noOpProvider = await TelemetryProviderFactory.createProvider({
+                type: "no-op",
+            })
 
-			const noOpTelemetryService = new TelemetryService(noOpProvider, MOCK_METADATA)
+            const noOpTelemetryService = new TelemetryService(noOpProvider, MOCK_METADATA)
 
-			// Test various telemetry methods - should all be no-ops
-			noOpTelemetryService.captureTaskCreated("task-789", "google")
-			noOpTelemetryService.identifyAccount(MOCK_USER_INFO)
-			noOpTelemetryService.captureTaskCompleted("task-789")
-			noOpTelemetryService.captureModelSelected("gpt-4", "openai", "task-789")
-			noOpTelemetryService.captureToolUsage("task-789", "write_to_file", "gpt-4", false, true)
+            // Test various telemetry methods - should all be no-ops
+            noOpTelemetryService.captureTaskCreated("task-789", "google")
+            noOpTelemetryService.identifyAccount(MOCK_USER_INFO)
+            noOpTelemetryService.captureTaskCompleted("task-789")
+            noOpTelemetryService.captureModelSelected("gpt-4", "openai", "task-789")
+            noOpTelemetryService.captureToolUsage("task-789", "write_to_file", "gpt-4", false, true)
 
-			// Test provider methods directly
-			noOpProvider.log("test_event", { test: "property" })
-			noOpProvider.identifyUser(MOCK_USER_INFO, { additional: "data" })
-			noOpProvider.setOptIn(true)
-			noOpProvider.setOptIn(false)
+            // Test provider methods directly
+            noOpProvider.log("test_event", { test: "property" })
+            noOpProvider.identifyUser(MOCK_USER_INFO, { additional: "data" })
+            noOpProvider.setOptIn(true)
+            noOpProvider.setOptIn(false)
 
-			// Verify provider state
-			const isEnabled = noOpProvider.isEnabled()
-			const settings = noOpProvider.getSettings()
+            // Verify provider state
+            const isEnabled = noOpProvider.isEnabled()
+            const settings = noOpProvider.getSettings()
 
-			// NoOp provider should always return false for isEnabled
-			assert.strictEqual(isEnabled, false, "NoOp provider should always be disabled")
+            // NoOp provider should always return false for isEnabled
+            assert.strictEqual(isEnabled, false, "NoOp provider should always be disabled")
 
-			// NoOp provider should return consistent settings
-			assert.deepStrictEqual(
-				settings,
-				{
-					extensionEnabled: false,
-					hostEnabled: false,
-					level: "off",
-				},
-				"NoOp provider should return consistent settings",
-			)
+            // NoOp provider should return consistent settings
+            assert.deepStrictEqual(
+                settings,
+                {
+                    extensionEnabled: false,
+                    hostEnabled: false,
+                    level: "off",
+                },
+                "NoOp provider should return consistent settings",
+            )
 
-			console.log("No-Op Provider enabled:", isEnabled)
-			console.log("No-Op Provider settings:", settings)
+            console.log("No-Op Provider enabled:", isEnabled)
+            console.log("No-Op Provider settings:", settings)
 
-			await noOpProvider.dispose()
-		})
+            await noOpProvider.dispose()
+        })
 
-		it("should handle unsupported provider types by returning No-Op provider", async () => {
-			console.log("\n=== Testing Unsupported Provider Type ===")
-			// Test unsupported type by casting to bypass TypeScript checking
-			const unsupportedProvider = await TelemetryProviderFactory.createProvider({
-				type: "unsupported_provider" as TelemetryProviderType,
-			})
+        it("should handle unsupported provider types by returning No-Op provider", async () => {
+            console.log("\n=== Testing Unsupported Provider Type ===")
+            // Test unsupported type by casting to bypass TypeScript checking
+            const unsupportedProvider = await TelemetryProviderFactory.createProvider({
+                type: "unsupported_provider" as TelemetryProviderType,
+            })
 
-			// Should return NoOp provider
-			assert.ok(
-				unsupportedProvider instanceof NoOpTelemetryProvider,
-				"Unsupported provider should be an instance of NoOpTelemetryProvider",
-			)
-			assert.strictEqual(unsupportedProvider.isEnabled(), false, "Unsupported provider should return NoOp provider")
-			assert.deepStrictEqual(
-				unsupportedProvider.getSettings(),
-				{
-					extensionEnabled: false,
-					hostEnabled: false,
-					level: "off",
-				},
-				"Unsupported provider should return NoOp settings",
-			)
+            // Should return NoOp provider
+            assert.ok(
+                unsupportedProvider instanceof NoOpTelemetryProvider,
+                "Unsupported provider should be an instance of NoOpTelemetryProvider",
+            )
+            assert.strictEqual(unsupportedProvider.isEnabled(), false, "Unsupported provider should return NoOp provider")
+            assert.deepStrictEqual(
+                unsupportedProvider.getSettings(),
+                {
+                    extensionEnabled: false,
+                    hostEnabled: false,
+                    level: "off",
+                },
+                "Unsupported provider should return NoOp settings",
+            )
 
-			// Should handle all operations safely
-			const telemetryService = new TelemetryService(unsupportedProvider, MOCK_METADATA)
-			telemetryService.captureTaskCreated("task-456", "test")
-			telemetryService.identifyAccount(MOCK_USER_INFO)
+            // Should handle all operations safely
+            const telemetryService = new TelemetryService(unsupportedProvider, MOCK_METADATA)
+            telemetryService.captureTaskCreated("task-456", "test")
+            telemetryService.identifyAccount(MOCK_USER_INFO)
 
-			await unsupportedProvider.dispose()
-		})
-	})
+            await unsupportedProvider.dispose()
+        })
+    })
 
-	describe("Factory Configuration", () => {
-		it("should return default configuration", () => {
-			// Mock PostHog config validation to return true for this test
-			const isPostHogConfigValidStub = sinon.stub(posthogConfigModule, "isPostHogConfigValid").returns(true)
+    describe("Factory Configuration", () => {
+        it("should return default configuration", () => {
+            // Mock PostHog config validation to return true for this test
+            const isPostHogConfigValidStub = sinon.stub(posthogConfigModule, "isPostHogConfigValid").returns(true)
 
-			const defaultConfig = TelemetryProviderFactory.getDefaultConfig()
+            const defaultConfig = TelemetryProviderFactory.getDefaultConfig()
 
-			assert.deepStrictEqual(
-				defaultConfig,
-				{
-					type: "posthog",
-				},
-				"Should return PostHog as default configuration",
-			)
+            assert.deepStrictEqual(
+                defaultConfig,
+                {
+                    type: "posthog",
+                },
+                "Should return PostHog as default configuration",
+            )
 
-			// Restore the stub
-			isPostHogConfigValidStub.restore()
-		})
+            // Restore the stub
+            isPostHogConfigValidStub.restore()
+        })
 
-		it("should handle provider switching seamlessly", async () => {
-			console.log("\n=== Testing Provider Switching ===")
+        it("should handle provider switching seamlessly", async () => {
+            console.log("\n=== Testing Provider Switching ===")
 
-			// Start with PostHog provider
-			const posthogProvider = await TelemetryProviderFactory.createProvider({
-				type: "posthog",
-			})
-			let telemetryService = new TelemetryService(posthogProvider, MOCK_METADATA)
+            // Start with PostHog provider
+            const posthogProvider = await TelemetryProviderFactory.createProvider({
+                type: "posthog",
+            })
+            let telemetryService = new TelemetryService(posthogProvider, MOCK_METADATA)
 
-			telemetryService.captureTaskCreated("task-switch-1", "anthropic")
-			console.log("Captured event with PostHog provider")
+            telemetryService.captureTaskCreated("task-switch-1", "anthropic")
+            console.log("Captured event with PostHog provider")
 
-			await posthogProvider.dispose()
+            await posthogProvider.dispose()
 
-			// Switch to No-Op provider
-			const noOpProvider = await TelemetryProviderFactory.createProvider({
-				type: "no-op",
-			})
-			telemetryService = new TelemetryService(noOpProvider, MOCK_METADATA)
+            // Switch to No-Op provider
+            const noOpProvider = await TelemetryProviderFactory.createProvider({
+                type: "no-op",
+            })
+            telemetryService = new TelemetryService(noOpProvider, MOCK_METADATA)
 
-			telemetryService.captureTaskCreated("task-switch-2", "openai")
-			console.log("Captured event with No-Op provider")
+            telemetryService.captureTaskCreated("task-switch-2", "openai")
+            console.log("Captured event with No-Op provider")
 
-			// Verify different behaviors
-			// PostHog provider may be enabled depending on configuration
-			// NoOp provider should always be disabled
-			assert.strictEqual(noOpProvider.isEnabled(), false, "NoOp provider should always be disabled")
+            // Verify different behaviors
+            // PostHog provider may be enabled depending on configuration
+            // NoOp provider should always be disabled
+            assert.strictEqual(noOpProvider.isEnabled(), false, "NoOp provider should always be disabled")
 
-			await noOpProvider.dispose()
-		})
-	})
+            await noOpProvider.dispose()
+        })
+    })
 })

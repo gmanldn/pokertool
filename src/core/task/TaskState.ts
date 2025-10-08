@@ -15,63 +15,63 @@ import { AssistantMessageContent } from "@core/assistant-message"
 import { ClineAskResponse } from "@shared/WebviewMessage"
 
 export class TaskState {
-	// Streaming flags
-	isStreaming = false
-	isWaitingForFirstChunk = false
-	didCompleteReadingStream = false
+    // Streaming flags
+    isStreaming = false
+    isWaitingForFirstChunk = false
+    didCompleteReadingStream = false
 
-	// Content processing
-	currentStreamingContentIndex = 0
-	assistantMessageContent: AssistantMessageContent[] = []
-	userMessageContent: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[] = []
-	userMessageContentReady = false
+    // Content processing
+    currentStreamingContentIndex = 0
+    assistantMessageContent: AssistantMessageContent[] = []
+    userMessageContent: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[] = []
+    userMessageContentReady = false
 
-	// Presentation locks
-	presentAssistantMessageLocked = false
-	presentAssistantMessageHasPendingUpdates = false
+    // Presentation locks
+    presentAssistantMessageLocked = false
+    presentAssistantMessageHasPendingUpdates = false
 
-	// Ask/Response handling
-	askResponse?: ClineAskResponse
-	askResponseText?: string
-	askResponseImages?: string[]
-	askResponseFiles?: string[]
-	lastMessageTs?: number
+    // Ask/Response handling
+    askResponse?: ClineAskResponse
+    askResponseText?: string
+    askResponseImages?: string[]
+    askResponseFiles?: string[]
+    lastMessageTs?: number
 
-	// Plan mode specific state
-	isAwaitingPlanResponse = false
-	didRespondToPlanAskBySwitchingMode = false
+    // Plan mode specific state
+    isAwaitingPlanResponse = false
+    didRespondToPlanAskBySwitchingMode = false
 
-	// Context and history
-	conversationHistoryDeletedRange?: [number, number]
+    // Context and history
+    conversationHistoryDeletedRange?: [number, number]
 
-	// Tool execution flags
-	didRejectTool = false
-	didAlreadyUseTool = false
-	didEditFile: boolean = false
+    // Tool execution flags
+    didRejectTool = false
+    didAlreadyUseTool = false
+    didEditFile: boolean = false
 
-	// Consecutive request tracking
-	consecutiveAutoApprovedRequestsCount: number = 0
+    // Consecutive request tracking
+    consecutiveAutoApprovedRequestsCount: number = 0
 
-	// Error tracking
-	consecutiveMistakeCount: number = 0
-	didAutomaticallyRetryFailedApiRequest = false
-	checkpointManagerErrorMessage?: string
+    // Error tracking
+    consecutiveMistakeCount: number = 0
+    didAutomaticallyRetryFailedApiRequest = false
+    checkpointManagerErrorMessage?: string
 
-	// Task Initialization
-	isInitialized = false
+    // Task Initialization
+    isInitialized = false
 
-	// Focus Chain / Todo List Management
-	apiRequestCount: number = 0
-	apiRequestsSinceLastTodoUpdate: number = 0
-	currentFocusChainChecklist: string | null = null
-	todoListWasUpdatedByUser: boolean = false
+    // Focus Chain / Todo List Management
+    apiRequestCount: number = 0
+    apiRequestsSinceLastTodoUpdate: number = 0
+    currentFocusChainChecklist: string | null = null
+    todoListWasUpdatedByUser: boolean = false
 
-	// Task Abort / Cancellation
-	abort: boolean = false
-	didFinishAbortingStream = false
-	abandoned = false
+    // Task Abort / Cancellation
+    abort: boolean = false
+    didFinishAbortingStream = false
+    abandoned = false
 
-	// Auto-context summarization
-	currentlySummarizing: boolean = false
-	lastAutoCompactTriggerIndex?: number
+    // Auto-context summarization
+    currentlySummarizing: boolean = false
+    lastAutoCompactTriggerIndex?: number
 }

@@ -22,11 +22,11 @@ import type { Controller } from "../index"
  * @returns Empty response
  */
 export async function openUrl(_controller: Controller, request: StringRequest): Promise<Empty> {
-	try {
-		await openUrlInBrowser(request.value)
-		return Empty.create({})
-	} catch (error) {
-		console.error(`Failed to open URL: ${error}`)
-		throw error
-	}
+    try {
+        await openUrlInBrowser(request.value)
+        return Empty.create({})
+    } catch (error) {
+        console.error(`Failed to open URL: ${error}`)
+        throw error
+    }
 }

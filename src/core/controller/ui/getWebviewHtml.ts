@@ -21,9 +21,9 @@ import type { Controller } from "../index"
  * resolved through `resolveWebviewView()`.
  */
 export async function getWebviewHtml(_controller: Controller, _: EmptyRequest): Promise<String> {
-	const webviewProvider = WebviewProvider.getLastActiveInstance()
-	if (!webviewProvider) {
-		throw new Error("No active webview")
-	}
-	return Promise.resolve(String.create({ value: webviewProvider.getHtmlContent() }))
+    const webviewProvider = WebviewProvider.getLastActiveInstance()
+    if (!webviewProvider) {
+        throw new Error("No active webview")
+    }
+    return Promise.resolve(String.create({ value: webviewProvider.getHtmlContent() }))
 }

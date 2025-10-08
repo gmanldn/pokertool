@@ -21,6 +21,6 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function newTask(controller: Controller, request: NewTaskRequest): Promise<Empty> {
-	await controller.initTask(request.text, request.images, request.files)
-	return Empty.create()
+    await controller.initTask(request.text, request.images, request.files)
+    return Empty.create()
 }

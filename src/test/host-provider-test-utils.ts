@@ -21,24 +21,24 @@ import { vscodeHostBridgeClient } from "@/hosts/vscode/hostbridge/client/host-gr
  * @param options Optional overrides for the default test configuration
  */
 export function setVscodeHostProviderMock(options?: {
-	webviewProviderCreator?: WebviewProviderCreator
-	diffViewProviderCreator?: DiffViewProviderCreator
-	hostBridgeClient?: HostBridgeClientProvider
-	logToChannel?: (message: string) => void
-	getCallbackUri?: () => Promise<string>
-	getBinaryLocation?: (name: string) => Promise<string>
-	extensionFsPath?: string
-	globalStorageFsPath?: string
+    webviewProviderCreator?: WebviewProviderCreator
+    diffViewProviderCreator?: DiffViewProviderCreator
+    hostBridgeClient?: HostBridgeClientProvider
+    logToChannel?: (message: string) => void
+    getCallbackUri?: () => Promise<string>
+    getBinaryLocation?: (name: string) => Promise<string>
+    extensionFsPath?: string
+    globalStorageFsPath?: string
 }) {
-	HostProvider.reset()
-	HostProvider.initialize(
-		options?.webviewProviderCreator ?? (((_) => {}) as WebviewProviderCreator),
-		options?.diffViewProviderCreator ?? ((() => {}) as DiffViewProviderCreator),
-		options?.hostBridgeClient ?? vscodeHostBridgeClient,
-		options?.logToChannel ?? ((_) => {}),
-		options?.getCallbackUri ?? (async () => "http://example.com:1234/"),
-		options?.getBinaryLocation ?? (async (n) => `/mock/path/to/binary/${n}`),
-		options?.extensionFsPath ?? "/mock/path/to/extension",
-		options?.globalStorageFsPath ?? "/mock/path/to/globalstorage",
-	)
+    HostProvider.reset()
+    HostProvider.initialize(
+        options?.webviewProviderCreator ?? (((_) => {}) as WebviewProviderCreator),
+        options?.diffViewProviderCreator ?? ((() => {}) as DiffViewProviderCreator),
+        options?.hostBridgeClient ?? vscodeHostBridgeClient,
+        options?.logToChannel ?? ((_) => {}),
+        options?.getCallbackUri ?? (async () => "http://example.com:1234/"),
+        options?.getBinaryLocation ?? (async (n) => `/mock/path/to/binary/${n}`),
+        options?.extensionFsPath ?? "/mock/path/to/extension",
+        options?.globalStorageFsPath ?? "/mock/path/to/globalstorage",
+    )
 }

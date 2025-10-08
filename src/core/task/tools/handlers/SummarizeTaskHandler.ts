@@ -23,89 +23,89 @@ import type { TaskConfig } from "../types/TaskConfig"
 import type { StronglyTypedUIHelpers } from "../types/UIHelpers"
 
 export class SummarizeTaskHandler implements IToolHandler, IPartialBlockHandler {
-	readonly name = ClineDefaultTool.SUMMARIZE_TASK
+    readonly name = ClineDefaultTool.SUMMARIZE_TASK
 
-	constructor() {}
+    constructor() {}
 
-	getDescription(block: ToolUse): string {
-		return `[${block.name}]`
-	}
+    getDescription(block: ToolUse): string {
+        return `[${block.name}]`
+    }
 
-	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {
-		try {
-			const context: string | undefined = block.params.context
+    async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {
+        try {
+            const context: string | undefined = block.params.context
 
-			// Validate required parameters
-			if (!context) {
-				config.taskState.consecutiveMistakeCount++
-				return await config.callbacks.sayAndCreateMissingParamError(this.name, "context")
-			}
+            // Validate required parameters
+            if (!context) {
+                config.taskState.consecutiveMistakeCount++
+                return await config.callbacks.sayAndCreateMissingParamError(this.name, "context")
+            }
 
-			config.taskState.consecutiveMistakeCount = 0
+            config.taskState.consecutiveMistakeCount = 0
 
-			// Show completed summary in tool UI
-			const completeMessage = JSON.stringify({
-				tool: "summarizeTask",
-				content: context,
-			} satisfies ClineSayTool)
+            // Show completed summary in tool UI
+            const completeMessage = JSON.stringify({
+                tool: "summarizeTask",
+                content: context,
+            } satisfies ClineSayTool)
 
-			await config.callbacks.say("tool", completeMessage, undefined, undefined, false)
+            await config.callbacks.say("tool", completeMessage, undefined, undefined, false)
 
-			// Use the continuationPrompt to format the tool result
-			const toolResult = formatResponse.toolResult(continuationPrompt(context))
+            // Use the continuationPrompt to format the tool result
+            const toolResult = formatResponse.toolResult(continuationPrompt(context))
 
-			// Handle context management
-			const apiConversationHistory = config.messageState.getApiConversationHistory()
-			const keepStrategy = "none"
+            // Handle context management
+            const apiConversationHistory = config.messageState.getApiConversationHistory()
+            const keepStrategy = "none"
 
-			// clear the context history at this point in time. note that this will not include the assistant message
-			// for summarizing, which we will need to delete later
-			config.taskState.conversationHistoryDeletedRange = config.services.contextManager.getNextTruncationRange(
-				apiConversationHistory,
-				config.taskState.conversationHistoryDeletedRange,
-				keepStrategy,
-			)
-			await config.messageState.saveClineMessagesAndUpdateHistory()
-			await config.services.contextManager.triggerApplyStandardContextTruncationNoticeChange(
-				Date.now(),
-				await ensureTaskDirectoryExists(config.context, config.taskId),
-				apiConversationHistory,
-			)
+            // clear the context history at this point in time. note that this will not include the assistant message
+            // for summarizing, which we will need to delete later
+            config.taskState.conversationHistoryDeletedRange = config.services.contextManager.getNextTruncationRange(
+                apiConversationHistory,
+                config.taskState.conversationHistoryDeletedRange,
+                keepStrategy,
+            )
+            await config.messageState.saveClineMessagesAndUpdateHistory()
+            await config.services.contextManager.triggerApplyStandardContextTruncationNoticeChange(
+                Date.now(),
+                await ensureTaskDirectoryExists(config.context, config.taskId),
+                apiConversationHistory,
+            )
 
-			// Set summarizing state
-			config.taskState.currentlySummarizing = true
+            // Set summarizing state
+            config.taskState.currentlySummarizing = true
 
-			// Capture telemetry after main business logic is complete
-			const telemetryData = config.services.contextManager.getContextTelemetryData(
-				config.messageState.getClineMessages(),
-				config.api,
-				config.taskState.lastAutoCompactTriggerIndex,
-			)
+            // Capture telemetry after main business logic is complete
+            const telemetryData = config.services.contextManager.getContextTelemetryData(
+                config.messageState.getClineMessages(),
+                config.api,
+                config.taskState.lastAutoCompactTriggerIndex,
+            )
 
-			if (telemetryData) {
-				telemetryService.captureSummarizeTask(
-					config.ulid,
-					config.api.getModel().id,
-					telemetryData.tokensUsed,
-					telemetryData.maxContextWindow,
-				)
-			}
+            if (telemetryData) {
+                telemetryService.captureSummarizeTask(
+                    config.ulid,
+                    config.api.getModel().id,
+                    telemetryData.tokensUsed,
+                    telemetryData.maxContextWindow,
+                )
+            }
 
-			return toolResult
-		} catch (error) {
-			return `Error summarizing context window: ${(error as Error).message}`
-		}
-	}
+            return toolResult
+        } catch (error) {
+            return `Error summarizing context window: ${(error as Error).message}`
+        }
+    }
 
-	async handlePartialBlock(block: ToolUse, uiHelpers: StronglyTypedUIHelpers): Promise<void> {
-		const context = block.params.context || ""
+    async handlePartialBlock(block: ToolUse, uiHelpers: StronglyTypedUIHelpers): Promise<void> {
+        const context = block.params.context || ""
 
-		// Show streaming summary generation in tool UI
-		const partialMessage = JSON.stringify({
-			tool: "summarizeTask",
-			content: uiHelpers.removeClosingTag(block, "context", context),
-		} satisfies ClineSayTool)
+        // Show streaming summary generation in tool UI
+        const partialMessage = JSON.stringify({
+            tool: "summarizeTask",
+            content: uiHelpers.removeClosingTag(block, "context", context),
+        } satisfies ClineSayTool)
 
-		await uiHelpers.say("tool", partialMessage, undefined, undefined, block.partial)
-	}
+        await uiHelpers.say("tool", partialMessage, undefined, undefined, block.partial)
+    }
 }
