@@ -11,8 +11,8 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 20.1.0
-Last Modified: 2025-09-30
+Version: 20.2.0
+Last Modified: 2025-10-08
 Author: PokerTool Development Team
 License: MIT
 
@@ -21,13 +21,14 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v20.2.0 (2025-10-08): CRITICAL FIX - Tab visibility guaranteed, auto-start screen scraper, thread-safe background services
     - v20.1.0 (2025-09-30): Added auto-start scraper, continuous updates, dependency checking
     - v28.0.0 (2025-09-29): Enhanced documentation
     - v19.0.0 (2025-09-18): Bug fixes and improvements
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '20.1.0'
+__version__ = '20.2.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -220,9 +221,9 @@ class IntegratedPokerAssistant(tk.Tk):
         self._apply_translations()
         self._init_database()
         
-        # DISABLED: Background services cause Tcl/Tk crashes when accessing widgets from threads
-        # self._start_background_services()
-        # self._start_screen_update_loop()
+        # CRITICAL: Auto-start background services after GUI is fully initialized
+        # All widget updates from threads must use self.after() to be thread-safe
+        self.after(100, self._start_background_services_safely)
 
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
@@ -354,7 +355,18 @@ class IntegratedPokerAssistant(tk.Tk):
         
         # Explicitly configure Notebook tab styling to ensure visibility
         style.configure('TNotebook', background=COLORS['bg_dark'])
-        style.configure('TNotebook.Tab', padding=[10, 5])
+        style.configure(
+            'TNotebook.Tab',
+            background=COLORS['bg_medium'],      # Unselected tab background
+            foreground=COLORS['text_primary'],    # Unselected tab text
+            padding=[12, 6],                      # Increased padding for better visibility
+        )
+        # Configure selected/unselected tab appearance
+        style.map(
+            'TNotebook.Tab',
+            background=[('selected', COLORS['bg_dark']), ('!selected', COLORS['bg_medium'])],
+            foreground=[('selected', COLORS['accent_primary']), ('!selected', COLORS['text_primary'])],
+        )
 
     # Translation helpers -------------------------------------------------
     def _register_widget_translation(
@@ -1834,8 +1846,13 @@ Platform: {sys.platform}
         except Exception as e:
             print(f"Database initialization error: {e}")
     
-    def _start_background_services(self):
-        """Start background monitoring services."""
+    def _start_background_services_safely(self):
+        """Start background monitoring services safely from the main thread.
+        
+        This method is called via self.after() to ensure it runs on the main thread
+        after GUI initialization is complete. All widget updates use self.after()
+        to maintain thread safety.
+        """
         try:
             started_services = []
 
@@ -1848,21 +1865,30 @@ Platform: {sys.platform}
                     print('TableManager initialized (start_monitoring method not available)')
 
             # AUTO-START screen scraper immediately (not waiting for autopilot)
-            self._update_table_status("🚀 Auto-starting screen scraper...\n")
+            self.after(0, lambda: self._update_table_status("🚀 Auto-starting screen scraper...\n"))
             if self._start_enhanced_screen_scraper():
                 started_services.append('enhanced screen scraper')
-                self._update_table_status("✅ Screen scraper active and monitoring\n")
+                self.after(0, lambda: self._update_table_status("✅ Screen scraper active and monitoring\n"))
             else:
-                self._update_scraper_indicator(False)
-                self._update_table_status("⚠️ Screen scraper not started (check dependencies)\n")
+                self.after(0, lambda: self._update_scraper_indicator(False))
+                self.after(0, lambda: self._update_table_status("⚠️ Screen scraper not started (check dependencies)\n"))
 
             if started_services:
                 print(f'Background services started: {", ".join(started_services)}')
-                self._update_table_status(f"📡 Services running: {', '.join(started_services)}\n")
+                services_msg = f"📡 Services running: {', '.join(started_services)}\n"
+                self.after(0, lambda msg=services_msg: self._update_table_status(msg))
+
+            # Auto-start screen update loop for continuous monitoring
+            self.after(0, self._start_screen_update_loop)
 
         except Exception as e:
             print(f'Background services error: {e}')
-            self._update_table_status(f"❌ Background services error: {e}\n")
+            error_msg = f"❌ Background services error: {e}\n"
+            self.after(0, lambda msg=error_msg: self._update_table_status(msg))
+
+    def _start_background_services(self):
+        """Legacy method - redirects to thread-safe implementation."""
+        self._start_background_services_safely()
 
     def _start_enhanced_screen_scraper(self) -> bool:
         """Start the enhanced screen scraper in continuous mode."""
