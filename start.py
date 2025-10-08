@@ -679,11 +679,10 @@ class PokerToolLauncher:
                                 enhanced_env['TK_SILENCE_DEPRECATION'] = '1'  # Suppress tkinter deprecation warning
                                 
                                 self.dependency_manager.log("Starting GUI with system Python and venv packages")
-                                # Use direct launcher script instead of -m to avoid sys.path issues
-                                # The run_gui.py script ensures site-packages loads before src
-                                run_gui_script = ROOT / 'run_gui.py'
+                                # Use new simple GUI with sidebar navigation (no problematic tabs)
+                                simple_gui_script = SRC_DIR / 'pokertool' / 'simple_gui.py'
                                 result = subprocess.run([
-                                    sys_python, str(run_gui_script)
+                                    sys_python, str(simple_gui_script)
                                 ] + args, cwd=os.path.expanduser('~'), env=enhanced_env)
                                 return result.returncode
                             except Exception as e:
