@@ -11,8 +11,8 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 20.2.0
-Last Modified: 2025-10-08
+Version: 20.3.0
+Last Modified: 2025-10-12
 Author: PokerTool Development Team
 License: MIT
 
@@ -21,6 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v20.3.0 (2025-10-12): Enforced single-instance locking and revamped notebook styling for reliable tab visibility
     - v20.2.0 (2025-10-08): CRITICAL FIX - Tab visibility guaranteed, auto-start screen scraper, thread-safe background services
     - v20.1.0 (2025-09-30): Added auto-start scraper, continuous updates, dependency checking
     - v28.0.0 (2025-09-29): Enhanced documentation
@@ -28,7 +29,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '20.2.0'
+__version__ = '20.3.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -49,6 +50,8 @@ import webbrowser
 import sys
 import os
 import subprocess
+
+from .utils.single_instance import acquire_lock, release_lock
 
 def _ensure_scraper_dependencies():
     """Ensure screen scraper dependencies are installed before module imports."""
@@ -204,8 +207,10 @@ from .enhanced_gui_components import (
 class IntegratedPokerAssistant(tk.Tk):
     """Integrated Poker Assistant with prominent Autopilot functionality."""
     
-    def __init__(self):
+    def __init__(self, lock_path: Optional[Path] = None):
         super().__init__()
+
+        self._lock_path = lock_path
         
         self.title(translate('app.title'))
         self.geometry('1800x1000')  # Increased width to accommodate all tabs
@@ -257,6 +262,12 @@ class IntegratedPokerAssistant(tk.Tk):
 
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
+
+    def release_single_instance_lock(self) -> None:
+        """Release the single-instance guard for this process."""
+        if self._lock_path:
+            release_lock(self._lock_path)
+            self._lock_path = None
     
     def _init_modules(self):
         """Initialize all poker tool modules."""
@@ -363,18 +374,25 @@ class IntegratedPokerAssistant(tk.Tk):
     def _setup_styles(self):
         """Configure ttk styles."""
         style = ttk.Style()
-        
-        # CRITICAL: Use a theme that properly renders tabs
-        # On macOS, the aqua theme can make tabs invisible against dark backgrounds
+
+        # Choose a theme that cooperates with dark backgrounds
+        available_themes = {name.lower(): name for name in style.theme_names()}
+        preferred_theme = 'clam'
+        fallback_theme = 'default'
+
         if sys.platform == 'darwin':
+            preferred_theme = 'clam'
+            fallback_theme = 'aqua'
+
+        try:
+            style.theme_use(available_themes.get(preferred_theme, preferred_theme))
+        except tk.TclError:
             try:
-                # Use clam theme for better tab visibility on macOS
-                style.theme_use('clam')
-            except:
-                style.theme_use('default')
-        else:
-            style.theme_use('clam')
-        
+                style.theme_use(available_themes.get(fallback_theme, fallback_theme))
+            except tk.TclError:
+                # Leave whatever theme Tk selected if both options fail
+                pass
+
         # Enhanced button styles
         style.configure('Autopilot.TButton',
                        font=FONTS['autopilot'],
@@ -385,46 +403,94 @@ class IntegratedPokerAssistant(tk.Tk):
                        font=FONTS['body'],
                        background=COLORS['accent_primary'],
                        foreground=COLORS['text_primary'])
-        
-        # CRITICAL: Configure Notebook tab styling with MAXIMUM VISIBILITY
-        # Use bright colors that stand out against any background
+
+        # Dedicated high-contrast notebook styling targetted by name
+        notebook_style = 'PokerNotebook.TNotebook'
+        tab_style = f'{notebook_style}.Tab'
+
         style.configure(
-            'TNotebook', 
-            background='#2d3748',  # Dark gray for notebook background
-            borderwidth=0,
-            tabmargins=[2, 5, 2, 0]
+            notebook_style,
+            background=COLORS['bg_dark'],
+            borderwidth=2,
+            relief='ridge',
+            tabmargins=(16, 12, 16, 0)
         )
-        
+
         style.configure(
-            'TNotebook.Tab',
-            background='#4a5568',       # Medium gray for unselected tabs
-            foreground='#e2e8f0',       # Light gray text
-            padding=[20, 10],           # VERY large padding for visibility
-            font=('Arial', 12, 'bold'), # Large, bold font
+            tab_style,
+            background='#1f2937',
+            foreground='#f8fafc',
+            padding=(24, 14),
+            font=('Arial', 14, 'bold'),
             borderwidth=2,
             relief='raised'
         )
-        
-        # High contrast styling for selected/unselected states
+
+        try:
+            style.layout(
+                tab_style,
+                [
+                    ('Notebook.tab', {'sticky': 'nsew', 'children': [
+                        ('Notebook.padding', {'side': 'top', 'sticky': 'nsew', 'children': [
+                            ('Notebook.focus', {'side': 'top', 'sticky': 'nsew', 'children': [
+                                ('Notebook.label', {'side': 'top', 'sticky': 'nsew'})
+                            ]})
+                        ]})
+                    ]})
+                ]
+            )
+        except tk.TclError:
+            pass  # Some themes may not expose these layout elements
+
         style.map(
-            'TNotebook.Tab',
+            tab_style,
             background=[
-                ('selected', '#3b82f6'),  # Bright blue for selected tab
-                ('active', '#60a5fa'),    # Lighter blue on hover
-                ('!selected', '#4a5568')  # Gray for unselected
+                ('selected', '#0ea5e9'),
+                ('active', '#38bdf8'),
+                ('!selected', '#1f2937')
             ],
             foreground=[
-                ('selected', '#ffffff'),  # White text for selected
-                ('active', '#ffffff'),    # White text on hover
-                ('!selected', '#e2e8f0')  # Light gray for unselected
+                ('selected', '#0b1120'),
+                ('active', '#0b1120'),
+                ('!selected', '#f8fafc')
             ],
-            borderwidth=[
-                ('selected', 2),
-                ('!selected', 1)
+            bordercolor=[
+                ('selected', '#f8fafc'),
+                ('!selected', '#1f2937')
             ],
             relief=[
                 ('selected', 'raised'),
-                ('!selected', 'flat')
+                ('!selected', 'ridge')
+            ]
+        )
+
+        # Fallback styling for environments that ignore custom style names
+        style.configure(
+            'TNotebook',
+            background='#1f2937',
+            borderwidth=1,
+            tabmargins=(12, 10, 12, 0)
+        )
+        style.configure(
+            'TNotebook.Tab',
+            background='#334155',
+            foreground='#f8fafc',
+            padding=(22, 12),
+            font=('Arial', 13, 'bold'),
+            borderwidth=2,
+            relief='raised'
+        )
+        style.map(
+            'TNotebook.Tab',
+            background=[
+                ('selected', '#0ea5e9'),
+                ('active', '#38bdf8'),
+                ('!selected', '#334155')
+            ],
+            foreground=[
+                ('selected', '#0b1120'),
+                ('active', '#0b1120'),
+                ('!selected', '#f8fafc')
             ]
         )
 
@@ -519,10 +585,37 @@ class IntegratedPokerAssistant(tk.Tk):
         # Main container with notebook tabs
         main_container = tk.Frame(self, bg=COLORS['bg_dark'])
         main_container.pack(fill='both', expand=True, padx=10, pady=10)
-        
-        # Create notebook for different views
-        self.notebook = ttk.Notebook(main_container)
-        self.notebook.pack(fill='both', expand=True)
+
+        # Notebook wrapper gives a clear border beneath the tab row
+        notebook_wrapper = tk.Frame(
+            main_container,
+            bg=COLORS['bg_medium'],
+            bd=2,
+            relief=tk.RIDGE,
+            highlightbackground=COLORS['accent_primary'],
+            highlightcolor=COLORS['accent_primary'],
+            highlightthickness=1
+        )
+        notebook_wrapper.pack(side='top', fill='both', expand=True)
+
+        notebook_style = 'PokerNotebook.TNotebook'
+        try:
+            self.notebook = ttk.Notebook(notebook_wrapper, style=notebook_style)
+        except tk.TclError:
+            self.notebook = ttk.Notebook(notebook_wrapper)
+
+        self.notebook.pack(fill='both', expand=True, padx=6, pady=6)
+
+        try:
+            self.notebook.enable_traversal()
+        except AttributeError:
+            pass
+
+        try:
+            current_style = self.notebook.cget('style')
+            print(f"Notebook style in use: {current_style or 'default'}")
+        except tk.TclError:
+            pass
         
         # Define all tabs with their builders and fallback handlers
         # Using shorter titles to ensure all tabs fit in the window
@@ -2161,6 +2254,12 @@ Platform: {sys.platform}
         # Force quit immediately
         self.quit()
         self.destroy()
+
+        # Release the lock before terminating the process
+        try:
+            self.release_single_instance_lock()
+        except Exception as exc:
+            print(f"⚠️  Could not release single-instance lock: {exc}")
         
         # Force exit the entire program
         import os
@@ -2168,15 +2267,50 @@ Platform: {sys.platform}
 
 
 # Main application entry point
+def _notify_existing_instance(pid: int) -> None:
+    """Inform the user that another PokerTool instance is active."""
+    message = (
+        f"PokerTool is already running (PID: {pid}).\n"
+        "Close the existing window before launching another instance."
+    )
+    print(f"⚠️  {message}")
+
+    root = None
+    try:
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showwarning("PokerTool Already Running", message, parent=root)
+    except tk.TclError:
+        pass  # Likely no display available; console warning will suffice.
+    finally:
+        if root is not None:
+            try:
+                root.destroy()
+            except tk.TclError:
+                pass
+
 def main():
     """Launch the enhanced poker assistant."""
+    lock_path, existing_pid = acquire_lock()
+    if not lock_path:
+        if existing_pid:
+            _notify_existing_instance(existing_pid)
+        else:
+            print("⚠️  Could not create the PokerTool single-instance lock file.")
+        return 1
+
+    app: Optional[IntegratedPokerAssistant] = None
     try:
-        app = IntegratedPokerAssistant()
+        app = IntegratedPokerAssistant(lock_path=lock_path)
         app.mainloop()
+        if app:
+            app.release_single_instance_lock()
         return 0
     except Exception as e:
         print(f"Application error: {e}")
         return 1
+    finally:
+        release_lock(lock_path)
 
 
 if __name__ == '__main__':

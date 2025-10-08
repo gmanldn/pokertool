@@ -12,36 +12,67 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 import time
+import os
+import sys
 from datetime import datetime
 from typing import Optional, Dict, Any
-from pathlib import Path
 
-# Import core modules
+from pokertool.utils.single_instance import acquire_lock, release_lock
+
+# Fallback colors and fonts (define first)
+COLORS = {
+    'bg_dark': '#1a202c',
+    'bg_medium': '#2d3748',
+    'bg_light': '#4a5568',
+    'text_primary': '#e2e8f0',
+    'text_secondary': '#a0aec0',
+    'accent_primary': '#3b82f6',
+    'accent_success': '#10b981',
+    'accent_warning': '#f59e0b',
+    'accent_danger': '#ef4444',
+}
+FONTS = {
+    'title': ('Arial', 24, 'bold'),
+    'heading': ('Arial', 16, 'bold'),
+    'body': ('Arial', 12),
+    'small': ('Arial', 10),
+}
+
+# Import core modules (after fallbacks defined)
+COMPONENTS_LOADED = False
+SCREEN_SCRAPER_LOADED = False
+create_scraper = None
+
 try:
-    from pokertool.enhanced_gui_components import COLORS, FONTS
-    from pokertool.modules.poker_screen_scraper import create_scraper, SCREEN_SCRAPER_LOADED
-    COMPONENTS_LOADED = True
+    # Try to override with actual component colors/fonts
+    from pokertool.enhanced_gui_components import COLORS as COMP_COLORS, FONTS as COMP_FONTS
+    COLORS.update(COMP_COLORS)
+    FONTS.update(COMP_FONTS)
+    print("✓ Enhanced GUI components loaded")
 except ImportError as e:
-    print(f"Warning: Components not loaded: {e}")
-    COMPONENTS_LOADED = False
-    # Fallback colors
-    COLORS = {
-        'bg_dark': '#1a202c',
-        'bg_medium': '#2d3748',
-        'bg_light': '#4a5568',
-        'text_primary': '#e2e8f0',
-        'text_secondary': '#a0aec0',
-        'accent_primary': '#3b82f6',
-        'accent_success': '#10b981',
-        'accent_warning': '#f59e0b',
-        'accent_danger': '#ef4444',
-    }
-    FONTS = {
-        'title': ('Arial', 24, 'bold'),
-        'heading': ('Arial', 16, 'bold'),
-        'body': ('Arial', 12),
-        'small': ('Arial', 10),
-    }
+    print(f"ℹ️ Using fallback colors/fonts: {e}")
+
+try:
+    # Import screen scraper with clean environment to avoid numpy conflicts
+    # Save current directory
+    import os
+    _original_cwd = os.getcwd()
+    
+    # Change to home directory temporarily to avoid numpy import conflicts
+    os.chdir(os.path.expanduser('~'))
+    
+    try:
+        from pokertool.modules.poker_screen_scraper import create_scraper
+        SCREEN_SCRAPER_LOADED = True
+        COMPONENTS_LOADED = True
+        print("✓ Screen scraper loaded successfully")
+    finally:
+        # Restore original directory
+        os.chdir(_original_cwd)
+        
+except Exception as e:
+    print(f"⚠️ Screen scraper not available: {e}")
+    SCREEN_SCRAPER_LOADED = False
 
 
 class SimplePokerGUI(tk.Tk):
@@ -58,6 +89,8 @@ class SimplePokerGUI(tk.Tk):
         self.current_section = None
         self.sections = {}
         self.screen_scraper = None
+        self.autopilot_active = False  # Initialize autopilot flag
+        self.lock_file = None  # Single instance lock
         
         # Build UI
         self._build_ui()
@@ -66,6 +99,7 @@ class SimplePokerGUI(tk.Tk):
         self._init_scraper()
         
         # Show first section
+        print("DEBUG: Initializing GUI, showing autopilot section")
         self.show_section('autopilot')
         
         # Handle close
@@ -323,12 +357,18 @@ class SimplePokerGUI(tk.Tk):
     
     def show_section(self, section_id: str):
         """Show a specific section."""
+        print(f"DEBUG: show_section called with section_id='{section_id}'")
+        print(f"DEBUG: Current section: {self.current_section}")
+        print(f"DEBUG: Available sections: {list(self.sections.keys())}")
+        
         # Hide current section
         if self.current_section and self.current_section in self.sections:
+            print(f"DEBUG: Hiding current section '{self.current_section}'")
             self.sections[self.current_section].pack_forget()
         
         # Show new section
         if section_id in self.sections:
+            print(f"DEBUG: Showing new section '{section_id}'")
             self.sections[section_id].pack(fill='both', expand=True)
             self.current_section = section_id
             
@@ -346,6 +386,9 @@ class SimplePokerGUI(tk.Tk):
                         fg=COLORS['text_primary'],
                         relief='flat'
                     )
+            print(f"DEBUG: Section '{section_id}' is now displayed")
+        else:
+            print(f"DEBUG: ERROR - Section '{section_id}' not found in sections dict!")
     
     def _init_scraper(self):
         """Initialize screen scraper."""
@@ -424,17 +467,33 @@ class SimplePokerGUI(tk.Tk):
         self.autopilot_active = False
         self.quit()
         self.destroy()
-
-
 def main():
     """Launch the simple GUI."""
     print("="*60)
     print("PokerTool - Simple GUI")
     print("="*60)
+    
+    # Check for single instance
+    lock_file, existing_pid = acquire_lock()
+    if not lock_file:
+        if existing_pid:
+            print(f"⚠️  PokerTool is already running (PID: {existing_pid})")
+            print("   Please close the existing window before launching again.")
+        else:
+            print("⚠️  Could not create the single-instance lock file.")
+        return 1
+    
     print("\nLaunching...")
     
-    app = SimplePokerGUI()
-    app.mainloop()
+    try:
+        app = SimplePokerGUI()
+        app.lock_file = lock_file  # Store lock file for cleanup
+        app.mainloop()
+    finally:
+        # Clean up lock file
+        if lock_file:
+            release_lock(lock_file)
+            print("✓ Cleaned up lock file")
     
     return 0
 
