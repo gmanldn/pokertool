@@ -173,7 +173,6 @@ except ImportError as e:
 
 # Import screen scraper
 try:
-    sys.path.append('.')
     from pokertool.modules.poker_screen_scraper import (
         PokerScreenScraper,
         PokerSite,
