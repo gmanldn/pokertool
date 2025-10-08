@@ -653,21 +653,28 @@ class PokerToolLauncher:
                                 site_packages_pattern = str(VENV_DIR / 'lib' / 'python*' / 'site-packages')
                                 site_packages_dirs = glob.glob(site_packages_pattern)
                                 
-                                # Create clean PYTHONPATH with venv packages first to avoid conflicts
+                                # Create clean PYTHONPATH with ONLY venv packages and SRC_DIR
                                 # CRITICAL: venv site-packages MUST come before SRC_DIR
                                 # This ensures numpy is imported from venv, not from project directory
+                                # IMPORTANT: Clear any existing PYTHONPATH to avoid conflicts
                                 python_paths = []
                                 
                                 # Add venv site-packages if found (MUST be FIRST)
                                 if site_packages_dirs:
                                     python_paths.append(site_packages_dirs[0])
+                                    self.dependency_manager.log(f"Added venv site-packages: {site_packages_dirs[0]}")
+                                else:
+                                    self.dependency_manager.log("Warning: Could not find venv site-packages")
                                 
                                 # Add SRC_DIR AFTER site-packages so pokertool module is importable
                                 # but doesn't interfere with package imports
                                 python_paths.append(str(SRC_DIR))
                                 
-                                # Set clean PYTHONPATH with site-packages first
+                                # Set CLEAN PYTHONPATH (override any existing value completely)
                                 enhanced_env['PYTHONPATH'] = os.pathsep.join(python_paths)
+                                
+                                # Remove project root from path to prevent import conflicts
+                                enhanced_env.pop('PWD', None)
                                 
                                 enhanced_env['TK_SILENCE_DEPRECATION'] = '1'  # Suppress tkinter deprecation warning
                                 
