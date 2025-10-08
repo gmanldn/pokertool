@@ -527,8 +527,10 @@ class PokerToolLauncher:
         
         self.dependency_manager.log("Running tests...")
         try:
+            # Use HOME as cwd to avoid any directory conflicts
+            cwd = os.path.expanduser('~')
             result = subprocess.run([venv_python, str(test_file)], 
-                                  cwd=ROOT, env=env)
+                                  cwd=cwd, env=env)
             return result.returncode
         except Exception as e:
             self.dependency_manager.log(f"Test execution failed: {e}")
@@ -574,9 +576,11 @@ class PokerToolLauncher:
             # Test basic module imports
             smoke_test_code = "import pokertool.utils; print('pokertool.utils OK')"
 
+            # Use HOME as cwd to avoid any directory conflicts
+            cwd = os.path.expanduser('~')
             result = subprocess.run([
                 venv_python, '-c', smoke_test_code
-            ], capture_output=True, text=True, cwd=ROOT, env=env, timeout=30)
+            ], capture_output=True, text=True, cwd=cwd, env=env, timeout=30)
             
             if result.returncode == 0:
                 self.dependency_manager.log("✓ Basic module structure accessible")
@@ -650,22 +654,29 @@ class PokerToolLauncher:
                                 site_packages_dirs = glob.glob(site_packages_pattern)
                                 
                                 # Create clean PYTHONPATH with venv packages first to avoid conflicts
-                                # IMPORTANT: Do NOT include ROOT to avoid numpy import conflicts
-                                python_paths = [str(SRC_DIR)]  # Source code
+                                # CRITICAL: venv site-packages MUST come before SRC_DIR
+                                # This ensures numpy is imported from venv, not from project directory
+                                python_paths = []
                                 
-                                # Add venv site-packages if found
+                                # Add venv site-packages if found (MUST be FIRST)
                                 if site_packages_dirs:
-                                    python_paths.insert(0, site_packages_dirs[0])  # Virtual env packages MUST be first
+                                    python_paths.append(site_packages_dirs[0])
                                 
-                                # Set clean PYTHONPATH (don't append to existing to avoid conflicts)
+                                # Add SRC_DIR AFTER site-packages so pokertool module is importable
+                                # but doesn't interfere with package imports
+                                python_paths.append(str(SRC_DIR))
+                                
+                                # Set clean PYTHONPATH with site-packages first
                                 enhanced_env['PYTHONPATH'] = os.pathsep.join(python_paths)
+                                
                                 enhanced_env['TK_SILENCE_DEPRECATION'] = '1'  # Suppress tkinter deprecation warning
                                 
-                                self.dependency_manager.log("Starting GUI with enhanced PYTHONPATH for venv access")
-                                # Change cwd to SRC_DIR to prevent ROOT from being in sys.path
+                                self.dependency_manager.log("Starting GUI with system Python and venv packages")
+                                # Run from HOME to avoid any directory import conflicts
+                                # PYTHONPATH is configured to find both venv packages and pokertool
                                 result = subprocess.run([
-                                    sys_python, str(SRC_DIR / 'pokertool' / 'cli.py')
-                                ] + args, cwd=SRC_DIR, env=enhanced_env)
+                                    sys_python, '-m', 'pokertool.cli'
+                                ] + args, cwd=os.path.expanduser('~'), env=enhanced_env)
                                 return result.returncode
                             except Exception as e:
                                 self.dependency_manager.log(f"System Python GUI launch failed: {e}")
@@ -695,7 +706,9 @@ class PokerToolLauncher:
             
             self.dependency_manager.log(f"Trying launch method: {' '.join(method[:2])}")
             try:
-                result = subprocess.run(method, cwd=ROOT, env=env)
+                # Use HOME as cwd to avoid any directory conflicts
+                cwd = os.path.expanduser('~')
+                result = subprocess.run(method, cwd=cwd, env=env)
                 return result.returncode
             except Exception as e:
                 self.dependency_manager.log(f"Launch method failed: {e}")

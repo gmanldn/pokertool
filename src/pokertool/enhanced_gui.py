@@ -85,7 +85,23 @@ def _ensure_scraper_dependencies():
                 print(f"   Please run manually: pip install {package}")
         print(f"{'='*60}\n")
 
-# Import all pokertool modules
+# Import all pokertool modules with better error handling
+GUI_MODULES_LOADED = False
+CoachingSystem = None
+AnalyticsDashboard = None
+PrivacySettings = None
+UsageEvent = None
+GamificationEngine = None
+Achievement = None
+Badge = None
+ProgressState = None
+CommunityPlatform = None
+ForumPost = None
+Challenge = None
+CommunityTournament = None
+KnowledgeArticle = None
+MentorshipPair = None
+
 try:
     from .gui import (
         EnhancedPokerAssistant,
@@ -111,43 +127,49 @@ try:
     from .multi_table_support import TableManager, get_table_manager
     from .error_handling import sanitize_input, run_safely
     from .storage import get_secure_db
-    try:
-        from .coaching_system import CoachingSystem
-    except ImportError:
-        print("Warning: CoachingSystem not available")
-        CoachingSystem = None
-    
-    try:
-        from .analytics_dashboard import AnalyticsDashboard, PrivacySettings, UsageEvent
-    except ImportError:
-        print("Warning: Analytics dashboard not available")
-        AnalyticsDashboard = None
-        PrivacySettings = None
-        UsageEvent = None
-    
-    try:
-        from .gamification import GamificationEngine, Achievement, Badge, ProgressState
-    except ImportError:
-        print("Warning: Gamification engine not available")
-        GamificationEngine = None
-        Achievement = None
-        Badge = None
-        ProgressState = None
-    
-    try:
-        from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle, MentorshipPair
-    except ImportError:
-        print("Warning: Community platform not available")
-        CommunityPlatform = None
-        ForumPost = None
-        Challenge = None
-        CommunityTournament = None
-        KnowledgeArticle = None
-        MentorshipPair = None
     GUI_MODULES_LOADED = True
 except ImportError as e:
     print(f'Warning: GUI modules not fully loaded: {e}')
     GUI_MODULES_LOADED = False
+
+# Import optional advanced modules separately with individual error handling
+try:
+    from .coaching_system import CoachingSystem
+    print("✓ CoachingSystem loaded successfully")
+except ImportError as e:
+    print(f"Warning: CoachingSystem not available - {e}")
+    CoachingSystem = None
+
+try:
+    from .analytics_dashboard import AnalyticsDashboard, PrivacySettings, UsageEvent
+    print("✓ Analytics dashboard loaded successfully")
+except ImportError as e:
+    print(f"Warning: Analytics dashboard not available - {e}")
+    AnalyticsDashboard = None
+    PrivacySettings = None
+    UsageEvent = None
+
+try:
+    from .gamification import GamificationEngine, Achievement, Badge, ProgressState
+    print("✓ Gamification engine loaded successfully")
+except ImportError as e:
+    print(f"Warning: Gamification engine not available - {e}")
+    GamificationEngine = None
+    Achievement = None
+    Badge = None
+    ProgressState = None
+
+try:
+    from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle, MentorshipPair
+    print("✓ Community platform loaded successfully")
+except ImportError as e:
+    print(f"Warning: Community platform not available - {e}")
+    CommunityPlatform = None
+    ForumPost = None
+    Challenge = None
+    CommunityTournament = None
+    KnowledgeArticle = None
+    MentorshipPair = None
 
 # Import screen scraper
 try:
@@ -187,9 +209,18 @@ class IntegratedPokerAssistant(tk.Tk):
         super().__init__()
         
         self.title(translate('app.title'))
-        self.geometry('1600x1000')
-        self.minsize(1400, 900)
+        self.geometry('1800x1000')  # Increased width to accommodate all tabs
+        self.minsize(1600, 900)     # Increased minimum width
         self.configure(bg=COLORS['bg_dark'])
+        
+        # Maximize window on startup for best tab visibility
+        try:
+            self.state('zoomed')  # Windows/Linux
+        except:
+            try:
+                self.attributes('-zoomed', True)  # macOS alternative
+            except:
+                pass  # Keep default geometry if zoom fails
         
         # State
         self.autopilot_active = False
@@ -333,10 +364,13 @@ class IntegratedPokerAssistant(tk.Tk):
     def _setup_styles(self):
         """Configure ttk styles."""
         style = ttk.Style()
-        # Use default theme on macOS for better compatibility
+        
+        # CRITICAL: Use a theme that properly renders tabs
+        # On macOS, the aqua theme can make tabs invisible against dark backgrounds
         if sys.platform == 'darwin':
             try:
-                style.theme_use('aqua')  # Native macOS theme
+                # Use clam theme for better tab visibility on macOS
+                style.theme_use('clam')
             except:
                 style.theme_use('default')
         else:
@@ -353,19 +387,46 @@ class IntegratedPokerAssistant(tk.Tk):
                        background=COLORS['accent_primary'],
                        foreground=COLORS['text_primary'])
         
-        # Explicitly configure Notebook tab styling to ensure visibility
-        style.configure('TNotebook', background=COLORS['bg_dark'])
+        # CRITICAL: Configure Notebook tab styling with MAXIMUM VISIBILITY
+        # Use bright colors that stand out against any background
+        style.configure(
+            'TNotebook', 
+            background='#2d3748',  # Dark gray for notebook background
+            borderwidth=0,
+            tabmargins=[2, 5, 2, 0]
+        )
+        
         style.configure(
             'TNotebook.Tab',
-            background=COLORS['bg_medium'],      # Unselected tab background
-            foreground=COLORS['text_primary'],    # Unselected tab text
-            padding=[12, 6],                      # Increased padding for better visibility
+            background='#4a5568',       # Medium gray for unselected tabs
+            foreground='#e2e8f0',       # Light gray text
+            padding=[20, 10],           # VERY large padding for visibility
+            font=('Arial', 12, 'bold'), # Large, bold font
+            borderwidth=2,
+            relief='raised'
         )
-        # Configure selected/unselected tab appearance
+        
+        # High contrast styling for selected/unselected states
         style.map(
             'TNotebook.Tab',
-            background=[('selected', COLORS['bg_dark']), ('!selected', COLORS['bg_medium'])],
-            foreground=[('selected', COLORS['accent_primary']), ('!selected', COLORS['text_primary'])],
+            background=[
+                ('selected', '#3b82f6'),  # Bright blue for selected tab
+                ('active', '#60a5fa'),    # Lighter blue on hover
+                ('!selected', '#4a5568')  # Gray for unselected
+            ],
+            foreground=[
+                ('selected', '#ffffff'),  # White text for selected
+                ('active', '#ffffff'),    # White text on hover
+                ('!selected', '#e2e8f0')  # Light gray for unselected
+            ],
+            borderwidth=[
+                ('selected', 2),
+                ('!selected', 1)
+            ],
+            relief=[
+                ('selected', 'raised'),
+                ('!selected', 'flat')
+            ]
         )
 
     # Translation helpers -------------------------------------------------
@@ -465,32 +526,33 @@ class IntegratedPokerAssistant(tk.Tk):
         self.notebook.pack(fill='both', expand=True)
         
         # Define all tabs with their builders and fallback handlers
+        # Using shorter titles to ensure all tabs fit in the window
         tabs_config = [
             {
                 'name': 'autopilot',
                 'title_key': 'tab.autopilot',
-                'title_fallback': 'Autopilot',
+                'title_fallback': '🤖 Auto',  # Shorter title with icon
                 'builder': self._build_autopilot_tab,
                 'required': True  # Always build this one
             },
             {
                 'name': 'manual_play',
                 'title_key': 'tab.manual_play', 
-                'title_fallback': 'Manual Play',
+                'title_fallback': '🎮 Manual',  # Shorter title with icon
                 'builder': self._build_manual_play_tab,
                 'required': True
             },
             {
                 'name': 'analysis',
                 'title_key': 'tab.analysis',
-                'title_fallback': 'Analysis',
+                'title_fallback': '📊 Analysis',  # Icon for clarity
                 'builder': self._build_analysis_tab,
                 'required': True
             },
             {
                 'name': 'coaching',
                 'title_key': 'tab.coaching',
-                'title_fallback': 'Coaching',
+                'title_fallback': '🎓 Coach',  # Shorter with icon
                 'builder': self._build_coaching_tab,
                 'required': False,
                 'condition': lambda: self.coaching_system is not None
@@ -498,14 +560,14 @@ class IntegratedPokerAssistant(tk.Tk):
             {
                 'name': 'settings',
                 'title_key': 'tab.settings',
-                'title_fallback': 'Settings',
+                'title_fallback': '⚙️ Settings',
                 'builder': self._build_settings_tab,
                 'required': True
             },
             {
                 'name': 'analytics',
                 'title_key': None,
-                'title_fallback': 'Analytics',
+                'title_fallback': '📈 Stats',  # Much shorter
                 'builder': self._build_analytics_tab,
                 'required': False,
                 'condition': lambda: self.analytics_dashboard is not None
@@ -513,7 +575,7 @@ class IntegratedPokerAssistant(tk.Tk):
             {
                 'name': 'gamification',
                 'title_key': None,
-                'title_fallback': 'Gamification',
+                'title_fallback': '🏆 XP',  # Very short
                 'builder': self._build_gamification_tab,
                 'required': False,
                 'condition': lambda: self.gamification_engine is not None
@@ -521,7 +583,7 @@ class IntegratedPokerAssistant(tk.Tk):
             {
                 'name': 'community',
                 'title_key': None,
-                'title_fallback': 'Community',
+                'title_fallback': '👥 Social',  # Shorter
                 'builder': self._build_community_tab,
                 'required': False,
                 'condition': lambda: self.community_platform is not None
@@ -594,7 +656,25 @@ class IntegratedPokerAssistant(tk.Tk):
             else:
                 self.notebook.select(built_tabs[0][0])
         
+        # CRITICAL: Force notebook to update and show all tabs
+        self.notebook.update_idletasks()
+        
+        # Log tab visibility for debugging
         print(f"UI built successfully with {len(built_tabs)} tabs")
+        print(f"Visible tabs: {[self.notebook.tab(i, 'text') for i in range(len(built_tabs))]}")
+        
+        # Add status bar showing tab count
+        status_bar = tk.Frame(main_container, bg=COLORS['bg_medium'], height=25)
+        status_bar.pack(side='bottom', fill='x', pady=(5, 0))
+        
+        tab_count_label = tk.Label(
+            status_bar,
+            text=f"✓ {len(built_tabs)} tabs loaded - Use Ctrl+Tab to cycle through tabs",
+            font=('Arial', 9),
+            bg=COLORS['bg_medium'],
+            fg=COLORS['accent_success']
+        )
+        tab_count_label.pack(side='left', padx=10, pady=2)
     
     def _build_fallback_tab_content(self, parent: tk.Widget, tab_name: str, error_message: str) -> None:
         """Build fallback content for tabs that failed to load properly."""

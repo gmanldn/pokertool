@@ -166,10 +166,10 @@
     },
     "easyocr": {
       "name": "easyocr",
-      "status": "missing",
+      "status": "dependency_missing",
       "version": null,
       "is_critical": false,
-      "error_message": null,
+      "error_message": "Requires torch which is not available",
       "install_command": "easyocr"
     },
     "paddlepaddle": {
@@ -192,13 +192,13 @@
   "summary": {
     "total": 22,
     "available": 15,
-    "missing": 6,
+    "missing": 5,
     "errors": 0,
-    "skipped": 1
+    "skipped": 2
   },
   "recommendations": [
     "Optional enhancements available: websocket-client, scikit-learn, scikit-image"
   ],
   "critical_missing": [],
-  "timestamp": "2025-10-07 23:28:53"
+  "timestamp": "2025-10-08 02:53:52"
 }
