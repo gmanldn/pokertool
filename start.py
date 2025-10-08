@@ -34,11 +34,15 @@ import sys
 import subprocess
 import platform
 import shutil
-import venv
 import argparse
 import json
 import importlib
 from importlib import util as importlib_util
+
+# Preferred/supported Python runtimes for heavy ML dependencies.
+SUPPORTED_PYTHON_SERIES = {(3, 12), (3, 11), (3, 10)}
+MIN_SUPPORTED_PYTHON = (3, 10)
+MAX_SUPPORTED_PYTHON = (3, 12)
 
 def _module_available(module_name: str) -> bool:
     """Return True if the module can be imported."""
@@ -106,26 +110,61 @@ class PlatformManager:
     @staticmethod
     def get_python_executable() -> str:
         """Get the best Python executable for this platform."""
-        candidates = []
+        override = os.environ.get('POKERTOOL_PYTHON')
+        if override:
+            return override
+        
+        candidates: List[str] = []
+        
+        # Always try the interpreter currently running this script first
+        if sys.executable:
+            candidates.append(sys.executable)
         
         if IS_WINDOWS:
-            # Windows: try py launcher first, then python, then python3
-            candidates = ['py', 'python', 'python3']
+            # Use the py launcher to select specific versions if available
+            candidates.extend([
+                'py -3.12',
+                'py -3.11',
+                'py -3.10',
+                'py'
+            ])
+            candidates.extend(['python3.12', 'python3.11', 'python3.10', 'python', 'python3'])
         else:
-            # Unix-like: try python3 first, then python
-            candidates = ['python3', 'python']
+            # Unix-like platforms: prefer explicit versioned interpreters
+            candidates.extend([
+                'python3.12',
+                'python3.11',
+                'python3.10',
+                'python3',
+                'python'
+            ])
         
-        for cmd in candidates:
-            if shutil.which(cmd):
-                try:
-                    result = subprocess.run([cmd, '--version'], 
-                                          capture_output=True, text=True, timeout=10)
-                    if result.returncode == 0 and 'Python 3' in result.stdout:
-                        return cmd
-                except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
-                    continue
+        tried: set[str] = set()
+        for candidate in candidates:
+            if not candidate or candidate in tried:
+                continue
+            tried.add(candidate)
+            
+            parts = candidate.split()
+            executable = parts[0]
+            if shutil.which(executable) is None:
+                continue
+            
+            try:
+                result = subprocess.run(
+                    parts + ['--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+                continue
+            
+            version_output = (result.stdout or '') + (result.stderr or '')
+            if result.returncode == 0 and 'Python 3' in version_output:
+                return candidate
         
-        raise SetupError("No suitable Python 3 installation found. Please install Python 3.8 or later.")
+        raise SetupError("No suitable Python 3 installation found. Install Python 3.10–3.12 and re-run.")
     
     @staticmethod
     def get_venv_python() -> str:
@@ -192,45 +231,87 @@ class DependencyManager:
         python_exe = self.platform.get_python_executable()
         
         try:
-            result = subprocess.run([python_exe, '--version'], 
-                                  capture_output=True, text=True)
-            version_str = result.stdout.strip()
+            result = subprocess.run(python_exe.split() + ['--version'],
+                                    capture_output=True, text=True)
+            version_output = (result.stdout or result.stderr or '').strip()
+            version_str = version_output or 'Python 3'
             self.log(f"Found {version_str}")
             
             # Parse version
-            version_parts = version_str.split()[1].split('.')
+            try:
+                _, ver = version_str.split(maxsplit=1)
+            except ValueError:
+                raise SetupError(f"Unexpected Python version output: {version_str}")
+            version_parts = ver.split('.')
             major, minor = int(version_parts[0]), int(version_parts[1])
             
-            if major < 3 or (major == 3 and minor < 8):
-                raise SetupError(f"Python 3.8+ required, found {version_str}")
+            if (major, minor) not in SUPPORTED_PYTHON_SERIES:
+                if (major, minor) < MIN_SUPPORTED_PYTHON:
+                    raise SetupError("Python 3.10 or newer is required.")
+                if (major, minor) > MAX_SUPPORTED_PYTHON:
+                    raise SetupError(
+                        f"Python {major}.{minor} is too new for TensorFlow/PaddlePaddle wheels. "
+                        "Install Python 3.12 and set the POKERTOOL_PYTHON environment variable to its path."
+                    )
             
             return python_exe
         except Exception as e:
             raise SetupError(f"Failed to check Python version: {e}")
     
+    def _get_python_version(self, python_cmd: str) -> tuple[int, int]:
+        """Return (major, minor) for the provided Python command."""
+        try:
+            result = subprocess.run(
+                python_cmd.split() + ['--version'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+        except Exception as exc:
+            raise SetupError(f"Unable to determine Python version for {python_cmd}: {exc}") from exc
+        
+        version_output = (result.stdout or result.stderr or '').strip()
+        if not version_output.startswith('Python '):
+            raise SetupError(f"Unexpected Python version output from {python_cmd}: {version_output}")
+        
+        _, version = version_output.split(maxsplit=1)
+        parts = version.split('.')
+        return int(parts[0]), int(parts[1])
+    
+    def _ensure_compatible_virtualenv(self, python_exe: str) -> None:
+        """Remove the virtual environment if it uses an unsupported Python version."""
+        if not VENV_DIR.exists():
+            return
+        
+        venv_python = self.platform.get_venv_python()
+        if not Path(venv_python).exists():
+            self.log("Existing virtual environment is incomplete; recreating...")
+            shutil.rmtree(VENV_DIR, ignore_errors=True)
+            return
+        
+        try:
+            major, minor = self._get_python_version(venv_python)
+            if (major, minor) not in SUPPORTED_PYTHON_SERIES:
+                self.log(f"Virtual environment uses unsupported Python {major}.{minor}; recreating...")
+                shutil.rmtree(VENV_DIR, ignore_errors=True)
+        except SetupError as exc:
+            self.log(f"Unable to validate virtual environment Python version ({exc}); recreating...")
+            shutil.rmtree(VENV_DIR, ignore_errors=True)
+    
     def create_virtual_environment(self, python_exe: str) -> None:
         """Create a virtual environment."""
+        self._ensure_compatible_virtualenv(python_exe)
         if VENV_DIR.exists():
-            self.log("Virtual environment already exists")
+            self.log("Virtual environment already exists and is compatible")
             return
         
         self.log(f"Creating virtual environment at {VENV_DIR}")
         
         try:
-            # Try using built-in venv module first
-            venv.create(VENV_DIR, with_pip=True)
+            self.run_command(python_exe.split() + ['-m', 'venv', str(VENV_DIR)])
             self.log("Virtual environment created successfully")
         except Exception as e:
-            self.log(f"Built-in venv failed: {e}")
-            
-            # Fallback: try installing virtualenv and using it
-            try:
-                self.log("Installing virtualenv as fallback...")
-                self.run_command([python_exe, '-m', 'pip', 'install', '--user', 'virtualenv'])
-                self.run_command([python_exe, '-m', 'virtualenv', str(VENV_DIR)])
-                self.log("Virtual environment created with virtualenv")
-            except Exception as e2:
-                raise SetupError(f"Failed to create virtual environment: {e2}") from e
+            raise SetupError(f"Failed to create virtual environment: {e}") from e
     
     def upgrade_pip_in_venv(self) -> None:
         """Upgrade pip in the virtual environment."""

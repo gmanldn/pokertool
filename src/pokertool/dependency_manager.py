@@ -62,7 +62,7 @@ class DependencyManager:
         self.python_dependencies = {
             # Core Python packages
             'numpy': {
-                'install_command': 'numpy<2.0',
+                'install_command': 'numpy==1.26.4',
                 'is_critical': True,
                 'description': 'Numerical computing'
             },
@@ -101,7 +101,7 @@ class DependencyManager:
             },
             'websocket-client': {
                 'install_command': 'websocket-client>=1.6.0',
-                'is_critical': False,
+                'is_critical': True,
                 'description': 'WebSocket communication'
             },
             'pandas': {
@@ -130,8 +130,8 @@ class DependencyManager:
                 'description': 'Image hashing'
             },
             'scikit-image': {
-                'install_command': 'scikit-image',
-                'is_critical': False,
+                'install_command': 'scikit-image>=0.25.0,<0.26.0',
+                'is_critical': True,
                 'description': 'Advanced image processing'
             },
             # Optional heavy dependencies with fallbacks
@@ -149,11 +149,11 @@ class DependencyManager:
                 'description': 'ONNX Runtime for ML inference (torch alternative)',
                 'skip_auto_install': True,  # Very slow to install, skip during validation
             },
-            'tensorflow-lite': {
-                'install_command': 'tensorflow==2.15.0',
-                'is_critical': False, 
-                'description': 'TensorFlow for ML processing (torch alternative)',
-                'skip_auto_install': True,  # Very slow to install, skip during validation
+            'tensorflow': {
+                'install_command': 'tensorflow==2.16.2',
+                'is_critical': True,
+                'description': 'TensorFlow deep learning framework',
+                'supported_python_versions': [(3, 12), (3, 11), (3, 10)]
             },
             'easyocr': {
                 'install_command': 'easyocr',
@@ -163,10 +163,10 @@ class DependencyManager:
                 'skip_auto_install': True,  # Very slow to install, skip during validation
             },
             'paddlepaddle': {
-                'install_command': 'paddlepaddle',
-                'is_critical': False,
-                'description': 'PaddlePaddle ML framework (torch alternative)',
-                'skip_auto_install': True,  # Very slow to install (timeouts), skip during validation
+                'install_command': 'paddlepaddle>=3.0.0',
+                'is_critical': True,
+                'description': 'PaddlePaddle ML framework',
+                'supported_python_versions': [(3, 12), (3, 11), (3, 10)]
             },
             # macOS specific
             'pyobjc-framework-Quartz': {
@@ -231,6 +231,19 @@ class DependencyManager:
                 status='not_needed',
                 error_message=f"Not needed on {platform.system()}",
                 is_critical=False
+            )
+        
+        supported_versions = config.get('supported_python_versions')
+        if supported_versions and sys.version_info[:2] not in supported_versions:
+            return DependencyInfo(
+                name=name,
+                status='skipped',
+                error_message=(
+                    f"{name} is only supported on Python versions "
+                    f"{', '.join(f'{maj}.{min}' for maj, min in supported_versions)}"
+                ),
+                is_critical=config.get('is_critical', True),
+                install_command=config.get('install_command')
             )
         
         # Check dependencies
