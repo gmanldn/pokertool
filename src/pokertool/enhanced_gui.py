@@ -95,6 +95,12 @@ def _ensure_scraper_dependencies():
                 print(f"   Please run manually: pip install {package}")
         print(f"{'='*60}\n")
 
+
+try:
+    _ensure_scraper_dependencies()
+except Exception as dependency_check_error:
+    print(f"⚠️  Dependency preflight check skipped: {dependency_check_error}")
+
 # Import all pokertool modules with better error handling
 GUI_MODULES_LOADED = False
 CoachingSystem = None
@@ -258,6 +264,13 @@ class IntegratedPokerAssistant(tk.Tk):
         self._tab_bindings: List[Tuple[Any, str]] = []
         self._window_title_key = 'app.title'
         self._locale_listener_token: Optional[int] = None
+        self._tab_records: List[Dict[str, Any]] = []
+        self._tab_title_lookup: Dict[str, str] = {}
+        self._tab_failure_reported = False
+        self._tab_visibility_checks = 0
+        self._tab_watchdog_id: Optional[str] = None
+        self._screen_scraper_ready = False
+        self._screen_scraper_health_details: List[str] = []
         # Initialize modules
         self._init_modules()
         self._setup_styles()
@@ -698,6 +711,8 @@ class IntegratedPokerAssistant(tk.Tk):
         
         # Build tabs with robust error handling
         built_tabs = []
+        self._tab_records.clear()
+        self._tab_title_lookup.clear()
         for tab_config in tabs_config:
             try:
                 # Determine if the full feature is available
@@ -750,6 +765,16 @@ class IntegratedPokerAssistant(tk.Tk):
                         disabled_reason or 'Feature unavailable'
                     )
                 
+                tab_record = {
+                    'name': tab_config['name'],
+                    'frame': frame,
+                    'title': title,
+                    'required': tab_config.get('required', False),
+                    'feature_available': feature_available,
+                }
+                self._tab_records.append(tab_record)
+                self._tab_title_lookup[str(frame)] = title
+                
                 # Store reference for special tabs
                 if tab_config['name'] == 'manual_play':
                     self.manual_tab = frame
@@ -781,6 +806,8 @@ class IntegratedPokerAssistant(tk.Tk):
         # Log tab visibility for debugging
         print(f"UI built successfully with {len(built_tabs)} tabs")
         print(f"Visible tabs: {[self.notebook.tab(i, 'text') for i in range(len(built_tabs))]}")
+        self.after(150, self._enforce_tab_visibility)
+        self.after(500, self._validate_screen_scraper_ready)
         
         # Add status bar showing tab count
         status_bar = tk.Frame(main_container, bg=COLORS['bg_medium'], height=25)
@@ -794,6 +821,187 @@ class IntegratedPokerAssistant(tk.Tk):
             fg=COLORS['accent_success']
         )
         tab_count_label.pack(side='left', padx=10, pady=2)
+        self.tab_count_label = tab_count_label
+
+    def _select_default_tab(self) -> None:
+        """Ensure a sensible default tab stays selected after any recovery."""
+        if not hasattr(self, 'notebook'):
+            return
+
+        target = None
+        for record in self._tab_records:
+            if record.get('name') == 'autopilot':
+                target = record['frame']
+                break
+
+        if target is None and self._tab_records:
+            target = self._tab_records[0]['frame']
+
+        if target is None:
+            return
+
+        try:
+            self.notebook.select(target)
+        except tk.TclError:
+            pass
+
+    def _enforce_tab_visibility(self, attempt: int = 1) -> None:
+        """Watchdog that guarantees notebook tabs stay visible."""
+        if not hasattr(self, 'notebook') or not self._tab_records:
+            return
+
+        self._tab_visibility_checks += 1
+
+        try:
+            visible_ids = list(self.notebook.tabs())
+        except tk.TclError as exc:
+            print(f"Tab visibility check failed on attempt {attempt}: {exc}")
+            return
+
+        visible_set = set(visible_ids)
+        missing_records = [
+            record for record in self._tab_records
+            if str(record['frame']) not in visible_set
+        ]
+
+        if missing_records:
+            print(f"⚠️  Notebook missing {len(missing_records)} tab(s) on attempt {attempt}; applying fallback styling")
+            try:
+                self.notebook.configure(style='TNotebook')
+            except tk.TclError as style_error:
+                print(f"Notebook style fallback failed: {style_error}")
+
+            for record in missing_records:
+                frame_id = str(record['frame'])
+                title = self._tab_title_lookup.get(frame_id, record['title'])
+                try:
+                    self.notebook.add(record['frame'], text=title)
+                    print(f"   ↪ Reattached tab '{record['name']}'")
+                except tk.TclError as attach_error:
+                    print(f"   ↪ Failed to reattach tab '{record['name']}': {attach_error}")
+
+            try:
+                self.notebook.enable_traversal()
+            except AttributeError:
+                pass
+            except tk.TclError:
+                pass
+
+            self.notebook.update_idletasks()
+            visible_set = set(self.notebook.tabs())
+
+        missing_required = [
+            record for record in self._tab_records
+            if record.get('required') and str(record['frame']) not in visible_set
+        ]
+
+        current_count = len(visible_set)
+        if getattr(self, 'tab_count_label', None):
+            try:
+                self.tab_count_label.config(
+                    text=f"✓ {current_count} tabs active - Ctrl+Tab cycles views"
+                )
+            except tk.TclError:
+                pass
+
+        if missing_required:
+            if attempt < 4:
+                delay = max(300, 600 * attempt)
+                self._tab_watchdog_id = self.after(delay, lambda a=attempt + 1: self._enforce_tab_visibility(a))
+            else:
+                self._report_tab_failure(missing_required, visible_set)
+            return
+
+        # All required tabs accounted for; keep default selection
+        self._select_default_tab()
+
+        # Schedule periodic health check
+        try:
+            if self._tab_watchdog_id:
+                self.after_cancel(self._tab_watchdog_id)
+        except Exception:
+            pass
+        finally:
+            self._tab_watchdog_id = self.after(10000, self._enforce_tab_visibility)
+
+    def _report_tab_failure(self, missing_records: List[Dict[str, Any]], visible_set: set[str]) -> None:
+        """Surface a critical error when required tabs cannot be recovered."""
+        if self._tab_failure_reported:
+            return
+
+        self._tab_failure_reported = True
+        missing_names = ', '.join(record['title'] for record in missing_records)
+        diagnostic = [
+            "Critical GUI tabs failed to render after recovery attempts.",
+            f"Missing: {missing_names}",
+            f"Visible widget ids: {sorted(visible_set)}",
+            "Try switching to the default Tk theme or reinstalling GUI dependencies.",
+        ]
+        message = "\n".join(diagnostic)
+        print(f"❌ {message}")
+
+        try:
+            messagebox.showerror("PokerTool GUI Error", message, parent=self)
+        except tk.TclError:
+            pass
+
+    def _validate_screen_scraper_ready(self) -> None:
+        """Run a lightweight readiness check for the screen scraper stack."""
+        if not hasattr(self, 'table_status'):
+            # UI still constructing; try again shortly.
+            self.after(500, self._validate_screen_scraper_ready)
+            return
+
+        details: List[str] = []
+        ready = False
+
+        if not SCREEN_SCRAPER_LOADED:
+            details.append("❌ Screen scraper module not available - install opencv-python, Pillow, pytesseract, mss")
+        else:
+            try:
+                if self.screen_scraper is None and callable(create_scraper):
+                    self.screen_scraper = create_scraper('CHROME')
+                    details.append("ℹ️ Screen scraper factory invoked for CHROME profile")
+
+                if self.screen_scraper is None:
+                    details.append("❌ Screen scraper factory returned None")
+                else:
+                    required_methods = ['analyze_table', 'capture_table']
+                    missing = [
+                        name for name in required_methods
+                        if not hasattr(self.screen_scraper, name)
+                    ]
+                    if missing:
+                        details.append(f"⚠️ Screen scraper missing required methods: {', '.join(missing)}")
+                    else:
+                        ready = True
+                        details.append("✅ Screen scraper object ready")
+
+                    if hasattr(self.screen_scraper, 'get_performance_stats'):
+                        try:
+                            stats = self.screen_scraper.get_performance_stats()
+                            if isinstance(stats, dict) and stats:
+                                summary = ", ".join(
+                                    f"{key}={value}"
+                                    for key, value in list(stats.items())[:3]
+                                )
+                                details.append(f"📊 Initial scraper stats: {summary}")
+                        except Exception as stats_error:
+                            details.append(f"⚠️ Could not fetch scraper stats: {stats_error}")
+            except Exception as exc:
+                ready = False
+                details.append(f"❌ Screen scraper initialization error: {exc}")
+
+        self._screen_scraper_ready = ready
+        self._screen_scraper_health_details = details
+
+        for line in details:
+            print(line)
+            self._update_table_status(line + "\n")
+
+        if not ready:
+            guidance = "Run `python start.py --validate` to verify dependencies."
+            self._update_table_status(f"⚠️ {guidance}\n")
     
     def _build_fallback_tab_content(self, parent: tk.Widget, tab_name: str, error_message: str) -> None:
         """Build fallback content for tabs that failed to load properly."""

@@ -885,9 +885,19 @@ def main() -> int:
         # Validation
         if args.all or args.validate:
             dependency_manager.validate_setup()
+
+        auto_self_test_ran = False
+        if args.all:
+            dependency_manager.log("Running comprehensive self-test before launch (auto mode)...")
+            self_test_result = launcher.run_full_self_test()
+            auto_self_test_ran = True
+            if self_test_result != 0:
+                dependency_manager.log(f"❌ Auto self-test failed with code {self_test_result}")
+                return self_test_result
+            dependency_manager.log("✓ Auto self-test completed successfully")
         
         # Self-test (comprehensive)
-        if args.self_test:
+        if args.self_test and not auto_self_test_ran:
             self_test_result = launcher.run_full_self_test()
             if self_test_result != 0:
                 dependency_manager.log(f"Self-test failed with code {self_test_result}")
