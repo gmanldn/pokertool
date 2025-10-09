@@ -3,7 +3,7 @@
     "numpy": {
       "name": "numpy",
       "status": "available",
-      "version": "1.26.4",
+      "version": "2.2.2",
       "is_critical": true,
       "error_message": null,
       "install_command": null
@@ -11,7 +11,7 @@
     "opencv-python": {
       "name": "opencv-python",
       "status": "available",
-      "version": "4.9.0",
+      "version": "4.12.0",
       "is_critical": true,
       "error_message": null,
       "install_command": null
@@ -43,10 +43,42 @@
     "requests": {
       "name": "requests",
       "status": "available",
-      "version": "2.32.5",
+      "version": "2.32.3",
       "is_critical": true,
       "error_message": null,
       "install_command": null
+    },
+    "websocket-client": {
+      "name": "websocket-client",
+      "status": "available",
+      "version": "1.8.0",
+      "is_critical": true,
+      "error_message": null,
+      "install_command": null
+    },
+    "scikit-image": {
+      "name": "scikit-image",
+      "status": "available",
+      "version": "0.25.2",
+      "is_critical": true,
+      "error_message": null,
+      "install_command": null
+    },
+    "tensorflow": {
+      "name": "tensorflow",
+      "status": "skipped",
+      "version": null,
+      "is_critical": true,
+      "error_message": "tensorflow is only supported on Python versions 3.12, 3.11, 3.10",
+      "install_command": "tensorflow==2.16.2"
+    },
+    "paddlepaddle": {
+      "name": "paddlepaddle",
+      "status": "skipped",
+      "version": null,
+      "is_critical": true,
+      "error_message": "paddlepaddle is only supported on Python versions 3.12, 3.11, 3.10",
+      "install_command": "paddlepaddle>=3.0.0"
     },
     "pyobjc-framework-Quartz": {
       "name": "pyobjc-framework-Quartz",
@@ -79,39 +111,31 @@
     "opencv-contrib-python": {
       "name": "opencv-contrib-python",
       "status": "available",
-      "version": "4.9.0",
+      "version": "4.12.0",
       "is_critical": false,
       "error_message": null,
       "install_command": null
     },
-    "websocket-client": {
-      "name": "websocket-client",
-      "status": "missing",
-      "version": null,
-      "is_critical": false,
-      "error_message": null,
-      "install_command": "websocket-client>=1.6.0"
-    },
     "pandas": {
       "name": "pandas",
       "status": "available",
-      "version": "2.3.3",
+      "version": "2.2.3",
       "is_critical": false,
       "error_message": null,
       "install_command": null
     },
     "scikit-learn": {
       "name": "scikit-learn",
-      "status": "missing",
-      "version": null,
+      "status": "available",
+      "version": "1.7.0",
       "is_critical": false,
       "error_message": null,
-      "install_command": "scikit-learn>=1.3.0"
+      "install_command": null
     },
     "joblib": {
       "name": "joblib",
       "status": "available",
-      "version": "1.5.2",
+      "version": "1.5.1",
       "is_critical": false,
       "error_message": null,
       "install_command": null
@@ -119,7 +143,7 @@
     "psutil": {
       "name": "psutil",
       "status": "available",
-      "version": "7.1.0",
+      "version": "7.0.0",
       "is_critical": false,
       "error_message": null,
       "install_command": null
@@ -132,14 +156,6 @@
       "error_message": null,
       "install_command": null
     },
-    "scikit-image": {
-      "name": "scikit-image",
-      "status": "missing",
-      "version": null,
-      "is_critical": false,
-      "error_message": null,
-      "install_command": "scikit-image"
-    },
     "torch": {
       "name": "torch",
       "status": "skipped",
@@ -150,19 +166,11 @@
     },
     "onnxruntime": {
       "name": "onnxruntime",
-      "status": "available",
-      "version": "1.23.0",
-      "is_critical": false,
-      "error_message": null,
-      "install_command": null
-    },
-    "tensorflow-lite": {
-      "name": "tensorflow-lite",
       "status": "missing",
       "version": null,
       "is_critical": false,
       "error_message": null,
-      "install_command": "tensorflow==2.15.0"
+      "install_command": "onnxruntime"
     },
     "easyocr": {
       "name": "easyocr",
@@ -171,14 +179,6 @@
       "is_critical": false,
       "error_message": "Requires torch which is not available",
       "install_command": "easyocr"
-    },
-    "paddlepaddle": {
-      "name": "paddlepaddle",
-      "status": "missing",
-      "version": null,
-      "is_critical": false,
-      "error_message": null,
-      "install_command": "paddlepaddle"
     }
   },
   "platform_info": {
@@ -187,18 +187,18 @@
     "version": "Darwin Kernel Version 24.4.0: Wed Mar 12 21:16:11 PDT 2025; root:xnu-11417.101.13~4/RELEASE_X86_64",
     "machine": "x86_64",
     "python_version": "3.13.1 (v3.13.1:06714517797, Dec  3 2024, 14:00:22) [Clang 15.0.0 (clang-1500.3.9.4)]",
-    "python_executable": "/Users/georgeridout/Documents/github/pokertool/.venv/bin/python"
+    "python_executable": "/Library/Frameworks/Python.framework/Versions/3.13/bin/Python3"
   },
   "summary": {
     "total": 22,
-    "available": 15,
-    "missing": 5,
+    "available": 17,
+    "missing": 1,
     "errors": 0,
-    "skipped": 2
+    "skipped": 4
   },
   "recommendations": [
-    "Optional enhancements available: websocket-client, scikit-learn, scikit-image"
+    "Optional enhancements available: onnxruntime"
   ],
   "critical_missing": [],
-  "timestamp": "2025-10-08 05:07:17"
+  "timestamp": "2025-10-09 22:50:20"
 }
