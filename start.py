@@ -833,9 +833,9 @@ def main() -> int:
     
     args, unknown_args = parser.parse_known_args()
     
-    # Default to --all if no specific action is specified
+    # Default to --launch if no specific action is specified
     if not any([args.venv, args.python, args.node, args.tests, args.launch, args.all, args.validate, args.self_test]):
-        args.all = True
+        args.launch = True
     
     try:
         dependency_manager = DependencyManager(verbose=not args.quiet)
