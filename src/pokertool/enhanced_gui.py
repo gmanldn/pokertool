@@ -657,7 +657,8 @@ class IntegratedPokerAssistant(tk.Tk):
                 'title_fallback': '🎓 Coach',  # Shorter with icon
                 'builder': self._build_coaching_tab,
                 'required': False,
-                'condition': lambda: self.coaching_system is not None
+                'condition': lambda: self.coaching_system is not None,
+                'disabled_message': 'Coaching system not available. Install coaching dependencies to enable this tab.'
             },
             {
                 'name': 'settings',
@@ -672,7 +673,8 @@ class IntegratedPokerAssistant(tk.Tk):
                 'title_fallback': '📈 Stats',  # Much shorter
                 'builder': self._build_analytics_tab,
                 'required': False,
-                'condition': lambda: self.analytics_dashboard is not None
+                'condition': lambda: self.analytics_dashboard is not None,
+                'disabled_message': 'Analytics dashboard modules missing. Install analytics extras to activate.'
             },
             {
                 'name': 'gamification',
@@ -680,7 +682,8 @@ class IntegratedPokerAssistant(tk.Tk):
                 'title_fallback': '🏆 XP',  # Very short
                 'builder': self._build_gamification_tab,
                 'required': False,
-                'condition': lambda: self.gamification_engine is not None
+                'condition': lambda: self.gamification_engine is not None,
+                'disabled_message': 'Gamification engine not loaded. Install gamification dependencies to enable.'
             },
             {
                 'name': 'community',
@@ -688,7 +691,8 @@ class IntegratedPokerAssistant(tk.Tk):
                 'title_fallback': '👥 Social',  # Shorter
                 'builder': self._build_community_tab,
                 'required': False,
-                'condition': lambda: self.community_platform is not None
+                'condition': lambda: self.community_platform is not None,
+                'disabled_message': 'Community platform disabled. Install community dependencies to access this tab.'
             }
         ]
         
@@ -696,13 +700,19 @@ class IntegratedPokerAssistant(tk.Tk):
         built_tabs = []
         for tab_config in tabs_config:
             try:
-                # Check if tab should be built
+                # Determine if the full feature is available
+                feature_available = True
+                disabled_reason = None
                 if not tab_config['required']:
                     condition = tab_config.get('condition')
                     if condition and not condition():
-                        print(f"Skipping {tab_config['name']} tab - condition not met")
-                        continue
-                
+                        feature_available = False
+                        disabled_reason = tab_config.get(
+                            'disabled_message',
+                            'This feature is currently unavailable.'
+                        )
+                        print(f"Initializing {tab_config['name']} tab in placeholder mode")
+
                 # Create tab frame
                 frame = tk.Frame(self.notebook, bg=COLORS['bg_dark'])
                 
@@ -725,13 +735,20 @@ class IntegratedPokerAssistant(tk.Tk):
                         print(f"Translation registration failed for {tab_config['name']}: {e}")
                 
                 # Build tab content with error handling
-                try:
-                    tab_config['builder'](frame)
-                    print(f"✓ Successfully built {tab_config['name']} tab")
-                except Exception as tab_error:
-                    print(f"Error building {tab_config['name']} tab: {tab_error}")
-                    # Create fallback content
-                    self._build_fallback_tab_content(frame, tab_config['name'], str(tab_error))
+                if feature_available:
+                    try:
+                        tab_config['builder'](frame)
+                        print(f"✓ Successfully built {tab_config['name']} tab")
+                    except Exception as tab_error:
+                        print(f"Error building {tab_config['name']} tab: {tab_error}")
+                        # Create fallback content
+                        self._build_fallback_tab_content(frame, tab_config['name'], str(tab_error))
+                else:
+                    self._build_unavailable_tab_content(
+                        frame,
+                        tab_config['name'],
+                        disabled_reason or 'Feature unavailable'
+                    )
                 
                 # Store reference for special tabs
                 if tab_config['name'] == 'manual_play':
@@ -918,6 +935,44 @@ Platform: {sys.platform}
         
         diagnostic_text.insert('1.0', diagnostic_info)
         diagnostic_text.config(state='disabled')
+
+    def _build_unavailable_tab_content(self, parent: tk.Widget, tab_name: str, reason: str) -> None:
+        """Render a lightweight placeholder for features that are disabled."""
+        placeholder = tk.Frame(parent, bg=COLORS['bg_dark'])
+        placeholder.pack(fill='both', expand=True, padx=20, pady=20)
+
+        tk.Label(
+            placeholder,
+            text=f"{tab_name.replace('_', ' ').title()}",
+            font=FONTS['title'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['accent_warning']
+        ).pack(pady=(0, 10))
+
+        message = tk.Label(
+            placeholder,
+            text=reason,
+            font=FONTS['body'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['text_secondary'],
+            wraplength=480,
+            justify='center'
+        )
+        message.pack(pady=(0, 20))
+
+        tk.Button(
+            placeholder,
+            text="Check Dependencies",
+            font=FONTS['body'],
+            bg=COLORS['accent_primary'],
+            fg=COLORS['text_primary'],
+            command=lambda: self._open_dependency_report(reason)
+        ).pack()
+
+    def _open_dependency_report(self, reason: str) -> None:
+        """Show quick guidance for resolving missing-feature dependencies."""
+        info = f"{reason}\n\nRun `python start.py --validate` to view the dependency report."
+        messagebox.showinfo("Feature Unavailable", info, parent=self)
     
     def _build_autopilot_tab(self, parent):
         """Build the autopilot control tab."""
@@ -2062,6 +2117,8 @@ Platform: {sys.platform}
 
             # Auto-start screen update loop for continuous monitoring
             self.after(0, self._start_screen_update_loop)
+            # Ensure scraper keeps running even if dependencies fluctuate
+            self.after(5000, self._ensure_screen_scraper_watchdog)
 
         except Exception as e:
             print(f'Background services error: {e}')
@@ -2109,6 +2166,20 @@ Platform: {sys.platform}
             self._update_scraper_indicator(False, error=True)
             print(f'Enhanced screen scraper error: {e}')
             return False
+
+    def _ensure_screen_scraper_watchdog(self) -> None:
+        """Periodically verify the enhanced scraper is running and restart if needed."""
+        try:
+            if ENHANCED_SCRAPER_LOADED:
+                status = get_scraper_status()
+                running = bool(status.get('running', False)) if isinstance(status, dict) else False
+                if not running:
+                    self._update_table_status("⚠️ Screen scraper stopped unexpectedly. Restarting...\n")
+                    self._start_enhanced_screen_scraper()
+        except Exception as exc:
+            self._update_table_status(f"⚠️ Screen scraper watchdog error: {exc}\n")
+        finally:
+            self.after(10000, self._ensure_screen_scraper_watchdog)
 
     def _stop_enhanced_screen_scraper(self) -> None:
         """Stop the enhanced screen scraper if it was started."""
