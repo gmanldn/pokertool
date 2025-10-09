@@ -269,8 +269,8 @@ class IntegratedPokerAssistant(tk.Tk):
         self._tab_failure_reported = False
         self._tab_visibility_checks = 0
         self._tab_watchdog_id: Optional[str] = None
-        self._blade_buttons: Dict[str, ttk.Button] = {}
-        self._blade_meta: Dict[str, Dict[str, Any]] = {}
+        self._blade_buttons: Dict[tk.Widget, ttk.Button] = {}
+        self._blade_meta: Dict[tk.Widget, Dict[str, Any]] = {}
         self.blade_bar: Optional[tk.Frame] = None
         self._screen_scraper_ready = False
         self._screen_scraper_health_details: List[str] = []
@@ -567,13 +567,6 @@ class IntegratedPokerAssistant(tk.Tk):
                 ('!selected', '#f8fafc')
             ]
         )
-        try:
-            style.layout(
-                notebook_style,
-                [('Notebook.client', {'sticky': 'nsew'})]
-            )
-        except tk.TclError:
-            pass
 
     # Translation helpers -------------------------------------------------
     def _register_widget_translation(
@@ -657,24 +650,39 @@ class IntegratedPokerAssistant(tk.Tk):
         elif button_text:
             button.configure(text=button_text)
 
-        frame_id = str(frame)
-        self._blade_buttons[frame_id] = button
-        self._blade_meta[frame_id] = {
+        self._blade_buttons[frame] = button
+        self._blade_meta[frame] = {
             'feature_available': feature_available,
             'disabled_reason': disabled_reason,
         }
 
         if not feature_available:
             button.configure(style='BladeNavDisabled.TButton')
+            button.state(['disabled'])
 
     def _handle_blade_press(self, frame: Any) -> None:
         """Handle clicks on the blade navigation bar."""
+        self._activate_blade(frame)
+
+    def _activate_blade(self, frame: Any) -> None:
+        """Show the requested blade and hide all other notebook tabs."""
         if not hasattr(self, 'notebook'):
             return
-        try:
-            self.notebook.select(frame)
-        except tk.TclError:
-            return
+
+        for record in self._tab_records:
+            tab_frame = record['frame']
+            if tab_frame is frame:
+                try:
+                    self.notebook.tab(tab_frame, state='normal')
+                    self.notebook.select(tab_frame)
+                except tk.TclError:
+                    continue
+            else:
+                try:
+                    self.notebook.tab(tab_frame, state='hidden')
+                except tk.TclError:
+                    continue
+
         self._update_blade_selection()
 
 
@@ -699,15 +707,16 @@ class IntegratedPokerAssistant(tk.Tk):
             return
 
         try:
-            current = str(self.notebook.select())
+            current_path = self.notebook.select()
+            current_widget = self.notebook.nametowidget(current_path) if current_path else None
         except tk.TclError:
-            current = None
+            current_widget = None
 
-        for frame_id, button in self._blade_buttons.items():
-            meta = self._blade_meta.get(frame_id, {})
+        for frame_obj, button in self._blade_buttons.items():
+            meta = self._blade_meta.get(frame_obj, {})
             feature_available = meta.get('feature_available', True)
 
-            if frame_id == current:
+            if frame_obj is current_widget:
                 if feature_available:
                     button.configure(style='BladeNavSelected.TButton')
                 else:
@@ -968,11 +977,11 @@ class IntegratedPokerAssistant(tk.Tk):
         
         # CRITICAL: Force notebook to update and show all tabs
         self.notebook.update_idletasks()
-        self._update_blade_selection()
+        self._select_default_tab()
         
         # Log tab visibility for debugging
         print(f"UI built successfully with {len(built_tabs)} tabs")
-        print(f"Visible tabs: {[self.notebook.tab(i, 'text') for i in range(len(built_tabs))]}")
+        print(f"Registered blades: {[record['title'] for record in self._tab_records]}")
         self.after(150, self._enforce_tab_visibility)
         self.after(500, self._validate_screen_scraper_ready)
         
@@ -982,7 +991,7 @@ class IntegratedPokerAssistant(tk.Tk):
         
         tab_count_label = tk.Label(
             status_bar,
-            text=f"✓ {len(built_tabs)} tabs loaded - Use Ctrl+Tab to cycle through tabs",
+            text=f"✓ {len(built_tabs)} blades ready - use the navigation bar above to switch views",
             font=('Arial', 9),
             bg=COLORS['bg_medium'],
             fg=COLORS['accent_success']
@@ -1007,15 +1016,15 @@ class IntegratedPokerAssistant(tk.Tk):
         if target is None:
             return
 
-        try:
-            self.notebook.select(target)
-            self._update_blade_selection()
-        except tk.TclError:
-            pass
+        self._activate_blade(target)
 
     def _enforce_tab_visibility(self, attempt: int = 1) -> None:
         """Watchdog that guarantees notebook tabs stay visible."""
         if not hasattr(self, 'notebook') or not self._tab_records:
+            return
+
+        if self._blade_buttons:
+            # Custom navigation manages visibility explicitly; nothing to enforce.
             return
 
         self._tab_visibility_checks += 1
@@ -1063,11 +1072,11 @@ class IntegratedPokerAssistant(tk.Tk):
             if record.get('required') and str(record['frame']) not in visible_set
         ]
 
-        current_count = len(visible_set)
+        current_count = len(self._tab_records)
         if getattr(self, 'tab_count_label', None):
             try:
                 self.tab_count_label.config(
-                    text=f"✓ {current_count} tabs active - Ctrl+Tab cycles views"
+                    text=f"✓ {current_count} blades available - use the navigation bar above to switch views"
                 )
             except tk.TclError:
                 pass
