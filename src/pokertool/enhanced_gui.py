@@ -269,6 +269,9 @@ class IntegratedPokerAssistant(tk.Tk):
         self._tab_failure_reported = False
         self._tab_visibility_checks = 0
         self._tab_watchdog_id: Optional[str] = None
+        self._blade_buttons: Dict[str, ttk.Button] = {}
+        self._blade_meta: Dict[str, Dict[str, Any]] = {}
+        self.blade_bar: Optional[tk.Frame] = None
         self._screen_scraper_ready = False
         self._screen_scraper_health_details: List[str] = []
         # Initialize modules
@@ -427,6 +430,54 @@ class IntegratedPokerAssistant(tk.Tk):
                        background=COLORS['accent_primary'],
                        foreground=COLORS['text_primary'])
 
+        # Blade navigation buttons (replacement for default notebook tabs)
+        style.configure(
+            'BladeNav.TButton',
+            font=('Arial', 13, 'bold'),
+            background=COLORS['bg_medium'],
+            foreground=COLORS['text_primary'],
+            padding=(18, 10),
+            relief='flat',
+            borderwidth=0,
+        )
+        style.map(
+            'BladeNav.TButton',
+            background=[('active', COLORS['bg_light'])],
+            foreground=[('active', COLORS['text_primary'])],
+        )
+        style.configure(
+            'BladeNavSelected.TButton',
+            font=('Arial', 13, 'bold'),
+            background=COLORS['accent_primary'],
+            foreground=COLORS['bg_dark'],
+            padding=(18, 10),
+            relief='flat',
+            borderwidth=0,
+        )
+        style.map(
+            'BladeNavSelected.TButton',
+            background=[('active', COLORS['accent_primary'])],
+            foreground=[('active', COLORS['bg_dark'])],
+        )
+        style.configure(
+            'BladeNavDisabled.TButton',
+            font=('Arial', 13, 'bold'),
+            background=COLORS['bg_dark'],
+            foreground=COLORS['text_secondary'],
+            padding=(18, 10),
+            relief='flat',
+            borderwidth=0,
+        )
+        style.configure(
+            'BladeNavDisabledSelected.TButton',
+            font=('Arial', 13, 'bold'),
+            background=COLORS['accent_warning'],
+            foreground=COLORS['bg_dark'],
+            padding=(18, 10),
+            relief='flat',
+            borderwidth=0,
+        )
+
         # Dedicated high-contrast notebook styling targetted by name
         notebook_style = 'PokerNotebook.TNotebook'
         tab_style = f'{notebook_style}.Tab'
@@ -516,6 +567,13 @@ class IntegratedPokerAssistant(tk.Tk):
                 ('!selected', '#f8fafc')
             ]
         )
+        try:
+            style.layout(
+                notebook_style,
+                [('Notebook.client', {'sticky': 'nsew'})]
+            )
+        except tk.TclError:
+            pass
 
     # Translation helpers -------------------------------------------------
     def _register_widget_translation(
@@ -557,6 +615,69 @@ class IntegratedPokerAssistant(tk.Tk):
             except Exception:
                 pass
 
+    def _extract_icon_prefix(self, fallback: str) -> str:
+        """Return emoji prefix (if any) from a fallback label."""
+        stripped = fallback.strip()
+        if not stripped:
+            return ''
+        parts = stripped.split(' ', 1)
+        if len(parts) < 2:
+            return ''
+        prefix = parts[0]
+        if prefix and not prefix.isalnum():
+            return prefix + ' '
+        return ''
+
+    def _create_blade_button(
+        self,
+        frame: Any,
+        tab_config: Dict[str, Any],
+        feature_available: bool,
+        disabled_reason: Optional[str],
+    ) -> None:
+        """Create a navigation blade button for the supplied tab."""
+        if self.blade_bar is None:
+            return
+
+        icon_prefix = self._extract_icon_prefix(tab_config.get('title_fallback', ''))
+        button_text = tab_config.get('title_fallback') or tab_config.get('name', 'Tab')
+
+        button = ttk.Button(
+            self.blade_bar,
+            text=button_text,
+            style='BladeNav.TButton',
+            cursor='hand2',
+            command=lambda f=frame: self._handle_blade_press(f)
+        )
+        button.pack(side='left', padx=4, pady=2)
+
+        title_key = tab_config.get('title_key')
+        if title_key:
+            self._register_widget_translation(button, title_key, prefix=icon_prefix)
+        elif button_text:
+            button.configure(text=button_text)
+
+        frame_id = str(frame)
+        self._blade_buttons[frame_id] = button
+        self._blade_meta[frame_id] = {
+            'feature_available': feature_available,
+            'disabled_reason': disabled_reason,
+        }
+
+        if not feature_available:
+            button.configure(style='BladeNavDisabled.TButton')
+
+    def _handle_blade_press(self, frame: Any) -> None:
+        """Handle clicks on the blade navigation bar."""
+        if not hasattr(self, 'notebook'):
+            return
+        try:
+            self.notebook.select(frame)
+        except tk.TclError:
+            return
+        self._update_blade_selection()
+
+
     def _apply_widget_translation(
         self,
         widget: Any,
@@ -571,6 +692,35 @@ class IntegratedPokerAssistant(tk.Tk):
             widget.configure(**{attr: f"{prefix}{translated}{suffix}"})
         except tk.TclError:
             pass
+
+    def _update_blade_selection(self) -> None:
+        """Refresh blade button styles to reflect the selected tab."""
+        if not hasattr(self, 'notebook') or not self._blade_buttons:
+            return
+
+        try:
+            current = str(self.notebook.select())
+        except tk.TclError:
+            current = None
+
+        for frame_id, button in self._blade_buttons.items():
+            meta = self._blade_meta.get(frame_id, {})
+            feature_available = meta.get('feature_available', True)
+
+            if frame_id == current:
+                if feature_available:
+                    button.configure(style='BladeNavSelected.TButton')
+                else:
+                    button.configure(style='BladeNavDisabledSelected.TButton')
+            else:
+                if feature_available:
+                    button.configure(style='BladeNav.TButton')
+                else:
+                    button.configure(style='BladeNavDisabled.TButton')
+
+    def _on_notebook_tab_changed(self, _event: Optional[tk.Event] = None) -> None:
+        """Handle ttk notebook tab change events to sync blade navigation."""
+        self._update_blade_selection()
 
     def _apply_translations(self, _locale_code: Optional[str] = None) -> None:
         try:
@@ -596,6 +746,7 @@ class IntegratedPokerAssistant(tk.Tk):
 
         if self.settings_section:
             self.settings_section.update_localization_display()
+        self._update_blade_selection()
     
     def _refresh_progress_summary(self):
         """Refresh the coaching progress summary display."""
@@ -621,13 +772,22 @@ class IntegratedPokerAssistant(tk.Tk):
         )
         notebook_wrapper.pack(side='top', fill='both', expand=True)
 
+        if self.blade_bar and self.blade_bar.winfo_exists():
+            self.blade_bar.destroy()
+        self.blade_bar = tk.Frame(
+            notebook_wrapper,
+            bg=COLORS['bg_dark']
+        )
+        self.blade_bar.pack(side='top', fill='x', padx=6, pady=(6, 0))
+
         notebook_style = 'PokerNotebook.TNotebook'
         try:
             self.notebook = ttk.Notebook(notebook_wrapper, style=notebook_style)
         except tk.TclError:
             self.notebook = ttk.Notebook(notebook_wrapper)
 
-        self.notebook.pack(fill='both', expand=True, padx=6, pady=6)
+        self.notebook.pack(fill='both', expand=True, padx=6, pady=(0, 6))
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_notebook_tab_changed)
 
         try:
             self.notebook.enable_traversal()
@@ -713,6 +873,11 @@ class IntegratedPokerAssistant(tk.Tk):
         built_tabs = []
         self._tab_records.clear()
         self._tab_title_lookup.clear()
+        self._blade_buttons.clear()
+        self._blade_meta.clear()
+        if self.blade_bar:
+            for child in self.blade_bar.winfo_children():
+                child.destroy()
         for tab_config in tabs_config:
             try:
                 # Determine if the full feature is available
@@ -774,6 +939,7 @@ class IntegratedPokerAssistant(tk.Tk):
                 }
                 self._tab_records.append(tab_record)
                 self._tab_title_lookup[str(frame)] = title
+                self._create_blade_button(frame, tab_config, feature_available, disabled_reason)
                 
                 # Store reference for special tabs
                 if tab_config['name'] == 'manual_play':
@@ -802,6 +968,7 @@ class IntegratedPokerAssistant(tk.Tk):
         
         # CRITICAL: Force notebook to update and show all tabs
         self.notebook.update_idletasks()
+        self._update_blade_selection()
         
         # Log tab visibility for debugging
         print(f"UI built successfully with {len(built_tabs)} tabs")
@@ -842,6 +1009,7 @@ class IntegratedPokerAssistant(tk.Tk):
 
         try:
             self.notebook.select(target)
+            self._update_blade_selection()
         except tk.TclError:
             pass
 

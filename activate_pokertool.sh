@@ -32,7 +32,6 @@ critical_deps = [
     ('cv2', 'opencv-python'),
     ('PIL', 'Pillow'),
     ('pytesseract', 'pytesseract'),
-    ('torch', 'torch>=2.0.0,<3.0.0'),
 ]
 
 missing = []
@@ -44,17 +43,7 @@ for module_name, package_name in critical_deps:
         missing.append(package_name)
         print(f'❌ {package_name} is MISSING')
 
-# Additional version check for torch
-if 'torch>=2.0.0,<3.0.0' not in missing:
-    try:
-        import torch
-        if LooseVersion(torch.__version__) < LooseVersion("2.0.0"):
-            missing.append('torch>=2.0.0,<3.0.0')
-            print(f'❌ torch version {torch.__version__} is below required')
-        else:
-            print(f'✅ torch version {torch.__version__} is OK')
-    except ImportError:
-        pass
+optional_note = "Optional ML accelerators (install manually if needed): torch>=2.0.0,<3.0.0"
 
 if missing:
     print(f'\n📦 Installing missing dependencies...')
@@ -66,6 +55,8 @@ if missing:
             print(f'⚠️  Failed to install {package}: {e}')
 else:
     print('\n✅ All critical dependencies are available')
+
+print(f'\nℹ️ {optional_note}')
 "
 
 echo ""

@@ -17,9 +17,9 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 STATE_DIR = ROOT_DIR / 'state' / 'ml-tests'
 SENTINEL_PATH = STATE_DIR / 'last-success.json'
 REQUIREMENTS_FILE = ROOT_DIR / 'requirements.txt'
+# Torch is handled as an optional accelerator; keep ML automation focused on CPU-friendly deps.
 REQUIRED_MODULES = (
     'tensorflow',
-    'torch',
     'pandas',
     'sklearn',
 )

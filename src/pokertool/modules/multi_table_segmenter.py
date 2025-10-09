@@ -21,12 +21,24 @@ import math
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, NamedTuple, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, NamedTuple, Optional, Tuple, TYPE_CHECKING
 
 import cv2
 import numpy as np
-import torch
-import torch.nn as nn
+
+try:  # Prefer real torch but tolerate absence for lightweight deployments.
+    import torch
+    import torch.nn as nn
+    TORCH_AVAILABLE = True
+except ImportError:  # pragma: no cover - environment without torch
+    torch = None  # type: ignore[assignment]
+    nn = None  # type: ignore[assignment]
+    TORCH_AVAILABLE = False
+
+if TYPE_CHECKING:  # Keep type checkers happy without requiring the runtime dependency.
+    from torch import Tensor  # pragma: no cover
+else:
+    Tensor = Any  # Fallback type alias when torch is absent.
 
 logger = logging.getLogger(__name__)
 
@@ -104,51 +116,65 @@ class SegmentationResult:
 # ---------------------------------------------------------------------------
 
 
-class PokerSegmentationNet(nn.Module):
-    """Minimal convolutional network used for experimentation and tests."""
+if TORCH_AVAILABLE:
 
-    def __init__(self, num_classes: int = 12) -> None:
-        super().__init__()
-        self.num_classes = num_classes
+    class PokerSegmentationNet(nn.Module):
+        """Minimal convolutional network used for experimentation and tests."""
 
-        self.backbone = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(16),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-        )
+        def __init__(self, num_classes: int = 12) -> None:
+            super().__init__()
+            self.num_classes = num_classes
 
-        self.segmentation_head = nn.Sequential(
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, num_classes, kernel_size=1),
-        )
+            self.backbone = nn.Sequential(
+                nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(16),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(32),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(64),
+                nn.ReLU(inplace=True),
+            )
 
-        self.detection_head = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),
-            nn.Linear(64, num_classes * 5),
-        )
+            self.segmentation_head = nn.Sequential(
+                nn.Conv2d(64, 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(64, num_classes, kernel_size=1),
+            )
 
-    def forward(self, x: torch.Tensor) -> Dict[str, Any]:
-        if getattr(torch, "_POKERTOOL_STUB", False):
-            batch, _, height, width = x.shape
-            segmentation_map = torch.zeros((batch, self.num_classes, height, width))
-            detections = torch.zeros((batch, self.num_classes, 5))
+            self.detection_head = nn.Sequential(
+                nn.AdaptiveAvgPool2d((1, 1)),
+                nn.Flatten(),
+                nn.Linear(64, num_classes * 5),
+            )
+
+        def forward(self, x: "Tensor") -> Dict[str, Any]:
+            features = self.backbone(x)
+            segmentation_map = self.segmentation_head(features)
+            detections_flat = self.detection_head(features)
+            detections = detections_flat.view(x.shape[0], self.num_classes, 5)
             return {"segmentation": segmentation_map, "detection": detections}
 
-        features = self.backbone(x)
-        segmentation_map = self.segmentation_head(features)
-        detections_flat = self.detection_head(features)
-        detections = detections_flat.view(x.shape[0], self.num_classes, 5)
-        return {"segmentation": segmentation_map, "detection": detections}
+else:
+
+    class PokerSegmentationNet:
+        """Fallback stub when torch is not available."""
+
+        def __init__(self, num_classes: int = 12) -> None:
+            self.num_classes = num_classes
+            self._error = (
+                "PokerSegmentationNet requires PyTorch. "
+                "Install torch>=2.0 to enable neural segmentation features."
+            )
+
+        def __getattr__(self, name: str) -> None:
+            raise RuntimeError(self._error)
+
+        def forward(self, x: "Tensor") -> Dict[str, Any]:
+            raise RuntimeError(self._error)
 
 
 # ---------------------------------------------------------------------------
@@ -174,9 +200,10 @@ class MultiTableSegmenter:
         self.model_dir.mkdir(parents=True, exist_ok=True)
 
         self.config = self._load_config(config_path)
-        self.use_gpu = use_gpu and torch.cuda.is_available()
+        self.use_gpu = bool(use_gpu and TORCH_AVAILABLE and torch.cuda.is_available())
         self.confidence_threshold = confidence_threshold
         self.nms_threshold = nms_threshold
+        self.torch_available = TORCH_AVAILABLE
 
         self.component_classes = {
             "table": 0,

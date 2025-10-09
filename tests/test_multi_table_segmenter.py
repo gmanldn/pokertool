@@ -14,7 +14,10 @@ import cv2
 import numpy as np
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-import torch
+try:
+    import torch
+except ImportError:  # pragma: no cover - allows tests to run without torch installed
+    torch = None
 
 import sys
 sys.path.append('src')
@@ -466,6 +469,7 @@ class TestMultiTableSegmenter(unittest.TestCase):
         with self.assertRaises(ValueError):
             segmenter.segment_image(None)
             
+    @unittest.skipIf(torch is None, "PyTorch not installed - skipping neural segmentation tests")
     def test_poker_segmentation_net(self):
         """Test PokerSegmentationNet model architecture."""
         model = PokerSegmentationNet(num_classes=12)
