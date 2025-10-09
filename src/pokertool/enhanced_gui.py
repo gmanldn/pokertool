@@ -46,6 +46,13 @@ from typing import List, Optional, Dict, Any, Callable, Tuple
 from pathlib import Path
 import webbrowser
 
+# Ensure numpy is loaded from installed packages before any path changes
+NUMPY_IMPORT_ERROR: Optional[BaseException] = None
+try:
+    import numpy as _numpy_guard  # noqa: F401  - imported for side effect
+except Exception as _exc:  # pragma: no cover - environment specific
+    NUMPY_IMPORT_ERROR = _exc
+
 # CRITICAL: Check and install screen scraper dependencies FIRST
 import sys
 import os
@@ -176,6 +183,9 @@ except ImportError as e:
 
 # Import screen scraper
 try:
+    if NUMPY_IMPORT_ERROR is not None:
+        raise ImportError(f"Error importing numpy: {NUMPY_IMPORT_ERROR}") from NUMPY_IMPORT_ERROR
+
     from pokertool.modules.poker_screen_scraper import (
         PokerScreenScraper,
         PokerSite,

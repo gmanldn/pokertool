@@ -99,21 +99,23 @@ class DependencyManager:
                 'is_critical': True,
                 'description': 'HTTP requests'
             },
-            'websocket-client': {
-                'install_command': 'websocket-client>=1.6.0',
-                'is_critical': True,
-                'description': 'WebSocket communication'
-            },
+        'websocket-client': {
+            'install_command': 'websocket-client>=1.6.0',
+            'is_critical': True,
+            'description': 'WebSocket communication',
+            'import_name': 'websocket'
+        },
             'pandas': {
                 'install_command': 'pandas>=2.0.0',
                 'is_critical': False,
                 'description': 'Data analysis'
             },
-            'scikit-learn': {
-                'install_command': 'scikit-learn>=1.3.0',
-                'is_critical': False,
-                'description': 'Machine learning'
-            },
+        'scikit-learn': {
+            'install_command': 'scikit-learn>=1.3.0',
+            'is_critical': False,
+            'description': 'Machine learning',
+            'import_name': 'sklearn'
+        },
             'joblib': {
                 'install_command': 'joblib>=1.3.0',
                 'is_critical': False,
@@ -129,11 +131,12 @@ class DependencyManager:
                 'is_critical': False,
                 'description': 'Image hashing'
             },
-            'scikit-image': {
-                'install_command': 'scikit-image>=0.25.0,<0.26.0',
-                'is_critical': True,
-                'description': 'Advanced image processing'
-            },
+        'scikit-image': {
+            'install_command': 'scikit-image>=0.25.0,<0.26.0',
+            'is_critical': True,
+            'description': 'Advanced image processing',
+            'import_name': 'skimage'
+        },
             # Optional heavy dependencies with fallbacks
             'torch': {
                 'install_command': 'torch --extra-index-url https://download.pytorch.org/whl/cpu',
@@ -162,12 +165,13 @@ class DependencyManager:
                 'requires': ['torch'],  # Requires torch
                 'skip_auto_install': True,  # Very slow to install, skip during validation
             },
-            'paddlepaddle': {
-                'install_command': 'paddlepaddle>=3.0.0',
-                'is_critical': True,
-                'description': 'PaddlePaddle ML framework',
-                'supported_python_versions': [(3, 12), (3, 11), (3, 10)]
-            },
+        'paddlepaddle': {
+            'install_command': 'paddlepaddle>=3.0.0',
+            'is_critical': True,
+            'description': 'PaddlePaddle ML framework',
+            'import_name': 'paddle',
+            'supported_python_versions': [(3, 12), (3, 11), (3, 10)]
+        },
             # macOS specific
             'pyobjc-framework-Quartz': {
                 'install_command': 'pyobjc-framework-Quartz>=9.0',

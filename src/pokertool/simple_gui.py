@@ -12,10 +12,17 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 import time
-import os
 import sys
 from datetime import datetime
 from typing import Optional, Dict, Any
+
+# Pre-load numpy before any working-directory changes so we never
+# accidentally import from a checked-out numpy source tree.
+NUMPY_IMPORT_ERROR = None
+try:
+    import numpy as _numpy_guard  # noqa: F401  - imported for side effect
+except Exception as _exc:
+    NUMPY_IMPORT_ERROR = _exc
 
 from pokertool.utils.single_instance import acquire_lock, release_lock
 
@@ -54,22 +61,13 @@ except ImportError as e:
 
 try:
     # Import screen scraper with clean environment to avoid numpy conflicts
-    # Save current directory
-    import os
-    _original_cwd = os.getcwd()
-    
-    # Change to home directory temporarily to avoid numpy import conflicts
-    os.chdir(os.path.expanduser('~'))
-    
-    try:
-        from pokertool.modules.poker_screen_scraper import create_scraper
-        SCREEN_SCRAPER_LOADED = True
-        COMPONENTS_LOADED = True
-        print("✓ Screen scraper loaded successfully")
-    finally:
-        # Restore original directory
-        os.chdir(_original_cwd)
-        
+    if NUMPY_IMPORT_ERROR is not None:
+        raise ImportError(f"Error importing numpy: {NUMPY_IMPORT_ERROR}") from NUMPY_IMPORT_ERROR
+
+    from pokertool.modules.poker_screen_scraper import create_scraper
+    SCREEN_SCRAPER_LOADED = True
+    COMPONENTS_LOADED = True
+    print("✓ Screen scraper loaded successfully")
 except Exception as e:
     print(f"⚠️ Screen scraper not available: {e}")
     SCREEN_SCRAPER_LOADED = False

@@ -40,9 +40,9 @@ import importlib
 from importlib import util as importlib_util
 
 # Preferred/supported Python runtimes for heavy ML dependencies.
-SUPPORTED_PYTHON_SERIES = {(3, 12), (3, 11), (3, 10)}
+SUPPORTED_PYTHON_SERIES = {(3, 13), (3, 12), (3, 11), (3, 10)}
 MIN_SUPPORTED_PYTHON = (3, 10)
-MAX_SUPPORTED_PYTHON = (3, 12)
+MAX_SUPPORTED_PYTHON = (3, 13)
 
 def _module_available(module_name: str) -> bool:
     """Return True if the module can be imported."""
@@ -61,6 +61,22 @@ IS_LINUX = platform.system() == 'Linux'
 class SetupError(Exception):
     """Custom exception for setup errors."""
     pass
+
+# Terminal utilities ---------------------------------------------------------
+
+def clear_terminal() -> None:
+    """Clear the active terminal before logging output."""
+    try:
+        if IS_WINDOWS:
+            os.system('cls')
+            return
+        # Only run `clear` when TERM is defined; otherwise use ANSI reset.
+        if os.environ.get('TERM'):
+            os.system('clear')
+        else:
+            print('\033c', end='')
+    except Exception:
+        print('\033c', end='')
 
 # Early dependency validation
 def _validate_dependencies_upfront(verbose: bool = True) -> bool:
@@ -251,7 +267,7 @@ class DependencyManager:
                 if (major, minor) > MAX_SUPPORTED_PYTHON:
                     raise SetupError(
                         f"Python {major}.{minor} is too new for TensorFlow/PaddlePaddle wheels. "
-                        "Install Python 3.12 and set the POKERTOOL_PYTHON environment variable to its path."
+                        "Install a supported Python (3.10–3.13) and set the POKERTOOL_PYTHON environment variable to its path."
                     )
             
             return python_exe
@@ -721,56 +737,37 @@ class PokerToolLauncher:
                         result = subprocess.run([
                             sys_python, '-c', 'import tkinter; tkinter.Tcl().eval("package require Tk")'
                         ], capture_output=True, timeout=5)
-                        
-                        if result.returncode == 0:
-                            self.dependency_manager.log(f"Found working tkinter in system Python: {sys_python}")
-                            # Use system Python for GUI but setup proper PYTHONPATH for venv access
-                            try:
-                                # Create enhanced environment for system Python
-                                enhanced_env = env.copy()
-                                
-                                # Find actual site-packages directory in venv dynamically
-                                import glob
-                                site_packages_pattern = str(VENV_DIR / 'lib' / 'python*' / 'site-packages')
-                                site_packages_dirs = glob.glob(site_packages_pattern)
-                                
-                                # Create clean PYTHONPATH with ONLY venv packages and SRC_DIR
-                                # CRITICAL: venv site-packages MUST come before SRC_DIR
-                                # This ensures numpy is imported from venv, not from project directory
-                                # IMPORTANT: Clear any existing PYTHONPATH to avoid conflicts
-                                python_paths = []
-                                
-                                # Add venv site-packages if found (MUST be FIRST)
-                                if site_packages_dirs:
-                                    python_paths.append(site_packages_dirs[0])
-                                    self.dependency_manager.log(f"Added venv site-packages: {site_packages_dirs[0]}")
-                                else:
-                                    self.dependency_manager.log("Warning: Could not find venv site-packages")
-                                
-                                # Add SRC_DIR AFTER site-packages so pokertool module is importable
-                                # but doesn't interfere with package imports
-                                python_paths.append(str(SRC_DIR))
-                                
-                                # Set CLEAN PYTHONPATH (override any existing value completely)
-                                enhanced_env['PYTHONPATH'] = os.pathsep.join(python_paths)
-                                
-                                # Remove project root from path to prevent import conflicts
-                                enhanced_env.pop('PWD', None)
-                                
-                                enhanced_env['TK_SILENCE_DEPRECATION'] = '1'  # Suppress tkinter deprecation warning
-                                
-                                self.dependency_manager.log("Starting GUI with system Python and venv packages")
-                                # Use new simple GUI with sidebar navigation (no problematic tabs)
-                                simple_gui_script = SRC_DIR / 'pokertool' / 'simple_gui.py'
-                                result = subprocess.run([
-                                    sys_python, str(simple_gui_script)
-                                ] + args, cwd=os.path.expanduser('~'), env=enhanced_env)
-                                return result.returncode
-                            except Exception as e:
-                                self.dependency_manager.log(f"System Python GUI launch failed: {e}")
-                                break
-                    except:
+                        if result.returncode != 0:
+                            continue
+                    except Exception as e:
+                        self.dependency_manager.log(f"System Python tkinter check failed: {e}")
                         continue
+                    
+                    self.dependency_manager.log(f"Found working tkinter in system Python: {sys_python}")
+                    try:
+                        enhanced_env = env.copy()
+                        import glob
+                        site_packages_pattern = str(VENV_DIR / 'lib' / 'python*' / 'site-packages')
+                        site_packages_dirs = glob.glob(site_packages_pattern)
+                        
+                        python_paths: List[str] = []
+                        if site_packages_dirs:
+                            python_paths.append(site_packages_dirs[0])
+                            self.dependency_manager.log(f"Added venv site-packages: {site_packages_dirs[0]}")
+                        else:
+                            self.dependency_manager.log("Warning: Could not find venv site-packages")
+                        
+                        python_paths.append(str(SRC_DIR))
+                        enhanced_env['PYTHONPATH'] = os.pathsep.join(python_paths)
+                        enhanced_env['TK_SILENCE_DEPRECATION'] = '1'
+                        
+                        self.dependency_manager.log("Starting enhanced GUI with system Python")
+                        command = [sys_python, '-m', 'pokertool.cli'] + args
+                        result = subprocess.run(command, cwd=os.path.expanduser('~'), env=enhanced_env)
+                        return result.returncode
+                    except Exception as e:
+                        self.dependency_manager.log(f"System Python GUI launch failed: {e}")
+                        break
         
         # Define launch methods in priority order for venv Python
         launch_methods: List[List[str]] = [
@@ -807,6 +804,7 @@ class PokerToolLauncher:
 
 def main() -> int:
     """Main entry point."""
+    clear_terminal()
     parser = argparse.ArgumentParser(
         description="PokerTool Setup and Launcher",
         formatter_class=argparse.RawDescriptionHelpFormatter,
