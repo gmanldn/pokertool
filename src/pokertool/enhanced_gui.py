@@ -1525,15 +1525,9 @@ Platform: {sys.platform}
             desc_key='actions.screenshot_desc'
         )
 
-        create_action_button(
-            quick_actions_frame,
-            'actions.gto_analysis',
-            '🧠',
-            self._run_gto_analysis,
-            COLORS['accent_success'],
-            desc_key='actions.gto_desc'
-        )
-        
+        # GTO analysis is now auto-integrated (removed manual button)
+        # Analysis runs automatically when autopilot detects a table
+
         # Separator
         tk.Frame(quick_actions_frame, height=2, bg=COLORS['accent_primary']).pack(fill='x', padx=10, pady=8)
         
@@ -2428,9 +2422,9 @@ Platform: {sys.platform}
                         table_active = True
                         table_reason = f"{table_state.active_players} players, pot ${table_state.pot_size}"
                         self._process_table_state(table_state)
-                        
-                        # Auto GTO analysis if enabled
-                        if self.autopilot_panel.auto_gto_var.get() and self.gto_solver:
+
+                        # Auto GTO analysis (now always enabled)
+                        if self.gto_solver:
                             try:
                                 self.after(0, lambda: self._update_table_status(translate('autopilot.log.auto_gto_start') + "\n"))
                                 # GTO analysis would happen here with table_state
@@ -2450,8 +2444,8 @@ Platform: {sys.platform}
                 stats = {
                     'tables_detected': 1 if table_active else 0,
                     'hands_played': self.autopilot_panel.state.hands_played + (1 if table_active else 0),
-                    'actions_taken': self.autopilot_panel.state.actions_taken + (1 if self.autopilot_panel.auto_gto_var.get() and table_active else 0),
-                    'last_action_key': 'autopilot.last_action.auto_analyzing' if self.autopilot_panel.auto_gto_var.get() and table_active else 'autopilot.last_action.monitoring',
+                    'actions_taken': self.autopilot_panel.state.actions_taken + (1 if table_active else 0),
+                    'last_action_key': 'autopilot.last_action.auto_analyzing' if table_active else 'autopilot.last_action.monitoring',
                     'table_active': table_active,
                     'table_reason': table_reason
                 }

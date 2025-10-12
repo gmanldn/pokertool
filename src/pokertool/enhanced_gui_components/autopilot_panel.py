@@ -300,18 +300,8 @@ class AutopilotControlPanel(tk.Frame):
         continuous_update_cb.pack(anchor="w", padx=10, pady=2)
         self._register_translation(continuous_update_cb, "autopilot.settings.continuous_updates")
 
-        self.auto_gto_var = tk.BooleanVar(value=False)
-        auto_gto_cb = tk.Checkbutton(
-            settings_frame,
-            text=translate("autopilot.settings.auto_gto"),
-            variable=self.auto_gto_var,
-            font=FONTS["body"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-            selectcolor=COLORS["bg_light"],
-        )
-        auto_gto_cb.pack(anchor="w", padx=10, pady=2)
-        self._register_translation(auto_gto_cb, "autopilot.settings.auto_gto")
+        # GTO analysis is now auto-integrated (always enabled)
+        # Removed checkbox - GTO runs automatically when table is detected
 
         stats_frame = tk.LabelFrame(
             self,
