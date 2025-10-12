@@ -29,9 +29,9 @@ paddlepaddle>=3.0.0
 # easyocr>=1.7.0  # Temporarily disabled due to Python 3.13 compatibility (requires torch)
 
 # Screen scraping and computer vision
-# NOTE: opencv-python 4.9.x is compatible with NumPy 1.x
-opencv-python>=4.8.0,<4.10.0
-opencv-contrib-python>=4.8.0,<4.10.0
+# NOTE: opencv-python-headless is more compatible with macOS (no GUI dependencies)
+# opencv-python 4.9.x is compatible with NumPy 1.x
+opencv-python-headless>=4.8.0,<4.10.0
 pytesseract>=0.3.10
 mss>=9.0.0
 requests>=2.32.0
