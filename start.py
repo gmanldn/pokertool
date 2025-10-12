@@ -7,21 +7,21 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v31.0.0
-# last_commit: '2025-10-12T15:25:00Z'
+# version: v32.0.0
+# last_commit: '2025-10-12T16:00:00Z'
 # fixes:
 # - date: '2025-10-12'
-#   summary: Updated to launch Enhanced GUI v31.0.0 with graphical poker table
+#   summary: Updated to launch Enhanced GUI v32.0.0 with modern styling and logging tab
 # - date: '2025-10-12'
-#   summary: LiveTable now displays graphical oval poker table like Betfair
+#   summary: Added real-time Logging tab to monitor all application activity
 # - date: '2025-10-12'
-#   summary: All button text changed to black for better readability
+#   summary: Modernized color scheme with deeper contrasts and vibrant accents
 # - date: '2025-01-10'
 #   summary: Complete rewrite for robust cross-platform dependency management and setup
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v31.0.0
+PokerTool One-Click Launcher - v32.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -43,7 +43,7 @@ import shutil
 import argparse
 
 # Version
-__version__ = '31.0.0'
+__version__ = '32.0.0'
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -136,7 +136,7 @@ def run_tests() -> int:
     # Test enhanced GUI v2
     test_file = ROOT / 'tests' / 'gui' / 'test_enhanced_gui_styles.py'
     if test_file.exists():
-        log("Testing Enhanced GUI v31.0.0...")
+        log("Testing Enhanced GUI v32.0.0...")
         try:
             result = subprocess.run([venv_python, '-m', 'pytest', str(test_file), '-v'],
                                    cwd=ROOT)
@@ -150,7 +150,7 @@ def run_tests() -> int:
     return 0
 
 def launch_enhanced_gui() -> int:
-    """Launch the Enhanced GUI v31.0.0."""
+    """Launch the Enhanced GUI v32.0.0."""
     venv_python = get_venv_python()
     
     # Setup environment
@@ -158,7 +158,7 @@ def launch_enhanced_gui() -> int:
     env['PYTHONPATH'] = str(SRC_DIR)
     
     log("=" * 70)
-    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v31.0.0")
+    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v32.0.0")
     log("=" * 70)
     log("")
     log("Features:")
@@ -172,7 +172,7 @@ def launch_enhanced_gui() -> int:
     # Try enhanced GUI v2 launcher
     launcher = ROOT / 'launch_enhanced_gui_v2.py'
     if launcher.exists():
-        log("Starting Enhanced GUI v31.0.0...")
+        log("Starting Enhanced GUI v32.0.0...")
         result = subprocess.run([venv_python, str(launcher)], env=env)
         return result.returncode
     
@@ -193,7 +193,7 @@ def show_banner():
     """Show startup banner."""
     clear_terminal()
     print("=" * 70)
-    print("🎰 POKERTOOL - Enhanced GUI v31.0.0")
+    print("🎰 POKERTOOL - Enhanced GUI v32.0.0")
     print("=" * 70)
     print("Enterprise Edition with Integrated Screen Scraping")
     print("")

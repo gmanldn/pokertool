@@ -11,7 +11,7 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 31.0.0
+Version: 32.0.0
 Last Modified: 2025-10-12
 Author: PokerTool Development Team
 License: MIT
@@ -21,6 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v32.0.0 (2025-10-12): Modern styling, real-time Logging tab, ALWAYS-ON scraper
     - v31.0.0 (2025-10-12): LiveTable with graphical oval poker table, black button text for clarity
     - v30.0.0 (2025-10-12): Major codebase cleanup, fixed all dependencies, screen scraper optimized for v30
     - v20.2.0 (2025-10-08): CRITICAL FIX - Tab visibility guaranteed, auto-start screen scraper, thread-safe background services
@@ -30,7 +31,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '31.0.0'
+__version__ = '32.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -256,6 +257,10 @@ class IntegratedPokerAssistant(tk.Tk):
         self._enhanced_scraper_started = False
         self._screen_update_running = False
         self._screen_update_thread = None
+
+        # Logging tab state
+        self.log_text_widget = None
+        self.log_handler = None
 
         self.manual_section = None
         self.settings_section = None
@@ -876,6 +881,13 @@ class IntegratedPokerAssistant(tk.Tk):
                 'required': False,
                 'condition': lambda: self.community_platform is not None,
                 'disabled_message': 'Community platform disabled. Install community dependencies to access this tab.'
+            },
+            {
+                'name': 'logging',
+                'title_key': None,
+                'title_fallback': '📋 Logs',  # New logging tab
+                'builder': self._build_logging_tab,
+                'required': True  # Always available
             }
         ]
         
@@ -1885,6 +1897,218 @@ Platform: {sys.platform}
         self.community_platform.join_challenge(challenge_id, 'hero')
         self.community_platform.complete_challenge(challenge_id, 'hero')
         self._refresh_community_views()
+
+    def _build_logging_tab(self, parent):
+        """Build the Logging tab for real-time application logs."""
+        # Main container with modern styling
+        main_frame = tk.Frame(parent, bg=COLORS['bg_dark'])
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        # Header
+        header_frame = tk.Frame(main_frame, bg=COLORS['bg_dark'])
+        header_frame.pack(fill='x', pady=(0, 15))
+
+        tk.Label(
+            header_frame,
+            text="📋 Application Logs",
+            font=FONTS['heading'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['text_primary']
+        ).pack(side='left')
+
+        tk.Label(
+            header_frame,
+            text="Real-time view of what the app is doing and thinking",
+            font=FONTS['body'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['text_secondary']
+        ).pack(side='left', padx=(15, 0))
+
+        # Controls frame
+        controls_frame = tk.Frame(main_frame, bg=COLORS['bg_medium'], relief=tk.RAISED, bd=2)
+        controls_frame.pack(fill='x', pady=(0, 10))
+
+        # Filter buttons
+        tk.Button(
+            controls_frame,
+            text="🔴 Show Errors Only",
+            font=FONTS['body'],
+            bg=COLORS['accent_danger'],
+            fg='#000000',
+            command=lambda: self._filter_logs('ERROR'),
+            padx=10,
+            pady=5
+        ).pack(side='left', padx=10, pady=10)
+
+        tk.Button(
+            controls_frame,
+            text="⚠️ Show Warnings",
+            font=FONTS['body'],
+            bg=COLORS['accent_warning'],
+            fg='#000000',
+            command=lambda: self._filter_logs('WARNING'),
+            padx=10,
+            pady=5
+        ).pack(side='left', padx=5, pady=10)
+
+        tk.Button(
+            controls_frame,
+            text="ℹ️ Show All",
+            font=FONTS['body'],
+            bg=COLORS['accent_info'],
+            fg='#000000',
+            command=lambda: self._filter_logs('ALL'),
+            padx=10,
+            pady=5
+        ).pack(side='left', padx=5, pady=10)
+
+        tk.Button(
+            controls_frame,
+            text="🗑️ Clear Logs",
+            font=FONTS['body'],
+            bg=COLORS['bg_light'],
+            fg='#000000',
+            command=self._clear_logs,
+            padx=10,
+            pady=5
+        ).pack(side='left', padx=5, pady=10)
+
+        # Auto-scroll checkbox
+        self.log_autoscroll_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            controls_frame,
+            text="Auto-scroll",
+            variable=self.log_autoscroll_var,
+            font=FONTS['body'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            selectcolor=COLORS['bg_light']
+        ).pack(side='right', padx=10, pady=10)
+
+        # Log viewer frame with modern styling
+        log_frame = tk.LabelFrame(
+            main_frame,
+            text="Live Log Stream",
+            font=FONTS['subheading'],
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_primary'],
+            relief=tk.RAISED,
+            bd=3
+        )
+        log_frame.pack(fill='both', expand=True)
+
+        # Create text widget with scrollbar
+        log_container = tk.Frame(log_frame, bg=COLORS['bg_dark'])
+        log_container.pack(fill='both', expand=True, padx=10, pady=10)
+
+        scrollbar = tk.Scrollbar(log_container)
+        scrollbar.pack(side='right', fill='y')
+
+        self.log_text_widget = tk.Text(
+            log_container,
+            font=('Consolas', 10),
+            bg='#0a0f1a',  # Very dark background
+            fg=COLORS['text_primary'],
+            wrap=tk.WORD,
+            yscrollcommand=scrollbar.set,
+            relief=tk.SUNKEN,
+            bd=2,
+            padx=10,
+            pady=10,
+            state=tk.DISABLED  # Read-only by default
+        )
+        self.log_text_widget.pack(side='left', fill='both', expand=True)
+        scrollbar.config(command=self.log_text_widget.yview)
+
+        # Configure text tags for colored log levels
+        self.log_text_widget.tag_config('CRITICAL', foreground='#ff0000', font=('Consolas', 10, 'bold'))
+        self.log_text_widget.tag_config('ERROR', foreground='#ff4444')
+        self.log_text_widget.tag_config('WARNING', foreground='#f59e0b')
+        self.log_text_widget.tag_config('INFO', foreground='#10b981')
+        self.log_text_widget.tag_config('DEBUG', foreground='#94a3b8')
+        self.log_text_widget.tag_config('TIMESTAMP', foreground='#64748b')
+
+        # Setup logging handler
+        self._setup_logging_handler()
+
+        # Add initial welcome message
+        self._append_log("INFO", "Logging system initialized - monitoring application activity")
+        self._append_log("INFO", "All application logs will appear here in real-time")
+
+    def _setup_logging_handler(self):
+        """Setup a custom logging handler to capture logs in the UI."""
+        import logging
+
+        class TextWidgetHandler(logging.Handler):
+            def __init__(self, text_widget, gui_instance):
+                super().__init__()
+                self.text_widget = text_widget
+                self.gui_instance = gui_instance
+
+            def emit(self, record):
+                try:
+                    msg = self.format(record)
+                    level = record.levelname
+                    # Use after() to ensure thread-safe GUI updates
+                    self.gui_instance.after(0, lambda: self.gui_instance._append_log(level, msg))
+                except Exception:
+                    pass
+
+        # Create and configure handler
+        self.log_handler = TextWidgetHandler(self.log_text_widget, self)
+        self.log_handler.setFormatter(
+            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
+        )
+
+        # Add handler to root logger
+        logging.getLogger().addHandler(self.log_handler)
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    def _append_log(self, level, message):
+        """Append a log message to the log viewer."""
+        if not self.log_text_widget:
+            return
+
+        try:
+            self.log_text_widget.config(state=tk.NORMAL)
+
+            # Extract timestamp if present
+            if ' - ' in message:
+                parts = message.split(' - ', 2)
+                if len(parts) >= 3:
+                    timestamp, log_level, msg = parts
+                    self.log_text_widget.insert(tk.END, timestamp, 'TIMESTAMP')
+                    self.log_text_widget.insert(tk.END, ' - ')
+                    self.log_text_widget.insert(tk.END, log_level, level)
+                    self.log_text_widget.insert(tk.END, f' - {msg}\n')
+                else:
+                    self.log_text_widget.insert(tk.END, message + '\n', level)
+            else:
+                self.log_text_widget.insert(tk.END, message + '\n', level)
+
+            self.log_text_widget.config(state=tk.DISABLED)
+
+            # Auto-scroll if enabled
+            if hasattr(self, 'log_autoscroll_var') and self.log_autoscroll_var.get():
+                self.log_text_widget.see(tk.END)
+
+        except Exception as e:
+            print(f"Error appending log: {e}")
+
+    def _filter_logs(self, level):
+        """Filter logs by level (placeholder for future enhancement)."""
+        # This could be enhanced to actually filter the display
+        import logging
+        logging.info(f"Log filter changed to: {level}")
+
+    def _clear_logs(self):
+        """Clear all logs from the viewer."""
+        if self.log_text_widget:
+            self.log_text_widget.config(state=tk.NORMAL)
+            self.log_text_widget.delete('1.0', tk.END)
+            self.log_text_widget.config(state=tk.DISABLED)
+            import logging
+            logging.info("Log viewer cleared")
 
     def _refresh_community_views(self):
         if not self.community_platform:
