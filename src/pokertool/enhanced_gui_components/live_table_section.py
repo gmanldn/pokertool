@@ -375,12 +375,17 @@ class LiveTableSection:
 
     def _create_player_position(self, seat: int, x: float, y: float) -> None:
         """Create a player display at a specific table position."""
+        # Highlight seat 1 (hero position) with distinct visual styling
+        is_hero_seat = (seat == 1)
+        frame_bg = COLORS["accent_success"] if is_hero_seat else COLORS["bg_light"]
+        frame_bd = 3 if is_hero_seat else 2
+
         # Create frame for this player
         player_frame = tk.Frame(
             self.live_data_frame,
-            bg=COLORS["bg_light"],
+            bg=frame_bg,
             relief=tk.RAISED,
-            bd=2,
+            bd=frame_bd,
             padx=5,
             pady=3
         )
@@ -388,14 +393,15 @@ class LiveTableSection:
         # Place it on the canvas
         window_id = self.table_canvas.create_window(x, y, window=player_frame)
 
-        # Seat label
+        # Seat label with hero indicator
+        seat_text = f"🎯 YOU (S{seat})" if is_hero_seat else f"S{seat}"
         seat_label = tk.Label(
             player_frame,
-            text=f"S{seat}",
+            text=seat_text,
             font=("Arial", 9, "bold"),
-            bg=COLORS["bg_light"],
-            fg=COLORS["text_secondary"],
-            width=3
+            bg=frame_bg,
+            fg="#000000" if is_hero_seat else COLORS["text_secondary"],
+            width=12 if is_hero_seat else 3
         )
         seat_label.grid(row=0, column=0, columnspan=2, sticky="ew")
 
@@ -404,8 +410,8 @@ class LiveTableSection:
             player_frame,
             text="Empty",
             font=("Arial", 10, "bold"),
-            bg=COLORS["bg_light"],
-            fg=COLORS["text_secondary"],
+            bg=frame_bg,
+            fg=COLORS["text_primary"] if is_hero_seat else COLORS["text_secondary"],
             width=12
         )
         name_label.grid(row=1, column=0, columnspan=2, pady=2)
@@ -415,8 +421,8 @@ class LiveTableSection:
             player_frame,
             text="$0",
             font=("Arial", 9),
-            bg=COLORS["bg_light"],
-            fg=COLORS["accent_warning"]
+            bg=frame_bg,
+            fg="#000000" if is_hero_seat else COLORS["accent_warning"]
         )
         stack_label.grid(row=2, column=0, columnspan=2)
 
@@ -425,13 +431,13 @@ class LiveTableSection:
             player_frame,
             text="",
             font=("Arial", 8),
-            bg=COLORS["bg_light"],
+            bg=frame_bg,
             fg=COLORS["accent_info"]
         )
         bet_label.grid(row=3, column=0, columnspan=2)
 
         # Cards frame
-        cards_frame = tk.Frame(player_frame, bg=COLORS["bg_light"])
+        cards_frame = tk.Frame(player_frame, bg=frame_bg)
         cards_frame.grid(row=4, column=0, columnspan=2, pady=2)
 
         card1_label = tk.Label(
@@ -463,7 +469,7 @@ class LiveTableSection:
             player_frame,
             text="",
             font=("Arial", 8),
-            bg=COLORS["bg_light"],
+            bg=frame_bg,
             fg=COLORS["text_secondary"]
         )
         status_label.grid(row=5, column=0, columnspan=2)
