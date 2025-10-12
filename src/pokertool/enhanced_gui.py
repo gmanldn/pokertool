@@ -226,8 +226,9 @@ from .enhanced_gui_components import (
     SettingsSection,
     CoachingSection,
 )
+from .enhanced_gui_components.tabs import HandHistoryTabMixin
 
-class IntegratedPokerAssistant(tk.Tk):
+class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
     """Integrated Poker Assistant with prominent Autopilot functionality."""
     
     def __init__(self, lock_path: Optional[Path] = None):
@@ -921,6 +922,13 @@ class IntegratedPokerAssistant(tk.Tk):
                 'title_key': None,
                 'title_fallback': '📋 Logs',  # New logging tab
                 'builder': self._build_logging_tab,
+                'required': True  # Always available
+            },
+            {
+                'name': 'hand_history',
+                'title_key': None,
+                'title_fallback': '📚 History',  # Hand history tab
+                'builder': self._build_hand_history_tab,
                 'required': True  # Always available
             }
         ]
