@@ -8,16 +8,20 @@ Startup Validation System for PokerTool
 Comprehensive health checks for all application features and modules.
 Validates that every component is properly initialized and functional.
 
-Version: 1.0.0
+Version: 2.0.0
 Author: PokerTool Development Team
 """
 
 from __future__ import annotations
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
 import time
+import sys
+import platform
+import subprocess
+from pathlib import Path
 
 
 class HealthStatus(Enum):
@@ -469,3 +473,321 @@ class StartupValidator:
     def has_critical_failures(self) -> bool:
         """Check if any critical modules have failed."""
         return len(self.get_critical_failures()) > 0
+
+
+# ===========================================================================
+# Pre-Startup Dependency Validation (runs before app initialization)
+# ===========================================================================
+
+@dataclass
+class DependencyCheck:
+    """Result of a dependency check."""
+    name: str
+    version: Optional[str]
+    status: str  # "✓", "⚠", "✗"
+    message: str
+    critical: bool = False
+
+
+def check_dependencies() -> Tuple[List[DependencyCheck], bool]:
+    """
+    Check all required dependencies before app startup.
+
+    Returns:
+        Tuple of (check_results, can_start)
+        - check_results: List of dependency check results
+        - can_start: True if app can start, False if critical deps missing
+    """
+    checks = []
+
+    # ===== System Info =====
+    py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    checks.append(DependencyCheck(
+        name="Python",
+        version=py_version,
+        status="✓" if sys.version_info >= (3, 10) else "✗",
+        message="Version OK" if sys.version_info >= (3, 10) else "Version too old (need 3.10+)",
+        critical=True
+    ))
+
+    checks.append(DependencyCheck(
+        name="Platform",
+        version=f"{platform.system()} {platform.release()}",
+        status="ℹ",
+        message="",
+        critical=False
+    ))
+
+    # ===== Core Dependencies =====
+    # NumPy
+    try:
+        import numpy as np
+        checks.append(DependencyCheck(
+            name="NumPy",
+            version=np.__version__,
+            status="✓",
+            message="Installed",
+            critical=True
+        ))
+    except ImportError:
+        checks.append(DependencyCheck(
+            name="NumPy",
+            version=None,
+            status="✗",
+            message="NOT INSTALLED - pip install numpy",
+            critical=True
+        ))
+
+    # OpenCV
+    try:
+        import cv2
+        checks.append(DependencyCheck(
+            name="OpenCV",
+            version=cv2.__version__,
+            status="✓",
+            message="Installed",
+            critical=True
+        ))
+    except ImportError:
+        checks.append(DependencyCheck(
+            name="OpenCV",
+            version=None,
+            status="✗",
+            message="NOT INSTALLED - pip install opencv-python",
+            critical=True
+        ))
+
+    # Pillow
+    try:
+        from PIL import Image
+        import PIL
+        checks.append(DependencyCheck(
+            name="Pillow",
+            version=PIL.__version__,
+            status="✓",
+            message="Installed",
+            critical=True
+        ))
+    except ImportError:
+        checks.append(DependencyCheck(
+            name="Pillow",
+            version=None,
+            status="✗",
+            message="NOT INSTALLED - pip install Pillow",
+            critical=True
+        ))
+
+    # pytesseract
+    try:
+        import pytesseract
+        version = getattr(pytesseract, '__version__', 'unknown')
+        checks.append(DependencyCheck(
+            name="pytesseract",
+            version=version,
+            status="✓",
+            message="Installed",
+            critical=True
+        ))
+    except ImportError:
+        checks.append(DependencyCheck(
+            name="pytesseract",
+            version=None,
+            status="✗",
+            message="NOT INSTALLED - pip install pytesseract",
+            critical=True
+        ))
+
+    # MSS (screen capture)
+    try:
+        import mss
+        checks.append(DependencyCheck(
+            name="MSS",
+            version=mss.__version__,
+            status="✓",
+            message="Screen capture available",
+            critical=True
+        ))
+    except ImportError:
+        checks.append(DependencyCheck(
+            name="MSS",
+            version=None,
+            status="✗",
+            message="NOT INSTALLED - pip install mss",
+            critical=True
+        ))
+
+    # ===== Optional Dependencies =====
+    # PyTorch
+    try:
+        import torch
+        checks.append(DependencyCheck(
+            name="PyTorch",
+            version=torch.__version__,
+            status="✓",
+            message="ML features available",
+            critical=False
+        ))
+
+        # Check GPU
+        if torch.cuda.is_available():
+            gpu_name = torch.cuda.get_device_name(0)
+            checks.append(DependencyCheck(
+                name="GPU (CUDA)",
+                version=torch.version.cuda,
+                status="✓",
+                message=f"{gpu_name}",
+                critical=False
+            ))
+        else:
+            checks.append(DependencyCheck(
+                name="GPU (CUDA)",
+                version=None,
+                status="ℹ",
+                message="Not available (CPU mode)",
+                critical=False
+            ))
+    except ImportError:
+        checks.append(DependencyCheck(
+            name="PyTorch",
+            version=None,
+            status="⚠",
+            message="Not installed (optional)",
+            critical=False
+        ))
+        checks.append(DependencyCheck(
+            name="GPU (CUDA)",
+            version=None,
+            status="ℹ",
+            message="PyTorch not installed",
+            critical=False
+        ))
+
+    # Tesseract binary
+    try:
+        result = subprocess.run(['tesseract', '--version'],
+                               capture_output=True,
+                               text=True,
+                               timeout=5)
+        if result.returncode == 0:
+            version_line = result.stdout.split('\n')[0]
+            version = version_line.split()[1] if len(version_line.split()) > 1 else 'unknown'
+            checks.append(DependencyCheck(
+                name="Tesseract OCR",
+                version=version,
+                status="✓",
+                message="Binary installed",
+                critical=False
+            ))
+        else:
+            checks.append(DependencyCheck(
+                name="Tesseract OCR",
+                version=None,
+                status="⚠",
+                message="Binary not working correctly",
+                critical=False
+            ))
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        checks.append(DependencyCheck(
+            name="Tesseract OCR",
+            version=None,
+            status="⚠",
+            message="Binary not found (brew install tesseract)",
+            critical=False
+        ))
+
+    # Check if any critical dependencies failed
+    critical_failures = [c for c in checks if c.critical and c.status == "✗"]
+    can_start = len(critical_failures) == 0
+
+    return checks, can_start
+
+
+def print_dependency_report(checks: List[DependencyCheck], verbose: bool = False):
+    """Print a formatted dependency report."""
+    print()
+    print("=" * 70)
+    print("🔍 POKERTOOL STARTUP DEPENDENCY CHECK")
+    print("=" * 70)
+    print()
+
+    # Separate into categories
+    system_checks = [c for c in checks if c.name in ["Python", "Platform"]]
+    core_checks = [c for c in checks if c.name in ["NumPy", "OpenCV", "Pillow", "pytesseract", "MSS"]]
+    optional_checks = [c for c in checks if c.name in ["PyTorch", "GPU (CUDA)", "Tesseract OCR"]]
+
+    # Print system info
+    print("System Information:")
+    print("-" * 70)
+    for check in system_checks:
+        version_str = f" v{check.version}" if check.version else ""
+        msg_str = f" - {check.message}" if check.message else ""
+        print(f"  {check.status} {check.name}:{version_str}{msg_str}")
+    print()
+
+    # Print core dependencies
+    print("Core Dependencies:")
+    print("-" * 70)
+    for check in core_checks:
+        version_str = f" v{check.version}" if check.version else ""
+        msg_str = f" - {check.message}" if check.message else ""
+        print(f"  {check.status} {check.name:20s}{version_str}{msg_str}")
+    print()
+
+    # Print optional dependencies
+    print("Optional Features:")
+    print("-" * 70)
+    for check in optional_checks:
+        version_str = f" v{check.version}" if check.version else ""
+        msg_str = f" - {check.message}" if check.message else ""
+        print(f"  {check.status} {check.name:20s}{version_str}{msg_str}")
+    print()
+
+    # Summary
+    passed = sum(1 for c in checks if c.status == "✓")
+    warned = sum(1 for c in checks if c.status == "⚠")
+    failed = sum(1 for c in checks if c.status == "✗")
+
+    print("=" * 70)
+    print("SUMMARY")
+    print("=" * 70)
+    print(f"  Total checks:  {len(checks)}")
+    print(f"  ✓ Passed:      {passed}")
+    print(f"  ⚠ Warnings:    {warned}")
+    print(f"  ✗ Failed:      {failed}")
+    print()
+
+    # Verdict
+    critical_failures = [c for c in checks if c.critical and c.status == "✗"]
+    if critical_failures:
+        print("❌ CRITICAL DEPENDENCIES MISSING")
+        print()
+        print("The following critical dependencies are missing:")
+        for check in critical_failures:
+            print(f"  • {check.name}: {check.message}")
+        print()
+        print("Please install missing dependencies and try again.")
+        print("=" * 70)
+        return False
+    elif warned > 0:
+        print("⚠ WARNINGS DETECTED")
+        print("Some optional features may not be available.")
+        print("Application will start with reduced functionality.")
+        print("=" * 70)
+        return True
+    else:
+        print("✓ ALL DEPENDENCIES SATISFIED")
+        print("Application is ready to start!")
+        print("=" * 70)
+        return True
+
+
+def validate_startup_dependencies(verbose: bool = False) -> bool:
+    """
+    Quick dependency check before app startup.
+
+    Returns:
+        True if app can start, False if critical dependencies missing
+    """
+    checks, can_start = check_dependencies()
+    print_dependency_report(checks, verbose=verbose)
+    return can_start

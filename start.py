@@ -178,13 +178,37 @@ def launch_enhanced_gui() -> int:
     log("  ✓ Comprehensive startup validation")
     log("")
 
+    # Run dependency validation
+    log("Running startup validation...")
+    try:
+        validation_result = subprocess.run([
+            venv_python, '-c',
+            'import sys; sys.path.insert(0, "src"); '
+            'from pokertool.startup_validator import validate_startup_dependencies; '
+            'sys.exit(0 if validate_startup_dependencies() else 1)'
+        ], env=env, cwd=ROOT)
+
+        if validation_result.returncode != 0:
+            log("")
+            log("❌ Startup validation failed - cannot start application")
+            log("Please install missing dependencies and try again")
+            return 1
+
+        log("")
+        log("✓ Startup validation passed")
+        log("")
+    except Exception as e:
+        log(f"⚠ Warning: Could not run startup validation: {e}")
+        log("Continuing anyway...")
+        log("")
+
     # Try enhanced GUI v2 launcher
     launcher = ROOT / 'launch_enhanced_gui_v2.py'
     if launcher.exists():
         log("Starting Enhanced GUI v33.0.0...")
         result = subprocess.run([venv_python, str(launcher)], env=env)
         return result.returncode
-    
+
     # Fallback: Try to import and run directly
     log("Using direct import method...")
     try:

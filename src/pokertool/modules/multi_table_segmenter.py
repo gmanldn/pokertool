@@ -459,10 +459,20 @@ class MultiTableSegmenter:
 
     def _segment_traditional(self, frame: np.ndarray) -> List[TableLayout]:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        # Broad green range captures the felt of most poker tables.
+
+        # Support both green AND purple tables (Betfair uses purple)
+        # Green range for traditional poker tables
         lower_green = np.array([35, 25, 25])
         upper_green = np.array([85, 255, 255])
-        mask = cv2.inRange(hsv, lower_green, upper_green)
+        mask_green = cv2.inRange(hsv, lower_green, upper_green)
+
+        # Purple/violet range for Betfair tables (calibrated from BF_TEST.jpg)
+        lower_purple = np.array([100, 20, 80])
+        upper_purple = np.array([160, 255, 255])
+        mask_purple = cv2.inRange(hsv, lower_purple, upper_purple)
+
+        # Combine masks to detect both green and purple tables
+        mask = cv2.bitwise_or(mask_green, mask_purple)
         mask = cv2.medianBlur(mask, 5)
         mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=1)
 

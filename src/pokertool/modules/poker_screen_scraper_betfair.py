@@ -129,16 +129,18 @@ class Card:
 # Betfair detector constants
 #
 # Customize these ranges and weights if detection is inconsistent.  The
-# BETFAIR_FELT_RANGES specify the expected HSV ranges for the green felt used
+# BETFAIR_FELT_RANGES specify the expected HSV ranges for the purple/violet felt used
 # on Betfair tables.  Multiple ranges allow the detector to be robust to
 # lighting conditions.  Feel free to adjust the bounds or add additional
 # ranges based on your setup.  The weights determine how much each
 # detection strategy contributes to the overall confidence score.
 BETFAIR_FELT_RANGES: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]] = [
-    # Default Betfair felt range (dark green)
-    ((35, 40, 20), (75, 255, 255)),
-    # Slightly lighter green (for bright monitors)
-    ((25, 40, 40), (90, 255, 255)),
+    # Purple/violet Betfair table (primary) - calibrated from BF_TEST.jpg
+    ((110, 30, 100), (150, 255, 255)),
+    # Wider purple range for lighting variations
+    ((100, 20, 80), (160, 255, 255)),
+    # Blue-purple range (some monitor variations)
+    ((90, 25, 90), (140, 255, 255)),
 ]
 
 FELT_WEIGHT: float = 0.40
@@ -251,25 +253,43 @@ class BetfairPokerDetector:
             # -----------------------------------------------------------------
             # Strategy 5: Table shape (ellipse) detection
             # Look for a large elliptical contour which is characteristic of a
-            # poker table.  If found, boost confidence slightly.
+            # poker table.  If found, boost confidence significantly.
             ellipse_conf = 0.0
             try:
                 img_area = image.shape[0] * image.shape[1]
-                for contour in contours:
+                # Recompute contours from the felt mask for better table outline
+                felt_combined = np.zeros_like(gray)
+                for (lower, upper) in BETFAIR_FELT_RANGES:
+                    mask = cv2.inRange(hsv, lower, upper)
+                    felt_combined = cv2.bitwise_or(felt_combined, mask)
+
+                # Clean up the mask
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+                felt_combined = cv2.morphologyEx(felt_combined, cv2.MORPH_CLOSE, kernel)
+                felt_combined = cv2.morphologyEx(felt_combined, cv2.MORPH_OPEN, kernel)
+
+                # Find contours in the felt mask
+                felt_contours, _ = cv2.findContours(felt_combined, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                for contour in felt_contours:
                     area = cv2.contourArea(contour)
-                    # Consider only large contours (≥10% of screen area)
-                    if area > img_area * 0.10 and len(contour) >= 5:
+                    # Consider contours ≥8% of screen area (poker tables are large)
+                    if area > img_area * 0.08 and len(contour) >= 5:
                         ellipse = cv2.fitEllipse(contour)
-                        (_, axes, _angle) = ellipse
+                        ((cx, cy), axes, _angle) = ellipse
                         major = max(axes)
                         minor = min(axes)
                         if major > 0:
                             ratio = minor / major
-                            # Accept reasonable ellipse ratios (0.3-1.5)
-                            if 0.3 < ratio < 1.5:
+                            # Poker tables are typically oval: 0.5-0.85 ratio
+                            if 0.45 < ratio < 0.90:
                                 ellipse_conf = 1.0
+                                details['table_shape'] = f'ellipse({ratio:.2f})'
+                                details['table_center'] = (int(cx), int(cy))
+                                details['table_axes'] = (int(major), int(minor))
                                 break
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Ellipse detection error: {e}")
                 ellipse_conf = 0.0
             details['ellipse_confidence'] = ellipse_conf
 
