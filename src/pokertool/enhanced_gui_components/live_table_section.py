@@ -32,8 +32,11 @@ class LiveTableSection:
         self.board_labels: List[tk.Label] = []
         self.blinds_label: Optional[tk.Label] = None
         self.ante_label: Optional[tk.Label] = None
+        self.pot_label: Optional[tk.Label] = None
         self.dealer_button_label: Optional[tk.Label] = None
         self.table_status_label: Optional[tk.Label] = None
+        self.recommended_action_label: Optional[tk.Label] = None
+        self.my_cards_labels: List[tk.Label] = []
         
         # Update control
         self._update_thread: Optional[threading.Thread] = None
@@ -146,7 +149,7 @@ class LiveTableSection:
             card_label.pack(side="left", padx=2)
             self.board_labels.append(card_label)
 
-        # Game info section  
+        # Game info section
         game_info_frame = tk.Frame(self.live_data_frame, bg=COLORS["bg_dark"])
         game_info_frame.pack(fill="x", pady=(0, 10))
 
@@ -187,6 +190,24 @@ class LiveTableSection:
             fg=COLORS["accent_warning"],
         )
         self.ante_label.pack(side="left", padx=(5, 15))
+
+        # Pot display
+        tk.Label(
+            blinds_frame,
+            text="Pot:",
+            font=FONTS["body"],
+            bg=COLORS["bg_dark"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left")
+
+        self.pot_label = tk.Label(
+            blinds_frame,
+            text="$0",
+            font=("Helvetica", 11, "bold"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["accent_success"],
+        )
+        self.pot_label.pack(side="left", padx=(5, 15))
 
         # Dealer button
         dealer_frame = tk.Frame(game_info_frame, bg=COLORS["bg_dark"])
@@ -240,6 +261,61 @@ class LiveTableSection:
         for seat in range(1, 11):
             self._create_player_row(scrollable_frame, seat)
 
+        # My cards section
+        my_cards_frame = tk.LabelFrame(
+            self.live_data_frame,
+            text="🎴 My Hole Cards",
+            font=FONTS["subheading"],
+            bg=COLORS["bg_medium"],
+            fg=COLORS["text_primary"],
+        )
+        my_cards_frame.pack(fill="x", pady=(0, 10))
+
+        cards_display = tk.Frame(my_cards_frame, bg=COLORS["bg_medium"])
+        cards_display.pack(pady=10)
+
+        self.my_cards_labels = []
+        for i in range(2):
+            card_label = tk.Label(
+                cards_display,
+                text="[ ]",
+                font=("Courier", 16, "bold"),
+                bg=COLORS["bg_light"],
+                fg=COLORS["accent_success"],
+                width=5,
+                relief=tk.RAISED,
+                bd=2,
+            )
+            card_label.pack(side="left", padx=5)
+            self.my_cards_labels.append(card_label)
+
+        # Recommended action box
+        action_frame = tk.LabelFrame(
+            self.live_data_frame,
+            text="💡 RECOMMENDED ACTION",
+            font=FONTS["heading"],
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_info"],
+            relief=tk.RAISED,
+            bd=3,
+        )
+        action_frame.pack(fill="both", expand=True, pady=(0, 10))
+
+        self.recommended_action_label = tk.Label(
+            action_frame,
+            text="Waiting for game state...",
+            font=("Helvetica", 14, "bold"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["accent_warning"],
+            wraplength=450,
+            justify="center",
+            relief=tk.SUNKEN,
+            bd=2,
+            padx=20,
+            pady=20,
+        )
+        self.recommended_action_label.pack(fill="both", expand=True, padx=10, pady=10)
+
     def _create_player_row(self, parent, seat: int) -> None:
         """Create a row for displaying player information."""
         player_frame = tk.Frame(parent, bg=COLORS["bg_light"], relief=tk.RAISED, bd=1)
@@ -280,6 +356,18 @@ class LiveTableSection:
         )
         stack_label.pack(side="left", padx=5)
 
+        # Current bet
+        bet_label = tk.Label(
+            player_frame,
+            text="Bet: $0",
+            font=FONTS["body"],
+            bg=COLORS["bg_light"],
+            fg=COLORS["accent_info"],
+            width=10,
+            anchor="w",
+        )
+        bet_label.pack(side="left", padx=5)
+
         # Hole cards
         cards_frame = tk.Frame(player_frame, bg=COLORS["bg_light"])
         cards_frame.pack(side="left", padx=5)
@@ -319,6 +407,7 @@ class LiveTableSection:
         self.player_labels[seat] = {
             "name": name_label,
             "stack": stack_label,
+            "bet": bet_label,
             "card1": card1_label,
             "card2": card2_label,
             "status": status_label,
@@ -452,6 +541,11 @@ class LiveTableSection:
                 ante = table_data.get('ante', 0)
                 self.ante_label.config(text=f"${ante}")
 
+            # Update pot
+            if self.pot_label:
+                pot = table_data.get('pot', 0)
+                self.pot_label.config(text=f"${pot}")
+
             # Update dealer button
             if self.dealer_button_label:
                 dealer_seat = table_data.get('dealer_seat', 0)
@@ -464,20 +558,26 @@ class LiveTableSection:
             for seat in range(1, 11):
                 if seat in self.player_labels:
                     player_info = players.get(seat, {})
-                    
+
                     # Update name
                     name = player_info.get('name', 'Empty')
                     self.player_labels[seat]["name"].config(
                         text=name,
                         fg=COLORS["text_primary"] if name != 'Empty' else COLORS["text_secondary"]
                     )
-                    
+
                     # Update stack
                     stack = player_info.get('stack', 0)
                     self.player_labels[seat]["stack"].config(
                         text=f"${stack}" if stack > 0 else "$0"
                     )
-                    
+
+                    # Update bet
+                    bet = player_info.get('bet', 0)
+                    self.player_labels[seat]["bet"].config(
+                        text=f"Bet: ${bet}" if bet > 0 else "Bet: $0"
+                    )
+
                     # Update hole cards
                     hole_cards = player_info.get('hole_cards', ['', ''])
                     self.player_labels[seat]["card1"].config(
@@ -486,13 +586,38 @@ class LiveTableSection:
                     self.player_labels[seat]["card2"].config(
                         text=hole_cards[1] if len(hole_cards) > 1 and hole_cards[1] else "[ ]"
                     )
-                    
+
                     # Update status
                     status = player_info.get('status', '')
                     self.player_labels[seat]["status"].config(
                         text=status,
                         fg=COLORS["accent_success"] if status == "Active" else COLORS["text_secondary"]
                     )
+
+            # Update my hole cards
+            my_cards = table_data.get('my_hole_cards', ['', ''])
+            for i, card_label in enumerate(self.my_cards_labels):
+                if i < len(my_cards) and my_cards[i]:
+                    card_label.config(text=my_cards[i], fg=COLORS["accent_success"])
+                else:
+                    card_label.config(text="[ ]", fg=COLORS["text_secondary"])
+
+            # Update recommended action
+            if self.recommended_action_label:
+                action = table_data.get('recommended_action', 'Waiting for game state...')
+                action_color = COLORS["accent_success"]
+
+                # Color code by action type
+                if "FOLD" in action.upper():
+                    action_color = COLORS["accent_danger"]
+                elif "CALL" in action.upper() or "CHECK" in action.upper():
+                    action_color = COLORS["accent_warning"]
+                elif "RAISE" in action.upper() or "BET" in action.upper():
+                    action_color = COLORS["accent_success"]
+                elif "ALL-IN" in action.upper():
+                    action_color = COLORS["accent_info"]
+
+                self.recommended_action_label.config(text=action, fg=action_color)
 
         except Exception as e:
             print(f"Display update error: {e}")

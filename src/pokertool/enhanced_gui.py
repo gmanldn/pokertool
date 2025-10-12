@@ -2631,6 +2631,105 @@ Platform: {sys.platform}
             )
             self._update_widget_translation_key(button, text_key, prefix='🔌 ')
 
+    def get_live_table_data(self) -> Optional[Dict[str, Any]]:
+        """
+        Get live table data from the screen scraper for LiveTable display.
+
+        Returns a dictionary containing:
+        - status: Table status string
+        - confidence: Detection confidence (0-100)
+        - board_cards: List of community cards
+        - small_blind, big_blind, ante: Blind levels
+        - pot: Current pot size
+        - dealer_seat: Dealer button seat number
+        - players: Dict of player data by seat number
+        - my_hole_cards: Current player's hole cards
+        - recommended_action: AI-recommended action
+        """
+        try:
+            if not self.autopilot_active or not self.screen_scraper:
+                return None
+
+            # Try to get table state from scraper
+            table_state = None
+            if hasattr(self.screen_scraper, 'analyze_table'):
+                table_state = self.screen_scraper.analyze_table()
+
+            if not table_state:
+                return None
+
+            # Build the data structure
+            data = {
+                'status': 'Active',
+                'confidence': 85.0,  # Default confidence
+                'board_cards': [],
+                'small_blind': 0,
+                'big_blind': 0,
+                'ante': 0,
+                'pot': getattr(table_state, 'pot_size', 0),
+                'dealer_seat': 0,
+                'players': {},
+                'my_hole_cards': [],
+                'recommended_action': 'Waiting for game state...'
+            }
+
+            # Extract board cards
+            if hasattr(table_state, 'board_cards') and table_state.board_cards:
+                data['board_cards'] = [str(card) for card in table_state.board_cards]
+
+            # Extract player information
+            if hasattr(table_state, 'players') and table_state.players:
+                for seat_num, player in enumerate(table_state.players, start=1):
+                    if player:
+                        player_data = {
+                            'name': getattr(player, 'name', f'Player {seat_num}'),
+                            'stack': getattr(player, 'stack', 0),
+                            'bet': getattr(player, 'current_bet', 0),
+                            'hole_cards': [],
+                            'status': 'Active' if getattr(player, 'active', True) else 'Folded'
+                        }
+
+                        # Extract hole cards if visible
+                        if hasattr(player, 'hole_cards') and player.hole_cards:
+                            player_data['hole_cards'] = [str(card) for card in player.hole_cards]
+
+                        data['players'][seat_num] = player_data
+
+            # Extract hero's hole cards
+            if hasattr(table_state, 'hero_cards') and table_state.hero_cards:
+                data['my_hole_cards'] = [str(card) for card in table_state.hero_cards]
+
+            # Get recommended action from manual panel if available
+            if hasattr(self, 'manual_panel') and self.manual_panel:
+                try:
+                    # Try to get action from the poker assistant
+                    if hasattr(self.manual_panel, 'get_recommended_action'):
+                        action = self.manual_panel.get_recommended_action()
+                        if action:
+                            data['recommended_action'] = action
+                    elif hasattr(self.manual_panel, 'recommendation_text'):
+                        rec_text = self.manual_panel.recommendation_text.get('1.0', 'end-1c').strip()
+                        if rec_text:
+                            data['recommended_action'] = rec_text
+                except Exception:
+                    pass
+
+            # Try to extract blinds from table state
+            if hasattr(table_state, 'small_blind'):
+                data['small_blind'] = table_state.small_blind
+            if hasattr(table_state, 'big_blind'):
+                data['big_blind'] = table_state.big_blind
+            if hasattr(table_state, 'ante'):
+                data['ante'] = table_state.ante
+            if hasattr(table_state, 'dealer_seat'):
+                data['dealer_seat'] = table_state.dealer_seat
+
+            return data
+
+        except Exception as e:
+            print(f"Error getting live table data: {e}")
+            return None
+
     def _start_screen_update_loop(self):
         """Start continuous screen update loop to follow scraper output."""
         if self._screen_update_running:
