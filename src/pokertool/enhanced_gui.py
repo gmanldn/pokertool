@@ -1458,31 +1458,8 @@ Platform: {sys.platform}
 
             return button
         
-        # Screen scraper status / toggle button (most prominent)
-        self.scraper_status_button = create_action_button(
-            quick_actions_frame,
-            'actions.screen_scraper_off',
-            '🔌',
-            self._toggle_screen_scraper,
-            COLORS['accent_danger'],
-            desc_key='actions.screen_scraper_desc',
-            height=4
-        )
-
-        if not ENHANCED_SCRAPER_LOADED:
-            self.scraper_status_button.config(
-                text=translate('actions.screen_scraper_unavailable'),
-                state=tk.DISABLED,
-                bg=COLORS['bg_light'],
-                fg=COLORS['text_secondary'],
-                activebackground=COLORS['bg_light'],
-                activeforeground=COLORS['text_secondary'],
-                cursor='arrow'
-            )
-            self._register_widget_translation(self.scraper_status_button, 'actions.screen_scraper_unavailable')
-
-        # Separator
-        tk.Frame(quick_actions_frame, height=2, bg=COLORS['accent_primary']).pack(fill='x', padx=10, pady=8)
+        # Screen scraper is now ALWAYS ON - no toggle button needed
+        # The scraper auto-starts in the background service initialization
 
         # Table detection and analysis buttons
         create_action_button(
@@ -2471,7 +2448,8 @@ Platform: {sys.platform}
     
     def _start_background_services_safely(self):
         """Start background monitoring services safely from the main thread.
-        
+
+        CRITICAL: Screen scraper is ALWAYS-ON and starts automatically.
         This method is called via self.after() to ensure it runs on the main thread
         after GUI initialization is complete. All widget updates use self.after()
         to maintain thread safety.
@@ -2482,48 +2460,76 @@ Platform: {sys.platform}
             if self.multi_table_manager:
                 # Check if start_monitoring method exists before calling
                 if hasattr(self.multi_table_manager, 'start_monitoring'):
-                    self.multi_table_manager.start_monitoring()
-                    started_services.append('table monitoring')
+                    try:
+                        self.multi_table_manager.start_monitoring()
+                        started_services.append('table monitoring')
+                    except Exception as tbl_err:
+                        error_msg = f"❌ Table monitoring failed to start: {tbl_err}"
+                        print(error_msg)
+                        import logging
+                        logging.error(error_msg)
                 else:
                     print('TableManager initialized (start_monitoring method not available)')
 
-            # AUTO-START screen scraper immediately (not waiting for autopilot)
-            self.after(0, lambda: self._update_table_status("🚀 Auto-starting screen scraper...\n"))
+            # ALWAYS-ON: Auto-start screen scraper immediately (CRITICAL)
+            self.after(0, lambda: self._update_table_status("🚀 Starting ALWAYS-ON screen scraper...\n"))
             if self._start_enhanced_screen_scraper():
-                started_services.append('enhanced screen scraper')
-                self.after(0, lambda: self._update_table_status("✅ Screen scraper active and monitoring\n"))
+                started_services.append('ALWAYS-ON screen scraper')
+                self.after(0, lambda: self._update_table_status("✅ ALWAYS-ON screen scraper active and monitoring\n"))
             else:
                 self.after(0, lambda: self._update_scraper_indicator(False))
-                self.after(0, lambda: self._update_table_status("⚠️ Screen scraper not started (check dependencies)\n"))
+                critical_msg = "❌ CRITICAL: ALWAYS-ON screen scraper failed to start!"
+                self.after(0, lambda: self._update_table_status(critical_msg + '\n'))
+                print(critical_msg)
+                import logging
+                logging.critical(critical_msg)
 
             if started_services:
                 print(f'Background services started: {", ".join(started_services)}')
                 services_msg = f"📡 Services running: {', '.join(started_services)}\n"
                 self.after(0, lambda msg=services_msg: self._update_table_status(msg))
+            else:
+                error_msg = "❌ WARNING: No background services started!"
+                print(error_msg)
+                import logging
+                logging.warning(error_msg)
 
             # Auto-start screen update loop for continuous monitoring
             self.after(0, self._start_screen_update_loop)
-            # Ensure scraper keeps running even if dependencies fluctuate
+            # Ensure ALWAYS-ON scraper keeps running with watchdog
             self.after(5000, self._ensure_screen_scraper_watchdog)
 
         except Exception as e:
-            print(f'Background services error: {e}')
-            error_msg = f"❌ Background services error: {e}\n"
-            self.after(0, lambda msg=error_msg: self._update_table_status(msg))
+            error_msg = f"❌ CRITICAL: Background services exception: {e}"
+            print(error_msg)
+            import logging
+            import traceback
+            logging.critical(error_msg)
+            logging.error(traceback.format_exc())
+            self.after(0, lambda msg=error_msg + '\n': self._update_table_status(msg))
 
     def _start_background_services(self):
         """Legacy method - redirects to thread-safe implementation."""
         self._start_background_services_safely()
 
     def _start_enhanced_screen_scraper(self) -> bool:
-        """Start the enhanced screen scraper in continuous mode."""
-        if not ENHANCED_SCRAPER_LOADED or self._enhanced_scraper_started:
-            if self._enhanced_scraper_started:
-                self._update_scraper_indicator(True)
+        """Start the enhanced screen scraper in continuous mode - ALWAYS ON."""
+        if not ENHANCED_SCRAPER_LOADED:
+            error_msg = "❌ CRITICAL: Screen scraper module not loaded - missing dependencies (opencv-python, Pillow, pytesseract, mss)"
+            self._update_table_status(error_msg + '\n')
+            print(error_msg)
+            import logging
+            logging.error(error_msg)
             return False
+
+        if self._enhanced_scraper_started:
+            self._update_scraper_indicator(True)
+            return True
 
         try:
             site = getattr(self.autopilot_panel.state, 'site', 'GENERIC')
+            print(f'🚀 Starting ALWAYS-ON screen scraper for site: {site}')
+
             result = run_screen_scraper(
                 site=site,
                 continuous=True,
@@ -2533,38 +2539,71 @@ Platform: {sys.platform}
 
             if result.get('status') == 'success':
                 self._enhanced_scraper_started = True
-                status_line = '✅ Enhanced screen scraper running (continuous mode)'
+                status_line = '✅ ALWAYS-ON screen scraper running (continuous mode)'
                 if result.get('ocr_enabled'):
                     status_line += ' with OCR'
                 self._update_table_status(status_line + '\n')
                 self._update_scraper_indicator(True)
-                print(f'Enhanced screen scraper started automatically (site={site})')
+                success_msg = f'✅ Screen scraper ALWAYS-ON and active (site={site})'
+                print(success_msg)
+                import logging
+                logging.info(success_msg)
                 return True
 
             failure_message = result.get('message', 'unknown error')
-            self._update_table_status(f"❌ Enhanced screen scraper failed to start: {failure_message}\n")
+            error_msg = f"❌ CRITICAL: Screen scraper failed to start: {failure_message}"
+            self._update_table_status(error_msg + '\n')
             self._update_scraper_indicator(False, error=True)
-            print(f'Enhanced screen scraper failed to start: {failure_message}')
+            print(error_msg)
+            import logging
+            logging.error(error_msg)
             return False
 
         except Exception as e:
-            self._update_table_status(f"❌ Enhanced screen scraper error: {e}\n")
+            error_msg = f"❌ CRITICAL: Screen scraper exception: {e}"
+            self._update_table_status(error_msg + '\n')
             self._update_scraper_indicator(False, error=True)
-            print(f'Enhanced screen scraper error: {e}')
+            print(error_msg)
+            import logging
+            import traceback
+            logging.error(error_msg)
+            logging.error(traceback.format_exc())
             return False
 
     def _ensure_screen_scraper_watchdog(self) -> None:
-        """Periodically verify the enhanced scraper is running and restart if needed."""
+        """Periodically verify the ALWAYS-ON scraper is running and restart if needed."""
         try:
             if ENHANCED_SCRAPER_LOADED:
                 status = get_scraper_status()
                 running = bool(status.get('running', False)) if isinstance(status, dict) else False
-                if not running:
-                    self._update_table_status("⚠️ Screen scraper stopped unexpectedly. Restarting...\n")
-                    self._start_enhanced_screen_scraper()
+                if not running and self._enhanced_scraper_started:
+                    error_msg = "❌ CRITICAL: Screen scraper stopped unexpectedly! Auto-restarting..."
+                    self._update_table_status(error_msg + '\n')
+                    print(error_msg)
+                    import logging
+                    logging.error(error_msg)
+
+                    # Attempt restart
+                    if self._start_enhanced_screen_scraper():
+                        recovery_msg = "✅ Screen scraper successfully restarted by watchdog"
+                        self._update_table_status(recovery_msg + '\n')
+                        print(recovery_msg)
+                        logging.info(recovery_msg)
+                    else:
+                        critical_msg = "❌ CRITICAL: Screen scraper watchdog failed to restart scraper!"
+                        self._update_table_status(critical_msg + '\n')
+                        print(critical_msg)
+                        logging.critical(critical_msg)
         except Exception as exc:
-            self._update_table_status(f"⚠️ Screen scraper watchdog error: {exc}\n")
+            error_msg = f"❌ CRITICAL: Screen scraper watchdog exception: {exc}"
+            self._update_table_status(error_msg + '\n')
+            print(error_msg)
+            import logging
+            import traceback
+            logging.error(error_msg)
+            logging.error(traceback.format_exc())
         finally:
+            # Check every 10 seconds to ensure scraper is always running
             self.after(10000, self._ensure_screen_scraper_watchdog)
 
     def _stop_enhanced_screen_scraper(self) -> None:
@@ -2582,19 +2621,12 @@ Platform: {sys.platform}
             self._update_scraper_indicator(False)
 
     def _toggle_screen_scraper(self) -> None:
-        """Toggle the enhanced screen scraper on or off."""
-        if not ENHANCED_SCRAPER_LOADED:
-            self._update_table_status("❌ Screen scraper dependencies not available\n")
-            return
-
-        if self._enhanced_scraper_started:
-            self._update_table_status("🛑 Stopping enhanced screen scraper...\n")
-            self._stop_enhanced_screen_scraper()
-            return
-
-        self._update_table_status("🚀 Starting enhanced screen scraper...\n")
-        if not self._start_enhanced_screen_scraper():
-            self._update_table_status("❌ Screen scraper did not start\n")
+        """Screen scraper is ALWAYS-ON - toggle is disabled."""
+        error_msg = "⚠️ Screen scraper is ALWAYS-ON and cannot be toggled off"
+        self._update_table_status(error_msg + '\n')
+        print(error_msg)
+        import logging
+        logging.warning("User attempted to toggle ALWAYS-ON screen scraper")
 
     def _update_scraper_indicator(self, active: bool, *, error: bool = False) -> None:
         """Update the visual indicator for the screen scraper button."""
