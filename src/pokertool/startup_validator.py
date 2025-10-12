@@ -790,4 +790,26 @@ def validate_startup_dependencies(verbose: bool = False) -> bool:
     """
     checks, can_start = check_dependencies()
     print_dependency_report(checks, verbose=verbose)
+
+    # Prompt for poker handle if not configured
+    if can_start:
+        try:
+            from pokertool.user_config import prompt_for_poker_handle, get_poker_handle
+            handle = prompt_for_poker_handle()
+
+            if handle:
+                print()
+                print("=" * 70)
+                print(f"✓ Poker Handle: {handle}")
+                print("  Hero position will be auto-detected using OCR")
+                print("=" * 70)
+            else:
+                print()
+                print("=" * 70)
+                print("⚠ No poker handle configured")
+                print("  Hero position will use seat #1 heuristic (less accurate)")
+                print("=" * 70)
+        except Exception as e:
+            print(f"\n⚠ Could not prompt for poker handle: {e}")
+
     return can_start

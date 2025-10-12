@@ -720,6 +720,10 @@ class PokerScreenScraper:
         presence of a circular dealer button and the relative order of
         players.  Seats with no discernible text are considered inactive.
 
+        Hero detection: If a poker handle is configured, the hero is identified
+        by matching the OCR'd player name to the configured handle. Otherwise,
+        seat #1 is assumed to be the hero (less accurate).
+
         Args:
             image: Screen capture of the table in BGR format.
 
@@ -732,6 +736,16 @@ class PokerScreenScraper:
             return seats
 
         try:
+            # Load configured poker handle for hero detection
+            configured_handle: Optional[str] = None
+            try:
+                from pokertool.user_config import get_poker_handle
+                configured_handle = get_poker_handle()
+                if configured_handle:
+                    logger.debug(f"Using configured poker handle for hero detection: {configured_handle}")
+            except Exception as e:
+                logger.debug(f"Could not load poker handle: {e}")
+
             h, w = image.shape[:2]
             if h == 0 or w == 0:
                 return seats
@@ -845,13 +859,29 @@ class PokerScreenScraper:
 
                 # Determine dealer flag
                 is_dealer = (dealer_seat == seat_num) if dealer_seat is not None else False
+
+                # Determine if this seat is the hero
+                is_hero = False
+                if configured_handle and name:
+                    # Match player name to configured handle (case-insensitive, partial match)
+                    # This handles OCR errors and username display variations
+                    is_hero = (configured_handle.lower() in name.lower() or
+                              name.lower() in configured_handle.lower())
+                    if is_hero:
+                        logger.info(f"✓ Hero detected at seat {seat_num}: '{name}' matches handle '{configured_handle}'")
+                else:
+                    # Fallback: assume seat 1 is hero
+                    is_hero = (seat_num == 1)
+                    if is_hero and is_active:
+                        logger.debug(f"Hero assigned to seat {seat_num} (default heuristic)")
+
                 # Create seat info (position will be assigned later)
                 seat = SeatInfo(
                     seat_number=seat_num,
                     is_active=is_active,
                     player_name=name,
                     stack_size=stack,
-                    is_hero=(seat_num == 1),
+                    is_hero=is_hero,
                     is_dealer=is_dealer,
                     position="",
                 )

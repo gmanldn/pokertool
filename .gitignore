@@ -101,6 +101,7 @@ user_config.json
 user_preferences.json
 local_settings.json
 .user_settings
+.pokertool_config.json
 
 # Machine learning model state
 *.pkl
