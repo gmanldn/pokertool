@@ -11,7 +11,7 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 34.0.0
+Version: 35.0.0
 Last Modified: 2025-10-12
 Author: PokerTool Development Team
 License: MIT
@@ -21,6 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v35.0.0 (2025-10-12): Confidence-Aware Decision API - Uncertainty quantification and risk-adjusted recommendations
     - v34.0.0 (2025-10-12): Enhanced UX - Clear hero position, auto table detection, optimized action blades
     - v33.0.0 (2025-10-12): Comprehensive startup validation system with health monitoring
     - v32.0.0 (2025-10-12): Modern styling, real-time Logging tab, ALWAYS-ON scraper
@@ -33,7 +34,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '34.0.0'
+__version__ = '35.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
