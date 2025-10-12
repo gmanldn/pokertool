@@ -11,7 +11,7 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 20.3.0
+Version: 30.0.0
 Last Modified: 2025-10-12
 Author: PokerTool Development Team
 License: MIT
@@ -21,7 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
-    - v20.3.0 (2025-10-12): Enforced single-instance locking and revamped notebook styling for reliable tab visibility
+    - v30.0.0 (2025-10-12): Major codebase cleanup, fixed all dependencies, screen scraper optimized for v30
     - v20.2.0 (2025-10-08): CRITICAL FIX - Tab visibility guaranteed, auto-start screen scraper, thread-safe background services
     - v20.1.0 (2025-09-30): Added auto-start scraper, continuous updates, dependency checking
     - v28.0.0 (2025-09-29): Enhanced documentation
@@ -29,7 +29,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '20.3.0'
+__version__ = '30.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
