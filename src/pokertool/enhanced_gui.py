@@ -215,7 +215,7 @@ from .enhanced_gui_components import (
     COLORS,
     FONTS,
     AutopilotControlPanel,
-    ManualPlaySection,
+    LiveTableSection,
     SettingsSection,
     CoachingSection,
 )
@@ -822,7 +822,7 @@ class IntegratedPokerAssistant(tk.Tk):
             {
                 'name': 'manual_play',
                 'title_key': 'tab.manual_play', 
-                'title_fallback': '🎮 Manual',  # Shorter title with icon
+                'title_fallback': '🃏 LiveTable',  # Live table view with scraper data
                 'builder': self._build_manual_play_tab,
                 'required': True
             },
@@ -1579,8 +1579,8 @@ Platform: {sys.platform}
         scrollbar.config(command=self.table_status.yview)
     
     def _build_manual_play_tab(self, parent):
-        """Build manual play tab with the embedded manual assistant."""
-        self.manual_section = ManualPlaySection(self, parent, modules_loaded=GUI_MODULES_LOADED)
+        """Build LiveTable tab with live scraper data and manual controls."""
+        self.manual_section = LiveTableSection(self, parent, modules_loaded=GUI_MODULES_LOADED)
 
 
     def _build_analysis_tab(self, parent):
