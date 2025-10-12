@@ -7,9 +7,11 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v32.0.0
-# last_commit: '2025-10-12T16:00:00Z'
+# version: v33.0.0
+# last_commit: '2025-10-12T17:00:00Z'
 # fixes:
+# - date: '2025-10-12'
+#   summary: Added comprehensive startup validation system with health monitoring
 # - date: '2025-10-12'
 #   summary: Updated to launch Enhanced GUI v32.0.0 with modern styling and logging tab
 # - date: '2025-10-12'
@@ -21,7 +23,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v32.0.0
+PokerTool One-Click Launcher - v33.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -43,7 +45,7 @@ import shutil
 import argparse
 
 # Version
-__version__ = '32.0.0'
+__version__ = '33.0.0'
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -133,32 +135,38 @@ def run_tests() -> int:
     log("Running comprehensive tests...")
     log("=" * 70)
     
-    # Test enhanced GUI v2
-    test_file = ROOT / 'tests' / 'gui' / 'test_enhanced_gui_styles.py'
-    if test_file.exists():
-        log("Testing Enhanced GUI v32.0.0...")
-        try:
-            result = subprocess.run([venv_python, '-m', 'pytest', str(test_file), '-v'],
-                                   cwd=ROOT)
-            if result.returncode != 0:
-                log("⚠ Some enhanced GUI tests failed (non-critical)")
-        except:
-            log("⚠ pytest not available, skipping unit tests")
+    # Test enhanced GUI v2 and startup validation
+    test_files = [
+        ROOT / 'tests' / 'gui' / 'test_enhanced_gui_styles.py',
+        ROOT / 'tests' / 'test_startup_validation.py'
+    ]
+
+    for test_file in test_files:
+        if test_file.exists():
+            log(f"Testing {test_file.name}...")
+            try:
+                result = subprocess.run([venv_python, '-m', 'pytest', str(test_file), '-v'],
+                                       cwd=ROOT)
+                if result.returncode != 0:
+                    log(f"⚠ Some tests in {test_file.name} failed (non-critical)")
+            except:
+                log("⚠ pytest not available, skipping unit tests")
+                break
     
     log("=" * 70)
     log("✓ Test suite completed")
     return 0
 
 def launch_enhanced_gui() -> int:
-    """Launch the Enhanced GUI v32.0.0."""
+    """Launch the Enhanced GUI v33.0.0."""
     venv_python = get_venv_python()
-    
+
     # Setup environment
     env = os.environ.copy()
     env['PYTHONPATH'] = str(SRC_DIR)
-    
+
     log("=" * 70)
-    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v32.0.0")
+    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v33.0.0")
     log("=" * 70)
     log("")
     log("Features:")
@@ -167,12 +175,13 @@ def launch_enhanced_gui() -> int:
     log("  ✓ Manual card entry and analysis")
     log("  ✓ Professional table visualization")
     log("  ✓ Performance monitoring")
+    log("  ✓ Comprehensive startup validation")
     log("")
-    
+
     # Try enhanced GUI v2 launcher
     launcher = ROOT / 'launch_enhanced_gui_v2.py'
     if launcher.exists():
-        log("Starting Enhanced GUI v32.0.0...")
+        log("Starting Enhanced GUI v33.0.0...")
         result = subprocess.run([venv_python, str(launcher)], env=env)
         return result.returncode
     
@@ -193,9 +202,9 @@ def show_banner():
     """Show startup banner."""
     clear_terminal()
     print("=" * 70)
-    print("🎰 POKERTOOL - Enhanced GUI v32.0.0")
+    print("🎰 POKERTOOL - Enhanced GUI v33.0.0")
     print("=" * 70)
-    print("Enterprise Edition with Integrated Screen Scraping")
+    print("Enterprise Edition with Startup Validation & Health Monitoring")
     print("")
     print(f"Platform: {platform.system()} {platform.release()}")
     print(f"Python: {sys.version.split()[0]}")

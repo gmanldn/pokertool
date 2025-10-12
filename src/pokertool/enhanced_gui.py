@@ -11,7 +11,7 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 32.0.0
+Version: 33.0.0
 Last Modified: 2025-10-12
 Author: PokerTool Development Team
 License: MIT
@@ -21,6 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v33.0.0 (2025-10-12): Comprehensive startup validation system with health monitoring
     - v32.0.0 (2025-10-12): Modern styling, real-time Logging tab, ALWAYS-ON scraper
     - v31.0.0 (2025-10-12): LiveTable with graphical oval poker table, black button text for clarity
     - v30.0.0 (2025-10-12): Major codebase cleanup, fixed all dependencies, screen scraper optimized for v30
@@ -31,7 +32,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '32.0.0'
+__version__ = '33.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -43,6 +44,7 @@ from tkinter import ttk, messagebox
 import json
 import threading
 import time
+import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any, Callable, Tuple
 from pathlib import Path
@@ -145,6 +147,7 @@ try:
     from .multi_table_support import TableManager, get_table_manager
     from .error_handling import sanitize_input, run_safely
     from .storage import get_secure_db
+    from .startup_validator import StartupValidator, ModuleHealth, HealthStatus
     GUI_MODULES_LOADED = True
 except ImportError as e:
     print(f'Warning: GUI modules not fully loaded: {e}')
@@ -261,6 +264,10 @@ class IntegratedPokerAssistant(tk.Tk):
         # Logging tab state
         self.log_text_widget = None
         self.log_handler = None
+
+        # Startup validation
+        self.startup_validator = None
+        self.startup_validation_results = None
 
         self.manual_section = None
         self.settings_section = None
@@ -399,6 +406,31 @@ class IntegratedPokerAssistant(tk.Tk):
             except Exception as community_error:
                 print(f"Community platform initialization error: {community_error}")
                 self.community_platform = None
+
+            # Run comprehensive startup validation
+            if GUI_MODULES_LOADED:
+                try:
+                    self.startup_validator = StartupValidator(app_instance=self)
+                    self.startup_validation_results = self.startup_validator.validate_all()
+
+                    # Log validation summary
+                    summary = self.startup_validator.get_summary_report()
+                    logging.info("Startup validation completed")
+                    logging.info(f"\n{summary}")
+
+                    # Check for critical failures
+                    if self.startup_validator.has_critical_failures():
+                        critical_failures = self.startup_validator.get_critical_failures()
+                        logging.critical("CRITICAL: Application has critical module failures!")
+                        for failure in critical_failures:
+                            logging.critical(f"  {failure.get_summary()}")
+                    else:
+                        logging.info("✓ All critical modules passed validation")
+
+                    print("\n" + summary)
+                except Exception as validation_error:
+                    logging.error(f"Startup validation failed: {validation_error}")
+                    print(f"Warning: Startup validation failed: {validation_error}")
 
         except Exception as e:
             print(f"Module initialization error: {e}")
@@ -1924,6 +1956,93 @@ Platform: {sys.platform}
             fg=COLORS['text_secondary']
         ).pack(side='left', padx=(15, 0))
 
+        # Startup validation summary section
+        if self.startup_validation_results:
+            validation_frame = tk.LabelFrame(
+                main_frame,
+                text="🔍 Startup Validation",
+                font=FONTS['subheading'],
+                bg=COLORS['bg_medium'],
+                fg=COLORS['text_primary'],
+                relief=tk.RAISED,
+                bd=3
+            )
+            validation_frame.pack(fill='x', pady=(0, 15))
+
+            validation_inner = tk.Frame(validation_frame, bg=COLORS['bg_medium'])
+            validation_inner.pack(fill='x', padx=15, pady=10)
+
+            # Count statuses
+            from .startup_validator import HealthStatus
+            healthy = sum(1 for m in self.startup_validation_results.values() if m.status == HealthStatus.HEALTHY)
+            degraded = sum(1 for m in self.startup_validation_results.values() if m.status == HealthStatus.DEGRADED)
+            unavailable = sum(1 for m in self.startup_validation_results.values() if m.status == HealthStatus.UNAVAILABLE)
+            failed = sum(1 for m in self.startup_validation_results.values() if m.status == HealthStatus.FAILED)
+
+            # Summary stats
+            stats_frame = tk.Frame(validation_inner, bg=COLORS['bg_medium'])
+            stats_frame.pack(fill='x')
+
+            tk.Label(
+                stats_frame,
+                text=f"✅ {healthy} Healthy",
+                font=FONTS['body'],
+                bg=COLORS['bg_medium'],
+                fg=COLORS['accent_success']
+            ).pack(side='left', padx=(0, 15))
+
+            if degraded > 0:
+                tk.Label(
+                    stats_frame,
+                    text=f"⚠️ {degraded} Degraded",
+                    font=FONTS['body'],
+                    bg=COLORS['bg_medium'],
+                    fg=COLORS['accent_warning']
+                ).pack(side='left', padx=(0, 15))
+
+            if unavailable > 0:
+                tk.Label(
+                    stats_frame,
+                    text=f"ℹ️ {unavailable} Unavailable",
+                    font=FONTS['body'],
+                    bg=COLORS['bg_medium'],
+                    fg=COLORS['accent_info']
+                ).pack(side='left', padx=(0, 15))
+
+            if failed > 0:
+                tk.Label(
+                    stats_frame,
+                    text=f"❌ {failed} Failed",
+                    font=FONTS['body'],
+                    bg=COLORS['bg_medium'],
+                    fg=COLORS['accent_danger']
+                ).pack(side='left', padx=(0, 15))
+
+            # Critical failures warning
+            if self.startup_validator and self.startup_validator.has_critical_failures():
+                critical_frame = tk.Frame(validation_inner, bg=COLORS['accent_danger'], relief=tk.RAISED, bd=2)
+                critical_frame.pack(fill='x', pady=(10, 0))
+
+                tk.Label(
+                    critical_frame,
+                    text="⚠️ CRITICAL: Application has critical module failures!",
+                    font=FONTS['body'],
+                    bg=COLORS['accent_danger'],
+                    fg='#000000'
+                ).pack(padx=10, pady=8)
+
+            # View full report button
+            tk.Button(
+                validation_inner,
+                text="📊 View Full Validation Report",
+                font=FONTS['body'],
+                bg=COLORS['accent_primary'],
+                fg='#000000',
+                command=self._show_validation_report,
+                padx=10,
+                pady=5
+            ).pack(pady=(10, 0))
+
         # Controls frame
         controls_frame = tk.Frame(main_frame, bg=COLORS['bg_medium'], relief=tk.RAISED, bd=2)
         controls_frame.pack(fill='x', pady=(0, 10))
@@ -2109,6 +2228,107 @@ Platform: {sys.platform}
             self.log_text_widget.config(state=tk.DISABLED)
             import logging
             logging.info("Log viewer cleared")
+
+    def _periodic_health_check(self):
+        """Perform periodic health check of all modules (runs every 60 seconds)."""
+        try:
+            if self.startup_validator and GUI_MODULES_LOADED:
+                # Re-run validation
+                self.startup_validation_results = self.startup_validator.validate_all()
+
+                # Check for critical failures
+                if self.startup_validator.has_critical_failures():
+                    critical_failures = self.startup_validator.get_critical_failures()
+                    logging.critical("⚠️ CRITICAL: Periodic health check detected module failures!")
+                    for failure in critical_failures:
+                        logging.critical(f"  {failure.get_summary()}")
+                else:
+                    logging.debug("✓ Periodic health check: All critical modules healthy")
+
+                # Log any status changes
+                for module_name, health in self.startup_validation_results.items():
+                    if health.status.value == 'failed':
+                        logging.error(f"Module failure detected: {health.get_summary()}")
+                    elif health.status.value == 'degraded':
+                        logging.warning(f"Module degraded: {health.get_summary()}")
+
+        except Exception as e:
+            logging.error(f"Periodic health check failed: {e}")
+
+        # Schedule next check in 60 seconds
+        self.after(60000, self._periodic_health_check)
+
+    def _show_validation_report(self):
+        """Show the full startup validation report in a popup window."""
+        if not self.startup_validator:
+            messagebox.showinfo("No Validation Report", "Startup validation was not performed.")
+            return
+
+        # Create popup window
+        report_window = tk.Toplevel(self)
+        report_window.title("Startup Validation Report")
+        report_window.geometry("900x700")
+        report_window.configure(bg=COLORS['bg_dark'])
+
+        # Header
+        header_frame = tk.Frame(report_window, bg=COLORS['bg_dark'])
+        header_frame.pack(fill='x', padx=20, pady=20)
+
+        tk.Label(
+            header_frame,
+            text="📊 Startup Validation Report",
+            font=FONTS['heading'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['text_primary']
+        ).pack()
+
+        tk.Label(
+            header_frame,
+            text="Comprehensive health check of all application modules",
+            font=FONTS['body'],
+            bg=COLORS['bg_dark'],
+            fg=COLORS['text_secondary']
+        ).pack(pady=(5, 0))
+
+        # Report content
+        report_frame = tk.Frame(report_window, bg=COLORS['bg_dark'])
+        report_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
+
+        # Text widget with scrollbar
+        scrollbar = tk.Scrollbar(report_frame)
+        scrollbar.pack(side='right', fill='y')
+
+        report_text = tk.Text(
+            report_frame,
+            font=('Consolas', 11),
+            bg='#0a0f1a',
+            fg=COLORS['text_primary'],
+            wrap=tk.WORD,
+            yscrollcommand=scrollbar.set,
+            relief=tk.SUNKEN,
+            bd=2,
+            padx=15,
+            pady=15
+        )
+        report_text.pack(side='left', fill='both', expand=True)
+        scrollbar.config(command=report_text.yview)
+
+        # Insert report content
+        report_content = self.startup_validator.get_summary_report()
+        report_text.insert('1.0', report_content)
+        report_text.config(state=tk.DISABLED)
+
+        # Close button
+        tk.Button(
+            report_window,
+            text="Close",
+            font=FONTS['body'],
+            bg=COLORS['accent_primary'],
+            fg='#000000',
+            command=report_window.destroy,
+            padx=20,
+            pady=8
+        ).pack(pady=(0, 20))
 
     def _refresh_community_views(self):
         if not self.community_platform:
@@ -2722,6 +2942,8 @@ Platform: {sys.platform}
             self.after(0, self._start_screen_update_loop)
             # Ensure ALWAYS-ON scraper keeps running with watchdog
             self.after(5000, self._ensure_screen_scraper_watchdog)
+            # Start periodic health monitoring (every 60 seconds)
+            self.after(60000, self._periodic_health_check)
 
         except Exception as e:
             error_msg = f"❌ CRITICAL: Background services exception: {e}"
