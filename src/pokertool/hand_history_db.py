@@ -213,10 +213,13 @@ class HandHistoryDatabase:
                 )
             """)
 
-            # Index for faster queries
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON hands(timestamp)")
+            # Indexes for faster queries
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON hands(timestamp DESC)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_hero_name ON hands(hero_name)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_table_name ON hands(table_name)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_hero_result ON hands(hero_result)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_site ON hands(site)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_hero_timestamp ON hands(hero_name, timestamp DESC)")
 
             conn.commit()
             logger.info(f"Hand history database initialized at {self.db_path}")
@@ -321,61 +324,152 @@ class HandHistoryDatabase:
             logger.error(f"Failed to retrieve recent hands: {e}")
             return []
 
-    def get_statistics(self, hero_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_statistics(self, hero_name: Optional[str] = None, days: Optional[int] = None) -> Dict[str, Any]:
         """
         Get statistics about recorded hands.
 
         Args:
             hero_name: Filter by hero name (optional)
+            days: Filter by last N days (optional)
 
         Returns:
             Dictionary of statistics
         """
         try:
             with sqlite3.connect(str(self.db_path)) as conn:
+                # Build query with optional filters
+                where_clauses = []
+                params = []
+
                 if hero_name:
-                    cursor = conn.execute("""
+                    where_clauses.append("hero_name = ?")
+                    params.append(hero_name)
+
+                if days:
+                    where_clauses.append("datetime(timestamp) >= datetime('now', ? || ' days')")
+                    params.append(f"-{days}")
+
+                where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+                if hero_name:
+                    cursor = conn.execute(f"""
                         SELECT
                             COUNT(*) as total_hands,
                             SUM(CASE WHEN hero_result = 'won' THEN 1 ELSE 0 END) as hands_won,
                             SUM(CASE WHEN hero_result = 'lost' THEN 1 ELSE 0 END) as hands_lost,
+                            SUM(CASE WHEN hero_result = 'pushed' THEN 1 ELSE 0 END) as hands_pushed,
                             SUM(hero_net) as total_net,
                             AVG(pot_size) as avg_pot_size,
-                            MAX(pot_size) as max_pot_size
+                            MAX(pot_size) as max_pot_size,
+                            MIN(pot_size) as min_pot_size,
+                            AVG(duration_seconds) as avg_duration,
+                            SUM(CASE WHEN final_stage = 'preflop' THEN 1 ELSE 0 END) as preflop_hands,
+                            SUM(CASE WHEN final_stage = 'flop' THEN 1 ELSE 0 END) as flop_hands,
+                            SUM(CASE WHEN final_stage = 'turn' THEN 1 ELSE 0 END) as turn_hands,
+                            SUM(CASE WHEN final_stage = 'river' THEN 1 ELSE 0 END) as river_hands
                         FROM hands
-                        WHERE hero_name = ?
-                    """, (hero_name,))
+                        {where_sql}
+                    """, params)
+
+                    row = cursor.fetchone()
+                    if row:
+                        total = row[0] or 0
+                        won = row[1] or 0
+                        lost = row[2] or 0
+                        pushed = row[3] or 0
+
+                        return {
+                            'total_hands': total,
+                            'hands_won': won,
+                            'hands_lost': lost,
+                            'hands_pushed': pushed,
+                            'total_net': row[4] or 0.0,
+                            'avg_pot_size': row[5] or 0.0,
+                            'max_pot_size': row[6] or 0.0,
+                            'min_pot_size': row[7] or 0.0,
+                            'avg_duration': row[8] or 0.0,
+                            'win_rate': (won / total * 100) if total > 0 else 0.0,
+                            'loss_rate': (lost / total * 100) if total > 0 else 0.0,
+                            'showdown_rate': ((row[10] + row[11] + row[12]) / total * 100) if total > 0 else 0.0,
+                            'preflop_folds': ((row[9] / total * 100) if total > 0 else 0.0),
+                            'went_to_flop': ((row[10] / total * 100) if total > 0 else 0.0),
+                            'went_to_turn': ((row[11] / total * 100) if total > 0 else 0.0),
+                            'went_to_river': ((row[12] / total * 100) if total > 0 else 0.0),
+                        }
                 else:
-                    cursor = conn.execute("""
+                    cursor = conn.execute(f"""
                         SELECT
                             COUNT(*) as total_hands,
                             AVG(pot_size) as avg_pot_size,
-                            MAX(pot_size) as max_pot_size
+                            MAX(pot_size) as max_pot_size,
+                            AVG(duration_seconds) as avg_duration
                         FROM hands
-                    """)
+                        {where_sql}
+                    """, params)
 
-                row = cursor.fetchone()
-                if row and hero_name:
-                    return {
-                        'total_hands': row[0] or 0,
-                        'hands_won': row[1] or 0,
-                        'hands_lost': row[2] or 0,
-                        'total_net': row[3] or 0.0,
-                        'avg_pot_size': row[4] or 0.0,
-                        'max_pot_size': row[5] or 0.0,
-                        'win_rate': (row[1] / row[0] * 100) if row[0] else 0.0
-                    }
-                elif row:
-                    return {
-                        'total_hands': row[0] or 0,
-                        'avg_pot_size': row[1] or 0.0,
-                        'max_pot_size': row[2] or 0.0
-                    }
+                    row = cursor.fetchone()
+                    if row:
+                        return {
+                            'total_hands': row[0] or 0,
+                            'avg_pot_size': row[1] or 0.0,
+                            'max_pot_size': row[2] or 0.0,
+                            'avg_duration': row[3] or 0.0,
+                        }
 
         except Exception as e:
-            logger.error(f"Failed to get statistics: {e}")
+            logger.error(f"Failed to get statistics: {e}", exc_info=True)
 
         return {}
+
+    def get_hands_by_date_range(
+        self,
+        start_date: str,
+        end_date: str,
+        hero_name: Optional[str] = None,
+        limit: int = 1000
+    ) -> List[HandHistory]:
+        """
+        Get hands within a date range.
+
+        Args:
+            start_date: Start date in ISO format
+            end_date: End date in ISO format
+            hero_name: Filter by hero name (optional)
+            limit: Maximum number of hands to return
+
+        Returns:
+            List of HandHistory objects
+        """
+        try:
+            with sqlite3.connect(str(self.db_path)) as conn:
+                if hero_name:
+                    cursor = conn.execute("""
+                        SELECT hand_data FROM hands
+                        WHERE hero_name = ?
+                        AND timestamp >= ?
+                        AND timestamp <= ?
+                        ORDER BY timestamp DESC
+                        LIMIT ?
+                    """, (hero_name, start_date, end_date, limit))
+                else:
+                    cursor = conn.execute("""
+                        SELECT hand_data FROM hands
+                        WHERE timestamp >= ?
+                        AND timestamp <= ?
+                        ORDER BY timestamp DESC
+                        LIMIT ?
+                    """, (start_date, end_date, limit))
+
+                hands = []
+                for row in cursor.fetchall():
+                    data = json.loads(row[0])
+                    hands.append(HandHistory.from_dict(data))
+
+                return hands
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve hands by date range: {e}", exc_info=True)
+            return []
 
     def delete_hand(self, hand_id: str) -> bool:
         """Delete a hand from the database."""
@@ -383,9 +477,10 @@ class HandHistoryDatabase:
             with sqlite3.connect(str(self.db_path)) as conn:
                 conn.execute("DELETE FROM hands WHERE hand_id = ?", (hand_id,))
                 conn.commit()
+            logger.info(f"Deleted hand {hand_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete hand {hand_id}: {e}")
+            logger.error(f"Failed to delete hand {hand_id}: {e}", exc_info=True)
             return False
 
     def clear_all_hands(self) -> bool:

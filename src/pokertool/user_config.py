@@ -31,6 +31,12 @@ class UserConfig:
     show_startup_validation: bool = True
     auto_detect_hero: bool = True
 
+    # Hand history settings
+    enable_hand_recording: bool = True
+    auto_save_hands: bool = True
+    record_all_hands: bool = True
+    min_pot_for_recording: float = 0.0
+
     # Advanced settings
     detection_confidence_threshold: float = 0.5
     enable_logging: bool = True
