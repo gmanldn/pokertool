@@ -18,6 +18,7 @@ COLORS = {
     "accent_success": "#4ade80",
     "accent_warning": "#fbbf24",
     "accent_danger": "#ef4444",
+    "accent_info": "#3b82f6",
     "autopilot_active": "#00ff00",
     "autopilot_inactive": "#ff4444",
     "autopilot_standby": "#ffaa00",
