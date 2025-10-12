@@ -46,16 +46,30 @@ COLORS = {
     "border": "#334155",           # Border color
     "hover": "#475569",            # Hover state
     "selected": "#3b82f6",         # Selected state
+
+    # Button colors
+    "button_bg": "#3b82f6",        # Button background (primary blue)
+    "button_fg": "#f8fafc",        # Button text (near white)
+    "button_active": "#2563eb",    # Button active state (darker blue)
+
+    # Semantic colors (aliases for convenience)
+    "accent": "#3b82f6",           # Primary accent (blue)
+    "success": "#10b981",          # Success (green)
+    "danger": "#ef4444",           # Danger (red)
 }
 
 FONTS = {
     "title": ("Arial", 28, "bold"),
     "heading": ("Arial", 18, "bold"),
     "subheading": ("Arial", 14, "bold"),
+    "section": ("Arial", 16, "bold"),
     "body": ("Arial", 14, "bold"),
+    "button": ("Arial", 12, "bold"),
+    "small": ("Arial", 11),
     "autopilot": ("Arial", 20, "bold"),
     "status": ("Arial", 16, "bold"),
     "analysis": ("Consolas", 12, "bold"),
+    "mono": ("Courier New", 11),
 }
 
 __all__ = ["COLORS", "FONTS"]
