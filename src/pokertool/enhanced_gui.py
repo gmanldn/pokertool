@@ -419,16 +419,16 @@ class IntegratedPokerAssistant(tk.Tk):
                 # Leave whatever theme Tk selected if both options fail
                 pass
 
-        # Enhanced button styles
+        # Enhanced button styles - BLACK TEXT for clarity
         style.configure('Autopilot.TButton',
                        font=FONTS['autopilot'],
-                       foreground=COLORS['text_primary'])
+                       foreground='#000000')
 
-        # Default TButton style for high-contrast bold buttons
+        # Default TButton style for high-contrast bold buttons - BLACK TEXT
         style.configure('TButton',
                        font=FONTS['body'],
                        background=COLORS['accent_primary'],
-                       foreground=COLORS['text_primary'])
+                       foreground='#000000')
 
         # Blade navigation buttons (replacement for default notebook tabs)
         style.configure(
@@ -1228,18 +1228,18 @@ class IntegratedPokerAssistant(tk.Tk):
             text="Retry Tab Loading",
             font=FONTS['body'],
             bg=COLORS['accent_primary'],
-            fg=COLORS['text_primary'],
+            fg='#000000',
             command=lambda: self._retry_tab_loading(parent, tab_name)
         )
         retry_button.pack(side='left', padx=(0, 10))
-        
+
         # Diagnostic button
         diagnostic_button = tk.Button(
             buttons_frame,
             text="Show Diagnostics",
             font=FONTS['body'],
             bg=COLORS['accent_warning'],
-            fg=COLORS['bg_dark'],
+            fg='#000000',
             command=lambda: self._show_tab_diagnostics(tab_name, error_message)
         )
         diagnostic_button.pack(side='left')
@@ -1350,7 +1350,7 @@ Platform: {sys.platform}
             text="Check Dependencies",
             font=FONTS['body'],
             bg=COLORS['accent_primary'],
-            fg=COLORS['text_primary'],
+            fg='#000000',
             command=lambda: self._open_dependency_report(reason)
         ).pack()
 

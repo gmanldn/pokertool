@@ -28,6 +28,7 @@ class LiveTableSection:
         
         # Live table data display widgets
         self.live_data_frame: Optional[tk.Frame] = None
+        self.table_canvas: Optional[tk.Canvas] = None
         self.player_labels: Dict[int, Dict[str, tk.Label]] = {}
         self.board_labels: List[tk.Label] = []
         self.blinds_label: Optional[tk.Label] = None
@@ -85,10 +86,10 @@ class LiveTableSection:
         self._build_manual_panel(content_frame)
 
     def _build_live_data_panel(self, parent) -> None:
-        """Build the live table data display panel."""
+        """Build the live table data display panel with graphical poker table."""
         live_container = tk.LabelFrame(
             parent,
-            text="🔴 LIVE TABLE DATA",
+            text="🔴 LIVE POKER TABLE",
             font=FONTS["heading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["accent_success"],
@@ -230,36 +231,27 @@ class LiveTableSection:
         )
         self.dealer_button_label.pack(side="left", padx=(5, 0))
 
-        # Players section
-        players_frame = tk.LabelFrame(
-            self.live_data_frame,
-            text="Players (Live from Scraper)",
-            font=FONTS["subheading"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
+        # Graphical poker table section
+        table_canvas_frame = tk.Frame(self.live_data_frame, bg=COLORS["table_felt"])
+        table_canvas_frame.pack(fill="both", expand=True, pady=(0, 10))
+
+        # Create canvas for the poker table
+        self.table_canvas = tk.Canvas(
+            table_canvas_frame,
+            bg=COLORS["table_felt"],
+            highlightthickness=2,
+            highlightbackground=COLORS["table_border"],
+            width=800,
+            height=500
         )
-        players_frame.pack(fill="both", expand=True, pady=(0, 10))
+        self.table_canvas.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # Create scrollable frame for players
-        canvas = tk.Canvas(players_frame, bg=COLORS["bg_medium"], height=200)
-        scrollbar = ttk.Scrollbar(players_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg=COLORS["bg_medium"])
+        # Draw the poker table (oval shape)
+        self._draw_poker_table()
 
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True, padx=5, pady=5)
-        scrollbar.pack(side="right", fill="y")
-
-        # Initialize player display (seats 1-10)
+        # Initialize player display positions around the table (10 seats)
         self.player_labels = {}
-        for seat in range(1, 11):
-            self._create_player_row(scrollable_frame, seat)
+        self._create_graphical_player_positions()
 
         # My cards section
         my_cards_frame = tk.LabelFrame(
@@ -316,95 +308,170 @@ class LiveTableSection:
         )
         self.recommended_action_label.pack(fill="both", expand=True, padx=10, pady=10)
 
-    def _create_player_row(self, parent, seat: int) -> None:
-        """Create a row for displaying player information."""
-        player_frame = tk.Frame(parent, bg=COLORS["bg_light"], relief=tk.RAISED, bd=1)
-        player_frame.pack(fill="x", padx=2, pady=1)
+    def _draw_poker_table(self) -> None:
+        """Draw the oval poker table on the canvas."""
+        # Get canvas dimensions
+        canvas_width = 800
+        canvas_height = 500
 
-        # Seat number
+        # Calculate oval dimensions (centered, with padding)
+        padding = 80
+        table_x1 = padding
+        table_y1 = padding
+        table_x2 = canvas_width - padding
+        table_y2 = canvas_height - padding
+
+        # Draw outer table border (lighter green)
+        self.table_canvas.create_oval(
+            table_x1 - 5, table_y1 - 5, table_x2 + 5, table_y2 + 5,
+            fill=COLORS["table_border"],
+            outline=COLORS["table_border"],
+            width=3
+        )
+
+        # Draw main table felt
+        self.table_canvas.create_oval(
+            table_x1, table_y1, table_x2, table_y2,
+            fill=COLORS["table_felt"],
+            outline="#1a5c3f",
+            width=2
+        )
+
+        # Draw inner rail (darker)
+        rail_padding = 15
+        self.table_canvas.create_oval(
+            table_x1 + rail_padding, table_y1 + rail_padding,
+            table_x2 - rail_padding, table_y2 - rail_padding,
+            fill="",
+            outline="#0d2a18",
+            width=2
+        )
+
+    def _create_graphical_player_positions(self) -> None:
+        """Create player display positions around the table."""
+        # Define 10 player positions around an oval table
+        # Positions are (x, y, anchor) relative to canvas
+        canvas_width = 800
+        canvas_height = 500
+        center_x = canvas_width // 2
+        center_y = canvas_height // 2
+
+        # Radius for player positioning
+        radius_x = 340
+        radius_y = 210
+
+        # 10 seat positions around the table
+        import math
+        positions = []
+        for i in range(10):
+            angle = (i * 36 - 90) * math.pi / 180  # Start from top, go clockwise
+            x = center_x + radius_x * math.cos(angle)
+            y = center_y + radius_y * math.sin(angle)
+            positions.append((x, y))
+
+        # Create player frames at each position
+        for seat, (x, y) in enumerate(positions, start=1):
+            self._create_player_position(seat, x, y)
+
+    def _create_player_position(self, seat: int, x: float, y: float) -> None:
+        """Create a player display at a specific table position."""
+        # Create frame for this player
+        player_frame = tk.Frame(
+            self.live_data_frame,
+            bg=COLORS["bg_light"],
+            relief=tk.RAISED,
+            bd=2,
+            padx=5,
+            pady=3
+        )
+
+        # Place it on the canvas
+        window_id = self.table_canvas.create_window(x, y, window=player_frame)
+
+        # Seat label
         seat_label = tk.Label(
             player_frame,
-            text=f"Seat {seat}:",
-            font=FONTS["body"],
+            text=f"S{seat}",
+            font=("Arial", 9, "bold"),
             bg=COLORS["bg_light"],
-            fg=COLORS["text_primary"],
-            width=8,
+            fg=COLORS["text_secondary"],
+            width=3
         )
-        seat_label.pack(side="left", padx=5)
+        seat_label.grid(row=0, column=0, columnspan=2, sticky="ew")
 
         # Player name
         name_label = tk.Label(
             player_frame,
             text="Empty",
-            font=FONTS["body"],
+            font=("Arial", 10, "bold"),
             bg=COLORS["bg_light"],
             fg=COLORS["text_secondary"],
-            width=15,
-            anchor="w",
+            width=12
         )
-        name_label.pack(side="left", padx=5)
+        name_label.grid(row=1, column=0, columnspan=2, pady=2)
 
-        # Stack size
+        # Stack
         stack_label = tk.Label(
             player_frame,
             text="$0",
-            font=FONTS["body"],
+            font=("Arial", 9),
             bg=COLORS["bg_light"],
-            fg=COLORS["accent_warning"],
-            width=10,
-            anchor="w",
+            fg=COLORS["accent_warning"]
         )
-        stack_label.pack(side="left", padx=5)
+        stack_label.grid(row=2, column=0, columnspan=2)
 
-        # Current bet
+        # Bet
         bet_label = tk.Label(
             player_frame,
-            text="Bet: $0",
-            font=FONTS["body"],
+            text="",
+            font=("Arial", 8),
             bg=COLORS["bg_light"],
-            fg=COLORS["accent_info"],
-            width=10,
-            anchor="w",
+            fg=COLORS["accent_info"]
         )
-        bet_label.pack(side="left", padx=5)
+        bet_label.grid(row=3, column=0, columnspan=2)
 
-        # Hole cards
+        # Cards frame
         cards_frame = tk.Frame(player_frame, bg=COLORS["bg_light"])
-        cards_frame.pack(side="left", padx=5)
+        cards_frame.grid(row=4, column=0, columnspan=2, pady=2)
 
         card1_label = tk.Label(
             cards_frame,
-            text="[ ]",
-            font=("Courier", 10),
-            bg=COLORS["bg_light"],
-            fg=COLORS["text_primary"],
+            text="[]",
+            font=("Courier", 9, "bold"),
+            bg="#ffffff",
+            fg="#000000",
             width=3,
+            relief=tk.RAISED,
+            bd=1
         )
         card1_label.pack(side="left", padx=1)
 
         card2_label = tk.Label(
             cards_frame,
-            text="[ ]",
-            font=("Courier", 10),
-            bg=COLORS["bg_light"],
-            fg=COLORS["text_primary"],
+            text="[]",
+            font=("Courier", 9, "bold"),
+            bg="#ffffff",
+            fg="#000000",
             width=3,
+            relief=tk.RAISED,
+            bd=1
         )
         card2_label.pack(side="left", padx=1)
 
-        # Status (active, folded, etc.)
+        # Status indicator
         status_label = tk.Label(
             player_frame,
             text="",
-            font=FONTS["body"],
+            font=("Arial", 8),
             bg=COLORS["bg_light"],
-            fg=COLORS["text_secondary"],
-            width=10,
-            anchor="w",
+            fg=COLORS["text_secondary"]
         )
-        status_label.pack(side="left", padx=5)
+        status_label.grid(row=5, column=0, columnspan=2)
 
+        # Store references
         self.player_labels[seat] = {
+            "frame": player_frame,
+            "window_id": window_id,
             "name": name_label,
             "stack": stack_label,
             "bet": bet_label,
