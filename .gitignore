@@ -271,3 +271,5 @@ core.*
 
 # Keep static assets
 !assets/**/*
+test_logs/*.log
+test_logs/*.json

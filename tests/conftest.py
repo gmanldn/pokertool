@@ -1,5 +1,6 @@
 # Ensure pytest recognizes async tests and benchmarking even if plugins missing
 import sys
+import os
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+
+# Set test mode to suppress GUI popups during testing
+os.environ['POKERTOOL_TEST_MODE'] = '1'
 
 # Register pytest-asyncio automatically if available
 pytest_plugins = []

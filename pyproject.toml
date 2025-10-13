@@ -42,3 +42,46 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+# Pytest configuration for PokerTool test suite
+minversion = "6.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Timeout settings - prevent hanging tests (requires pytest-timeout plugin)
+# timeout = 300  # 5 minutes per test (can be overridden with --timeout)
+# timeout_method = "thread"  # Use thread-based timeout for better compatibility
+
+# Output settings
+addopts = [
+    "-v",  # Verbose output
+    "--tb=short",  # Short traceback format
+    "--strict-markers",  # Strict marker checking
+    "--color=yes",  # Colored output
+]
+
+# Markers for categorizing tests
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "system: system/integration tests (deselect with '-m \"not system\"')",
+    "unit: unit tests",
+    "gui: GUI-related tests",
+    "ml: machine learning tests",
+    "scraper: screen scraper tests",
+    "asyncio: marks tests as using asyncio",
+]
+
+# Test discovery patterns
+norecursedirs = [
+    ".*",
+    "build",
+    "dist",
+    "*.egg",
+    "__pycache__",
+    "node_modules",
+    ".venv",
+    "venv",
+]

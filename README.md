@@ -310,17 +310,66 @@ open assets/ui_baselines/baseline_manifest.json
 ### **Key Development Tools**
 
 ```bash
+# 🧪 COMPREHENSIVE TEST SUITE (Recommended)
+python test_everything.py              # Run ALL tests with detailed logging
+python test_everything.py --verbose    # Verbose output with full details
+python test_everything.py --quick      # Quick tests only (no system tests)
+python test_everything.py --system     # System tests only
+python test_everything.py --coverage   # Run with coverage report
+
 # Comprehensive system test
 python start.py --self-test
 
-# Dependency validation  
+# Dependency validation
 python src/pokertool/dependency_manager.py
 
-# Run test suite
+# Legacy test runner
 python run_tests.py
 
 # Code quality checks (when available)
 python tools/poker_go.py --check-only
+```
+
+### **Comprehensive Test Suite**
+
+PokerTool includes a comprehensive test runner that executes all 69+ test files and provides detailed logging:
+
+```bash
+# Run all tests with detailed logging
+python test_everything.py
+```
+
+**Features:**
+- ✅ **Automatic test discovery** - Finds all test files across the project
+- ✅ **Detailed logging** - Logs to both console and timestamped log files
+- ✅ **JSON reports** - Machine-readable test results
+- ✅ **Coverage reports** - Optional code coverage analysis
+- ✅ **Flexible modes** - Quick, system, or comprehensive test runs
+- ✅ **Color-coded output** - Easy-to-read results with status indicators
+
+**Test Logs Location:** `test_logs/test_run_YYYYMMDD_HHMMSS.log`
+
+**Sample Output:**
+```text
+================================================================================
+POKERTOOL COMPREHENSIVE TEST SUITE
+================================================================================
+Timestamp: 2025-10-13 12:00:00
+Log file: test_logs/test_run_20251013_120000.log
+Mode: COMPREHENSIVE (all tests)
+--------------------------------------------------------------------------------
+
+Found 69 test files
+Running pytest...
+...
+================================================================================
+TEST SUMMARY
+================================================================================
+Total Tests Run:  245
+✅ Passed:        238
+❌ Failed:        3
+⏭️  Skipped:       4
+Pass Rate:        97.1%
 ```
 
 ### **Module Structure**

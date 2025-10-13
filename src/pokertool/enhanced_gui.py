@@ -582,30 +582,23 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         # Fallback styling for environments that ignore custom style names
         style.configure(
             'TNotebook',
-            background='#1f2937',
-            borderwidth=1,
-            tabmargins=(12, 10, 12, 0)
+            background=COLORS['bg_dark']
         )
         style.configure(
             'TNotebook.Tab',
-            background='#334155',
-            foreground='#f8fafc',
-            padding=(22, 12),
-            font=('Arial', 13, 'bold'),
-            borderwidth=2,
-            relief='raised'
+            background=COLORS['bg_medium'],
+            foreground=COLORS['text_primary'],
+            padding=[12, 6]
         )
         style.map(
             'TNotebook.Tab',
             background=[
-                ('selected', '#0ea5e9'),
-                ('active', '#38bdf8'),
-                ('!selected', '#334155')
+                ('selected', COLORS['bg_dark']),
+                ('!selected', COLORS['bg_medium'])
             ],
             foreground=[
-                ('selected', '#0b1120'),
-                ('active', '#0b1120'),
-                ('!selected', '#f8fafc')
+                ('selected', COLORS['accent_primary']),
+                ('!selected', COLORS['text_primary'])
             ]
         )
 
@@ -2563,7 +2556,7 @@ Platform: {sys.platform}
             if not self.screen_scraper:
                 self._update_table_status("⚠️ Initializing screen scraper...\n")
                 try:
-                    self.screen_scraper = create_scraper('GENERIC')
+                    self.screen_scraper = create_scraper('BETFAIR')
                     self._update_table_status("✅ Screen scraper initialized\n")
                 except Exception as init_error:
                     self._update_table_status(f"❌ Failed to initialize screen scraper: {init_error}\n")
@@ -3152,7 +3145,8 @@ Platform: {sys.platform}
                         # Log detection results (only if table detected to reduce noise)
                         if is_detected:
                             msg = f"🔍 Auto-detection: Table found ({confidence:.1%} confidence)"
-                            self.after(0, lambda m=msg: self._log_to_logging_tab(m, 'INFO'))
+                            # Update status display instead of logging to non-existent tab
+                            self.after(0, lambda m=msg: self._update_table_status(m + '\n'))
 
                     except Exception as e:
                         # Silently handle errors to avoid spamming logs
@@ -3378,7 +3372,7 @@ Platform: {sys.platform}
                         try:
                             # Try to get basic table state
                             table_state = self.screen_scraper.analyze_table()
-                            if table_state and table_state.pot_size > 0:
+                            if table_state and hasattr(table_state, 'pot_size') and table_state.pot_size is not None and table_state.pot_size > 0:
                                 timestamp = datetime.now().strftime('%H:%M:%S')
                                 msg = f"[{timestamp}] 🎰 Table detected: Pot ${table_state.pot_size}\n"
                                 self.after(0, lambda m=msg: self._update_table_status(m))

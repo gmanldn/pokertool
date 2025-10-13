@@ -157,9 +157,38 @@ def run_tests() -> int:
     log("✓ Test suite completed")
     return 0
 
+def cleanup_old_processes():
+    """Kill any old pokertool processes before starting."""
+    try:
+        current_pid = os.getpid()
+
+        if IS_WINDOWS:
+            # Windows: Use taskkill
+            subprocess.run(
+                ['taskkill', '/F', '/FI', 'IMAGENAME eq python*', '/FI', f'PID ne {current_pid}'],
+                capture_output=True, timeout=5
+            )
+        else:
+            # Unix: Use pkill
+            subprocess.run(
+                ['pkill', '-f', 'python.*start\\.py'],
+                capture_output=True, timeout=5
+            )
+
+        # Give processes time to terminate
+        import time
+        time.sleep(0.5)
+
+    except Exception as e:
+        # Non-critical - continue even if cleanup fails
+        pass
+
 def launch_enhanced_gui() -> int:
     """Launch the Enhanced GUI v33.0.0."""
     venv_python = get_venv_python()
+
+    # Clean up any old processes first
+    cleanup_old_processes()
 
     # Setup environment
     env = os.environ.copy()
