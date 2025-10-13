@@ -158,29 +158,79 @@ def run_tests() -> int:
     return 0
 
 def cleanup_old_processes():
-    """Kill any old pokertool processes before starting."""
+    """Kill any old pokertool processes before starting (including stuck ones)."""
+    import time
+    import signal
+
     try:
         current_pid = os.getpid()
+        log("Cleaning up previous pokertool instances...")
 
         if IS_WINDOWS:
-            # Windows: Use taskkill
+            # Windows: Use taskkill with force flag
+            # First try graceful termination
             subprocess.run(
                 ['taskkill', '/F', '/FI', 'IMAGENAME eq python*', '/FI', f'PID ne {current_pid}'],
                 capture_output=True, timeout=5
             )
         else:
-            # Unix: Use pkill
-            subprocess.run(
-                ['pkill', '-f', 'python.*start\\.py'],
-                capture_output=True, timeout=5
-            )
+            # Unix: More robust multi-step cleanup
+            # Step 1: Find all pokertool processes (excluding current)
+            try:
+                result = subprocess.run(
+                    ['pgrep', '-f', 'python.*start\\.py'],
+                    capture_output=True, text=True, timeout=5
+                )
+                pids = [int(pid) for pid in result.stdout.strip().split('\n') if pid and int(pid) != current_pid]
 
-        # Give processes time to terminate
-        import time
-        time.sleep(0.5)
+                if pids:
+                    log(f"Found {len(pids)} previous instance(s) to clean up")
+
+                    # Step 2: Try SIGTERM first (graceful)
+                    for pid in pids:
+                        try:
+                            os.kill(pid, signal.SIGTERM)
+                        except ProcessLookupError:
+                            pass  # Process already gone
+                        except PermissionError:
+                            log(f"⚠️  Cannot terminate PID {pid} (permission denied)")
+
+                    # Step 3: Wait briefly for graceful shutdown
+                    time.sleep(1.0)
+
+                    # Step 4: Force kill any remaining processes with SIGKILL
+                    for pid in pids:
+                        try:
+                            # Check if still running
+                            os.kill(pid, 0)  # Signal 0 checks existence
+                            # Still alive, force kill
+                            os.kill(pid, signal.SIGKILL)
+                            log(f"Force killed stuck process PID {pid}")
+                        except ProcessLookupError:
+                            pass  # Process terminated gracefully
+                        except PermissionError:
+                            log(f"⚠️  Cannot kill PID {pid} (permission denied)")
+
+                    # Step 5: Final wait and verify
+                    time.sleep(0.5)
+                    log("✓ Cleanup complete")
+                else:
+                    log("✓ No previous instances found")
+
+            except subprocess.TimeoutExpired:
+                log("⚠️  Process search timed out, continuing anyway")
+            except FileNotFoundError:
+                # pgrep not available, fallback to pkill
+                log("Using fallback cleanup method...")
+                subprocess.run(
+                    ['pkill', '-9', '-f', 'python.*start\\.py'],
+                    capture_output=True, timeout=5
+                )
+                time.sleep(0.5)
 
     except Exception as e:
-        # Non-critical - continue even if cleanup fails
+        # Log error but continue - startup should proceed
+        log(f"⚠️  Cleanup warning: {e}")
         pass
 
 def launch_enhanced_gui() -> int:

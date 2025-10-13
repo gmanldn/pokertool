@@ -541,7 +541,7 @@ class LiveTableSection:
 
                 self.table_status_label.config(
                     text=status_text,
-                    fg=COLORS["accent_success"] if (confidence > 70 and validation_complete) else COLORS["accent_warning"]
+                    fg=COLORS["accent_success"] if (confidence and confidence > 70 and validation_complete) else COLORS["accent_warning"]
                 )
 
             # Update board cards
@@ -570,6 +570,8 @@ class LiveTableSection:
             # Update dealer button
             if self.dealer_button_label:
                 dealer_seat = table_data.get('dealer_seat', 0)
+                # Handle None values explicitly
+                dealer_seat = dealer_seat if dealer_seat is not None else 0
                 self.dealer_button_label.config(
                     text=f"Seat {dealer_seat}" if dealer_seat > 0 else "Seat -"
                 )

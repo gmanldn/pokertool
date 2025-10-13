@@ -50,14 +50,21 @@ def _pid_is_running(pid: int) -> bool:
         return True
 
 
-def acquire_lock(app_name: str = _DEFAULT_APP_NAME) -> Tuple[Optional[Path], Optional[int]]:
+def acquire_lock(app_name: str = _DEFAULT_APP_NAME, force_cleanup: bool = True) -> Tuple[Optional[Path], Optional[int]]:
     """
     Attempt to acquire the single-instance lock.
+
+    Args:
+        app_name: Application name for the lock file
+        force_cleanup: If True, forcefully kill any previous instance to ensure only newest runs
 
     Returns a tuple of (lock_path, existing_pid). If lock_path is None and
     existing_pid is not None, another process already holds the lock. If both
     values are None, an unexpected filesystem error occurred.
     """
+    import signal
+    import time
+
     lock_path = _lock_path(app_name)
 
     try:
@@ -68,13 +75,42 @@ def acquire_lock(app_name: str = _DEFAULT_APP_NAME) -> Tuple[Optional[Path], Opt
                 stored_pid = None
 
             if stored_pid and _pid_is_running(stored_pid):
-                return None, stored_pid
+                if force_cleanup:
+                    # Newest instance wins - forcefully clean up the old one
+                    print(f"[POKERTOOL] Found previous instance (PID {stored_pid}), cleaning up...")
 
+                    try:
+                        # Step 1: Try graceful termination (SIGTERM)
+                        os.kill(stored_pid, signal.SIGTERM)
+                        time.sleep(0.5)
+
+                        # Step 2: Check if still running, use SIGKILL if needed
+                        if _pid_is_running(stored_pid):
+                            print(f"[POKERTOOL] Force killing stuck process PID {stored_pid}")
+                            os.kill(stored_pid, signal.SIGKILL)
+                            time.sleep(0.3)
+                        else:
+                            print(f"[POKERTOOL] ✓ Previous instance terminated gracefully")
+
+                    except ProcessLookupError:
+                        pass  # Process already gone
+                    except PermissionError:
+                        print(f"⚠️  Cannot terminate PID {stored_pid} (permission denied)")
+                        return None, stored_pid
+                    except Exception as e:
+                        print(f"⚠️  Error terminating PID {stored_pid}: {e}")
+                        return None, stored_pid
+                else:
+                    # Original behavior - don't force cleanup
+                    return None, stored_pid
+
+            # Remove stale or cleaned-up lock file
             try:
                 lock_path.unlink()
             except OSError:
                 pass
 
+        # Acquire lock for this instance
         lock_path.write_text(str(os.getpid()))
         return lock_path, None
     except OSError as exc:

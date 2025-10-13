@@ -2400,8 +2400,12 @@ Platform: {sys.platform}
             if len(hero_cards) == 0:
                 validation_report['warnings'].append("Hero cards not detected")
 
-            # Player information
-            players = getattr(table_state, 'players', [])
+            # Player information - check both 'players' and 'seats' attributes
+            players = []
+            if hasattr(table_state, 'players') and table_state.players:
+                players = table_state.players
+            elif hasattr(table_state, 'seats') and table_state.seats:
+                players = table_state.seats
             validation_report['data']['total_seats'] = len(players)
             validation_report['data']['players'] = []
 
@@ -3297,13 +3301,21 @@ Platform: {sys.platform}
                 data['warnings'].append("No board cards detected")
 
             # Extract player information with comprehensive validation
+            # Check both 'players' and 'seats' attributes (different scrapers use different names)
+            players_list = []
             if hasattr(table_state, 'players') and table_state.players:
+                players_list = table_state.players
+            elif hasattr(table_state, 'seats') and table_state.seats:
+                players_list = table_state.seats
+
+            if players_list:
                 players_detected = 0
                 players_with_names = 0
                 players_with_stacks = 0
 
-                for seat_num, player in enumerate(table_state.players, start=1):
-                    if player:
+                for player in players_list:
+                    if player and (hasattr(player, 'is_active') and player.is_active or not hasattr(player, 'is_active')):
+                        seat_num = getattr(player, 'seat_number', len(validation_report['data']['players']) + 1)
                         players_detected += 1
 
                         player_name = getattr(player, 'name', None)
