@@ -46,6 +46,17 @@ except ImportError:
     CDP_SCRAPER_AVAILABLE = False
     logger.info("Chrome DevTools Protocol scraper not available (optional speedup)")
 
+# Import learning system
+try:
+    from .scraper_learning_system import (
+        ScraperLearningSystem, ExtractionType, EnvironmentSignature,
+        OCRStrategyResult, ExtractionFeedback, CDPGroundTruth
+    )
+    LEARNING_SYSTEM_AVAILABLE = True
+except ImportError:
+    LEARNING_SYSTEM_AVAILABLE = False
+    logger.warning("Learning system not available")
+
 
 # ============================================================================
 # Data Models
@@ -476,13 +487,15 @@ class PokerScreenScraper:
     Optimized for Betfair Poker with universal fallback support.
     """
     
-    def __init__(self, site: PokerSite = PokerSite.BETFAIR, use_cdp: bool = True):
+    def __init__(self, site: PokerSite = PokerSite.BETFAIR, use_cdp: bool = True,
+                 enable_learning: bool = True):
         """Initialize the scraper."""
         if not SCRAPER_DEPENDENCIES_AVAILABLE:
             logger.warning("Screen scraper dependencies not fully available")
 
         self.site = site
         self.use_cdp = use_cdp
+        self.enable_learning = enable_learning
 
         # Initialize detectors
         self.betfair_detector = BetfairPokerDetector()
@@ -498,10 +511,20 @@ class PokerScreenScraper:
             except Exception as e:
                 logger.warning(f"Could not initialize CDP scraper: {e}")
 
+        # Initialize learning system
+        self.learning_system = None
+        if LEARNING_SYSTEM_AVAILABLE and enable_learning:
+            try:
+                self.learning_system = ScraperLearningSystem()
+                logger.info("🧠 Learning system initialized (adaptive optimization enabled)")
+            except Exception as e:
+                logger.warning(f"Could not initialize learning system: {e}")
+
         # State management
         self.calibrated = False
         self.last_state = None
         self.last_detection_result = None
+        self.last_cdp_data = None  # Store last CDP data for learning
         self.capture_thread = None
         self.stop_event = None
         self.state_history = deque(maxlen=100)
@@ -517,7 +540,7 @@ class PokerScreenScraper:
         else:
             self.sct = None
 
-        logger.info(f"🎯 PokerScreenScraper initialized (target: {site.value}, CDP: {use_cdp})")
+        logger.info(f"🎯 PokerScreenScraper initialized (target: {site.value}, CDP: {use_cdp}, Learning: {enable_learning})")
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
         """
@@ -527,6 +550,11 @@ class PokerScreenScraper:
         1. Try Betfair-specific detection first (if configured for Betfair)
         2. Fall back to universal detection
         3. Return best result
+
+        Learning system integration:
+        - Uses environment-specific detection thresholds
+        - Records detection results for adaptive tuning
+        - Updates environment profiles
 
         Args:
             image: Optional image to analyze. If None, captures current screen.
@@ -543,6 +571,12 @@ class PokerScreenScraper:
             logger.warning("[DETECTION] No image to analyze")
             return False, 0.0, {'error': 'No image'}
 
+        # Get environment-specific parameters from learning system
+        detection_threshold = DETECTION_THRESHOLD
+        if self.learning_system:
+            env_profile = self.learning_system.get_environment_profile(image)
+            detection_threshold = env_profile.detection_threshold
+
         # Strategy 1: Try Betfair detector first (if Betfair site)
         if self.site == PokerSite.BETFAIR:
             betfair_result = self.betfair_detector.detect(image)
@@ -551,6 +585,15 @@ class PokerScreenScraper:
                 logger.info(f"[BETFAIR] ✓ Detected with {betfair_result.confidence:.1%} confidence")
                 self.last_detection_result = betfair_result
                 self.true_positive_count += 1
+
+                # Record successful detection in learning system
+                if self.learning_system:
+                    self.learning_system.record_detection_result(
+                        True, betfair_result.confidence, betfair_result.time_ms
+                    )
+                    self.learning_system.update_environment_profile(
+                        image, True, betfair_result.time_ms
+                    )
 
                 return True, betfair_result.confidence, {
                     'site': 'betfair',
@@ -574,6 +617,15 @@ class PokerScreenScraper:
             self.last_detection_result = universal_result
             self.true_positive_count += 1
 
+            # Record successful detection in learning system
+            if self.learning_system:
+                self.learning_system.record_detection_result(
+                    True, universal_result.confidence, universal_result.time_ms
+                )
+                self.learning_system.update_environment_profile(
+                    image, True, universal_result.time_ms
+                )
+
             return True, universal_result.confidence, {
                 'site': 'generic',
                 'detector': 'universal',
@@ -583,6 +635,12 @@ class PokerScreenScraper:
 
         # No detection
         total_time = (time.time() - start_time) * 1000
+
+        # Record failed detection in learning system
+        if self.learning_system:
+            self.learning_system.record_detection_result(False, 0.0, total_time)
+            self.learning_system.update_environment_profile(image, False, total_time)
+
         # Only log periodically to avoid terminal spam
         if not hasattr(self, '_last_detection_log') or time.time() - self._last_detection_log >= 5.0:
             self._last_detection_log = time.time()
@@ -665,6 +723,21 @@ class PokerScreenScraper:
                 try:
                     cdp_data = self.cdp_scraper.extract_table_data()
                     if cdp_data:
+                        # Store CDP data for learning comparison
+                        self.last_cdp_data = cdp_data
+
+                        # Record CDP ground truth in learning system
+                        if self.learning_system:
+                            ground_truth = CDPGroundTruth(
+                                pot_size=cdp_data.pot_size,
+                                player_names={s: p.get('name', '') for s, p in cdp_data.players.items()},
+                                stack_sizes={s: p.get('stack', 0.0) for s, p in cdp_data.players.items()},
+                                board_cards=cdp_data.board_cards,
+                                hero_cards=cdp_data.hero_cards,
+                                blinds=(cdp_data.small_blind, cdp_data.big_blind)
+                            )
+                            self.learning_system.record_cdp_ground_truth(ground_truth)
+
                         # Convert CDP data to TableState
                         state = self._convert_cdp_to_table_state(cdp_data)
                         state.extraction_method = "cdp"
@@ -802,6 +875,35 @@ class PokerScreenScraper:
             extraction_time = (time.time() - extraction_start) * 1000  # Convert to milliseconds
             state.extraction_time_ms = extraction_time
             state.extraction_method = "screenshot_ocr"
+
+            # Compare OCR extraction with CDP ground truth (if available)
+            if self.learning_system and self.last_cdp_data:
+                try:
+                    # Build OCR extracted data dictionary
+                    ocr_extracted = {
+                        'pot_size': state.pot_size,
+                        'player_names': {s.seat_number: s.player_name for s in state.seats if s.is_active},
+                        'stack_sizes': {s.seat_number: s.stack_size for s in state.seats if s.is_active},
+                    }
+
+                    # Build CDP ground truth
+                    cdp_ground_truth = CDPGroundTruth(
+                        pot_size=self.last_cdp_data.pot_size,
+                        player_names={s: p.get('name', '') for s, p in self.last_cdp_data.players.items()},
+                        stack_sizes={s: p.get('stack', 0.0) for s, p in self.last_cdp_data.players.items()},
+                        board_cards=self.last_cdp_data.board_cards,
+                        hero_cards=self.last_cdp_data.hero_cards,
+                        blinds=(self.last_cdp_data.small_blind, self.last_cdp_data.big_blind)
+                    )
+
+                    # Compare and learn from differences
+                    self.learning_system.compare_ocr_vs_cdp(
+                        ocr_extracted,
+                        cdp_ground_truth,
+                        [ExtractionType.POT_SIZE, ExtractionType.PLAYER_NAME, ExtractionType.STACK_SIZE]
+                    )
+                except Exception as e:
+                    logger.debug(f"CDP comparison failed: {e}")
 
             # ALWAYS return state with whatever data we extracted, even at low confidence
             return state
@@ -1647,8 +1749,82 @@ class PokerScreenScraper:
         state.timestamp = time.time()
         return state
 
+    def get_learning_report(self) -> Optional[Dict[str, Any]]:
+        """
+        Get comprehensive learning system report.
+
+        Returns:
+            Dictionary with learning metrics or None if learning disabled
+        """
+        if not self.learning_system:
+            return None
+
+        return self.learning_system.get_learning_report()
+
+    def print_learning_report(self):
+        """Print human-readable learning report."""
+        if not self.learning_system:
+            logger.warning("Learning system not available")
+            return
+
+        self.learning_system.print_learning_report()
+
+    def record_user_feedback(self, extraction_type: str, extracted_value: Any,
+                            corrected_value: Any, strategy_used: str = "unknown"):
+        """
+        Record user feedback/correction for learning.
+
+        Args:
+            extraction_type: Type of extraction (e.g., "pot_size", "player_name")
+            extracted_value: What was extracted
+            corrected_value: Corrected value from user
+            strategy_used: OCR strategy that was used
+        """
+        if not self.learning_system:
+            return
+
+        # Map string to ExtractionType enum
+        type_map = {
+            'pot_size': ExtractionType.POT_SIZE,
+            'player_name': ExtractionType.PLAYER_NAME,
+            'stack_size': ExtractionType.STACK_SIZE,
+            'card_rank': ExtractionType.CARD_RANK,
+            'card_suit': ExtractionType.CARD_SUIT,
+            'blind_amount': ExtractionType.BLIND_AMOUNT,
+        }
+
+        ext_type = type_map.get(extraction_type)
+        if not ext_type:
+            logger.warning(f"Unknown extraction type: {extraction_type}")
+            return
+
+        feedback = ExtractionFeedback(
+            extraction_type=ext_type,
+            extracted_value=extracted_value,
+            corrected_value=corrected_value,
+            strategy_used=strategy_used,
+            environment="current"
+        )
+
+        self.learning_system.record_user_feedback(feedback)
+        logger.info(f"📝 User feedback recorded for {extraction_type}")
+
+    def save_learning_data(self):
+        """Manually save learning data to disk."""
+        if self.learning_system:
+            self.learning_system.save()
+            logger.info("💾 Learning data saved")
+
     def shutdown(self):
         """Clean shutdown."""
+        # Save learning data before shutdown
+        if self.learning_system:
+            try:
+                self.learning_system.save()
+                logger.info("💾 Learning data saved on shutdown")
+            except Exception as e:
+                logger.error(f"Failed to save learning data: {e}")
+
         # Disconnect CDP scraper
         if self.cdp_scraper:
             try:
