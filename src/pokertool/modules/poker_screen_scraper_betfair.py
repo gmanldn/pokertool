@@ -746,6 +746,12 @@ class PokerScreenScraper:
             if should_log_details:
                 logger.info(f"📍 STAGE: {state.stage.upper()}")
 
+            # Blind amounts - try to extract from table UI
+            state.small_blind, state.big_blind, state.ante = self._extract_blinds(image)
+            if should_log_details and (state.small_blind > 0 or state.big_blind > 0):
+                logger.info(f"💰 BLINDS: ${state.small_blind:.2f}/${state.big_blind:.2f}" +
+                          (f" (ante ${state.ante:.2f})" if state.ante > 0 else ""))
+
             # Players and positions
             if should_log_details:
                 logger.info("-" * 80)
@@ -1298,12 +1304,24 @@ class PokerScreenScraper:
                 if card_img.size == 0:
                     logger.debug(f"    Card {idx+1}: Empty image, skipping")
                     continue
-                # OCR on the top-left quadrant for rank text
-                tl_h = int(ch * 0.5)  # Increased from 0.4 to capture more of the rank
-                tl_w = int(cw * 0.5)  # Increased from 0.4
+                # OCR on the top-left corner for rank text
+                # Use tighter crop to focus on JUST the rank (exclude suit symbol)
+                tl_h = int(ch * 0.35)  # Smaller region - just the rank at top
+                tl_w = int(cw * 0.40)  # Smaller region - just the rank at left
                 tl_region = card_img[0:tl_h, 0:tl_w]
+
+                if tl_region.size == 0:
+                    logger.debug(f"    Card {idx+1}: Empty rank region, skipping")
+                    continue
+
                 tl_gray = cv2.cvtColor(tl_region, cv2.COLOR_BGR2GRAY)
-                tl_gray = cv2.resize(tl_gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)  # Increased from 2x to 3x
+
+                # Apply morphological operations to clean up text
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+                tl_gray = cv2.morphologyEx(tl_gray, cv2.MORPH_CLOSE, kernel)
+
+                # Scale up for better OCR
+                tl_gray = cv2.resize(tl_gray, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
 
                 # Try multiple OCR approaches
                 rank = ''
@@ -1311,20 +1329,35 @@ class PokerScreenScraper:
 
                 # Approach 1: OTSU threshold (good for cards with clear contrast)
                 _, tl_thresh = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-                rank_text1 = pytesseract.image_to_string(tl_thresh, config='--psm 10 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+                rank_text1 = pytesseract.image_to_string(tl_thresh, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
 
                 # Approach 2: Inverse OTSU (for dark text on light background)
                 _, tl_thresh_inv = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-                rank_text2 = pytesseract.image_to_string(tl_thresh_inv, config='--psm 10 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+                rank_text2 = pytesseract.image_to_string(tl_thresh_inv, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
 
                 # Approach 3: Simple threshold at 127
                 _, tl_thresh_simple = cv2.threshold(tl_gray, 127, 255, cv2.THRESH_BINARY)
-                rank_text3 = pytesseract.image_to_string(tl_thresh_simple, config='--psm 10 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+                rank_text3 = pytesseract.image_to_string(tl_thresh_simple, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
 
-                # Try all three approaches and take the first valid result
-                for rt in [rank_text1, rank_text2, rank_text3]:
+                # Approach 4: Adaptive threshold (handles varying lighting)
+                tl_adaptive = cv2.adaptiveThreshold(tl_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+                rank_text4 = pytesseract.image_to_string(tl_adaptive, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+
+                # Approach 5: PSM 6 for multi-character ranks like "10" (no whitelist for flexibility)
+                rank_text5 = pytesseract.image_to_string(tl_thresh, config='--psm 6')  # type: ignore
+
+                # Approach 6: PSM 6 on adaptive threshold
+                rank_text6 = pytesseract.image_to_string(tl_adaptive, config='--psm 6')  # type: ignore
+
+                # Try all six approaches and take the first valid result
+                for rt in [rank_text1, rank_text2, rank_text3, rank_text4, rank_text5, rank_text6]:
                     if rt:
                         rank_text = rt
+                        # Handle "10" as a special case (two digit rank)
+                        if '10' in rt or '1O' in rt or '1o' in rt:
+                            rank = 'T'
+                            break
+                        # Try to match single character
                         match = re.search(r'([0-9AJQKTaajqkt])', rt)
                         if match:
                             rank_char = match.group(1).upper()
@@ -1389,6 +1422,78 @@ class PokerScreenScraper:
         elif num_cards == 5:
             return 'river'
         return 'unknown'
+
+    def _extract_blinds(self, image: np.ndarray) -> Tuple[float, float, float]:
+        """Extract blind amounts from table UI.
+
+        Returns:
+            (small_blind, big_blind, ante) tuple
+        """
+        if not SCRAPER_DEPENDENCIES_AVAILABLE:
+            return (0.0, 0.0, 0.0)
+
+        try:
+            h, w = image.shape[:2]
+            # Betfair typically shows blinds in the table info area
+            # Try multiple regions where blinds might appear
+
+            regions_to_check = [
+                # Top bar area (where table info often appears)
+                (0, int(h * 0.05), w, int(h * 0.15)),
+                # Bottom info area
+                (int(w * 0.3), int(h * 0.45), int(w * 0.7), int(h * 0.55)),
+                # Tournament info area (bottom center)
+                (int(w * 0.25), int(h * 0.5), int(w * 0.75), int(h * 0.65)),
+            ]
+
+            for y0, y1, x0, x1 in regions_to_check:
+                roi = image[y0:y1, x0:x1]
+                if roi.size == 0:
+                    continue
+
+                # Convert to grayscale and enhance
+                gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+
+                # Try OCR with focus on numbers and currency
+                text = pytesseract.image_to_string(gray, config='--psm 6')  # type: ignore
+
+                # Look for blind patterns like:
+                # - "$0.05/$0.10"
+                # - "£0.05/£0.10"
+                # - "0.05/0.10"
+                # - "Blinds: 0.05/0.10"
+                blind_patterns = [
+                    r'[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # 0.05/0.10 or $0.05/$0.10
+                    r'blinds?\s*:?\s*[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # Blinds: 0.05/0.10
+                    r'sb\s*[£$€]?(\d+\.?\d*)\s*bb\s*[£$€]?(\d+\.?\d*)',  # SB 0.05 BB 0.10
+                ]
+
+                for pattern in blind_patterns:
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    if match:
+                        try:
+                            sb = float(match.group(1))
+                            bb = float(match.group(2))
+
+                            # Sanity check: BB should be ~2x SB, both should be reasonable poker values
+                            if 0.01 <= sb <= 1000 and 0.01 <= bb <= 2000 and 1.5 <= (bb / sb) <= 3:
+                                logger.info(f"✓ Blinds detected from OCR: ${sb:.2f}/${bb:.2f}")
+                                return (sb, bb, 0.0)  # Ante detection TODO
+                        except (ValueError, ZeroDivisionError):
+                            continue
+
+            # If OCR fails, use heuristics based on pot size
+            # Small stakes typically have standard blind structures
+            logger.debug("Blind OCR failed, using fallback heuristics")
+
+            # For now, use common micro stakes blinds as fallback
+            # This should be improved with better OCR or CDP
+            return (0.05, 0.10, 0.0)  # Common microstakes
+
+        except Exception as e:
+            logger.debug(f"Blind extraction error: {e}")
+            return (0.0, 0.0, 0.0)
     
     def calibrate(self, test_image: Optional[np.ndarray] = None) -> bool:
         """Calibrate the scraper for current conditions."""
