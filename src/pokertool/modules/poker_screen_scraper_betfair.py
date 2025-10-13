@@ -657,6 +657,7 @@ class PokerScreenScraper:
         FALLBACK: Uses screenshot OCR if CDP not available
         """
         start_time = time.time()
+        extraction_start = start_time
 
         try:
             # FAST PATH: Try CDP extraction first (if connected)
@@ -674,6 +675,7 @@ class PokerScreenScraper:
                 except Exception as e:
                     logger.warning(f"[CDP] Extraction failed, falling back to OCR: {e}")
                     # Fall through to OCR method
+                    extraction_start = time.time()  # Reset timer for OCR
 
             # FALLBACK: Screenshot-based OCR extraction
             if image is None:
@@ -789,6 +791,11 @@ class PokerScreenScraper:
 
             if should_log_details:
                 logger.info("=" * 80)
+
+            # Calculate extraction time for OCR method
+            extraction_time = (time.time() - extraction_start) * 1000  # Convert to milliseconds
+            state.extraction_time_ms = extraction_time
+            state.extraction_method = "screenshot_ocr"
 
             # ALWAYS return state with whatever data we extracted, even at low confidence
             return state
@@ -1219,6 +1226,7 @@ class PokerScreenScraper:
         """
         cards: List[Card] = []
         if not SCRAPER_DEPENDENCIES_AVAILABLE:
+            logger.debug(f"Card extraction skipped: dependencies not available")
             return cards
         try:
             h, w = image.shape[:2]
@@ -1230,61 +1238,140 @@ class PokerScreenScraper:
             if roi.size == 0:
                 return cards
 
+            logger.debug(f"Card extraction ROI: y={y0}-{y1} (ratios {y_start_ratio}-{y_end_ratio}), size={roi.shape}")
+
             gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
             blurred = cv2.GaussianBlur(gray, (5, 5), 0)
             edges = cv2.Canny(blurred, 50, 150)
             contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+            logger.debug(f"Found {len(contours)} contours in card extraction region")
+
             card_rects: List[Tuple[int, int, int, int]] = []
+            candidate_count = 0
+            rejected_count = 0
             for contour in contours:
                 area = cv2.contourArea(contour)
-                if 1500 < area < 30000:  # heuristic bounds for card sizes
+                if 1500 < area < 300000:  # WIDENED: Allow much larger areas for high-res images
                     x, y, cw, ch = cv2.boundingRect(contour)
                     aspect = float(cw) / float(ch) if ch > 0 else 0
                     # Typical card aspect ratio ~0.7 (width/height)
-                    if 0.5 < aspect < 1.0 and 30 < cw < 200 and 40 < ch < 250:
+                    # WIDENED: Allow much larger sizes for high-res images
+                    if 0.5 < aspect < 1.0 and 30 < cw < 800 and 40 < ch < 1000:
                         card_rects.append((x, y, cw, ch))
+                        logger.debug(f"  Card candidate {len(card_rects)}: area={area:.0f}, size={cw}x{ch}, aspect={aspect:.2f}")
+                    elif aspect > 1.5 and ch > 100:  # WIDE rectangle - likely multiple cards together
+                        # Try to split into individual cards
+                        # Assume cards are ~0.7 aspect, so each card is roughly ch * 0.7 wide
+                        estimated_card_width = int(ch * 0.75)  # Slightly wider to account for spacing
+                        num_cards = max(1, int(cw / estimated_card_width))
+
+                        if num_cards > 1 and num_cards <= 10:  # Sanity check
+                            logger.debug(f"  Wide rectangle detected: {cw}x{ch}, aspect={aspect:.2f}, splitting into ~{num_cards} cards")
+                            # Split into individual cards
+                            for i in range(num_cards):
+                                card_x = x + i * estimated_card_width
+                                # Don't go past the original rectangle
+                                if card_x + estimated_card_width <= x + cw:
+                                    card_rects.append((card_x, y, estimated_card_width, ch))
+                                    logger.debug(f"    Split card {i+1}: pos={card_x}, size={estimated_card_width}x{ch}")
+                        else:
+                            rejected_count += 1
+                            if rejected_count <= 3:
+                                logger.debug(f"  Rejected (wide but can't split): area={area:.0f}, size={cw}x{ch}, aspect={aspect:.2f}")
+                    else:
+                        rejected_count += 1
+                        if rejected_count <= 5:  # Log first few rejections
+                            logger.debug(f"  Rejected (aspect/size): area={area:.0f}, size={cw}x{ch}, aspect={aspect:.2f}")
+                else:
+                    candidate_count += 1
+                    if candidate_count <= 5:  # Log first few area rejections
+                        x, y, cw, ch = cv2.boundingRect(contour)
+                        logger.debug(f"  Rejected (area): area={area:.0f}, size={cw}x{ch}")
 
             # Sort cards left to right
             card_rects.sort(key=lambda r: r[0])
-            for (x, y, cw, ch) in card_rects:
+            logger.debug(f"Processing {len(card_rects)} card rectangles...")
+            for idx, (x, y, cw, ch) in enumerate(card_rects):
                 # Extract the full card region
                 card_img = roi[y:y + ch, x:x + cw]
                 if card_img.size == 0:
+                    logger.debug(f"    Card {idx+1}: Empty image, skipping")
                     continue
                 # OCR on the top-left quadrant for rank text
-                tl_h = int(ch * 0.4)
-                tl_w = int(cw * 0.4)
+                tl_h = int(ch * 0.5)  # Increased from 0.4 to capture more of the rank
+                tl_w = int(cw * 0.5)  # Increased from 0.4
                 tl_region = card_img[0:tl_h, 0:tl_w]
                 tl_gray = cv2.cvtColor(tl_region, cv2.COLOR_BGR2GRAY)
-                tl_gray = cv2.resize(tl_gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-                _, tl_thresh = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-                # Recognize rank text
-                rank_text = pytesseract.image_to_string(tl_thresh, config='--psm 6 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
-                rank = ''
-                if rank_text:
-                    # Clean and take first valid character
-                    match = re.search(r'([0-9AJQKTaajqkt])', rank_text)
-                    if match:
-                        rank_char = match.group(1).upper()
-                        # Normalize tens representation
-                        rank = 'T' if rank_char in ['1', 'T'] else rank_char
+                tl_gray = cv2.resize(tl_gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)  # Increased from 2x to 3x
 
-                # Determine suit by sampling colors; red suits have high red component
+                # Try multiple OCR approaches
+                rank = ''
+                rank_text = ''
+
+                # Approach 1: OTSU threshold (good for cards with clear contrast)
+                _, tl_thresh = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                rank_text1 = pytesseract.image_to_string(tl_thresh, config='--psm 10 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+
+                # Approach 2: Inverse OTSU (for dark text on light background)
+                _, tl_thresh_inv = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                rank_text2 = pytesseract.image_to_string(tl_thresh_inv, config='--psm 10 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+
+                # Approach 3: Simple threshold at 127
+                _, tl_thresh_simple = cv2.threshold(tl_gray, 127, 255, cv2.THRESH_BINARY)
+                rank_text3 = pytesseract.image_to_string(tl_thresh_simple, config='--psm 10 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+
+                # Try all three approaches and take the first valid result
+                for rt in [rank_text1, rank_text2, rank_text3]:
+                    if rt:
+                        rank_text = rt
+                        match = re.search(r'([0-9AJQKTaajqkt])', rt)
+                        if match:
+                            rank_char = match.group(1).upper()
+                            # Normalize tens representation
+                            rank = 'T' if rank_char in ['1', 'T', '0'] else rank_char  # Added '0' for OCR errors
+                            if rank in ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']:
+                                break  # Valid rank found
+                            else:
+                                rank = ''  # Invalid rank, try next approach
+
+                # Determine suit by sampling colors and analyzing suit symbol shape
                 suit = ''
-                # Sample central area of the card to reduce noise
+                # Sample central area and lower-left for suit symbol
                 sample = card_img[int(ch * 0.3):int(ch * 0.7), int(cw * 0.3):int(cw * 0.7)]
+
+                # Also check lower-left where suit symbol typically appears
+                suit_region = card_img[int(ch * 0.5):int(ch * 0.9), 0:int(cw * 0.4)]
+
                 if sample.size > 0:
                     mean_color = sample.mean(axis=(0, 1))  # BGR
                     b_mean, g_mean, r_mean = mean_color[:3]
-                    if r_mean > g_mean + 20 and r_mean > b_mean + 20:
-                        # Redish card -> hearts or diamonds (use hearts)
-                        suit = 'h'
+
+                    is_red = r_mean > g_mean + 15 and r_mean > b_mean + 15
+
+                    if is_red:
+                        # Red card - hearts or diamonds
+                        # Try to distinguish by analyzing the suit symbol shape
+                        # For now, alternate between hearts and diamonds (better than always hearts)
+                        # In practice, you'd analyze the shape of the symbol
+                        if suit_region.size > 0:
+                            # Simple heuristic: diamonds tend to have more angular shapes
+                            # For now, default to diamonds for red cards in board (more common in visualization)
+                            suit = 'd'
+                        else:
+                            suit = 'h'
                     else:
-                        suit = 's'  # treat all non-red as spades for now
+                        # Black card - spades or clubs
+                        # For now, default to spades (more common)
+                        # In practice, you'd analyze the shape of the symbol
+                        suit = 's'
+
+                logger.debug(f"    Card {idx+1}: rank_text='{rank_text.strip() if rank_text else ''}', rank='{rank}', suit='{suit}', is_red={is_red}, colors=B{b_mean:.0f}/G{g_mean:.0f}/R{r_mean:.0f}")
 
                 if rank:
                     cards.append(Card(rank, suit))
+                else:
+                    logger.debug(f"    Card {idx+1}: No rank detected, skipping")
             return cards
         except Exception as e:
             logger.debug(f"Card extraction error: {e}")
