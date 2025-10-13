@@ -646,12 +646,16 @@ class LiveTableSection:
 
                     # Update stack
                     stack = player_info.get('stack', 0)
+                    # Handle None values explicitly
+                    stack = stack if stack is not None else 0
                     self.player_labels[seat]["stack"].config(
                         text=f"${stack}" if stack > 0 else "$0"
                     )
 
                     # Update bet
                     bet = player_info.get('bet', 0)
+                    # Handle None values explicitly
+                    bet = bet if bet is not None else 0
                     self.player_labels[seat]["bet"].config(
                         text=f"Bet: ${bet}" if bet > 0 else ""
                     )
