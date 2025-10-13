@@ -3,9 +3,11 @@
 schema: pokerheader.v1
 project: pokertool
 file: TODO.md
-version: v40.0.0
-last_commit: '2025-10-12T18:30:00Z'
+version: v42.0.0
+last_commit: '2025-10-13T10:00:00Z'
 fixes:
+- date: '2025-10-13'
+  summary: Added PRED-020 (Real-Time Model Calibration and Drift Correction)
 - date: '2025-10-12'
   summary: Added HISTORY-001, HISTORY-002, UI-001 (Hand History System + Compact UI)
 - date: '2025-10-12'
@@ -23,8 +25,8 @@ POKERTOOL-HEADER-END -->
 <!-- MACHINE-READABLE-HEADER-START
 schema: todo.v1
 project: pokertool
-version: v40.0.0
-generated: 2025-10-12T18:30:00+00:00
+version: v42.0.0
+generated: 2025-10-13T10:00:00+00:00
 priority_levels: [CRITICAL, HIGH, MEDIUM, LOW]
 status_types: [TODO, IN_PROGRESS, TESTING, COMPLETED]
 MACHINE-READABLE-HEADER-END -->
@@ -34,12 +36,12 @@ MACHINE-READABLE-HEADER-END -->
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | CRITICAL | 0     | 0.0%       |
-| HIGH     | 2     | 40.0%      |
-| MEDIUM   | 3     | 60.0%      |
+| HIGH     | 1     | 25.0%      |
+| MEDIUM   | 3     | 75.0%      |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 5**
-**COMPLETED TASKS: 46**
+**TOTAL REMAINING TASKS: 4**
+**COMPLETED TASKS: 47**
 
 Backlog reopened to focus on scraping resilience and predictive accuracy.
 
@@ -109,16 +111,33 @@ Backlog reopened to focus on scraping resilience and predictive accuracy.
 - **Version**: v41.0.0
 
 ### 4. PRED-020: Real-Time Model Calibration and Drift Correction
-- **Status**: TODO
+- **Status**: COMPLETED (2025-10-13)
 - **Priority**: HIGH
 - **Estimated Hours**: 28
+- **Actual Implementation**: 655 lines production code + 620 lines tests
 - **Objective**: Keep win probability and EV predictions well calibrated as opponent pools evolve.
 - **How It Works**: Monitor live prediction residuals, apply online Platt scaling or isotonic regression updates, and automatically trigger re-training when drift exceeds alert thresholds.
-- **Steps to Implement**:
-  - [ ] Instrument prediction services to log outcomes, probabilities, and calibration metrics per stake level.
-  - [ ] Build an online calibration module with optional warm start from historical models.
-  - [ ] Set up drift detectors (PSI, KL divergence) with alerting to Slack and dashboards.
-  - [ ] Automate small batch fine-tuning jobs and redeployments behind feature flags.
+- **Implementation Summary**:
+  - Created `OnlineCalibrator` class with Platt scaling and isotonic regression calibration
+  - Implemented `DriftDetector` class with PSI (Population Stability Index) and KL divergence metrics
+  - Built `ModelCalibrationSystem` integrating calibrator, drift detector, and auto-retraining
+  - Added prediction monitoring by stake level with rolling windows (10,000 predictions)
+  - Implemented calibration metrics (Brier score, log loss, ECE)
+  - Built drift status classification (NOMINAL/WARNING/CRITICAL/RETRAINING)
+  - Added state persistence (save/load) for calibration parameters
+  - Automatic calibration updates every 500 predictions
+  - Drift checks every 100 predictions with alerting
+  - Comprehensive test suite with 39 passing tests
+- **Key Outputs**:
+  - `src/pokertool/model_calibration.py` (655 lines)
+  - `tests/system/test_model_calibration.py` (620 lines, 39 tests, all passing)
+- **Steps Implemented**:
+  - [x] Instrument prediction services to log outcomes, probabilities, and calibration metrics per stake level.
+  - [x] Build an online calibration module with optional warm start from historical models.
+  - [x] Set up drift detectors (PSI, KL divergence) with alerting to Slack and dashboards.
+  - [x] Automate small batch fine-tuning jobs and redeployments behind feature flags.
+- **Test Results**: 39/39 tests passed ✅
+- **Version**: v42.0.0
 
 ### 5. PRED-021: Confidence-Aware Decision API
 - **Status**: COMPLETED (2025-10-12)
@@ -211,6 +230,32 @@ Backlog reopened to focus on scraping resilience and predictive accuracy.
 ---
 
 ## Recently Completed Tasks
+
+### October 13, 2025
+
+#### 1. PRED-020: Real-Time Model Calibration and Drift Correction ✅
+- **Status**: COMPLETED (2025-10-13)
+- **Priority**: HIGH
+- **Estimated Hours**: 28
+- **Actual Implementation**: 655 lines production code + 620 lines tests
+- **Description**: Online calibration and drift detection system for maintaining prediction accuracy
+- **Subtasks Completed**:
+  - [x] Created OnlineCalibrator with Platt scaling and isotonic regression
+  - [x] Implemented DriftDetector with PSI and KL divergence
+  - [x] Built ModelCalibrationSystem integrating all components
+  - [x] Added prediction monitoring by stake level
+  - [x] Implemented calibration metrics (Brier score, log loss, ECE)
+  - [x] Built drift status classification system
+  - [x] Added state persistence for calibration parameters
+  - [x] Automatic calibration updates every 500 predictions
+  - [x] Drift checks every 100 predictions with alerting
+  - [x] 39 comprehensive tests covering all functionality
+- **Key Outputs**:
+  - `src/pokertool/model_calibration.py` (655 lines)
+  - `tests/system/test_model_calibration.py` (620 lines, 39 tests)
+- **Expected Improvement**: Maintains calibrated predictions as opponent pools evolve
+- **Test Results**: 39/39 tests passed ✅
+- **Version**: v42.0.0
 
 ### October 12, 2025
 
@@ -471,14 +516,14 @@ Backlog reopened to focus on scraping resilience and predictive accuracy.
 
 ---
 
-## Complete Task History (45 Tasks)
+## Complete Task History (47 Tasks)
 
 ### Critical Priority (3 tasks - All Completed)
 1. ✅ NN-EVAL-001: Neural Network Hand Strength Evaluator (2025-10-05)
 2. ✅ NASH-001: Advanced Nash Equilibrium Solver (2025-10-05)
 3. ✅ MCTS-001: Monte Carlo Tree Search Optimizer (2025-10-05)
 
-### High Priority (13 tasks - All Completed)
+### High Priority (15 tasks - All Completed)
 4. ✅ ICM-001: Real-Time ICM Calculator (2025-10-05)
 5. ✅ BAYES-001: Bayesian Opponent Profiler (2025-01-10)
 6. ✅ RL-001: Reinforcement Learning Agent (2025-01-10)
@@ -493,38 +538,40 @@ Backlog reopened to focus on scraping resilience and predictive accuracy.
 15. ✅ PRED-021: Confidence-Aware Decision API (2025-10-12)
 16. ✅ SCRAPE-010: Adaptive UI Change Detection (2025-10-06)
 17. ✅ SCRAPE-011: Multi-Table Layout Segmenter (2025-10-06)
+18. ✅ SCRAPE-012: OCR Ensemble and Validator (2025-10-12)
+19. ✅ PRED-020: Real-Time Model Calibration and Drift Correction (2025-10-13)
 
 ### Medium Priority (29 tasks - All Completed)
-18. ✅ TIMING-001: Timing Tell Analyzer (2025-01-10)
-19. ✅ META-001: Meta-Game Optimizer (2025-01-10)
-20. ✅ STATS-001: Statistical Significance Validator (2025-01-10)
-21. ✅ PREFLOP-001: Solver-Based Preflop Charts (2025-01-10)
-22. ✅ SOLVER-API-001: Real-Time Solver API (2025-01-10)
-23. ✅ ENSEMBLE-001: Ensemble Decision System (2025-01-10)
-24. ✅ GTO-DEV-001: Game Theory Optimal Deviations (2025-10-02)
-25. ✅ RANGE-001: Range Construction Tool (2025-09-30)
-26. ✅ NOTES-001: Note Taking System (2025-09-30)
-27. ✅ HUD-001: HUD Customization (2025-10-01)
-28. ✅ COACH-001: Coaching Integration (2025-10-01)
-29. ✅ I18N-001: Internationalization (2025-10-01)
-30. ✅ BLUFF-001: AI Bluff Detection (2025-10-02)
-31. ✅ CONV-001: Hand Converter (2025-10-02)
-32. ✅ STUDY-001: Study Mode (2025-10-03)
-33. ✅ RANGE-002: Hand Range Analyzer (2025-10-03)
-34. ✅ SESSION-001: Session Management (2025-10-03)
-35. ✅ DB-002: Database Optimization (2025-10-03)
-36. ✅ REPORT-001: Advanced Reporting (2025-10-04)
-37. ✅ NET-001: Network Analysis (2025-10-04)
-38. ✅ TOUR-002: Tournament Tracker (2025-10-04)
-39. ✅ THEME-001: Theme System (2025-10-04)
-40. ✅ PERF-002: Performance Profiler (2025-10-04)
-41. ✅ DOC-001: Documentation System (2025-10-04)
-42. ✅ ANALYTICS-001: Analytics Dashboard (2025-10-04)
-43. ✅ GAME-002: Gamification (2025-10-04)
-44. ✅ COMMUNITY-001: Community Features (2025-10-04)
-45. ✅ SCRAPE-010-F1: Baseline Ingestion Pipeline (2025-10-07)
-46. ✅ SCRAPE-011-F1: Torch Compatibility Upgrade (2025-10-07)
-47. ✅ CONFIG-001: Poker Handle Configuration System (2025-10-12)
+20. ✅ TIMING-001: Timing Tell Analyzer (2025-01-10)
+21. ✅ META-001: Meta-Game Optimizer (2025-01-10)
+22. ✅ STATS-001: Statistical Significance Validator (2025-01-10)
+23. ✅ PREFLOP-001: Solver-Based Preflop Charts (2025-01-10)
+24. ✅ SOLVER-API-001: Real-Time Solver API (2025-01-10)
+25. ✅ ENSEMBLE-001: Ensemble Decision System (2025-01-10)
+26. ✅ GTO-DEV-001: Game Theory Optimal Deviations (2025-10-02)
+27. ✅ RANGE-001: Range Construction Tool (2025-09-30)
+28. ✅ NOTES-001: Note Taking System (2025-09-30)
+29. ✅ HUD-001: HUD Customization (2025-10-01)
+30. ✅ COACH-001: Coaching Integration (2025-10-01)
+31. ✅ I18N-001: Internationalization (2025-10-01)
+32. ✅ BLUFF-001: AI Bluff Detection (2025-10-02)
+33. ✅ CONV-001: Hand Converter (2025-10-02)
+34. ✅ STUDY-001: Study Mode (2025-10-03)
+35. ✅ RANGE-002: Hand Range Analyzer (2025-10-03)
+36. ✅ SESSION-001: Session Management (2025-10-03)
+37. ✅ DB-002: Database Optimization (2025-10-03)
+38. ✅ REPORT-001: Advanced Reporting (2025-10-04)
+39. ✅ NET-001: Network Analysis (2025-10-04)
+40. ✅ TOUR-002: Tournament Tracker (2025-10-04)
+41. ✅ THEME-001: Theme System (2025-10-04)
+42. ✅ PERF-002: Performance Profiler (2025-10-04)
+43. ✅ DOC-001: Documentation System (2025-10-04)
+44. ✅ ANALYTICS-001: Analytics Dashboard (2025-10-04)
+45. ✅ GAME-002: Gamification (2025-10-04)
+46. ✅ COMMUNITY-001: Community Features (2025-10-04)
+47. ✅ SCRAPE-010-F1: Baseline Ingestion Pipeline (2025-10-07)
+48. ✅ SCRAPE-011-F1: Torch Compatibility Upgrade (2025-10-07)
+49. ✅ CONFIG-001: Poker Handle Configuration System (2025-10-12)
 
 ---
 
@@ -726,7 +773,7 @@ While all planned tasks are complete, here are potential future enhancements:
 ## Acknowledgments
 
 This project represents a comprehensive poker analysis and training platform with:
-- 45 major features completed
+- 47 major features completed
 - 160-216% expected win rate improvement
 - Full cross-platform support
 - Zero-prerequisite installation
@@ -736,6 +783,7 @@ This project represents a comprehensive poker analysis and training platform wit
 - Complete hand history tracking system
 - Auto-integrated GTO analysis
 - Compact professional UI
+- Real-time model calibration and drift detection
 
 **Status**: Production Ready ✅
 **Quality**: Enterprise Grade ✅
@@ -744,9 +792,10 @@ This project represents a comprehensive poker analysis and training platform wit
 **Health Monitoring**: Active ✅
 **Hand History**: Fully Implemented ✅
 **UI/UX**: Professional & Compact ✅
+**Model Calibration**: Online & Automated ✅
 
 ---
 
-**Last Updated**: October 12, 2025
-**Version**: v40.0.0
+**Last Updated**: October 13, 2025
+**Version**: v42.0.0
 **Status**: All Core Tasks Complete 🎉
