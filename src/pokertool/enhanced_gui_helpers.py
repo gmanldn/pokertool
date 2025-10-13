@@ -124,6 +124,10 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
             'dealer_seat': getattr(table_state, 'dealer_seat', 0),
             'stage': getattr(table_state, 'stage', 'unknown'),
             'active_players': getattr(table_state, 'active_players', 0),
+            'active_turn_seat': getattr(table_state, 'active_turn_seat', 0),  # NEW
+            'tournament_name': getattr(table_state, 'tournament_name', None),  # NEW
+            'extraction_method': getattr(table_state, 'extraction_method', 'screenshot_ocr'),  # NEW
+            'extraction_time_ms': getattr(table_state, 'extraction_time_ms', 0.0),  # NEW
             'players': {},
             'my_hole_cards': [],
             'recommended_action': 'Waiting for game state...',
@@ -189,11 +193,16 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
                     'stack': player_stack if player_stack > 0 else 0,
                     'bet': getattr(player, 'current_bet', 0) or getattr(player, 'bet', 0) or 0,
                     'hole_cards': [],
-                    'status': 'Active' if is_active else 'Empty',
+                    'status': getattr(player, 'status_text', 'Active' if is_active else 'Empty'),
                     'position': getattr(player, 'position', None) or '',
                     'is_dealer': getattr(player, 'is_dealer', False) or (seat_num == data['dealer_seat']),
                     'is_small_blind': getattr(player, 'is_small_blind', False),
                     'is_big_blind': getattr(player, 'is_big_blind', False),
+                    # NEW: Enhanced stats from CDP or OCR
+                    'vpip': getattr(player, 'vpip', None),
+                    'af': getattr(player, 'af', None),
+                    'time_bank': getattr(player, 'time_bank', None),
+                    'is_active_turn': getattr(player, 'is_active_turn', False) or (seat_num == data['active_turn_seat']),
                 }
 
                 # Extract hole cards if visible (showdown)
