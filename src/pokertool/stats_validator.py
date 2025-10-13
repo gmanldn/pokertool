@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
 
-class TestType(Enum):
+class StatStatTestType(Enum):
     """Types of statistical tests."""
     T_TEST = "t_test"
     Z_TEST = "z_test"
@@ -112,7 +112,7 @@ class HypothesisTester:
         """Perform one-sample t-test."""
         if sample_size < 2 or std_dev == 0:
             return HypothesisTestResult(
-                test_type=TestType.T_TEST.value,
+                test_type=StatTestType.T_TEST.value,
                 statistic=0,
                 p_value=1.0,
                 is_significant=False,
@@ -136,7 +136,7 @@ class HypothesisTester:
         effect_size = abs(sample_mean - population_mean) / std_dev
         
         return HypothesisTestResult(
-            test_type=TestType.T_TEST.value,
+            test_type=StatTestType.T_TEST.value,
             statistic=t_stat,
             p_value=p_value,
             is_significant=p_value < self.alpha,
@@ -156,7 +156,7 @@ class HypothesisTester:
         """Perform z-test (for large samples)."""
         if sample_size < 30 or std_dev == 0:
             return HypothesisTestResult(
-                test_type=TestType.Z_TEST.value,
+                test_type=StatTestType.Z_TEST.value,
                 statistic=0,
                 p_value=1.0,
                 is_significant=False,
@@ -177,7 +177,7 @@ class HypothesisTester:
         effect_size = abs(sample_mean - population_mean) / std_dev
         
         return HypothesisTestResult(
-            test_type=TestType.Z_TEST.value,
+            test_type=StatTestType.Z_TEST.value,
             statistic=z_stat,
             p_value=p_value,
             is_significant=p_value < self.alpha,
@@ -196,7 +196,7 @@ class HypothesisTester:
         """Test if observed proportion differs from expected."""
         if trials < 10:
             return HypothesisTestResult(
-                test_type=TestType.PROPORTION_TEST.value,
+                test_type=StatTestType.PROPORTION_TEST.value,
                 statistic=0,
                 p_value=1.0,
                 is_significant=False,
@@ -222,7 +222,7 @@ class HypothesisTester:
                           math.asin(math.sqrt(expected_proportion)))
         
         return HypothesisTestResult(
-            test_type=TestType.PROPORTION_TEST.value,
+            test_type=StatTestType.PROPORTION_TEST.value,
             statistic=z_stat,
             p_value=p_value,
             is_significant=p_value < self.alpha,
@@ -240,7 +240,7 @@ class HypothesisTester:
         """Chi-square goodness of fit test."""
         if len(observed) != len(expected) or len(observed) < 2:
             return HypothesisTestResult(
-                test_type=TestType.CHI_SQUARE.value,
+                test_type=StatTestType.CHI_SQUARE.value,
                 statistic=0,
                 p_value=1.0,
                 is_significant=False,
@@ -267,7 +267,7 @@ class HypothesisTester:
         effect_size = math.sqrt(chi_square / n) if n > 0 else 0
         
         return HypothesisTestResult(
-            test_type=TestType.CHI_SQUARE.value,
+            test_type=StatTestType.CHI_SQUARE.value,
             statistic=chi_square,
             p_value=p_value,
             is_significant=p_value < self.alpha,

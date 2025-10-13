@@ -99,7 +99,7 @@ class GroundTruth:
 
 
 @dataclass
-class TestCase:
+class QaQaTestCase:
     """A single QA test case."""
     id: str
     name: str
@@ -132,7 +132,7 @@ class FieldDiff:
 
 
 @dataclass
-class TestResult:
+class QaQaTestResult:
     """Result of running a test case."""
     test_case_id: str
     success: bool
@@ -162,7 +162,7 @@ class SuiteReport:
     passed: int
     failed: int
     total_execution_time_ms: float
-    results: List[TestResult]
+    results: List[QaTestResult]
     per_field_accuracy: Dict[FieldType, float] = field(default_factory=dict)
     by_theme: Dict[ThemeType, Tuple[int, int]] = field(default_factory=dict)  # (pass, total)
     by_stakes: Dict[str, Tuple[int, int]] = field(default_factory=dict)  # (pass, total)
@@ -197,8 +197,8 @@ class ScrapeQAHarness:
         """
         self.test_suite_dir = Path(test_suite_dir)
         self.scraper_fn = scraper_fn
-        self.test_cases: List[TestCase] = []
-        self.results: List[TestResult] = []
+        self.test_cases: List[QaTestCase] = []
+        self.results: List[QaTestResult] = []
 
         # Numeric comparison tolerance
         self.numeric_tolerance = 0.01  # 1% tolerance for pot sizes, stacks, etc.
@@ -241,7 +241,7 @@ class ScrapeQAHarness:
                 ground_truth = GroundTruth.from_dict(gt_data)
 
                 # Create test case
-                test_case = TestCase(
+                test_case = QaTestCase(
                     id=case_data['id'],
                     name=case_data.get('name', case_data['id']),
                     image_path=image_path,
@@ -274,7 +274,7 @@ class ScrapeQAHarness:
 
                     ground_truth = GroundTruth.from_dict(data.get('ground_truth', {}))
 
-                    test_case = TestCase(
+                    test_case = QaTestCase(
                         id=img_path.stem,
                         name=data.get('name', img_path.stem),
                         image_path=img_path,
@@ -293,7 +293,7 @@ class ScrapeQAHarness:
 
         return len(self.test_cases)
 
-    def run_test_case(self, test_case: TestCase, seed: int = 42) -> TestResult:
+    def run_test_case(self, test_case: QaTestCase, seed: int = 42) -> QaTestResult:
         """
         Run a single test case.
 
@@ -390,7 +390,7 @@ class ScrapeQAHarness:
         accuracy = matched / max(len(diffs), 1)
         success = accuracy >= 0.8 and len(errors) == 0  # 80% threshold
 
-        return TestResult(
+        return QaTestResult(
             test_case_id=test_case.id,
             success=success,
             execution_time_ms=execution_time,
@@ -463,7 +463,7 @@ class ScrapeQAHarness:
             match=match
         )
 
-    def _mock_extraction(self, test_case: TestCase) -> Dict[str, Any]:
+    def _mock_extraction(self, test_case: QaTestCase) -> Dict[str, Any]:
         """Mock extraction for testing (returns ground truth with some noise)."""
         gt = test_case.ground_truth
 
@@ -683,7 +683,7 @@ class ScrapeQAHarness:
 # Utility functions for test case creation
 def create_test_case_from_screenshot(image_path: Path,
                                       ground_truth: GroundTruth,
-                                      **kwargs) -> TestCase:
+                                      **kwargs) -> QaTestCase:
     """Create a test case from a screenshot file."""
     if CV2_AVAILABLE:
         img = cv2.imread(str(image_path))
@@ -695,7 +695,7 @@ def create_test_case_from_screenshot(image_path: Path,
     else:
         resolution = (1920, 1080)
 
-    return TestCase(
+    return QaTestCase(
         id=image_path.stem,
         name=kwargs.get('name', image_path.stem),
         image_path=image_path,
@@ -708,7 +708,7 @@ def create_test_case_from_screenshot(image_path: Path,
     )
 
 
-def save_test_case(test_case: TestCase, output_dir: Path):
+def save_test_case(test_case: QaTestCase, output_dir: Path):
     """Save test case as image + json pair."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
