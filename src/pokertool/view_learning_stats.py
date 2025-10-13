@@ -150,6 +150,19 @@ def view_learning_stats(detailed: bool = False):
     patterns = report['learned_patterns']
     print(f"   Player Names: {patterns['player_names_count']} unique names learned")
 
+    # Caching Performance
+    if 'caching' in report:
+        print_section("⚡ Smart Caching Performance")
+        caching = report['caching']
+        print(f"   Cache Hits: {caching['cache_hits']}")
+        print(f"   Cache Misses: {caching['cache_misses']}")
+        print(f"   Hit Rate: {caching['hit_rate']:.1%}")
+        print(f"   Cache Size: {caching['cache_size']} entries")
+
+        if caching['hit_rate'] > 0:
+            speedup = 1 / (1 - caching['hit_rate'] * 0.8)  # Assume 80% time saved on hit
+            print(f"   Estimated Speedup: {speedup:.1f}x")
+
     # Storage Info
     print_section("💾 Storage Information")
     storage_dir = Path.home() / '.pokertool' / 'learning'

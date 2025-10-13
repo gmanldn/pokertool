@@ -529,6 +529,12 @@ class PokerScreenScraper:
         self.stop_event = None
         self.state_history = deque(maxlen=100)
 
+        # Smart result caching (improves performance for unchanged screens)
+        self.result_cache = {}  # image_hash -> (result, timestamp)
+        self.cache_ttl = 0.5  # Cache valid for 500ms
+        self.cache_hits = 0
+        self.cache_misses = 0
+
         # Performance tracking
         self.detection_times = deque(maxlen=50)
         self.false_positive_count = 0
@@ -916,10 +922,8 @@ class PokerScreenScraper:
     def _extract_pot_size(self, image: np.ndarray) -> float:
         """Extract pot size displayed at the center of the table using OCR.
 
-        The pot is typically rendered near the middle of the table on most
-        poker clients.  We sample a central region, enhance it and then run
-        Tesseract to extract numerical values.  If no pot is detected a
-        value of 0.0 is returned.
+        Uses learned best-performing OCR strategies from the learning system.
+        Tries strategies in priority order based on historical success rates.
 
         Args:
             image: Screen capture of the table in BGR format.
@@ -947,54 +951,124 @@ class PokerScreenScraper:
             y1 = min(cy + roi_h // 2, h)
             roi = image[y0:y1, x0:x1]
 
+            # Check cache first (significant speedup for static screens)
+            image_hash = self._compute_image_hash(roi)
+            cached = self._get_cached_result('pot_size', image_hash)
+            if cached is not None:
+                return cached
+
+            # Get learned best strategies (if available)
+            strategy_order = ['bilateral_otsu', 'clahe_otsu', 'adaptive', 'simple']
+            if self.learning_system:
+                learned_strategies = self.learning_system.get_best_ocr_strategies(
+                    ExtractionType.POT_SIZE, top_k=4
+                )
+                if learned_strategies:
+                    strategy_order = learned_strategies + strategy_order
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    strategy_order = [s for s in strategy_order if not (s in seen or seen.add(s))]
+
             # Multi-pass approach for pot detection
             gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
-            # Pass 1: Bilateral filter + OTSU
-            gray_filtered = cv2.bilateralFilter(gray, 11, 100, 100)
-            _, thresh1 = cv2.threshold(gray_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            # Strategy dictionary with preprocessing
+            strategies = {
+                'bilateral_otsu': lambda: cv2.threshold(
+                    cv2.bilateralFilter(gray, 11, 100, 100),
+                    0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+                )[1],
+                'clahe_otsu': lambda: cv2.threshold(
+                    cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8)).apply(gray),
+                    0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+                )[1],
+                'adaptive': lambda: cv2.adaptiveThreshold(
+                    gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+                ),
+                'simple': lambda: cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)[1]
+            }
 
-            # Pass 2: CLAHE for better contrast
-            clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
-            enhanced = clahe.apply(gray)
-            _, thresh2 = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-            # Try OCR on both versions
-            all_text = ""
+            # OCR configs
             configs = [
                 '--psm 6 -c tessedit_char_whitelist=0123456789$.,POT',
                 '--psm 7 -c tessedit_char_whitelist=0123456789$.,',
             ]
 
-            for thresh in [thresh1, thresh2]:
-                # Invert if background is white
-                if np.mean(thresh) > 127:
-                    thresh = cv2.bitwise_not(thresh)
+            best_result = 0.0
+            successful_strategy = None
 
-                for config in configs:
-                    try:
-                        text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
-                        if text:
-                            all_text += " " + text
-                    except Exception:
-                        pass
+            # Try strategies in learned priority order
+            for strategy_id in strategy_order:
+                if strategy_id not in strategies:
+                    continue
 
-            if not all_text:
-                return 0.0
-
-            # Find all potential pot values
-            # Match patterns like: $12.50, 12.50, POT: 12.50, etc.
-            matches = re.findall(r'(?:POT[:\s]*)?[\$]?\s*([0-9][0-9,]*\.?[0-9]*)', all_text, re.IGNORECASE)
-            if matches:
-                # Choose the number with the most digits as it's most likely the pot
-                num_str = max(matches, key=lambda s: len(s.replace(',', '').replace('.', '')))
-                # Remove commas and parse
-                num_str = num_str.replace(',', '').strip()
+                extraction_start = time.time()
                 try:
-                    return float(num_str)
-                except Exception:
-                    return 0.0
-            return 0.0
+                    thresh = strategies[strategy_id]()
+
+                    # Invert if background is white
+                    if np.mean(thresh) > 127:
+                        thresh = cv2.bitwise_not(thresh)
+
+                    # Try OCR configs
+                    all_text = ""
+                    for config in configs:
+                        try:
+                            text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
+                            if text:
+                                all_text += " " + text
+                        except Exception:
+                            pass
+
+                    if all_text:
+                        # Find potential pot values
+                        matches = re.findall(r'(?:POT[:\s]*)?[\$]?\s*([0-9][0-9,]*\.?[0-9]*)', all_text, re.IGNORECASE)
+                        if matches:
+                            num_str = max(matches, key=lambda s: len(s.replace(',', '').replace('.', '')))
+                            num_str = num_str.replace(',', '').strip()
+                            try:
+                                result = float(num_str)
+                                if result > 0:
+                                    best_result = result
+                                    successful_strategy = strategy_id
+
+                                    # Record success in learning system
+                                    if self.learning_system:
+                                        execution_time = (time.time() - extraction_start) * 1000
+                                        self.learning_system.record_ocr_success(
+                                            ExtractionType.POT_SIZE,
+                                            strategy_id,
+                                            execution_time
+                                        )
+
+                                    # Found good result, can break early
+                                    break
+                            except Exception:
+                                pass
+
+                except Exception as e:
+                    logger.debug(f"Strategy {strategy_id} failed: {e}")
+                    # Record failure
+                    if self.learning_system:
+                        self.learning_system.record_ocr_failure(
+                            ExtractionType.POT_SIZE,
+                            strategy_id
+                        )
+
+            # Record failure for strategies that didn't find anything
+            if best_result == 0.0 and self.learning_system:
+                for strategy_id in strategy_order[:3]:  # Mark first few as failed
+                    if strategy_id != successful_strategy:
+                        self.learning_system.record_ocr_failure(
+                            ExtractionType.POT_SIZE,
+                            strategy_id
+                        )
+
+            # Cache the result (even if 0.0)
+            self._cache_result('pot_size', image_hash, best_result)
+
+            return best_result
+
         except Exception as e:
             logger.debug(f"Pot size extraction error: {e}")
             return 0.0
@@ -1749,6 +1823,82 @@ class PokerScreenScraper:
         state.timestamp = time.time()
         return state
 
+    def _compute_image_hash(self, image: np.ndarray) -> str:
+        """
+        Compute fast hash of image for caching.
+
+        Uses a downscaled version for speed.
+        """
+        try:
+            # Downsample to 32x32 for fast hash
+            small = cv2.resize(image, (32, 32))
+            # Simple hash based on mean values
+            hash_str = hashlib.md5(small.tobytes()).hexdigest()[:16]
+            return hash_str
+        except:
+            return ""
+
+    def _get_cached_result(self, cache_key: str, image_hash: str) -> Optional[Any]:
+        """
+        Get cached result if available and fresh.
+
+        Args:
+            cache_key: Type of cached data (e.g., 'pot_size', 'players')
+            image_hash: Hash of current image
+
+        Returns:
+            Cached result or None if cache miss
+        """
+        full_key = f"{cache_key}_{image_hash}"
+        if full_key in self.result_cache:
+            result, timestamp = self.result_cache[full_key]
+            age = time.time() - timestamp
+
+            if age < self.cache_ttl:
+                self.cache_hits += 1
+                logger.debug(f"Cache hit: {cache_key} (age: {age*1000:.0f}ms)")
+                return result
+
+            # Expired, remove
+            del self.result_cache[full_key]
+
+        self.cache_misses += 1
+        return None
+
+    def _cache_result(self, cache_key: str, image_hash: str, result: Any):
+        """
+        Cache a result.
+
+        Args:
+            cache_key: Type of cached data
+            image_hash: Hash of image
+            result: Result to cache
+        """
+        full_key = f"{cache_key}_{image_hash}"
+        self.result_cache[full_key] = (result, time.time())
+
+        # Cleanup old cache entries (keep last 50)
+        if len(self.result_cache) > 50:
+            # Remove oldest entries
+            sorted_keys = sorted(
+                self.result_cache.items(),
+                key=lambda x: x[1][1]
+            )
+            for key, _ in sorted_keys[:-50]:
+                del self.result_cache[key]
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get caching performance statistics."""
+        total = self.cache_hits + self.cache_misses
+        hit_rate = self.cache_hits / total if total > 0 else 0.0
+
+        return {
+            'cache_hits': self.cache_hits,
+            'cache_misses': self.cache_misses,
+            'hit_rate': hit_rate,
+            'cache_size': len(self.result_cache)
+        }
+
     def get_learning_report(self) -> Optional[Dict[str, Any]]:
         """
         Get comprehensive learning system report.
@@ -1759,7 +1909,12 @@ class PokerScreenScraper:
         if not self.learning_system:
             return None
 
-        return self.learning_system.get_learning_report()
+        report = self.learning_system.get_learning_report()
+
+        # Add caching stats
+        report['caching'] = self.get_cache_stats()
+
+        return report
 
     def print_learning_report(self):
         """Print human-readable learning report."""
