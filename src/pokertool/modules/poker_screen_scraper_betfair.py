@@ -135,22 +135,28 @@ class Card:
 # ranges based on your setup.  The weights determine how much each
 # detection strategy contributes to the overall confidence score.
 BETFAIR_FELT_RANGES: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]] = [
-    # Purple/violet Betfair table (primary) - calibrated from BF_TEST.jpg
-    ((110, 30, 100), (150, 255, 255)),
-    # Wider purple range for lighting variations
-    ((100, 20, 80), (160, 255, 255)),
-    # Blue-purple range (some monitor variations)
-    ((90, 25, 90), (140, 255, 255)),
+    # Purple/violet Betfair table (primary) - expanded ranges
+    ((110, 15, 50), (150, 255, 255)),  # Wider saturation and value ranges
+    # Darker purple/violet variations for different lighting
+    ((100, 10, 40), (160, 255, 255)),  
+    # Blue-purple range for monitor variations
+    ((90, 10, 30), (140, 255, 255)),
+    # Additional ranges for edge cases
+    ((105, 5, 25), (155, 255, 255)),   # Very low saturation purple
+    ((95, 15, 60), (145, 200, 255)),   # Medium saturation purple
 ]
 
-FELT_WEIGHT: float = 0.40
+FELT_WEIGHT: float = 0.35  # Reduced since color ranges are wider
 CARD_WEIGHT: float = 0.30
 UI_WEIGHT: float = 0.20
 TEXT_WEIGHT: float = 0.10
 # Additional weight for detecting the characteristic oval/elliptical table
 # shape found in most poker interfaces.  This uses contour fitting to
 # identify a large ellipse and boosts confidence slightly when present.
-ELLIPSE_WEIGHT: float = 0.10
+ELLIPSE_WEIGHT: float = 0.15  # Increased for better table shape detection
+
+# Detection threshold
+DETECTION_THRESHOLD: float = 0.40  # Lowered from 0.50 for better detection
 
 
 class BetfairPokerDetector:
@@ -303,8 +309,8 @@ class BetfairPokerDetector:
             )
             details['total_confidence'] = total_confidence
 
-            # Determine detection based on threshold (default 0.5)
-            detected = total_confidence >= 0.50
+            # Determine detection based on threshold
+            detected = total_confidence >= DETECTION_THRESHOLD
             if detected:
                 self.success_count += 1
                 details['strategy'] = 'betfair_weighted'

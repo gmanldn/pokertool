@@ -3315,7 +3315,7 @@ Platform: {sys.platform}
 
                 for player in players_list:
                     if player and (hasattr(player, 'is_active') and player.is_active or not hasattr(player, 'is_active')):
-                        seat_num = getattr(player, 'seat_number', len(validation_report['data']['players']) + 1)
+                        seat_num = getattr(player, 'seat_number', len(data['players']) + 1)
                         players_detected += 1
 
                         player_name = getattr(player, 'name', None)
