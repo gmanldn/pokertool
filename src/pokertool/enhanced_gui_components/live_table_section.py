@@ -123,10 +123,10 @@ class LiveTableSection:
         self.live_data_frame = tk.Frame(live_container, bg=COLORS["bg_dark"])
         self.live_data_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Table status
+        # Table status with extraction method and tournament info
         status_frame = tk.Frame(self.live_data_frame, bg=COLORS["bg_dark"])
         status_frame.pack(fill="x", pady=(0, 10))
-        
+
         tk.Label(
             status_frame,
             text="Table Status:",
@@ -134,7 +134,7 @@ class LiveTableSection:
             bg=COLORS["bg_dark"],
             fg=COLORS["text_primary"],
         ).pack(side="left")
-        
+
         self.table_status_label = tk.Label(
             status_frame,
             text="Waiting for scraper data...",
@@ -143,6 +143,16 @@ class LiveTableSection:
             fg=COLORS["text_secondary"],
         )
         self.table_status_label.pack(side="left", padx=(10, 0))
+
+        # Tournament/Table name display
+        self.tournament_label = tk.Label(
+            status_frame,
+            text="",
+            font=("Arial", 9, "italic"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["accent_info"],
+        )
+        self.tournament_label.pack(side="right", padx=(10, 0))
 
         # Board cards section
         board_frame = tk.LabelFrame(
@@ -448,7 +458,29 @@ class LiveTableSection:
         )
         stack_label.grid(row=2, column=0, columnspan=2)
 
-        # Bet
+        # Stats frame (VPIP / AF)
+        stats_frame = tk.Frame(player_frame, bg=frame_bg)
+        stats_frame.grid(row=3, column=0, columnspan=2)
+
+        vpip_label = tk.Label(
+            stats_frame,
+            text="",
+            font=("Arial", 7),
+            bg=frame_bg,
+            fg=COLORS["accent_info"]
+        )
+        vpip_label.pack(side="left", padx=1)
+
+        af_label = tk.Label(
+            stats_frame,
+            text="",
+            font=("Arial", 7),
+            bg=frame_bg,
+            fg=COLORS["accent_info"]
+        )
+        af_label.pack(side="left", padx=1)
+
+        # Bet / Time Bank
         bet_label = tk.Label(
             player_frame,
             text="",
@@ -456,11 +488,11 @@ class LiveTableSection:
             bg=frame_bg,
             fg=COLORS["accent_info"]
         )
-        bet_label.grid(row=3, column=0, columnspan=2)
+        bet_label.grid(row=4, column=0, columnspan=2)
 
         # Cards frame
         cards_frame = tk.Frame(player_frame, bg=frame_bg)
-        cards_frame.grid(row=4, column=0, columnspan=2, pady=2)
+        cards_frame.grid(row=5, column=0, columnspan=2, pady=2)
 
         card1_label = tk.Label(
             cards_frame,
@@ -494,7 +526,7 @@ class LiveTableSection:
             bg=frame_bg,
             fg=COLORS["text_secondary"]
         )
-        status_label.grid(row=5, column=0, columnspan=2)
+        status_label.grid(row=6, column=0, columnspan=2)
 
         # Store references
         self.player_labels[seat] = {
@@ -503,6 +535,8 @@ class LiveTableSection:
             "seat_label": seat_label,
             "name": name_label,
             "stack": stack_label,
+            "vpip": vpip_label,
+            "af": af_label,
             "bet": bet_label,
             "card1": card1_label,
             "card2": card2_label,
@@ -606,20 +640,41 @@ class LiveTableSection:
                 print(f"   Board: {table_data.get('board_cards', [])}")
                 print(f"   My cards: {table_data.get('my_hole_cards', [])}")
 
-            # Update table status with validation info and data freshness
+            # Update tournament name
+            if self.tournament_label:
+                tournament_name = table_data.get('tournament_name')
+                if tournament_name:
+                    self.tournament_label.config(text=f"🏆 {tournament_name}")
+                else:
+                    self.tournament_label.config(text="")
+
+            # Update table status with validation info, extraction method and data freshness
             if self.table_status_label:
                 status = table_data.get('status', 'Active')
                 confidence = table_data.get('confidence', 0)
                 validation_complete = table_data.get('validation_complete', False)
                 warnings = table_data.get('warnings', [])
 
+                # Check extraction method
+                extraction_method = table_data.get('extraction_method', 'unknown')
+                extraction_time = table_data.get('extraction_time_ms', 0.0)
+
                 # Check if data is live or cached
                 data_source = table_data.get('data_source', 'unknown')
                 data_age = table_data.get('data_age_seconds', 0.0)
 
-                # Build status text with freshness indicator
+                # Build status text with extraction method and freshness indicator
                 if data_source == 'live':
-                    status_text = f"🔴 LIVE - {status} ({confidence:.1f}% confidence)"
+                    if extraction_method == 'cdp':
+                        # Chrome DevTools - fastest and most reliable
+                        method_icon = "⚡"
+                        method_text = "CDP"
+                    else:
+                        # Screenshot OCR - slower
+                        method_icon = "📸"
+                        method_text = "OCR"
+
+                    status_text = f"{method_icon} {method_text} ({extraction_time:.0f}ms) - {status} ({confidence:.1f}%)"
                     status_color = COLORS["accent_success"] if (confidence and confidence > 70 and validation_complete) else COLORS["accent_warning"]
                 else:
                     # Cached data
@@ -683,58 +738,91 @@ class LiveTableSection:
                             self.user_seat = seat
                             print(f"Detected user at seat {seat}")
 
-                    # Highlight user's position in blue
+                    # Check if this is the active player's turn
+                    is_active_turn = player_info.get('is_active_turn', False)
+
+                    # Determine background color based on player state
+                    if is_active_turn:
+                        # Bright green for active turn
+                        bg_color = "#28a745"
+                        fg_color = "#FFFFFF"
+                        border = 4
+                    elif is_user_seat:
+                        # Blue for user
+                        bg_color = "#4A90E2"
+                        fg_color = "#FFFFFF"
+                        border = 3
+                    else:
+                        # Default
+                        bg_color = COLORS["bg_light"]
+                        fg_color = COLORS["text_primary"] if name != 'Empty' else COLORS["text_secondary"]
+                        border = 2
+
+                    # Apply styling to frame
+                    self.player_labels[seat]["frame"].config(bg=bg_color, bd=border)
+
+                    # Seat label with indicators
+                    seat_label_text = f"S{seat}"
                     if is_user_seat:
-                        self.player_labels[seat]["frame"].config(bg="#4A90E2", bd=3)  # Blue background
-                        self.player_labels[seat]["seat_label"].config(
-                            text=f"🎯 YOU (S{seat})",
-                            bg="#4A90E2",
-                            fg="#FFFFFF",  # White text
-                            width=12
-                        )
-                        self.player_labels[seat]["name"].config(
-                            text=name,
-                            bg="#4A90E2",
-                            fg="#FFFFFF",  # White text
-                        )
-                        self.player_labels[seat]["stack"].config(
-                            bg="#4A90E2",
-                            fg="#FFFFFF"
-                        )
-                        self.player_labels[seat]["bet"].config(
-                            bg="#4A90E2",
-                            fg="#FFFFFF"
-                        )
-                        self.player_labels[seat]["status"].config(
-                            bg="#4A90E2",
-                            fg="#FFFFFF"
+                        seat_label_text = f"🎯 YOU (S{seat})"
+                    if is_active_turn:
+                        seat_label_text = f"▶ {seat_label_text}"
+
+                    self.player_labels[seat]["seat_label"].config(
+                        text=seat_label_text,
+                        bg=bg_color,
+                        fg=fg_color,
+                        width=12 if is_user_seat else 5
+                    )
+
+                    # Player name
+                    self.player_labels[seat]["name"].config(
+                        text=name,
+                        bg=bg_color,
+                        fg=fg_color
+                    )
+
+                    # Stack
+                    self.player_labels[seat]["stack"].config(
+                        bg=bg_color,
+                        fg=fg_color if is_user_seat or is_active_turn else COLORS["accent_warning"]
+                    )
+
+                    # VPIP stat
+                    vpip = player_info.get('vpip')
+                    if vpip is not None:
+                        self.player_labels[seat]["vpip"].config(
+                            text=f"VP:{vpip}%",
+                            bg=bg_color,
+                            fg=fg_color
                         )
                     else:
-                        # Reset to default styling for non-user seats
-                        self.player_labels[seat]["frame"].config(bg=COLORS["bg_light"], bd=2)
-                        self.player_labels[seat]["seat_label"].config(
-                            text=f"S{seat}",
-                            bg=COLORS["bg_light"],
-                            fg=COLORS["text_secondary"],
-                            width=3
+                        self.player_labels[seat]["vpip"].config(text="", bg=bg_color)
+
+                    # AF stat
+                    af = player_info.get('af')
+                    if af is not None:
+                        self.player_labels[seat]["af"].config(
+                            text=f"AF:{af:.1f}",
+                            bg=bg_color,
+                            fg=fg_color
                         )
-                        self.player_labels[seat]["name"].config(
-                            text=name,
-                            bg=COLORS["bg_light"],
-                            fg=COLORS["text_primary"] if name != 'Empty' else COLORS["text_secondary"]
+                    else:
+                        self.player_labels[seat]["af"].config(text="", bg=bg_color)
+
+                    # Bet / Time bank
+                    self.player_labels[seat]["bet"].config(
+                        bg=bg_color,
+                        fg=fg_color if is_user_seat or is_active_turn else COLORS["accent_info"]
+                    )
+
+                    # Status
+                    self.player_labels[seat]["status"].config(
+                        bg=bg_color,
+                        fg=fg_color if is_user_seat or is_active_turn else (
+                            COLORS["accent_success"] if player_info.get('status') == "Active" else COLORS["text_secondary"]
                         )
-                        self.player_labels[seat]["stack"].config(
-                            bg=COLORS["bg_light"],
-                            fg=COLORS["accent_warning"]
-                        )
-                        self.player_labels[seat]["bet"].config(
-                            bg=COLORS["bg_light"],
-                            fg=COLORS["accent_info"]
-                        )
-                        self.player_labels[seat]["status"].config(
-                            bg=COLORS["bg_light"],
-                            fg=COLORS["accent_success"] if player_info.get('status') == "Active" else COLORS["text_secondary"]
-                        )
+                    )
 
                     # Update stack
                     stack = player_info.get('stack', 0)
@@ -744,13 +832,25 @@ class LiveTableSection:
                         text=f"${stack}" if stack > 0 else "$0"
                     )
 
-                    # Update bet
+                    # Update bet or time bank
                     bet = player_info.get('bet', 0)
+                    time_bank = player_info.get('time_bank')
+
                     # Handle None values explicitly
                     bet = bet if bet is not None else 0
-                    self.player_labels[seat]["bet"].config(
-                        text=f"Bet: ${bet}" if bet > 0 else ""
-                    )
+
+                    # Show time bank if present, otherwise show bet
+                    if time_bank is not None and time_bank > 0:
+                        self.player_labels[seat]["bet"].config(
+                            text=f"⏱ Time: {time_bank}s",
+                            fg="#FF6B6B"  # Red for time running out
+                        )
+                    elif bet > 0:
+                        self.player_labels[seat]["bet"].config(
+                            text=f"Bet: ${bet}"
+                        )
+                    else:
+                        self.player_labels[seat]["bet"].config(text="")
 
                     # Update hole cards
                     hole_cards = player_info.get('hole_cards', ['', ''])

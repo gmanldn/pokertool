@@ -38,6 +38,14 @@ except ImportError as e:
     mss = None
     cv2 = None
 
+# Check for Chrome DevTools Protocol (fast extraction)
+try:
+    from .chrome_devtools_scraper import ChromeDevToolsScraper, CDP_AVAILABLE
+    CDP_SCRAPER_AVAILABLE = CDP_AVAILABLE
+except ImportError:
+    CDP_SCRAPER_AVAILABLE = False
+    logger.info("Chrome DevTools Protocol scraper not available (optional speedup)")
+
 
 # ============================================================================
 # Data Models
@@ -74,6 +82,13 @@ class SeatInfo:
     is_small_blind: bool = False
     is_big_blind: bool = False
     position: str = ""
+    # Enhanced stats (from CDP or OCR)
+    vpip: Optional[int] = None  # Voluntarily Put $ In Pot (%)
+    af: Optional[float] = None  # Aggression Factor
+    time_bank: Optional[int] = None  # Time bank seconds remaining
+    is_active_turn: bool = False  # Is it this player's turn?
+    current_bet: float = 0.0  # Amount bet in current round
+    status_text: str = ""  # "Active", "Sitting Out", "All In", etc.
 
 
 @dataclass
@@ -83,7 +98,8 @@ class TableState:
     detection_confidence: float = 0.0
     detection_strategies: List[str] = field(default_factory=list)
     site_detected: Optional[PokerSite] = None
-    
+    extraction_method: str = "screenshot_ocr"  # "cdp", "screenshot_ocr"
+
     # Game state
     pot_size: float = 0.0
     hero_cards: List = field(default_factory=list)
@@ -95,13 +111,22 @@ class TableState:
     big_blind_seat: Optional[int] = None
     active_players: int = 0
     stage: str = "unknown"
-    
+    active_turn_seat: Optional[int] = None  # Whose turn it is
+
     # Betting action
     current_bet: float = 0.0
     to_call: float = 0.0
-    
+    small_blind: float = 0.0
+    big_blind: float = 0.0
+    ante: float = 0.0
+
+    # Table info
+    tournament_name: Optional[str] = None
+    table_name: Optional[str] = None
+
     # Timestamp
     timestamp: float = field(default_factory=time.time)
+    extraction_time_ms: float = 0.0
 
 
 @dataclass
@@ -451,17 +476,28 @@ class PokerScreenScraper:
     Optimized for Betfair Poker with universal fallback support.
     """
     
-    def __init__(self, site: PokerSite = PokerSite.BETFAIR):
+    def __init__(self, site: PokerSite = PokerSite.BETFAIR, use_cdp: bool = True):
         """Initialize the scraper."""
         if not SCRAPER_DEPENDENCIES_AVAILABLE:
             logger.warning("Screen scraper dependencies not fully available")
-        
+
         self.site = site
-        
+        self.use_cdp = use_cdp
+
         # Initialize detectors
         self.betfair_detector = BetfairPokerDetector()
         self.universal_detector = UniversalPokerDetector()
-        
+
+        # Initialize Chrome DevTools Protocol scraper (if available and enabled)
+        self.cdp_scraper = None
+        self.cdp_connected = False
+        if CDP_SCRAPER_AVAILABLE and use_cdp:
+            try:
+                self.cdp_scraper = ChromeDevToolsScraper()
+                logger.info("Chrome DevTools Protocol scraper initialized (fast extraction mode)")
+            except Exception as e:
+                logger.warning(f"Could not initialize CDP scraper: {e}")
+
         # State management
         self.calibrated = False
         self.last_state = None
@@ -469,19 +505,19 @@ class PokerScreenScraper:
         self.capture_thread = None
         self.stop_event = None
         self.state_history = deque(maxlen=100)
-        
+
         # Performance tracking
         self.detection_times = deque(maxlen=50)
         self.false_positive_count = 0
         self.true_positive_count = 0
-        
+
         # Screen capture
         if SCRAPER_DEPENDENCIES_AVAILABLE:
             self.sct = mss.mss()
         else:
             self.sct = None
-        
-        logger.info(f"🎯 PokerScreenScraper initialized (target: {site.value})")
+
+        logger.info(f"🎯 PokerScreenScraper initialized (target: {site.value}, CDP: {use_cdp})")
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
         """
@@ -586,14 +622,60 @@ class PokerScreenScraper:
             logger.error(f"Screen capture failed: {e}")
             return None
     
+    def connect_to_chrome(self, tab_filter: str = "betfair") -> bool:
+        """
+        Connect to Chrome via DevTools Protocol for fast data extraction.
+
+        Args:
+            tab_filter: String to match in tab URL/title
+
+        Returns:
+            True if connected successfully
+        """
+        if not self.cdp_scraper:
+            logger.warning("CDP scraper not initialized")
+            return False
+
+        try:
+            if self.cdp_scraper.connect(tab_filter=tab_filter):
+                self.cdp_connected = True
+                logger.info("✓ Connected to Chrome for fast data extraction")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to connect to Chrome: {e}")
+            return False
+
     def analyze_table(self, image: Optional[np.ndarray] = None) -> TableState:
         """
         Complete table analysis with detection validation.
 
         Returns TableState with whatever data is available, even at low confidence.
         This ensures continuous display in the LiveTable tab.
+
+        FAST PATH: If connected to Chrome via CDP, uses direct DOM extraction (10-100x faster)
+        FALLBACK: Uses screenshot OCR if CDP not available
         """
+        start_time = time.time()
+
         try:
+            # FAST PATH: Try CDP extraction first (if connected)
+            if self.cdp_connected and self.cdp_scraper:
+                try:
+                    cdp_data = self.cdp_scraper.extract_table_data()
+                    if cdp_data:
+                        # Convert CDP data to TableState
+                        state = self._convert_cdp_to_table_state(cdp_data)
+                        state.extraction_method = "cdp"
+                        state.extraction_time_ms = cdp_data.extraction_time_ms
+                        logger.debug(f"[CDP] Fast extraction complete: {state.active_players} players, "
+                                   f"${state.pot_size:.2f} pot ({state.extraction_time_ms:.1f}ms)")
+                        return state
+                except Exception as e:
+                    logger.warning(f"[CDP] Extraction failed, falling back to OCR: {e}")
+                    # Fall through to OCR method
+
+            # FALLBACK: Screenshot-based OCR extraction
             if image is None:
                 image = self.capture_table()
 
@@ -1286,13 +1368,107 @@ class PokerScreenScraper:
         except Exception as e:
             logger.error(f"Failed to save debug image: {e}")
     
+    def _convert_cdp_to_table_state(self, cdp_data) -> TableState:
+        """
+        Convert Chrome DevTools Protocol data to TableState format.
+
+        Args:
+            cdp_data: BetfairTableData from CDP scraper
+
+        Returns:
+            TableState with all extracted data
+        """
+        state = TableState()
+        state.detection_confidence = cdp_data.detection_confidence
+        state.detection_strategies = ["chrome_devtools_protocol"]
+        state.site_detected = PokerSite.BETFAIR
+        state.extraction_method = "cdp"
+
+        # Game state
+        state.pot_size = cdp_data.pot_size
+        state.stage = cdp_data.stage
+        state.dealer_seat = cdp_data.dealer_seat
+        state.active_turn_seat = cdp_data.active_turn_seat
+        state.active_players = cdp_data.active_players
+        state.small_blind = cdp_data.small_blind
+        state.big_blind = cdp_data.big_blind
+        state.ante = cdp_data.ante
+
+        # Table info
+        state.tournament_name = cdp_data.tournament_name
+        state.table_name = cdp_data.table_name
+
+        # Board cards - convert to Card objects
+        state.board_cards = [Card(c[0] if len(c) > 0 else '', c[1] if len(c) > 1 else '')
+                            for c in cdp_data.board_cards]
+
+        # Hero cards
+        state.hero_cards = [Card(c[0] if len(c) > 0 else '', c[1] if len(c) > 1 else '')
+                           for c in cdp_data.hero_cards]
+
+        # Players
+        for seat_num, player_data in cdp_data.players.items():
+            seat_info = SeatInfo(
+                seat_number=seat_num,
+                is_active=player_data.get('is_active', False),
+                player_name=player_data.get('name', ''),
+                stack_size=player_data.get('stack', 0.0),
+                is_dealer=player_data.get('is_dealer', False),
+                is_active_turn=player_data.get('is_turn', False),
+                current_bet=player_data.get('bet', 0.0),
+                vpip=player_data.get('vpip'),
+                af=player_data.get('af'),
+                time_bank=player_data.get('time_bank'),
+                status_text=player_data.get('status', 'Active')
+            )
+
+            # Detect hero (assume first active player for now, should be improved)
+            if seat_num == 1:
+                seat_info.is_hero = True
+                state.hero_seat = seat_num
+
+            state.seats.append(seat_info)
+
+        # Find dealer and blinds
+        if state.dealer_seat:
+            active_seats = [s.seat_number for s in state.seats if s.is_active]
+            if state.dealer_seat in active_seats and len(active_seats) >= 2:
+                try:
+                    dealer_idx = active_seats.index(state.dealer_seat)
+                    sb_seat = active_seats[(dealer_idx + 1) % len(active_seats)]
+                    bb_seat = active_seats[(dealer_idx + 2) % len(active_seats)]
+
+                    for seat in state.seats:
+                        if seat.seat_number == sb_seat:
+                            seat.position = 'SB'
+                            seat.is_small_blind = True
+                            state.small_blind_seat = sb_seat
+                        elif seat.seat_number == bb_seat:
+                            seat.position = 'BB'
+                            seat.is_big_blind = True
+                            state.big_blind_seat = bb_seat
+                        elif seat.seat_number == state.dealer_seat:
+                            seat.position = 'BTN'
+                except Exception:
+                    pass
+
+        state.timestamp = time.time()
+        return state
+
     def shutdown(self):
         """Clean shutdown."""
+        # Disconnect CDP scraper
+        if self.cdp_scraper:
+            try:
+                self.cdp_scraper.disconnect()
+            except:
+                pass
+
         if self.capture_thread and self.capture_thread.is_alive():
             if self.stop_event:
                 self.stop_event.set()
             self.capture_thread.join(timeout=2.0)
-        
+
         logger.info("PokerScreenScraper shutdown complete")
 
 
