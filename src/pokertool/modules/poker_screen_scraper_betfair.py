@@ -641,9 +641,9 @@ class PokerScreenScraper:
             if h == 0 or w == 0:
                 return 0.0
 
-            # Define a central ROI for pot detection (roughly center 30% width x 20% height)
-            roi_w = int(w * 0.3)
-            roi_h = int(h * 0.2)
+            # Expanded central ROI for pot detection (40% width x 25% height for better coverage)
+            roi_w = int(w * 0.4)
+            roi_h = int(h * 0.25)
             cx = w // 2
             cy = h // 2
             x0 = max(cx - roi_w // 2, 0)
@@ -652,27 +652,49 @@ class PokerScreenScraper:
             y1 = min(cy + roi_h // 2, h)
             roi = image[y0:y1, x0:x1]
 
-            # Convert to grayscale and enhance contrast
+            # Multi-pass approach for pot detection
             gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-            gray = cv2.bilateralFilter(gray, 9, 75, 75)
-            # Threshold to highlight bright text on darker felt
-            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            # Invert if background is white (rare on poker tables but safe)
-            if np.mean(thresh) > 127:
-                thresh = cv2.bitwise_not(thresh)
 
-            # Run OCR on the ROI
-            config = '--psm 6 -c tessedit_char_whitelist=0123456789$.,'
-            text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
-            if not text:
+            # Pass 1: Bilateral filter + OTSU
+            gray_filtered = cv2.bilateralFilter(gray, 11, 100, 100)
+            _, thresh1 = cv2.threshold(gray_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+            # Pass 2: CLAHE for better contrast
+            clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
+            enhanced = clahe.apply(gray)
+            _, thresh2 = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+            # Try OCR on both versions
+            all_text = ""
+            configs = [
+                '--psm 6 -c tessedit_char_whitelist=0123456789$.,POT',
+                '--psm 7 -c tessedit_char_whitelist=0123456789$.,',
+            ]
+
+            for thresh in [thresh1, thresh2]:
+                # Invert if background is white
+                if np.mean(thresh) > 127:
+                    thresh = cv2.bitwise_not(thresh)
+
+                for config in configs:
+                    try:
+                        text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
+                        if text:
+                            all_text += " " + text
+                    except Exception:
+                        pass
+
+            if not all_text:
                 return 0.0
 
-            # Find first occurrence of a number (optionally preceded by a $)
-            match = re.search(r'\$?\s*([0-9][0-9,]*\.?[0-9]*)', text)
-            if match:
-                num_str = match.group(1)
-                # Remove commas and stray dots, then parse
-                num_str = num_str.replace(',', '')
+            # Find all potential pot values
+            # Match patterns like: $12.50, 12.50, POT: 12.50, etc.
+            matches = re.findall(r'(?:POT[:\s]*)?[\$]?\s*([0-9][0-9,]*\.?[0-9]*)', all_text, re.IGNORECASE)
+            if matches:
+                # Choose the number with the most digits as it's most likely the pot
+                num_str = max(matches, key=lambda s: len(s.replace(',', '').replace('.', '')))
+                # Remove commas and parse
+                num_str = num_str.replace(',', '').strip()
                 try:
                     return float(num_str)
                 except Exception:
@@ -751,25 +773,41 @@ class PokerScreenScraper:
             # Convert once to grayscale for circle detection
             gray_full = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-            # Detect circular dealer button anywhere on the screen
+            # Detect circular dealer button anywhere on the screen with relaxed parameters
             dealer_seat: Optional[int] = None
             try:
-                circles = cv2.HoughCircles(
-                    gray_full,
-                    cv2.HOUGH_GRADIENT,
-                    dp=1.2,
-                    minDist=50,
-                    param1=100,
-                    param2=30,
-                    minRadius=12,
-                    maxRadius=45,
-                )
+                # Try with multiple parameter sets for better detection
+                circle_params = [
+                    # (dp, minDist, param1, param2, minRadius, maxRadius)
+                    (1.2, 50, 100, 30, 12, 45),  # Default
+                    (1.0, 40, 80, 25, 10, 50),   # More sensitive
+                    (1.5, 60, 120, 35, 15, 40),  # More strict
+                ]
+
                 circle_centers: List[Tuple[int, int]] = []
-                if circles is not None:
-                    for c in circles[0]:
-                        cx, cy, _r = c
-                        circle_centers.append((int(cx), int(cy)))
-            except Exception:
+                for dp, minDist, param1, param2, minRadius, maxRadius in circle_params:
+                    try:
+                        circles = cv2.HoughCircles(
+                            gray_full,
+                            cv2.HOUGH_GRADIENT,
+                            dp=dp,
+                            minDist=minDist,
+                            param1=param1,
+                            param2=param2,
+                            minRadius=minRadius,
+                            maxRadius=maxRadius,
+                        )
+                        if circles is not None:
+                            for c in circles[0]:
+                                cx, cy, _r = c
+                                circle_centers.append((int(cx), int(cy)))
+                            if circle_centers:
+                                break  # Found circles, no need to try other parameters
+                    except Exception:
+                        continue
+
+            except Exception as e:
+                logger.debug(f"Dealer button detection error: {e}")
                 circle_centers = []
 
             # Define seat positions normalized to [0,1] based on TableVisualization layout
@@ -809,48 +847,99 @@ class PokerScreenScraper:
                 y1 = min(cy + roi_h // 2, h)
                 roi = image[y0:y1, x0:x1]
 
-                # OCR for names and stack amounts
+                # Enhanced OCR for names and stack amounts with multiple attempts
                 name = ""
                 stack = 0.0
                 is_active = False
                 try:
                     roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-                    roi_gray = cv2.bilateralFilter(roi_gray, 7, 50, 50)
-                    # Adaptive threshold to highlight text (white on dark background)
-                    thresh = cv2.adaptiveThreshold(
-                        roi_gray,
+
+                    # Multi-pass OCR approach for better accuracy
+                    # Pass 1: Standard adaptive threshold
+                    roi_gray_filtered = cv2.bilateralFilter(roi_gray, 9, 75, 75)
+                    thresh1 = cv2.adaptiveThreshold(
+                        roi_gray_filtered,
                         255,
                         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                         cv2.THRESH_BINARY_INV,
                         11,
                         2,
                     )
-                    text = pytesseract.image_to_string(thresh, config='--psm 6')  # type: ignore
-                    # Parse numbers for stack
-                    if text:
-                        nums = re.findall(r'[0-9][0-9,.]*', text)
-                        if nums:
-                            # Use the largest or last parsed number.  Remove
-                            # thousands separators (commas) but preserve the
-                            # decimal point so that fractional chip amounts are
-                            # parsed correctly.  If multiple numbers are found,
-                            # choose the one with the most digits.
-                            num_str = sorted(nums, key=lambda s: len(s))[-1]
+
+                    # Pass 2: OTSU threshold for better contrast
+                    _, thresh2 = cv2.threshold(roi_gray_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+                    # Pass 3: Enhanced contrast version
+                    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+                    enhanced = clahe.apply(roi_gray)
+                    thresh3 = cv2.adaptiveThreshold(
+                        enhanced,
+                        255,
+                        cv2.ADAPTIVE_THRESH_MEAN_C,
+                        cv2.THRESH_BINARY_INV,
+                        15,
+                        3,
+                    )
+
+                    # Try OCR with multiple configurations for robustness
+                    texts = []
+                    configs = [
+                        '--psm 6',  # Uniform block of text
+                        '--psm 7',  # Single line of text
+                        '--psm 11',  # Sparse text
+                    ]
+
+                    for thresh in [thresh1, thresh2, thresh3]:
+                        for config in configs:
                             try:
-                                cleaned = num_str.replace(',', '')
+                                text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
+                                if text.strip():
+                                    texts.append(text.strip())
+                            except Exception:
+                                pass
+
+                    # Combine and parse all OCR results
+                    all_text = ' '.join(texts)
+
+                    # Parse numbers for stack - look for all numeric patterns
+                    if all_text:
+                        # Find all numbers, including those with $ prefix, commas, and decimals
+                        nums = re.findall(r'\$?\s*([0-9][0-9,.]*\.?[0-9]*)', all_text)
+                        if nums:
+                            # Choose the number with the most digits as it's likely the stack
+                            num_str = max(nums, key=lambda s: len(s.replace(',', '').replace('.', '')))
+                            try:
+                                cleaned = num_str.replace(',', '').replace('$', '').strip()
                                 stack = float(cleaned)
                             except Exception:
-                                # Fall back to integer parsing if float fails
+                                # Fall back to parsing just digits
                                 try:
-                                    stack = float(re.sub(r'[^0-9]', '', num_str))
+                                    digits = re.sub(r'[^0-9.]', '', num_str)
+                                    if digits:
+                                        stack = float(digits)
                                 except Exception:
                                     stack = 0.0
-                        # Parse first word as name if contains letters
-                        words = re.findall(r'[A-Za-z]{2,}', text)
-                        if words:
-                            name = words[0]
+
+                        # Parse player name - look for sequences of letters
+                        # Match words of 2+ letters, allowing underscores and hyphens
+                        words = re.findall(r'[A-Za-z][A-Za-z0-9_-]*', all_text)
+                        # Filter out common OCR artifacts
+                        valid_words = [w for w in words if len(w) >= 2 and w.lower() not in ['the', 'and', 'or', 'pot', 'bet']]
+                        if valid_words:
+                            # Take the longest word as it's most likely the username
+                            name = max(valid_words, key=len)
+                            # If multiple words, might be multi-word name - join first few
+                            if len(valid_words) > 1:
+                                # Join first 2-3 words if they're all similar length
+                                if len(valid_words[0]) > 3 and len(valid_words[1]) > 3:
+                                    name = valid_words[0] + valid_words[1][:3] if len(valid_words[1]) < 5 else valid_words[0]
+
                     # Determine active if we have either name or stack
                     is_active = bool(name or stack > 0)
+
+                    if is_active:
+                        logger.debug(f"Seat {seat_num}: name='{name}', stack=${stack}")
+
                 except Exception as ocr_err:
                     logger.debug(f"Seat OCR error at seat {seat_num}: {ocr_err}")
                     is_active = False
