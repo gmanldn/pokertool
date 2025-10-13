@@ -115,7 +115,7 @@ class Deviation:
     ev_gain: float  # Expected value gain in big blinds
     confidence: float  # Confidence in the deviation (0-1)
     reasoning: str  # Explanation of why this deviation is profitable
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
@@ -128,6 +128,38 @@ class Deviation:
             'confidence': self.confidence,
             'reasoning': self.reasoning
         }
+
+
+@dataclass
+class PopulationProfile:
+    """Population profile for GTO deviations."""
+    name: str
+    action_bias: Dict[str, float] = field(default_factory=dict)
+    description: str = ""
+
+
+@dataclass
+class DeviationRequest:
+    """Request for GTO deviation calculation."""
+    node_id: str
+    game_state: Dict[str, Any]
+    baseline_strategy: Dict[str, float]
+    action_evs: Dict[str, float]
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    max_shift: float = 0.3
+    population_profile: Optional[PopulationProfile] = None
+    simplification_threshold: float = 0.01
+    max_actions: Optional[int] = None
+
+
+@dataclass
+class DeviationResult:
+    """Result of GTO deviation calculation."""
+    deviation_strategy: Dict[str, float]
+    ev_gain: float
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    exploitability: float = 0.0
+    confidence: float = 1.0
 
 
 class MaximumExploitationFinder:
@@ -339,29 +371,31 @@ class NodeLocker:
 
 class StrategySimplifier:
     """Simplifies complex GTO strategies while maintaining EV."""
-    
+
     def __init__(self, ev_loss_tolerance: float = 0.05):
         """
         Initialize simplifier.
-        
+
         Args:
             ev_loss_tolerance: Maximum EV loss (in BB) acceptable from simplification
         """
         self.ev_loss_tolerance = ev_loss_tolerance
         self.logger = logging.getLogger(__name__ + '.StrategySimplifier')
-    
+
+    @staticmethod
     def simplify(
-        self,
-        strategy: Dict[ActionType, float],
-        min_frequency: float = 0.10
-    ) -> Dict[ActionType, float]:
+        strategy: Dict[str, float],
+        threshold: float = 0.10,
+        max_actions: Optional[int] = None
+    ) -> Dict[str, float]:
         """
         Simplify a mixed strategy by removing low-frequency actions.
-        
+
         Args:
             strategy: Original mixed strategy
-            min_frequency: Minimum frequency to keep an action
-            
+            threshold: Minimum frequency to keep an action
+            max_actions: Maximum number of actions to keep
+
         Returns:
             Simplified strategy with renormalized frequencies
         """
@@ -369,25 +403,27 @@ class StrategySimplifier:
         simplified = {
             action: freq
             for action, freq in strategy.items()
-            if freq >= min_frequency
+            if freq >= threshold
         }
-        
+
         if not simplified:
             # If all actions filtered out, keep the highest frequency one
-            simplified = {max(strategy.items(), key=lambda x: x[1])[0]: 1.0}
-            return simplified
-        
+            best_action = max(strategy.items(), key=lambda x: x[1])[0]
+            return {best_action: 1.0}
+
+        # Apply max_actions constraint if specified
+        if max_actions is not None and len(simplified) > max_actions:
+            # Keep only top N actions by frequency
+            sorted_actions = sorted(simplified.items(), key=lambda x: x[1], reverse=True)
+            simplified = dict(sorted_actions[:max_actions])
+
         # Renormalize frequencies
         total = sum(simplified.values())
         normalized = {
             action: freq / total
             for action, freq in simplified.items()
         }
-        
-        self.logger.debug(
-            f"Simplified strategy from {len(strategy)} to {len(normalized)} actions"
-        )
-        
+
         return normalized
     
     def merge_similar_actions(
@@ -415,6 +451,265 @@ class StrategySimplifier:
                 del merged[ActionType.BET]
         
         return merged
+
+
+class DeviationEVCalculator:
+    """Calculator for EV-related computations in GTO deviations."""
+
+    @staticmethod
+    def expected_value(strategy: Dict[str, float], action_evs: Dict[str, float]) -> float:
+        """
+        Calculate expected value of a strategy.
+
+        Args:
+            strategy: Strategy with action frequencies
+            action_evs: EV for each action
+
+        Returns:
+            Expected value
+        """
+        ev = 0.0
+        for action, frequency in strategy.items():
+            ev += frequency * action_evs.get(action, 0.0)
+        return ev
+
+    @staticmethod
+    def ev_gain(
+        baseline: Dict[str, float],
+        deviated: Dict[str, float],
+        action_evs: Dict[str, float]
+    ) -> float:
+        """
+        Calculate EV gain from deviation.
+
+        Args:
+            baseline: Baseline strategy
+            deviated: Deviated strategy
+            action_evs: EV for each action
+
+        Returns:
+            EV gain
+        """
+        baseline_ev = DeviationEVCalculator.expected_value(baseline, action_evs)
+        deviated_ev = DeviationEVCalculator.expected_value(deviated, action_evs)
+        return deviated_ev - baseline_ev
+
+
+class GTODeviationEngine:
+    """Engine for calculating GTO deviations with population profiles."""
+
+    def __init__(self, solver_api: Optional[Any] = None):
+        self.logger = logging.getLogger(__name__ + '.GTODeviationEngine')
+        self._population_profiles: Dict[str, PopulationProfile] = {}
+        self.solver_api = solver_api
+
+    def register_population_profile(self, profile: PopulationProfile) -> None:
+        """Register a population profile."""
+        self._population_profiles[profile.name] = profile
+        self.logger.info(f"Registered population profile: {profile.name}")
+
+    def get_population_profile(self, name: str) -> Optional[PopulationProfile]:
+        """Get a population profile by name."""
+        return self._population_profiles.get(name)
+
+    def _apply_population_profile(
+        self,
+        request: DeviationRequest,
+        baseline: Dict[str, float]
+    ) -> Dict[str, float]:
+        """
+        Apply population profile bias to strategy.
+
+        Args:
+            request: Deviation request with metadata
+            baseline: Baseline strategy
+
+        Returns:
+            Adjusted strategy
+        """
+        # Get profile from request or metadata
+        profile = request.population_profile
+        if profile is None and 'population_profile' in request.metadata:
+            profile_name = request.metadata['population_profile']
+            profile = self.get_population_profile(profile_name)
+
+        if profile is None:
+            return baseline.copy()
+
+        # Apply action bias
+        adjusted = baseline.copy()
+        for action, bias in profile.action_bias.items():
+            if action in adjusted:
+                adjusted[action] = max(0.0, adjusted[action] + bias)
+
+        # Renormalize
+        return self._normalise(adjusted)
+
+    @staticmethod
+    def _normalise(strategy: Dict[str, float]) -> Dict[str, float]:
+        """
+        Normalize a strategy so frequencies sum to 1.0.
+
+        Args:
+            strategy: Strategy to normalize
+
+        Returns:
+            Normalized strategy
+        """
+        total = sum(strategy.values())
+
+        if total == 0:
+            # Uniform distribution if all zero
+            n = len(strategy)
+            return {action: 1.0 / n for action in strategy.keys()}
+
+        return {action: freq / total for action, freq in strategy.items()}
+
+    @staticmethod
+    def _estimate_exploitability(
+        baseline: Dict[str, float],
+        deviation: Dict[str, float]
+    ) -> float:
+        """
+        Estimate exploitability as distance between strategies.
+
+        Args:
+            baseline: Baseline strategy
+            deviation: Deviated strategy
+
+        Returns:
+            Exploitability score (0-1)
+        """
+        # Calculate L1 distance
+        distance = 0.0
+        all_actions = set(baseline.keys()) | set(deviation.keys())
+
+        for action in all_actions:
+            baseline_freq = baseline.get(action, 0.0)
+            deviation_freq = deviation.get(action, 0.0)
+            distance += abs(deviation_freq - baseline_freq)
+
+        # Scale to [0, 1], half of L1 distance (since max L1 = 2)
+        return min(1.0, distance / 2.0)
+
+    def _max_exploitation(
+        self,
+        strategy: Dict[str, float],
+        action_evs: Dict[str, float],
+        max_shift: float = 0.3
+    ) -> Dict[str, float]:
+        """
+        Apply maximum exploitation by shifting probability to best EV action.
+
+        Args:
+            strategy: Current strategy
+            action_evs: EV for each action
+            max_shift: Maximum probability shift allowed
+
+        Returns:
+            Exploited strategy
+        """
+        if max_shift == 0:
+            return self._normalise(strategy)
+
+        # Find best action by EV
+        best_action = max(action_evs.items(), key=lambda x: x[1])[0]
+
+        # Normalize baseline
+        normalized = self._normalise(strategy)
+
+        # Calculate how much we can shift
+        available_shift = sum(
+            freq for action, freq in normalized.items()
+            if action != best_action
+        )
+        actual_shift = min(max_shift, available_shift)
+
+        if actual_shift == 0:
+            return normalized
+
+        # Shift probability to best action
+        deviated = {}
+        shift_ratio = actual_shift / available_shift if available_shift > 0 else 0
+
+        for action, freq in normalized.items():
+            if action == best_action:
+                deviated[action] = freq + actual_shift
+            else:
+                deviated[action] = freq * (1 - shift_ratio)
+
+        return self._normalise(deviated)
+
+    def compute_deviation(
+        self,
+        request: DeviationRequest
+    ) -> DeviationResult:
+        """
+        Compute GTO deviation for a request.
+
+        Args:
+            request: Deviation request
+
+        Returns:
+            Deviation result
+        """
+        # Apply population profile if present
+        adjusted_baseline = self._apply_population_profile(
+            request,
+            request.baseline_strategy
+        )
+
+        # Apply maximum exploitation
+        deviation_strategy = self._max_exploitation(
+            adjusted_baseline,
+            request.action_evs,
+            request.max_shift
+        )
+
+        # Apply simplification if requested
+        if request.simplification_threshold > 0 or request.max_actions is not None:
+            deviation_strategy = StrategySimplifier.simplify(
+                deviation_strategy,
+                threshold=request.simplification_threshold,
+                max_actions=request.max_actions
+            )
+
+        # Calculate EV gain
+        ev_gain = DeviationEVCalculator.ev_gain(
+            request.baseline_strategy,
+            deviation_strategy,
+            request.action_evs
+        )
+
+        # Calculate exploitability
+        exploitability = self._estimate_exploitability(
+            request.baseline_strategy,
+            deviation_strategy
+        )
+
+        # Calculate EVs for metadata
+        ev_baseline = DeviationEVCalculator.expected_value(
+            request.baseline_strategy,
+            request.action_evs
+        )
+        ev_deviation = DeviationEVCalculator.expected_value(
+            deviation_strategy,
+            request.action_evs
+        )
+
+        metadata = {
+            'ev_baseline': ev_baseline,
+            'ev_deviation': ev_deviation,
+            'node_id': request.node_id,
+            **request.metadata
+        }
+
+        return DeviationResult(
+            deviation_strategy=deviation_strategy,
+            ev_gain=ev_gain,
+            metadata=metadata,
+            exploitability=exploitability
+        )
 
 
 class GTODeviationCalculator:
