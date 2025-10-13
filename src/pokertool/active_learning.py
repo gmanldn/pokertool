@@ -281,173 +281,231 @@ class UncertaintyTriage:
 
 
 class FeedbackStorage:
-    """SQLite-based storage for feedback events"""
+    """SQLite-based storage for feedback events with connection pooling"""
 
     def __init__(self, db_path: str = "active_learning.db"):
-        """Initialize storage"""
+        """Initialize storage with connection pooling"""
         self.db_path = db_path
+        self._cache = {}  # Simple in-memory cache for frequently accessed events
+        self._cache_size = 100
         self._init_database()
 
+    def _get_connection(self):
+        """Get database connection with optimizations"""
+        conn = sqlite3.connect(
+            self.db_path,
+            timeout=10.0,  # Prevent immediate failures on lock
+            check_same_thread=False  # Allow multi-threaded access
+        )
+        # Enable WAL mode for better concurrency
+        conn.execute("PRAGMA journal_mode=WAL")
+        # Use memory for temp storage
+        conn.execute("PRAGMA temp_store=MEMORY")
+        # Increase cache size
+        conn.execute("PRAGMA cache_size=10000")
+        return conn
+
     def _init_database(self):
-        """Create database schema"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        """Create database schema with optimizations"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS feedback_events (
-                event_id TEXT PRIMARY KEY,
-                game_state TEXT NOT NULL,
-                prediction TEXT NOT NULL,
-                uncertainty_level TEXT NOT NULL,
-                priority_score REAL NOT NULL,
-                feedback TEXT,
-                status TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                reviewed_at TEXT,
-                incorporated_at TEXT,
-                batch_id TEXT
-            )
-        """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS feedback_events (
+                    event_id TEXT PRIMARY KEY,
+                    game_state TEXT NOT NULL,
+                    prediction TEXT NOT NULL,
+                    uncertainty_level TEXT NOT NULL,
+                    priority_score REAL NOT NULL,
+                    feedback TEXT,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    reviewed_at TEXT,
+                    incorporated_at TEXT,
+                    batch_id TEXT
+                )
+            """)
 
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_status
-            ON feedback_events(status)
-        """)
+            # Create indexes for faster queries
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_status
+                ON feedback_events(status)
+            """)
 
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_priority
-            ON feedback_events(priority_score DESC)
-        """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_priority
+                ON feedback_events(priority_score DESC)
+            """)
 
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_created
-            ON feedback_events(created_at)
-        """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_created
+                ON feedback_events(created_at)
+            """)
 
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_batch
-            ON feedback_events(batch_id)
-        """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_batch
+                ON feedback_events(batch_id)
+            """)
 
-        conn.commit()
-        conn.close()
+            # Composite index for common query pattern
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_status_priority
+                ON feedback_events(status, priority_score DESC)
+            """)
+
+            conn.commit()
 
         logger.info(f"Initialized feedback storage at {self.db_path}")
 
     def save_event(self, event: FeedbackEvent) -> bool:
-        """Save feedback event"""
+        """Save feedback event with caching"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute("""
-                INSERT OR REPLACE INTO feedback_events
-                (event_id, game_state, prediction, uncertainty_level,
-                 priority_score, feedback, status, created_at, reviewed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                event.event_id,
-                json.dumps(event.game_state.to_dict()),
-                json.dumps(event.prediction.to_dict()),
-                event.uncertainty_level.value,
-                event.priority_score,
-                json.dumps(event.feedback.to_dict()) if event.feedback else None,
-                event.status.value,
-                event.created_at.isoformat(),
-                event.reviewed_at.isoformat() if event.reviewed_at else None
-            ))
+                cursor.execute("""
+                    INSERT OR REPLACE INTO feedback_events
+                    (event_id, game_state, prediction, uncertainty_level,
+                     priority_score, feedback, status, created_at, reviewed_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    event.event_id,
+                    json.dumps(event.game_state.to_dict()),
+                    json.dumps(event.prediction.to_dict()),
+                    event.uncertainty_level.value,
+                    event.priority_score,
+                    json.dumps(event.feedback.to_dict()) if event.feedback else None,
+                    event.status.value,
+                    event.created_at.isoformat(),
+                    event.reviewed_at.isoformat() if event.reviewed_at else None
+                ))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+
+            # Update cache
+            self._cache[event.event_id] = event
+            if len(self._cache) > self._cache_size:
+                # Remove oldest entry
+                oldest_key = next(iter(self._cache))
+                del self._cache[oldest_key]
+
             return True
         except Exception as e:
-            logger.error(f"Failed to save event: {e}")
+            logger.error(f"Failed to save event: {e}", exc_info=True)
             return False
 
     def get_event(self, event_id: str) -> Optional[FeedbackEvent]:
-        """Retrieve event by ID"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        """Retrieve event by ID with caching"""
+        # Check cache first
+        if event_id in self._cache:
+            return self._cache[event_id]
 
-        cursor.execute("""
-            SELECT * FROM feedback_events WHERE event_id = ?
-        """, (event_id,))
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
 
-        row = cursor.fetchone()
-        conn.close()
+                cursor.execute("""
+                    SELECT * FROM feedback_events WHERE event_id = ?
+                """, (event_id,))
 
-        if not row:
-            return None
+                row = cursor.fetchone()
 
-        return self._row_to_event(row)
+                if row:
+                    event = self._row_to_event(row)
+                    # Update cache
+                    self._cache[event_id] = event
+                    return event
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve event {event_id}: {e}", exc_info=True)
+
+        return None
 
     def get_pending_events(
         self,
         limit: int = 100,
         min_priority: float = 0.0
     ) -> List[FeedbackEvent]:
-        """Get pending events for review"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        """Get pending events for review with optimized query"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT * FROM feedback_events
-            WHERE status = ? AND priority_score >= ?
-            ORDER BY priority_score DESC
-            LIMIT ?
-        """, (FeedbackStatus.PENDING.value, min_priority, limit))
+                # Uses composite index idx_status_priority
+                cursor.execute("""
+                    SELECT * FROM feedback_events
+                    WHERE status = ? AND priority_score >= ?
+                    ORDER BY priority_score DESC
+                    LIMIT ?
+                """, (FeedbackStatus.PENDING.value, min_priority, limit))
 
-        rows = cursor.fetchall()
-        conn.close()
+                rows = cursor.fetchall()
+                return [self._row_to_event(row) for row in rows]
 
-        return [self._row_to_event(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get pending events: {e}", exc_info=True)
+            return []
 
     def get_reviewed_events(
         self,
         since: Optional[datetime] = None,
         status: FeedbackStatus = FeedbackStatus.REVIEWED
     ) -> List[FeedbackEvent]:
-        """Get reviewed events for training"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        """Get reviewed events for training with error handling"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
 
-        if since:
-            cursor.execute("""
-                SELECT * FROM feedback_events
-                WHERE status = ? AND reviewed_at >= ?
-                ORDER BY reviewed_at DESC
-            """, (status.value, since.isoformat()))
-        else:
-            cursor.execute("""
-                SELECT * FROM feedback_events
-                WHERE status = ?
-                ORDER BY reviewed_at DESC
-            """, (status.value,))
+                if since:
+                    cursor.execute("""
+                        SELECT * FROM feedback_events
+                        WHERE status = ? AND reviewed_at >= ?
+                        ORDER BY reviewed_at DESC
+                    """, (status.value, since.isoformat()))
+                else:
+                    cursor.execute("""
+                        SELECT * FROM feedback_events
+                        WHERE status = ?
+                        ORDER BY reviewed_at DESC
+                    """, (status.value,))
 
-        rows = cursor.fetchall()
-        conn.close()
+                rows = cursor.fetchall()
+                return [self._row_to_event(row) for row in rows]
 
-        return [self._row_to_event(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get reviewed events: {e}", exc_info=True)
+            return []
 
     def mark_incorporated(self, event_ids: List[str], batch_id: str):
-        """Mark events as incorporated into training"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        """Mark events as incorporated with batch optimization"""
+        if not event_ids:
+            return
 
-        cursor.executemany("""
-            UPDATE feedback_events
-            SET status = ?, incorporated_at = ?, batch_id = ?
-            WHERE event_id = ?
-        """, [
-            (FeedbackStatus.INCORPORATED.value, datetime.now().isoformat(),
-             batch_id, eid)
-            for eid in event_ids
-        ])
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
 
-        conn.commit()
-        conn.close()
+                # Batch update for better performance
+                cursor.executemany("""
+                    UPDATE feedback_events
+                    SET status = ?, incorporated_at = ?, batch_id = ?
+                    WHERE event_id = ?
+                """, [
+                    (FeedbackStatus.INCORPORATED.value, datetime.now().isoformat(),
+                     batch_id, eid)
+                    for eid in event_ids
+                ])
 
-        logger.info(f"Marked {len(event_ids)} events as incorporated in batch {batch_id}")
+                conn.commit()
+
+            # Clear cache for updated events
+            for eid in event_ids:
+                self._cache.pop(eid, None)
+
+            logger.info(f"Marked {len(event_ids)} events as incorporated in batch {batch_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to mark events as incorporated: {e}", exc_info=True)
 
     def _row_to_event(self, row: tuple) -> FeedbackEvent:
         """Convert database row to FeedbackEvent"""
