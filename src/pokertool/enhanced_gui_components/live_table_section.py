@@ -584,7 +584,7 @@ class LiveTableSection:
                     print(f"[LiveTable] ERROR: Host does not have get_live_table_data method!")
                     time.sleep(5)  # Avoid spam
 
-                time.sleep(0.5)  # Update every 500ms for live feel
+                time.sleep(0.5)  # Update every 500ms for live feel (now uses cached state)
             except Exception as e:
                 print(f"[LiveTable] Update error: {e}")
                 import traceback
