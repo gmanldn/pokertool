@@ -325,8 +325,8 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         """Initialize all poker tool modules."""
         try:
             if SCREEN_SCRAPER_LOADED:
-                self.screen_scraper = create_scraper('CHROME')
-                print("Screen scraper initialized")
+                self.screen_scraper = create_scraper('BETFAIR')
+                print("Screen scraper initialized (BETFAIR optimized)")
 
             if GUI_MODULES_LOADED:
                 self.gto_solver = get_gto_solver()
@@ -1206,8 +1206,8 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         else:
             try:
                 if self.screen_scraper is None and callable(create_scraper):
-                    self.screen_scraper = create_scraper('CHROME')
-                    details.append("ℹ️ Screen scraper factory invoked for CHROME profile")
+                    self.screen_scraper = create_scraper('BETFAIR')
+                    details.append("ℹ️ Screen scraper factory invoked for BETFAIR profile")
 
                 if self.screen_scraper is None:
                     details.append("❌ Screen scraper factory returned None")
@@ -2415,12 +2415,16 @@ Platform: {sys.platform}
 
             for seat_num, player in enumerate(players, start=1):
                 if player:
+                    # Handle both attribute naming conventions (name/player_name, stack/stack_size)
+                    player_name = getattr(player, 'player_name', None) or getattr(player, 'name', None)
+                    player_stack = getattr(player, 'stack_size', 0) or getattr(player, 'stack', 0)
+
                     player_info = {
-                        'seat': seat_num,
-                        'name': getattr(player, 'name', None),
-                        'stack': getattr(player, 'stack', 0),
-                        'current_bet': getattr(player, 'current_bet', 0),
-                        'active': getattr(player, 'active', False),
+                        'seat': getattr(player, 'seat_number', seat_num),  # Use seat_number if available
+                        'name': player_name,
+                        'stack': player_stack,
+                        'current_bet': getattr(player, 'current_bet', 0) or getattr(player, 'bet', 0),
+                        'active': getattr(player, 'is_active', False) or getattr(player, 'active', False),
                         'position': getattr(player, 'position', None),
                         'hole_cards': []
                     }
@@ -3251,132 +3255,10 @@ Platform: {sys.platform}
         """
         Get live table data from the screen scraper for LiveTable display.
 
-        Returns a dictionary containing:
-        - status: Table status string
-        - confidence: Detection confidence (0-100)
-        - board_cards: List of community cards
-        - small_blind, big_blind, ante: Blind levels
-        - pot: Current pot size
-        - dealer_seat: Dealer button seat number
-        - players: Dict of player data by seat number
-        - my_hole_cards: Current player's hole cards
-        - recommended_action: AI-recommended action
+        This method delegates to the helper function to keep this file under 25,000 tokens.
         """
-        try:
-            # Always try to get data if scraper exists - don't wait for autopilot
-            if not self.screen_scraper:
-                return None
-
-            # Try to get table state from scraper
-            table_state = None
-            if hasattr(self.screen_scraper, 'analyze_table'):
-                table_state = self.screen_scraper.analyze_table()
-
-            if not table_state:
-                return None
-
-            # Build comprehensive data structure with ALL table information
-            data = {
-                'status': 'Active',
-                'confidence': getattr(table_state, 'confidence', 85.0),
-                'board_cards': [],
-                'small_blind': getattr(table_state, 'small_blind', 0.05),
-                'big_blind': getattr(table_state, 'big_blind', 0.10),
-                'ante': getattr(table_state, 'ante', 0),
-                'pot': getattr(table_state, 'pot_size', 0),
-                'dealer_seat': getattr(table_state, 'dealer_seat', 0),
-                'stage': getattr(table_state, 'stage', 'unknown'),
-                'active_players': getattr(table_state, 'active_players', 0),
-                'players': {},
-                'my_hole_cards': [],
-                'recommended_action': 'Waiting for game state...',
-                'validation_complete': True,
-                'warnings': []
-            }
-
-            # Extract board cards with validation
-            if hasattr(table_state, 'board_cards') and table_state.board_cards:
-                data['board_cards'] = [str(card) for card in table_state.board_cards]
-            else:
-                data['warnings'].append("No board cards detected")
-
-            # Extract player information with comprehensive validation
-            # Check both 'players' and 'seats' attributes (different scrapers use different names)
-            players_list = []
-            if hasattr(table_state, 'players') and table_state.players:
-                players_list = table_state.players
-            elif hasattr(table_state, 'seats') and table_state.seats:
-                players_list = table_state.seats
-
-            if players_list:
-                players_detected = 0
-                players_with_names = 0
-                players_with_stacks = 0
-
-                for player in players_list:
-                    if player and (hasattr(player, 'is_active') and player.is_active or not hasattr(player, 'is_active')):
-                        seat_num = getattr(player, 'seat_number', len(data['players']) + 1)
-                        players_detected += 1
-
-                        player_name = getattr(player, 'name', None)
-                        player_stack = getattr(player, 'stack', 0)
-
-                        if player_name:
-                            players_with_names += 1
-                        if player_stack > 0:
-                            players_with_stacks += 1
-
-                        player_data = {
-                            'name': player_name or f'Player {seat_num}',
-                            'stack': player_stack,
-                            'bet': getattr(player, 'current_bet', 0),
-                            'hole_cards': [],
-                            'status': 'Active' if getattr(player, 'active', True) else 'Folded',
-                            'position': getattr(player, 'position', None),
-                            'is_dealer': (seat_num == data['dealer_seat']),
-                            'is_small_blind': False,  # TODO: detect SB position
-                            'is_big_blind': False,    # TODO: detect BB position
-                        }
-
-                        # Extract hole cards if visible (showdown)
-                        if hasattr(player, 'hole_cards') and player.hole_cards:
-                            player_data['hole_cards'] = [str(card) for card in player.hole_cards]
-
-                        data['players'][seat_num] = player_data
-
-                # Add validation warnings
-                if players_detected == 0:
-                    data['warnings'].append("No players detected at table")
-                    data['validation_complete'] = False
-                elif players_with_names < players_detected:
-                    data['warnings'].append(f"Only {players_with_names}/{players_detected} player names detected")
-                    data['validation_complete'] = False
-                elif players_with_stacks < players_detected:
-                    data['warnings'].append(f"Only {players_with_stacks}/{players_detected} player stacks detected")
-                    data['validation_complete'] = False
-            else:
-                data['warnings'].append("No player data available")
-                data['validation_complete'] = False
-
-            # Extract hero's hole cards with validation
-            if hasattr(table_state, 'hero_cards') and table_state.hero_cards:
-                data['my_hole_cards'] = [str(card) for card in table_state.hero_cards]
-            else:
-                data['warnings'].append("Hero cards not detected")
-
-            # Validate dealer button
-            if data['dealer_seat'] == 0:
-                data['warnings'].append("Dealer button position not detected")
-                data['validation_complete'] = False
-
-            # TODO: Implement GTO-based recommendation system
-            # For now, recommended_action remains "Waiting for game state..."
-
-            return data
-
-        except Exception as e:
-            print(f"Error getting live table data: {e}")
-            return None
+        from .enhanced_gui_helpers import get_live_table_data_from_scraper
+        return get_live_table_data_from_scraper(self.screen_scraper)
 
     def _start_screen_update_loop(self):
         """Start continuous screen update loop to follow scraper output."""

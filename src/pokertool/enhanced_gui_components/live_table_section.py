@@ -18,9 +18,12 @@ class LiveTableSection:
     """Encapsulates the LiveTable tab with real-time scraper data display."""
 
     def __init__(self, host: Any, parent: tk.Misc, *, modules_loaded: bool) -> None:
+        print("[LiveTableSection] __init__ called")
         self.host = host
         self.parent = parent
         self._modules_loaded = modules_loaded
+        print(f"[LiveTableSection] Host type: {type(host).__name__}")
+        print(f"[LiveTableSection] Host has get_live_table_data: {hasattr(host, 'get_live_table_data')}")
 
         # Live table data display widgets
         self.live_data_frame: Optional[tk.Frame] = None
@@ -44,28 +47,33 @@ class LiveTableSection:
         self._stop_updates = False
 
         self._build_ui()
-        self._prompt_for_handle()
-        self._start_live_updates()
+        self._start_live_updates()  # Start updates FIRST, before prompt
+        self._prompt_for_handle()  # Prompt can happen after
 
     # ------------------------------------------------------------------
     def _prompt_for_handle(self) -> None:
         """Prompt user for their poker handle on startup."""
-        from tkinter import simpledialog
+        try:
+            from tkinter import simpledialog
 
-        # Use simpledialog to ask for handle
-        self.user_handle = simpledialog.askstring(
-            "Player Handle",
-            "Enter your poker handle/username:\n(This helps identify your position at the table)",
-            parent=self.parent
-        )
+            # Use simpledialog to ask for handle
+            self.user_handle = simpledialog.askstring(
+                "Player Handle",
+                "Enter your poker handle/username:\n(This helps identify your position at the table)",
+                parent=self.parent
+            )
 
-        if not self.user_handle:
-            self.user_handle = ""  # Empty if cancelled
-        else:
-            self.user_handle = self.user_handle.strip()
-            print(f"User handle set to: {self.user_handle}")
+            if not self.user_handle:
+                self.user_handle = ""  # Empty if cancelled
+            else:
+                self.user_handle = self.user_handle.strip()
+                print(f"User handle set to: {self.user_handle}")
+        except Exception as e:
+            print(f"[LiveTableSection] Could not prompt for handle: {e}")
+            self.user_handle = ""  # Use empty if prompt fails
 
     def _build_ui(self) -> None:
+        print("[LiveTableSection] _build_ui called")
         header_frame = tk.Frame(self.parent, bg=COLORS["bg_dark"])
         header_frame.pack(fill="x", pady=(20, 10))
 
@@ -504,44 +512,126 @@ class LiveTableSection:
 
     def _start_live_updates(self) -> None:
         """Start the live data update thread."""
-        if self._update_thread is None or not self._update_thread.is_alive():
-            self._stop_updates = False
-            self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-            self._update_thread.start()
+        print("[LiveTableSection] _start_live_updates called")
+        try:
+            if self._update_thread is None or not self._update_thread.is_alive():
+                print("[LiveTableSection] Starting update thread...")
+                self._stop_updates = False
+                self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
+                self._update_thread.start()
+                print(f"[LiveTableSection] Update thread started: {self._update_thread.is_alive()}")
+            else:
+                print("[LiveTableSection] Update thread already running")
+        except Exception as e:
+            print(f"[LiveTableSection] ERROR starting update thread: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _update_loop(self) -> None:
         """Main update loop for live table data."""
+        print(f"[LiveTable] Update loop STARTED")
+        update_count = 0
+        last_status_log = 0.0
         while not self._stop_updates:
             try:
                 # Always try to get live data (don't wait for autopilot)
                 if hasattr(self.host, 'get_live_table_data'):
+                    if update_count == 0:
+                        print(f"[LiveTable] Host has get_live_table_data method ✓")
                     # Get live data from the scraper
                     table_data = self.host.get_live_table_data()
                     if table_data:
+                        update_count += 1
+
+                        # Log comprehensive status every 5 seconds
+                        current_time = time.time()
+                        if current_time - last_status_log >= 5.0:
+                            last_status_log = current_time
+                            players_count = len(table_data.get('players', {}))
+                            active_players = table_data.get('active_players', 0)
+                            confidence = table_data.get('confidence', 0)
+                            data_source = table_data.get('data_source', 'unknown')
+                            pot = table_data.get('pot', 0)
+                            stage = table_data.get('stage', 'unknown')
+
+                            print(f"\n{'='*80}")
+                            print(f"[LiveTable Status] Update #{update_count}")
+                            print(f"  Data Source: {data_source.upper()}")
+                            print(f"  Confidence: {confidence:.1f}%")
+                            print(f"  Active Players: {active_players}/{players_count} seats")
+                            print(f"  Pot: ${pot:.2f}")
+                            print(f"  Stage: {stage.upper()}")
+
+                            # Log active player details
+                            players = table_data.get('players', {})
+                            if players:
+                                print(f"  Players:")
+                                for seat_num in sorted(players.keys()):
+                                    player = players[seat_num]
+                                    if player.get('status') == 'Active':
+                                        name = player.get('name', 'Unknown')
+                                        stack = player.get('stack', 0)
+                                        position = player.get('position', '')
+                                        dealer = " 🔘" if player.get('is_dealer') else ""
+                                        print(f"    Seat {seat_num}: {name} - ${stack:.2f} {position}{dealer}")
+                            print(f"{'='*80}\n")
+
                         self._update_live_display(table_data)
+                    else:
+                        if update_count % 20 == 0:
+                            print(f"[LiveTable] No data available (update #{update_count})")
+                else:
+                    print(f"[LiveTable] ERROR: Host does not have get_live_table_data method!")
+                    time.sleep(5)  # Avoid spam
 
                 time.sleep(0.5)  # Update every 500ms for live feel
             except Exception as e:
-                print(f"Live update error: {e}")
+                print(f"[LiveTable] Update error: {e}")
+                import traceback
+                traceback.print_exc()
                 time.sleep(2.0)
 
     def _update_live_display(self, table_data: Dict) -> None:
         """Update the live display with scraped table data."""
         try:
-            # Update table status with validation info
+            # Log the received data structure (only once per 20 updates to avoid spam)
+            if not hasattr(self, '_display_update_count'):
+                self._display_update_count = 0
+            self._display_update_count += 1
+
+            if self._display_update_count % 20 == 1:
+                print(f"[LiveTable Display] Update #{self._display_update_count}: Received data with {len(table_data.get('players', {}))} players")
+                print(f"   Confidence: {table_data.get('confidence', 0):.1f}%")
+                print(f"   Pot: ${table_data.get('pot', 0)}, Stage: {table_data.get('stage', 'unknown')}")
+                print(f"   Board: {table_data.get('board_cards', [])}")
+                print(f"   My cards: {table_data.get('my_hole_cards', [])}")
+
+            # Update table status with validation info and data freshness
             if self.table_status_label:
                 status = table_data.get('status', 'Active')
                 confidence = table_data.get('confidence', 0)
                 validation_complete = table_data.get('validation_complete', False)
                 warnings = table_data.get('warnings', [])
 
-                status_text = f"{status} ({confidence:.1f}% confidence)"
+                # Check if data is live or cached
+                data_source = table_data.get('data_source', 'unknown')
+                data_age = table_data.get('data_age_seconds', 0.0)
+
+                # Build status text with freshness indicator
+                if data_source == 'live':
+                    status_text = f"🔴 LIVE - {status} ({confidence:.1f}% confidence)"
+                    status_color = COLORS["accent_success"] if (confidence and confidence > 70 and validation_complete) else COLORS["accent_warning"]
+                else:
+                    # Cached data
+                    status_text = f"💾 CACHED ({data_age:.1f}s ago) - {status} ({confidence:.1f}% confidence)"
+                    status_color = COLORS["accent_info"] if data_age < 5.0 else COLORS["accent_warning"]
+
                 if not validation_complete:
                     status_text += f" - ⚠️ {len(warnings)} warning(s)"
 
                 self.table_status_label.config(
                     text=status_text,
-                    fg=COLORS["accent_success"] if (confidence and confidence > 70 and validation_complete) else COLORS["accent_warning"]
+                    fg=status_color
                 )
 
             # Update board cards

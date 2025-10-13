@@ -120,6 +120,16 @@ class Card:
         self.rank = rank
         self.suit = suit
 
+    def __str__(self) -> str:
+        """Return string representation of card (e.g., 'As', 'Kh', 'Td')."""
+        if not self.rank or not self.suit:
+            return ""
+        return f"{self.rank}{self.suit}"
+
+    def __repr__(self) -> str:
+        """Return representation of card."""
+        return f"Card({self.rank}{self.suit})"
+
 
 # ============================================================================
 # Detection Engines
@@ -476,64 +486,74 @@ class PokerScreenScraper:
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
         """
         Detect if a poker table is present in the image.
-        
+
         This method uses a multi-strategy approach:
         1. Try Betfair-specific detection first (if configured for Betfair)
         2. Fall back to universal detection
         3. Return best result
-        
+
         Args:
             image: Optional image to analyze. If None, captures current screen.
-        
+
         Returns:
             Tuple of (is_poker_table, confidence_score, detection_details)
         """
         start_time = time.time()
-        
+
         if image is None:
             image = self.capture_table()
-        
+
         if image is None or image.size == 0:
             logger.warning("[DETECTION] No image to analyze")
             return False, 0.0, {'error': 'No image'}
-        
+
         # Strategy 1: Try Betfair detector first (if Betfair site)
         if self.site == PokerSite.BETFAIR:
             betfair_result = self.betfair_detector.detect(image)
-            
+
             if betfair_result.detected:
                 logger.info(f"[BETFAIR] ✓ Detected with {betfair_result.confidence:.1%} confidence")
                 self.last_detection_result = betfair_result
                 self.true_positive_count += 1
-                
+
                 return True, betfair_result.confidence, {
                     'site': 'betfair',
                     'detector': 'betfair_specialized',
                     **betfair_result.details,
                     'time_ms': betfair_result.time_ms
                 }
-        
+            else:
+                # Log why Betfair detection failed
+                logger.debug(f"[BETFAIR] ✗ Not detected (confidence: {betfair_result.confidence:.1%})")
+                logger.debug(f"   Felt: {betfair_result.details.get('felt_confidence', 0):.1%}, "
+                           f"Cards: {betfair_result.details.get('card_confidence', 0):.1%}, "
+                           f"UI: {betfair_result.details.get('ui_confidence', 0):.1%}, "
+                           f"Ellipse: {betfair_result.details.get('ellipse_confidence', 0):.1%}")
+
         # Strategy 2: Try universal detector (fallback or primary for non-Betfair)
         universal_result = self.universal_detector.detect(image)
-        
+
         if universal_result.detected:
             logger.info(f"[UNIVERSAL] ✓ Detected with {universal_result.confidence:.1%} confidence")
             self.last_detection_result = universal_result
             self.true_positive_count += 1
-            
+
             return True, universal_result.confidence, {
                 'site': 'generic',
                 'detector': 'universal',
                 **universal_result.details,
                 'time_ms': universal_result.time_ms
             }
-        
+
         # No detection
         total_time = (time.time() - start_time) * 1000
         # Only log periodically to avoid terminal spam
         if not hasattr(self, '_last_detection_log') or time.time() - self._last_detection_log >= 5.0:
             self._last_detection_log = time.time()
-            logger.debug(f"[NO DETECTION] No poker table found (checked in {total_time:.1f}ms)")
+            betfair_conf = betfair_result.confidence if self.site == PokerSite.BETFAIR else 0.0
+            logger.info(f"[NO DETECTION] ❌ No poker table found")
+            logger.info(f"   Betfair confidence: {betfair_conf:.1%}, Universal confidence: {universal_result.confidence:.1%}")
+            logger.info(f"   Detection time: {total_time:.1f}ms")
 
         betfair_conf = betfair_result.confidence if self.site == PokerSite.BETFAIR else 0.0
 
@@ -569,59 +589,131 @@ class PokerScreenScraper:
     def analyze_table(self, image: Optional[np.ndarray] = None) -> TableState:
         """
         Complete table analysis with detection validation.
-        
-        Returns TableState only if a valid poker table is detected.
+
+        Returns TableState with whatever data is available, even at low confidence.
+        This ensures continuous display in the LiveTable tab.
         """
         try:
             if image is None:
                 image = self.capture_table()
-            
+
             if image is None:
                 logger.debug("[TABLE DETECTION] No image captured")
                 return TableState()
-            
+
             # Step 1: Detect if this is a poker table
             is_poker, confidence, details = self.detect_poker_table(image)
-            
+
+            # CHANGED: Don't immediately return empty state on low confidence
+            # Instead, attempt to extract data anyway and let the caller decide
             if not is_poker:
-                logger.debug(f"[TABLE DETECTION] No poker table detected")
-                return TableState()
-            
+                # Still try to extract data - just mark confidence as low
+                logger.debug(f"[TABLE DETECTION] Low confidence detection ({confidence:.1%}), extracting partial data anyway")
+                # Continue with extraction below
+
+            # Log detection info (only periodically to avoid spam)
+            if not hasattr(self, '_last_detection_log_time'):
+                self._last_detection_log_time = 0
+
+            if time.time() - self._last_detection_log_time >= 10.0 or is_poker:
+                self._last_detection_log_time = time.time()
+                logger.info("=" * 80)
+                if is_poker:
+                    logger.info(f"🎯 POKER TABLE DETECTED!")
+                else:
+                    logger.info(f"⚠️ POKER TABLE DETECTION: LOW CONFIDENCE")
+                logger.info(f"   Site: {details.get('site', 'unknown').upper()}")
+                logger.info(f"   Confidence: {confidence:.1%}")
+                logger.info(f"   Detector: {details.get('detector', 'unknown')}")
+                logger.info("=" * 80)
+
             # Step 2: Extract game state
             state = TableState()
             state.detection_confidence = confidence
             state.detection_strategies = [details.get('detector', 'unknown')]
             state.site_detected = PokerSite.BETFAIR if details.get('site') == 'betfair' else PokerSite.GENERIC
-            
-            # Extract elements (simplified - would use OCR and region detection)
+
+            # Extract elements with detailed logging (log periodically)
+            should_log_details = time.time() - self._last_detection_log_time < 1.0  # Log details if we just logged detection
+
+            if should_log_details:
+                logger.info("📊 EXTRACTING TABLE DATA:")
+                logger.info("-" * 80)
+
+            # Pot size
             state.pot_size = self._extract_pot_size(image)
+            if should_log_details:
+                logger.info(f"💰 POT: ${state.pot_size:.2f}")
+
+            # Hero cards
             state.hero_cards = self._extract_hero_cards(image)
+            hero_cards_str = ', '.join([str(c) for c in state.hero_cards]) if state.hero_cards else "None"
+            if should_log_details:
+                logger.info(f"🎴 MY HOLE CARDS: {hero_cards_str}")
+
+            # Board cards
             state.board_cards = self._extract_board_cards(image)
+            board_str = ', '.join([str(c) for c in state.board_cards]) if state.board_cards else "None"
+            if should_log_details:
+                logger.info(f"🃏 BOARD: {board_str}")
+
+            # Game stage
+            state.stage = self._detect_game_stage(state.board_cards)
+            if should_log_details:
+                logger.info(f"📍 STAGE: {state.stage.upper()}")
+
+            # Players and positions
+            if should_log_details:
+                logger.info("-" * 80)
+                logger.info("👥 PLAYERS:")
             state.seats = self._extract_seat_info(image)
             state.active_players = sum(1 for seat in state.seats if seat.is_active)
-            state.stage = self._detect_game_stage(state.board_cards)
 
+            if should_log_details:
+                for seat in state.seats:
+                    if seat.is_active:
+                        position_info = f" [{seat.position}]" if seat.position else ""
+                        hero_marker = " ⭐ HERO" if seat.is_hero else ""
+                        dealer_marker = " 🔘 DEALER" if seat.is_dealer else ""
+                        logger.info(f"   Seat {seat.seat_number}: {seat.player_name}{position_info} - ${seat.stack_size:.2f}{hero_marker}{dealer_marker}")
+
+                logger.info(f"   Total Active Players: {state.active_players}")
+
+            # Identify special positions
             if state.seats:
                 hero = next((seat for seat in state.seats if seat.is_hero), None)
                 if hero:
                     state.hero_seat = hero.seat_number
+                    if should_log_details:
+                        logger.info(f"⭐ HERO SEAT: {state.hero_seat}")
+
                 dealer = next((seat for seat in state.seats if seat.is_dealer or seat.position == 'BTN'), None)
                 if dealer:
                     state.dealer_seat = dealer.seat_number
+                    if should_log_details:
+                        logger.info(f"🔘 DEALER SEAT: {state.dealer_seat}")
+
                 sb = next((seat for seat in state.seats if seat.is_small_blind or seat.position == 'SB'), None)
                 if sb:
                     state.small_blind_seat = sb.seat_number
+                    if should_log_details:
+                        logger.info(f"🔵 SMALL BLIND: Seat {state.small_blind_seat} - {sb.player_name}")
+
                 bb = next((seat for seat in state.seats if seat.is_big_blind or seat.position == 'BB'), None)
                 if bb:
                     state.big_blind_seat = bb.seat_number
-            
-            logger.info(f"[TABLE ANALYSIS] ✓ Table analyzed: {details.get('site', 'unknown')}, "
-                       f"players:{state.active_players}, pot:${state.pot_size}")
-            
+                    if should_log_details:
+                        logger.info(f"🔴 BIG BLIND: Seat {state.big_blind_seat} - {bb.player_name}")
+
+            if should_log_details:
+                logger.info("=" * 80)
+
+            # ALWAYS return state with whatever data we extracted, even at low confidence
             return state
-            
+
         except Exception as e:
-            logger.error(f"Table analysis failed: {e}", exc_info=True)
+            logger.error(f"❌ Table analysis failed: {e}", exc_info=True)
+            # Return empty state on exception
             return TableState()
     
     def _extract_pot_size(self, image: np.ndarray) -> float:
@@ -845,8 +937,9 @@ class PokerScreenScraper:
             for seat_num, (xr, yr) in seat_positions.items():
                 cx = int(w * xr)
                 cy = int(h * yr)
-                roi_w = int(w * 0.18)
-                roi_h = int(h * 0.12)
+                # Larger ROI for better text capture (increased from 0.18 to 0.22)
+                roi_w = int(w * 0.22)
+                roi_h = int(h * 0.15)
                 x0 = max(cx - roi_w // 2, 0)
                 y0 = max(cy - roi_h // 2, 0)
                 x1 = min(cx + roi_w // 2, w)
@@ -860,8 +953,14 @@ class PokerScreenScraper:
                 try:
                     roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
+                    # Resize for better OCR (scale up 2x)
+                    roi_gray = cv2.resize(roi_gray, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+
+                    # Noise reduction
+                    roi_gray = cv2.fastNlMeansDenoising(roi_gray, None, 10, 7, 21)
+
                     # Multi-pass OCR approach for better accuracy
-                    # Pass 1: Standard adaptive threshold
+                    # Pass 1: Standard adaptive threshold with bilateral filter
                     roi_gray_filtered = cv2.bilateralFilter(roi_gray, 9, 75, 75)
                     thresh1 = cv2.adaptiveThreshold(
                         roi_gray_filtered,
@@ -875,7 +974,7 @@ class PokerScreenScraper:
                     # Pass 2: OTSU threshold for better contrast
                     _, thresh2 = cv2.threshold(roi_gray_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-                    # Pass 3: Enhanced contrast version
+                    # Pass 3: Enhanced contrast version with CLAHE
                     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
                     enhanced = clahe.apply(roi_gray)
                     thresh3 = cv2.adaptiveThreshold(
@@ -887,15 +986,19 @@ class PokerScreenScraper:
                         3,
                     )
 
+                    # Pass 4: Simple threshold for white text on dark background
+                    _, thresh4 = cv2.threshold(roi_gray, 127, 255, cv2.THRESH_BINARY)
+
                     # Try OCR with multiple configurations for robustness
                     texts = []
                     configs = [
-                        '--psm 6',  # Uniform block of text
-                        '--psm 7',  # Single line of text
-                        '--psm 11',  # Sparse text
+                        '--psm 6 --oem 3',  # Uniform block of text, LSTM + legacy
+                        '--psm 7 --oem 3',  # Single line of text, LSTM + legacy
+                        '--psm 11 --oem 3',  # Sparse text, LSTM + legacy
+                        '--psm 3 --oem 1',  # Fully automatic, LSTM only
                     ]
 
-                    for thresh in [thresh1, thresh2, thresh3]:
+                    for thresh in [thresh1, thresh2, thresh3, thresh4]:
                         for config in configs:
                             try:
                                 text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
@@ -927,21 +1030,24 @@ class PokerScreenScraper:
                                     stack = 0.0
 
                         # Parse player name - look for sequences of letters
-                        # Match words of 2+ letters, allowing underscores and hyphens
+                        # Match words of 1+ letters, allowing underscores, hyphens, and numbers
                         words = re.findall(r'[A-Za-z][A-Za-z0-9_-]*', all_text)
-                        # Filter out common OCR artifacts
-                        valid_words = [w for w in words if len(w) >= 2 and w.lower() not in ['the', 'and', 'or', 'pot', 'bet']]
+                        # Filter out common OCR artifacts and UI text (more lenient)
+                        filter_words = ['the', 'and', 'or', 'pot', 'bet', 'fold', 'call', 'raise',
+                                       'check', 'all', 'in', 'dealer', 'button', 'blind', 'big', 'small',
+                                       'sit', 'out', 'wait', 'bb', 'sb', 'seat', 'table', 'poker']
+                        valid_words = [w for w in words if len(w) >= 1 and w.lower() not in filter_words]
+
                         if valid_words:
                             # Take the longest word as it's most likely the username
                             name = max(valid_words, key=len)
-                            # If multiple words, might be multi-word name - join first few
-                            if len(valid_words) > 1:
-                                # Join first 2-3 words if they're all similar length
-                                if len(valid_words[0]) > 3 and len(valid_words[1]) > 3:
-                                    name = valid_words[0] + valid_words[1][:3] if len(valid_words[1]) < 5 else valid_words[0]
+                            # Clean up name - capitalize first letter if all lowercase
+                            if name and name.islower():
+                                name = name.capitalize()
 
-                    # Determine active if we have either name or stack
-                    is_active = bool(name or stack > 0)
+                    # Determine active if we have ANY text detected (more lenient)
+                    # Even partial detection means someone is at this seat
+                    is_active = bool(all_text.strip() and len(all_text.strip()) > 1)
 
                     if is_active:
                         logger.debug(f"Seat {seat_num}: name='{name}', stack=${stack}")
