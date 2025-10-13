@@ -271,6 +271,3 @@ core.*
 
 # Keep static assets
 !assets/**/*
-master_log.txt
-master_log.txt
-master_log.txt
