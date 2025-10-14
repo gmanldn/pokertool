@@ -46,9 +46,13 @@ class LiveTableSection:
         self._update_thread: Optional[threading.Thread] = None
         self._stop_updates = False
 
+        # Detection status indicators (LED lights)
+        self.status_lights: Dict[str, tk.Label] = {}
+
         self._build_ui()
-        self._start_live_updates()  # Start updates FIRST, before prompt
-        self._prompt_for_handle()  # Prompt can happen after
+        self._start_live_updates()  # Start updates FIRST
+        # Delay handle prompt to after GUI is fully shown (3 seconds)
+        self.parent.after(3000, self._prompt_for_handle)
 
     # ------------------------------------------------------------------
     def _prompt_for_handle(self) -> None:
@@ -104,8 +108,75 @@ class LiveTableSection:
         content_frame = tk.Frame(self.parent, bg=COLORS["bg_dark"])
         content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
+        # Detection Status Lights Panel (CRITICAL ADDITION)
+        self._build_detection_status_panel(content_frame)
+
         # Live table data display (full width)
         self._build_live_data_panel(content_frame)
+
+    def _build_detection_status_panel(self, parent) -> None:
+        """Build compact detection status panel with LED-style indicators."""
+        status_container = tk.LabelFrame(
+            parent,
+            text="🔍 DETECTION STATUS",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_info"],
+            relief=tk.RAISED,
+            bd=2,
+        )
+        status_container.pack(fill="x", pady=(0, 10))
+
+        # Create two rows of 4 indicators each for compact layout
+        indicators_config = [
+            ("Players", "players"),
+            ("Stacks", "stacks"),
+            ("Board", "board"),
+            ("Hole Cards", "hole_cards"),
+            ("Dealer", "dealer"),
+            ("Blinds", "blinds"),
+            ("Bets", "bets"),
+            ("Pot", "pot"),
+        ]
+
+        # Row 1
+        row1_frame = tk.Frame(status_container, bg=COLORS["bg_medium"])
+        row1_frame.pack(fill="x", padx=10, pady=(5, 2))
+
+        # Row 2
+        row2_frame = tk.Frame(status_container, bg=COLORS["bg_medium"])
+        row2_frame.pack(fill="x", padx=10, pady=(2, 5))
+
+        # Add 4 indicators to each row
+        for idx, (label, key) in enumerate(indicators_config):
+            target_frame = row1_frame if idx < 4 else row2_frame
+
+            indicator_frame = tk.Frame(target_frame, bg=COLORS["bg_medium"])
+            indicator_frame.pack(side="left", padx=5, expand=True)
+
+            # LED light (circle)
+            led = tk.Label(
+                indicator_frame,
+                text="●",
+                font=("Arial", 14),
+                bg=COLORS["bg_medium"],
+                fg="#888888",  # Gray = unknown/inactive
+                width=2
+            )
+            led.pack(side="left")
+
+            # Label text
+            label_widget = tk.Label(
+                indicator_frame,
+                text=label,
+                font=("Arial", 9),
+                bg=COLORS["bg_medium"],
+                fg=COLORS["text_primary"]
+            )
+            label_widget.pack(side="left", padx=(2, 0))
+
+            # Store LED reference for updating
+            self.status_lights[key] = led
 
     def _build_live_data_panel(self, parent) -> None:
         """Build the live table data display panel with graphical poker table."""
@@ -625,9 +696,86 @@ class LiveTableSection:
                 traceback.print_exc()
                 time.sleep(2.0)
 
+    def _update_detection_lights(self, table_data: Dict) -> None:
+        """Update LED status lights based on what's actually detected."""
+        # Green = detected & valid, Yellow = uncertain, Red = not detected, Gray = unknown
+
+        # Players detection
+        players = table_data.get('players', {})
+        active_players = sum(1 for p in players.values() if p.get('active', False))
+        if active_players >= 2:
+            self.status_lights['players'].config(fg="#10b981")  # Green
+        elif active_players == 1:
+            self.status_lights['players'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['players'].config(fg="#ef4444")  # Red
+
+        # Stacks detection (check if most players have valid stacks)
+        players_with_stacks = sum(1 for p in players.values() if p.get('stack', 0) > 0)
+        if players_with_stacks >= active_players * 0.7:  # 70% have stacks
+            self.status_lights['stacks'].config(fg="#10b981")  # Green
+        elif players_with_stacks > 0:
+            self.status_lights['stacks'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['stacks'].config(fg="#ef4444")  # Red
+
+        # Board cards detection
+        board_cards = table_data.get('board_cards', [])
+        valid_board = [c for c in board_cards if c and c != '']
+        if len(valid_board) >= 3:  # Flop or later
+            self.status_lights['board'].config(fg="#10b981")  # Green
+        elif len(valid_board) > 0:
+            self.status_lights['board'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['board'].config(fg="#888888")  # Gray (preflop is normal)
+
+        # Hole cards detection
+        my_cards = table_data.get('my_hole_cards', [])
+        valid_my_cards = [c for c in my_cards if c and c != '']
+        if len(valid_my_cards) == 2:
+            self.status_lights['hole_cards'].config(fg="#10b981")  # Green
+        elif len(valid_my_cards) == 1:
+            self.status_lights['hole_cards'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['hole_cards'].config(fg="#ef4444")  # Red
+
+        # Dealer button detection
+        dealer_seat = table_data.get('dealer_seat', 0)
+        if dealer_seat and dealer_seat > 0:
+            self.status_lights['dealer'].config(fg="#10b981")  # Green
+        else:
+            self.status_lights['dealer'].config(fg="#ef4444")  # Red
+
+        # Blinds detection
+        sb = table_data.get('small_blind', 0)
+        bb = table_data.get('big_blind', 0)
+        if sb > 0 and bb > 0:
+            self.status_lights['blinds'].config(fg="#10b981")  # Green
+        elif sb > 0 or bb > 0:
+            self.status_lights['blinds'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['blinds'].config(fg="#ef4444")  # Red
+
+        # Bets detection (check if any player has a current bet)
+        players_with_bets = sum(1 for p in players.values() if p.get('bet', 0) > 0)
+        if players_with_bets > 0:
+            self.status_lights['bets'].config(fg="#10b981")  # Green
+        else:
+            self.status_lights['bets'].config(fg="#888888")  # Gray (no bets is normal)
+
+        # Pot detection
+        pot = table_data.get('pot', 0)
+        if pot > 0:
+            self.status_lights['pot'].config(fg="#10b981")  # Green
+        else:
+            self.status_lights['pot'].config(fg="#888888")  # Gray (0 pot at start is normal)
+
     def _update_live_display(self, table_data: Dict) -> None:
         """Update the live display with scraped table data."""
         try:
+            # UPDATE DETECTION STATUS LIGHTS FIRST
+            self._update_detection_lights(table_data)
+
             # Log the received data structure (only once per 20 updates to avoid spam)
             if not hasattr(self, '_display_update_count'):
                 self._display_update_count = 0

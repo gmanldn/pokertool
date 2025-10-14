@@ -247,8 +247,8 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self._lock_path = lock_path
         
         self.title(translate('app.title'))
-        self.geometry('1800x1000')  # Increased width to accommodate all tabs
-        self.minsize(1600, 900)     # Increased minimum width
+        self.geometry('1400x900')  # Compact size for better visibility
+        self.minsize(1200, 800)     # Reasonable minimum
         self.configure(bg=COLORS['bg_dark'])
         
         # Maximize window on startup for best tab visibility
@@ -3345,8 +3345,11 @@ Platform: {sys.platform}
         try:
             # Bring window to front
             self.lift()
+
+            # Set topmost temporarily to bring to front, then stay above normal windows
             self.attributes('-topmost', True)
-            self.after_idle(lambda: self.attributes('-topmost', False))
+            self.after(500, lambda: self.attributes('-topmost', False))
+            self.after(600, lambda: self.lift())
 
             # Focus the window
             self.focus_force()
@@ -3356,8 +3359,33 @@ Platform: {sys.platform}
                 self.deiconify()
 
             print("✓ Window brought to foreground")
+
+            # Start periodic visibility monitoring
+            self.after(5000, self._monitor_window_visibility)
         except Exception as e:
             print(f"⚠️  Could not bring window to foreground: {e}")
+
+    def _monitor_window_visibility(self):
+        """Monitor and maintain window visibility every 5 seconds."""
+        try:
+            # Check if window is iconic (minimized)
+            if self.state() == 'iconic':
+                print("⚠️ Window was minimized, restoring...")
+                self.deiconify()
+                self.lift()
+                self.focus_force()
+
+            # Check if window exists and is visible
+            if self.winfo_exists() and self.winfo_viewable():
+                # Window is visible, schedule next check
+                self.after(5000, self._monitor_window_visibility)
+            else:
+                print("⚠️ Window visibility issue detected")
+                self.lift()
+                self.after(5000, self._monitor_window_visibility)
+        except Exception as e:
+            # Window might be destroyed, don't reschedule
+            print(f"Window monitoring stopped: {e}")
 
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""
