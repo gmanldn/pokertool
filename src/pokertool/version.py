@@ -43,13 +43,31 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-14',
-    'release_name': 'Reliability & Resilience',
+    'release_name': 'Automatic Chrome Connection',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '69.1.0',
+        'date': '2025-10-14',
+        'name': 'Automatic Chrome Connection',
+        'description': '100% automatic Chrome DevTools setup - zero manual configuration',
+        'highlights': [
+            'AUTOMATIC Chrome detection - checks if Chrome is running with DevTools',
+            'AUTOMATIC Chrome launch - finds and launches Chrome if not running',
+            'AUTOMATIC tab management - opens poker site in new tab if needed',
+            'AUTOMATIC connection with retry - no manual setup required',
+            'Cross-platform Chrome detection (macOS, Linux, Windows)',
+            'Port availability checking before launch',
+            'Dedicated debug profile isolation (~/.pokertool/chrome-debug-profile)',
+            'Process management with clean shutdown',
+            'New create_auto_scraper() convenience function',
+            'Expected impact: 5x faster development, zero configuration',
+        ],
+    },
     {
         'version': '69.0.0',
         'date': '2025-10-14',
