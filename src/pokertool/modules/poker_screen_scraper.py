@@ -37,6 +37,9 @@ This wrapper ensures existing code continues to work without modification.
 import logging
 from typing import Dict, List, Optional, Any, Callable, Tuple
 from dataclasses import dataclass
+from queue import Queue, Empty
+from threading import Thread, Event
+import time
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -166,6 +169,13 @@ class PokerScreenScraper:
             # Fallback to legacy (would need the full legacy implementation)
             logger.error("Betfair Edition not available and no legacy fallback implemented")
             raise ImportError("poker_screen_scraper_betfair module is required")
+
+        # Initialize continuous capture state
+        self._state_queue: Queue = Queue(maxsize=5)  # Keep last 5 states (optimized)
+        self._capture_thread: Optional[Thread] = None
+        self._stop_event: Event = Event()
+        self._latest_state: Optional[Dict[str, Any]] = None
+        self._last_state_hash: Optional[int] = None  # For deduplication
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
         """
@@ -209,19 +219,81 @@ class PokerScreenScraper:
     # Additional methods needed by enhanced_gui
     def start_continuous_capture(self, interval: float = 1.0) -> bool:
         """Start continuous table capture."""
-        # This is handled by the scrape.py enhanced scraper manager
-        # but we provide a stub for compatibility
-        logger.debug(f"start_continuous_capture called with interval={interval}")
+        if self._capture_thread and self._capture_thread.is_alive():
+            logger.warning("Continuous capture already running")
+            return True
+
+        self._stop_event.clear()
+
+        def capture_loop():
+            """Background thread that continuously captures table state."""
+            logger.info(f"Starting continuous capture with interval={interval}s")
+            while not self._stop_event.is_set():
+                try:
+                    # Capture and analyze the current table
+                    table_state = self.analyze_table()
+
+                    if table_state:
+                        # Convert to dict for queue storage
+                        state_dict = ScreenScraperBridge.convert_to_game_state(table_state)
+
+                        # Deduplicate states to reduce processing
+                        state_hash = hash(str(sorted(state_dict.items())))
+                        if state_hash == self._last_state_hash:
+                            continue  # Skip duplicate state
+                        self._last_state_hash = state_hash
+
+                        # Update latest state cache
+                        self._latest_state = state_dict
+
+                        # Add to queue (non-blocking, drop oldest if full)
+                        try:
+                            if self._state_queue.full():
+                                try:
+                                    self._state_queue.get_nowait()  # Remove oldest
+                                except Empty:
+                                    pass
+                            self._state_queue.put_nowait(state_dict)
+                        except Exception as e:
+                            logger.debug(f"Queue error: {e}")
+
+                except Exception as e:
+                    logger.error(f"Capture error: {e}")
+
+                # Wait for next capture interval
+                self._stop_event.wait(interval)
+
+            logger.info("Continuous capture stopped")
+
+        self._capture_thread = Thread(target=capture_loop, daemon=True, name="PokerScraper-Capture")
+        self._capture_thread.start()
         return True
-    
+
     def stop_continuous_capture(self):
         """Stop continuous capture."""
-        logger.debug("stop_continuous_capture called")
-    
+        logger.debug("Stopping continuous capture")
+        self._stop_event.set()
+        if self._capture_thread and self._capture_thread.is_alive():
+            self._capture_thread.join(timeout=2.0)
+        self._capture_thread = None
+
     def get_state_updates(self, timeout: float = 0.5) -> Optional[Dict[str, Any]]:
-        """Get state updates (stub for compatibility)."""
-        # In practice, this is handled by the EnhancedScraperManager
-        return None
+        """
+        Get state updates from continuous capture.
+
+        Args:
+            timeout: Maximum time to wait for an update (in seconds)
+
+        Returns:
+            Latest table state dict or None if no updates available
+        """
+        # Try to get from queue first (most recent updates)
+        try:
+            state = self._state_queue.get(timeout=timeout)
+            return state
+        except Empty:
+            # If queue is empty, return the cached latest state
+            return self._latest_state
     
     # Legacy methods for backward compatibility
     def extract_pot_size(self, image: np.ndarray) -> float:
