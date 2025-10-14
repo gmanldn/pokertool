@@ -368,7 +368,8 @@ class BetfairPokerDetector:
             details['card_confidence'] = card_conf
 
             # -----------------------------------------------------------------
-            # Strategy 3: UI element detection (e.g., dealer button, chip stacks)
+            # Strategy 3: UI element detection with clustering (ENHANCED)
+            # Detect circular elements and cluster them to identify UI patterns
             circles = cv2.HoughCircles(
                 gray,
                 cv2.HOUGH_GRADIENT,
@@ -379,10 +380,57 @@ class BetfairPokerDetector:
                 minRadius=10,
                 maxRadius=60,
             )
-            ui_count = len(circles[0]) if circles is not None else 0
-            # Expect roughly 4–16 circular UI elements; normalise accordingly
-            ui_conf = min(ui_count / 8.0, 1.0)
+
+            # CLUSTERING: Analyze circular UI elements with spatial clustering
+            ui_count = 0
+            ui_conf = 0.0
+            cluster_count = 0
+            high_confidence_clusters = 0
+
+            if circles is not None and len(circles[0]) > 0:
+                circle_data = circles[0]  # Shape: (N, 3) - x, y, radius
+                ui_count = len(circle_data)
+
+                # Cluster circles by proximity using distance-based clustering
+                clusters = self._cluster_circular_elements(circle_data)
+                cluster_count = len(clusters)
+
+                # Analyze clusters for poker UI patterns
+                for cluster in clusters:
+                    cluster_size = len(cluster['circles'])
+
+                    # Patterns we look for:
+                    # - Single large circles (dealer button): radius > 25, isolated
+                    # - Small circular groups (chip stacks): 3-6 circles, similar radius
+                    # - Action buttons: medium circles, aligned
+
+                    if cluster_size == 1:
+                        # Single circle - likely dealer button or action button
+                        radius = cluster['circles'][0][2]
+                        if 20 < radius < 50:  # Dealer button size range
+                            high_confidence_clusters += 1
+
+                    elif 2 <= cluster_size <= 6:
+                        # Group of circles - likely chip stacks or action buttons
+                        radii = [c[2] for c in cluster['circles']]
+                        avg_radius = np.mean(radii)
+                        radius_std = np.std(radii)
+
+                        # Similar sized circles = high confidence
+                        if radius_std < avg_radius * 0.3:  # Low variation
+                            high_confidence_clusters += 1
+
+                # Base confidence from total circles
+                ui_conf = min(ui_count / 8.0, 1.0)
+
+                # Boost confidence if we found high-quality clusters
+                if high_confidence_clusters > 0:
+                    cluster_bonus = min(high_confidence_clusters / 4.0, 0.3)
+                    ui_conf = min(ui_conf + cluster_bonus, 1.0)
+
             details['ui_elements'] = ui_count
+            details['ui_clusters'] = cluster_count
+            details['ui_high_confidence_clusters'] = high_confidence_clusters
             details['ui_confidence'] = ui_conf
 
             # -----------------------------------------------------------------
@@ -997,6 +1045,73 @@ class BetfairPokerDetector:
             'adjustment_rate': self.threshold_adjustment_rate,
             'tuning_interval': self.tuning_interval
         }
+
+    def _cluster_circular_elements(self, circles: np.ndarray, distance_threshold: float = 100) -> List[Dict]:
+        """
+        Cluster circular UI elements by spatial proximity.
+
+        CIRCULAR CLUSTERING: Groups nearby circles to identify UI patterns
+        like dealer buttons, chip stacks, and action buttons.
+
+        Args:
+            circles: Array of circles (x, y, radius)
+            distance_threshold: Maximum distance between circles in same cluster
+
+        Returns:
+            List of clusters, each containing circles and metadata
+        """
+        if len(circles) == 0:
+            return []
+
+        # Simple distance-based clustering (greedy approach)
+        clusters = []
+        used = set()
+
+        for i, circle in enumerate(circles):
+            if i in used:
+                continue
+
+            # Start new cluster with this circle
+            cluster_circles = [circle]
+            used.add(i)
+
+            # Find all nearby circles
+            for j, other_circle in enumerate(circles):
+                if j in used:
+                    continue
+
+                # Calculate distance between circle centers
+                distance = np.sqrt(
+                    (circle[0] - other_circle[0])**2 +
+                    (circle[1] - other_circle[1])**2
+                )
+
+                if distance <= distance_threshold:
+                    cluster_circles.append(other_circle)
+                    used.add(j)
+
+            # Create cluster metadata
+            xs = [c[0] for c in cluster_circles]
+            ys = [c[1] for c in cluster_circles]
+            radii = [c[2] for c in cluster_circles]
+
+            cluster = {
+                'circles': cluster_circles,
+                'size': len(cluster_circles),
+                'center': (np.mean(xs), np.mean(ys)),
+                'avg_radius': np.mean(radii),
+                'radius_std': np.std(radii),
+                'bounds': {
+                    'min_x': np.min(xs),
+                    'max_x': np.max(xs),
+                    'min_y': np.min(ys),
+                    'max_y': np.max(ys)
+                }
+            }
+
+            clusters.append(cluster)
+
+        return clusters
 
 
 class UniversalPokerDetector:
