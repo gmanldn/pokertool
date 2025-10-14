@@ -107,7 +107,7 @@ class CardTemplateManager:
     def _load_templates(self):
         """Load card template images."""
         if not self.template_dir.exists():
-            logger.warning(f"Template directory not found: {self.template_dir}")
+            logger.debug(f"Template directory not found: {self.template_dir} (using EasyOCR fallback)")
             return
         
         try:

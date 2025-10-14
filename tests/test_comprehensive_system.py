@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 
 # Import all modules for testing
 from pokertool.core import analyse_hand, parse_card, Card, Rank, Suit, Position
-from pokertool.threading import get_thread_pool, TaskPriority, get_poker_concurrency_manager
+from pokertool.concurrency import get_thread_pool, TaskPriority, get_poker_concurrency_manager
 from pokertool.compliance import get_compliance_manager, ConsentType, DataCategory
 from pokertool.error_handling import retry_on_failure, sanitize_input, CircuitBreaker
 from pokertool.storage import get_secure_db

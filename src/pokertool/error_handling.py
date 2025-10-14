@@ -220,17 +220,19 @@ def run_safely(fn: Callable, *args, **kwargs) -> int:
         else:
             log.exception('Fatal error: %s', e)
         
-        # Best-effort user-facing dialog if Tk is available
-        try:
-            import tkinter  # type: ignore
-            import tkinter.messagebox  # type: ignore
-            root = tkinter.Tk()
-            root.withdraw()
-            tkinter.messagebox.showerror('PokerTool error',
-                                       f"A fatal error occurred: \n{e}")
-            root.destroy()
-        except Exception:  # noqa: BLE001
-            pass
+        # Best-effort user-facing dialog if Tk is available (skip in test mode)
+        import os
+        if not os.environ.get('POKERTOOL_TEST_MODE'):
+            try:
+                import tkinter  # type: ignore
+                import tkinter.messagebox  # type: ignore
+                root = tkinter.Tk()
+                root.withdraw()
+                tkinter.messagebox.showerror('PokerTool error',
+                                           f"A fatal error occurred: \n{e}")
+                root.destroy()
+            except Exception:  # noqa: BLE001
+                pass
         return 1
 
 @contextmanager

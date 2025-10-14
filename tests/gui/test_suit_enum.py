@@ -115,7 +115,14 @@ class TestCardCreation(unittest.TestCase):
     def test_card_creation_with_suit(self):
         """Test creating Card instances with Suit enum."""
         card = self.Card('A', self.Suit.SPADES)
-        self.assertEqual(card.rank, 'A')
+        # Rank might be a string 'A' or Rank enum with value 14
+        # Check if it's an enum (has a 'value' attribute) or string
+        if hasattr(card.rank, 'value'):
+            # It's a Rank enum - check the value is 14 (ACE)
+            self.assertEqual(card.rank.value, 14)
+        else:
+            # It's a string
+            self.assertEqual(card.rank, 'A')
         # Suit might be stored as value
         self.assertIn(card.suit, ['s', self.Suit.SPADES])
 

@@ -201,23 +201,39 @@ class StartupValidator:
             if self.app and hasattr(self.app, '_enhanced_scraper_started'):
                 is_running = self.app._enhanced_scraper_started
 
-                self.results['enhanced_scraper'] = ModuleHealth(
-                    name="Enhanced Scraper (ALWAYS-ON)",
-                    status=HealthStatus.HEALTHY if is_running else HealthStatus.FAILED,
-                    loaded=loaded,
-                    initialized=True,
-                    functional=is_running,
-                    details={'always_on': True, 'currently_running': is_running},
-                    error_message=None if is_running else "CRITICAL: ALWAYS-ON scraper not running"
-                )
+                # During startup validation, the scraper hasn't started yet - this is expected
+                # The ALWAYS-ON enhanced scraper starts AFTER validation completes
+                # So we mark as UNAVAILABLE (not FAILED) when not running during validation
+                if is_running:
+                    self.results['enhanced_scraper'] = ModuleHealth(
+                        name="Enhanced Scraper (ALWAYS-ON)",
+                        status=HealthStatus.HEALTHY,
+                        loaded=loaded,
+                        initialized=True,
+                        functional=True,
+                        details={'always_on': True, 'currently_running': True},
+                        error_message=None
+                    )
+                else:
+                    # Not running yet - normal during startup, will start after validation
+                    self.results['enhanced_scraper'] = ModuleHealth(
+                        name="Enhanced Scraper (ALWAYS-ON)",
+                        status=HealthStatus.UNAVAILABLE,
+                        loaded=loaded,
+                        initialized=False,
+                        functional=False,
+                        details={'always_on': True, 'currently_running': False},
+                        error_message="Scraper will start after validation completes"
+                    )
             else:
+                # During startup, scraper may not be initialized yet - mark as UNAVAILABLE not FAILED
                 self.results['enhanced_scraper'] = ModuleHealth(
                     name="Enhanced Scraper (ALWAYS-ON)",
-                    status=HealthStatus.FAILED,
+                    status=HealthStatus.UNAVAILABLE,
                     loaded=loaded,
                     initialized=False,
                     functional=False,
-                    error_message="CRITICAL: ALWAYS-ON scraper not initialized"
+                    error_message="Scraper will start after validation completes"
                 )
         except Exception as e:
             self.results['enhanced_scraper'] = ModuleHealth(

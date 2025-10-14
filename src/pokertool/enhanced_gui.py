@@ -11,8 +11,8 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 35.0.0
-Last Modified: 2025-10-12
+Version: 36.0.0
+Last Modified: 2025-10-14
 Author: PokerTool Development Team
 License: MIT
 
@@ -21,6 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v36.0.0 (2025-10-14): Fixed GUI startup - robust process cleanup, window visibility guarantee, black button text
     - v35.0.0 (2025-10-12): Confidence-Aware Decision API - Uncertainty quantification and risk-adjusted recommendations
     - v34.0.0 (2025-10-12): Enhanced UX - Clear hero position, auto table detection, optimized action blades
     - v33.0.0 (2025-10-12): Comprehensive startup validation system with health monitoring
@@ -34,7 +35,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '35.0.0'
+__version__ = '36.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -218,6 +219,15 @@ except ImportError as e:
     print(f'Warning: Enhanced screen scraper not loaded: {e}')
     ENHANCED_SCRAPER_LOADED = False
 
+# Import hand recorder
+try:
+    from .hand_recorder import HandRecorder
+    HAND_RECORDER_LOADED = True
+except ImportError as e:
+    print(f'Warning: HandRecorder not loaded: {e}')
+    HAND_RECORDER_LOADED = False
+    HandRecorder = None
+
 from .enhanced_gui_components import (
     COLORS,
     FONTS,
@@ -237,8 +247,8 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self._lock_path = lock_path
         
         self.title(translate('app.title'))
-        self.geometry('1800x1000')  # Increased width to accommodate all tabs
-        self.minsize(1600, 900)     # Increased minimum width
+        self.geometry('1400x900')  # Compact size for better visibility
+        self.minsize(1200, 800)     # Reasonable minimum
         self.configure(bg=COLORS['bg_dark'])
         
         # Maximize window on startup for best tab visibility
@@ -260,6 +270,7 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self.analytics_dashboard = None
         self.gamification_engine = None
         self.community_platform = None
+        self.hand_recorder = None
         self._enhanced_scraper_started = False
         self._screen_update_running = False
         self._screen_update_thread = None
@@ -302,6 +313,9 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         # All widget updates from threads must use self.after() to be thread-safe
         self.after(100, self._start_background_services_safely)
 
+        # Ensure window is visible and comes to foreground
+        self.after(200, self._ensure_window_visible)
+
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
 
@@ -315,14 +329,25 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         """Initialize all poker tool modules."""
         try:
             if SCREEN_SCRAPER_LOADED:
-                self.screen_scraper = create_scraper('CHROME')
-                print("Screen scraper initialized")
-            
+                self.screen_scraper = create_scraper('BETFAIR')
+                print("Screen scraper initialized (BETFAIR optimized)")
+
             if GUI_MODULES_LOADED:
                 self.gto_solver = get_gto_solver()
                 self.opponent_modeler = get_opponent_modeling_system()
                 self.multi_table_manager = get_table_manager()
                 print("Core modules initialized")
+
+            # Initialize hand recorder
+            try:
+                if HAND_RECORDER_LOADED and HandRecorder:
+                    self.hand_recorder = HandRecorder()
+                    print("Hand recorder initialized - ready to record hands")
+                else:
+                    print("Warning: HandRecorder not available")
+            except Exception as recorder_error:
+                print(f"Hand recorder initialization error: {recorder_error}")
+                self.hand_recorder = None
 
             try:
                 if CoachingSystem:
@@ -582,30 +607,23 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         # Fallback styling for environments that ignore custom style names
         style.configure(
             'TNotebook',
-            background='#1f2937',
-            borderwidth=1,
-            tabmargins=(12, 10, 12, 0)
+            background=COLORS['bg_dark']
         )
         style.configure(
             'TNotebook.Tab',
-            background='#334155',
-            foreground='#f8fafc',
-            padding=(22, 12),
-            font=('Arial', 13, 'bold'),
-            borderwidth=2,
-            relief='raised'
+            background=COLORS['bg_medium'],
+            foreground=COLORS['text_primary'],
+            padding=[12, 6]
         )
         style.map(
             'TNotebook.Tab',
             background=[
-                ('selected', '#0ea5e9'),
-                ('active', '#38bdf8'),
-                ('!selected', '#334155')
+                ('selected', COLORS['bg_dark']),
+                ('!selected', COLORS['bg_medium'])
             ],
             foreground=[
-                ('selected', '#0b1120'),
-                ('active', '#0b1120'),
-                ('!selected', '#f8fafc')
+                ('selected', COLORS['accent_primary']),
+                ('!selected', COLORS['text_primary'])
             ]
         )
 
@@ -1192,8 +1210,8 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         else:
             try:
                 if self.screen_scraper is None and callable(create_scraper):
-                    self.screen_scraper = create_scraper('CHROME')
-                    details.append("ℹ️ Screen scraper factory invoked for CHROME profile")
+                    self.screen_scraper = create_scraper('BETFAIR')
+                    details.append("ℹ️ Screen scraper factory invoked for BETFAIR profile")
 
                 if self.screen_scraper is None:
                     details.append("❌ Screen scraper factory returned None")
@@ -1420,150 +1438,13 @@ Platform: {sys.platform}
         control_section = tk.Frame(parent, bg=COLORS['bg_dark'])
         control_section.pack(fill='x', pady=(0, 10))
         
-        # Autopilot control panel (left side)
+        # Autopilot control panel (full width - no quick actions panel)
         self.autopilot_panel = AutopilotControlPanel(
             control_section,
             on_toggle_autopilot=self._handle_autopilot_toggle,
             on_settings_changed=self._handle_autopilot_settings
         )
-        self.autopilot_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
-        
-        # Quick action panel (right side) - Enhanced for better visibility
-        quick_actions = tk.LabelFrame(
-            control_section,
-            text=translate('section.quick_actions'),
-            font=('Arial', 20, 'bold'),
-            bg=COLORS['bg_medium'],
-            fg=COLORS['accent_primary'],
-            relief=tk.RAISED,
-            bd=4,
-            labelanchor='n'
-        )
-        quick_actions.pack(side='right', fill='both', expand=True, padx=(10, 0))
-        self._register_widget_translation(quick_actions, 'section.quick_actions')
-        
-        # Create a scrollable frame for quick actions
-        quick_actions_canvas = tk.Canvas(quick_actions, bg=COLORS['bg_medium'], highlightthickness=0)
-        quick_actions_scrollbar = tk.Scrollbar(quick_actions, orient='vertical', command=quick_actions_canvas.yview)
-        quick_actions_frame = tk.Frame(quick_actions_canvas, bg=COLORS['bg_medium'])
-        
-        quick_actions_canvas.configure(yscrollcommand=quick_actions_scrollbar.set)
-        quick_actions_canvas.create_window((0, 0), window=quick_actions_frame, anchor='nw')
-        
-        # Pack scrollbar and canvas
-        quick_actions_scrollbar.pack(side='right', fill='y')
-        quick_actions_canvas.pack(side='left', fill='both', expand=True)
-        
-        # Enhanced button styling function with improved visibility
-        def create_action_button(parent, text_key, icon, command, color, desc_key=None, height=3):
-            button_frame = tk.Frame(parent, bg=COLORS['bg_medium'])
-            button_frame.pack(fill='x', padx=8, pady=8)
-
-            translated_text = translate(text_key)
-            button = tk.Button(
-                button_frame,
-                text=f'{icon}  {translated_text}',
-                font=('Arial', 16, 'bold'),  # Increased from 14 to 16
-                bg=color,
-                fg='#000000',  # Black text for better visibility
-                activebackground=self._brighten_color(color),
-                activeforeground='#000000',  # Black text on hover too
-                relief=tk.RAISED,
-                bd=5,  # Increased border
-                height=height,
-                cursor='hand2',
-                command=command,
-                padx=10,
-                pady=8
-            )
-            button.pack(fill='x', ipady=8)  # Increased internal padding
-            self._update_widget_translation_key(button, text_key, prefix=f'{icon}  ')
-
-            # Add hover effects with shadow
-            def on_enter(e):
-                button.config(
-                    bg=self._brighten_color(color, 0.3),
-                    relief=tk.RIDGE,
-                    bd=6
-                )
-            def on_leave(e):
-                button.config(
-                    bg=color,
-                    relief=tk.RAISED,
-                    bd=5
-                )
-            
-            button.bind("<Enter>", on_enter)
-            button.bind("<Leave>", on_leave)
-
-            # Add description label if provided with improved visibility
-            if desc_key:
-                desc_text = translate(desc_key)
-                desc_label = tk.Label(
-                    button_frame,
-                    text=desc_text,
-                    font=('Arial', 10, 'italic'),  # Increased from 9 to 10
-                    bg=COLORS['bg_medium'],
-                    fg='#C8D3E0',  # Lighter color for better visibility
-                    wraplength=220
-                )
-                desc_label.pack(pady=(3, 0))
-                self._register_widget_translation(desc_label, desc_key)
-
-            return button
-        
-        # Screen scraper is now ALWAYS ON - no toggle button needed
-        # The scraper auto-starts in the background service initialization
-        # Table detection now happens automatically in the background
-
-        create_action_button(
-            quick_actions_frame,
-            'actions.screenshot_test',
-            '📷',
-            self._test_screenshot,
-            COLORS['accent_warning'],
-            desc_key='actions.screenshot_desc'
-        )
-
-        # GTO analysis is now auto-integrated (removed manual button)
-        # Analysis runs automatically when autopilot detects a table
-
-        # Separator
-        tk.Frame(quick_actions_frame, height=2, bg=COLORS['accent_primary']).pack(fill='x', padx=10, pady=8)
-        
-        # Interface and utility buttons
-        create_action_button(
-            quick_actions_frame,
-            'actions.web_interface',
-            '🌐',
-            self._open_web_interface,
-            COLORS['accent_primary'],
-            desc_key='actions.web_desc'
-        )
-
-        create_action_button(
-            quick_actions_frame,
-            'actions.manual_gui',
-            '🎮',
-            self._open_manual_gui,
-            '#9333ea',
-            desc_key='actions.manual_desc'
-        )
-
-        create_action_button(
-            quick_actions_frame,
-            'actions.settings',
-            '⚙️',
-            lambda: self.notebook.select(4),
-            '#64748b',
-            desc_key='actions.settings_desc'
-        )
-        
-        # Update canvas scroll region
-        def configure_scroll_region(event=None):
-            quick_actions_canvas.configure(scrollregion=quick_actions_canvas.bbox('all'))
-        
-        quick_actions_frame.bind('<Configure>', configure_scroll_region)
+        self.autopilot_panel.pack(fill='both', expand=True)
         
         # Bottom section - Table monitoring
         monitor_section = tk.LabelFrame(
@@ -2152,24 +2033,27 @@ Platform: {sys.platform}
     def _setup_logging_handler(self):
         """Setup a custom logging handler to capture logs in the UI."""
         import logging
+        import queue
+
+        # Create thread-safe queue for log messages
+        self.log_queue = queue.Queue()
 
         class TextWidgetHandler(logging.Handler):
-            def __init__(self, text_widget, gui_instance):
+            def __init__(self, log_queue):
                 super().__init__()
-                self.text_widget = text_widget
-                self.gui_instance = gui_instance
+                self.log_queue = log_queue
 
             def emit(self, record):
                 try:
                     msg = self.format(record)
                     level = record.levelname
-                    # Use after() to ensure thread-safe GUI updates
-                    self.gui_instance.after(0, lambda: self.gui_instance._append_log(level, msg))
+                    # Put message in queue - this is thread-safe
+                    self.log_queue.put((level, msg))
                 except Exception:
                     pass
 
         # Create and configure handler
-        self.log_handler = TextWidgetHandler(self.log_text_widget, self)
+        self.log_handler = TextWidgetHandler(self.log_queue)
         self.log_handler.setFormatter(
             logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
         )
@@ -2177,6 +2061,28 @@ Platform: {sys.platform}
         # Add handler to root logger
         logging.getLogger().addHandler(self.log_handler)
         logging.getLogger().setLevel(logging.DEBUG)
+
+        # Start polling the queue from the main thread
+        self._poll_log_queue()
+
+    def _poll_log_queue(self):
+        """Poll the log queue and append messages (runs in main thread only)."""
+        import queue
+
+        try:
+            # Process all pending log messages
+            while True:
+                try:
+                    level, message = self.log_queue.get_nowait()
+                    self._append_log(level, message)
+                except queue.Empty:
+                    break
+        except Exception as e:
+            print(f"Error polling log queue: {e}")
+
+        # Schedule next poll (100ms interval)
+        if hasattr(self, 'log_text_widget') and self.log_text_widget:
+            self.after(100, self._poll_log_queue)
 
     def _append_log(self, level, message):
         """Append a log message to the log viewer."""
@@ -2372,8 +2278,8 @@ Platform: {sys.platform}
 
     def _update_manual_autopilot_status(self, active: bool) -> None:
         """Mirror autopilot status in the manual play tab."""
-        if self.manual_section:
-            self.manual_section.update_autopilot_status(active)
+        # LiveTable section auto-updates via its own thread
+        pass
     
     def _start_autopilot(self):
         """Start the autopilot system."""
@@ -2456,99 +2362,223 @@ Platform: {sys.platform}
                 print(f"Autopilot loop error: {e}")
                 self.after(0, lambda: self._update_table_status(f"⚠️ Autopilot error: {e}\n"))
             
-            time.sleep(2)  # Check every 2 seconds
+            time.sleep(0.5)  # Check every 500ms for live updates
     
+    def _validate_and_log_table_state(self, table_state) -> Dict[str, Any]:
+        """
+        Validate and log complete table state data.
+        Returns validation report with all detected information.
+        """
+        validation_report = {
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'complete': True,
+            'warnings': [],
+            'data': {}
+        }
+
+        try:
+            # Basic table info
+            validation_report['data']['pot_size'] = getattr(table_state, 'pot_size', 0)
+            validation_report['data']['stage'] = getattr(table_state, 'stage', 'unknown')
+            validation_report['data']['active_players'] = getattr(table_state, 'active_players', 0)
+
+            # Blind positions
+            validation_report['data']['small_blind'] = getattr(table_state, 'small_blind', None)
+            validation_report['data']['big_blind'] = getattr(table_state, 'big_blind', None)
+            validation_report['data']['dealer_seat'] = getattr(table_state, 'dealer_seat', None)
+
+            if validation_report['data']['dealer_seat'] is None:
+                validation_report['warnings'].append("Dealer position not detected")
+                validation_report['complete'] = False
+
+            # Board cards
+            board_cards = getattr(table_state, 'board_cards', [])
+            validation_report['data']['board_cards'] = [str(card) for card in board_cards]
+            validation_report['data']['board_card_count'] = len(board_cards)
+
+            # Hero cards
+            hero_cards = getattr(table_state, 'hero_cards', [])
+            validation_report['data']['hero_cards'] = [str(card) for card in hero_cards]
+            validation_report['data']['hero_card_count'] = len(hero_cards)
+
+            if len(hero_cards) == 0:
+                validation_report['warnings'].append("Hero cards not detected")
+
+            # Player information - check both 'players' and 'seats' attributes
+            players = []
+            if hasattr(table_state, 'players') and table_state.players:
+                players = table_state.players
+            elif hasattr(table_state, 'seats') and table_state.seats:
+                players = table_state.seats
+            validation_report['data']['total_seats'] = len(players)
+            validation_report['data']['players'] = []
+
+            seated_count = 0
+            players_with_stacks = 0
+            players_with_names = 0
+
+            for seat_num, player in enumerate(players, start=1):
+                if player:
+                    # Handle both attribute naming conventions (name/player_name, stack/stack_size)
+                    player_name = getattr(player, 'player_name', None) or getattr(player, 'name', None)
+                    player_stack = getattr(player, 'stack_size', 0) or getattr(player, 'stack', 0)
+
+                    player_info = {
+                        'seat': getattr(player, 'seat_number', seat_num),  # Use seat_number if available
+                        'name': player_name,
+                        'stack': player_stack,
+                        'current_bet': getattr(player, 'current_bet', 0) or getattr(player, 'bet', 0),
+                        'active': getattr(player, 'is_active', False) or getattr(player, 'active', False),
+                        'position': getattr(player, 'position', None),
+                        'hole_cards': []
+                    }
+
+                    # Check for visible hole cards (showdown)
+                    if hasattr(player, 'hole_cards') and player.hole_cards:
+                        player_info['hole_cards'] = [str(card) for card in player.hole_cards]
+
+                    validation_report['data']['players'].append(player_info)
+                    seated_count += 1
+
+                    if player_info['name']:
+                        players_with_names += 1
+                    if player_info['stack'] > 0:
+                        players_with_stacks += 1
+
+            validation_report['data']['seated_players'] = seated_count
+            validation_report['data']['players_with_names'] = players_with_names
+            validation_report['data']['players_with_stacks'] = players_with_stacks
+
+            # Validation checks
+            if seated_count == 0:
+                validation_report['warnings'].append("No players detected at table")
+                validation_report['complete'] = False
+
+            if players_with_names < seated_count:
+                validation_report['warnings'].append(
+                    f"Only {players_with_names}/{seated_count} player names detected"
+                )
+                validation_report['complete'] = False
+
+            if players_with_stacks < seated_count:
+                validation_report['warnings'].append(
+                    f"Only {players_with_stacks}/{seated_count} player stacks detected"
+                )
+                validation_report['complete'] = False
+
+            # User position validation
+            user_position = None
+            if hasattr(self, 'live_table_section') and hasattr(self.live_table_section, 'user_handle'):
+                user_handle = self.live_table_section.user_handle
+                if user_handle:
+                    for player_info in validation_report['data']['players']:
+                        if player_info['name'] and user_handle.lower() in player_info['name'].lower():
+                            user_position = player_info['seat']
+                            break
+
+            validation_report['data']['user_position'] = user_position
+            if user_position is None and hasattr(self, 'live_table_section'):
+                validation_report['warnings'].append("User position not identified")
+
+        except Exception as e:
+            validation_report['complete'] = False
+            validation_report['warnings'].append(f"Validation error: {e}")
+            print(f"Table state validation error: {e}")
+
+        return validation_report
+
+    def _log_validation_report(self, report: Dict[str, Any]) -> None:
+        """Log detailed validation report to console and UI."""
+        log_msg = f"\n{'='*70}\n"
+        log_msg += f"📊 TABLE STATE VALIDATION REPORT\n"
+        log_msg += f"{'='*70}\n"
+        log_msg += f"Timestamp: {report['timestamp']}\n"
+        log_msg += f"Status: {'✅ COMPLETE' if report['complete'] else '⚠️  INCOMPLETE'}\n\n"
+
+        data = report['data']
+
+        # Basic info
+        log_msg += f"🎰 TABLE INFO:\n"
+        log_msg += f"  • Pot: ${data.get('pot_size', 0)}\n"
+        log_msg += f"  • Stage: {data.get('stage', 'unknown')}\n"
+        log_msg += f"  • Active Players: {data.get('active_players', 0)}\n\n"
+
+        # Positions
+        log_msg += f"🎯 POSITIONS:\n"
+        log_msg += f"  • Dealer Button: Seat {data.get('dealer_seat', 'NOT DETECTED')}\n"
+        log_msg += f"  • Small Blind: ${data.get('small_blind', 'NOT DETECTED')}\n"
+        log_msg += f"  • Big Blind: ${data.get('big_blind', 'NOT DETECTED')}\n"
+        log_msg += f"  • User Position: Seat {data.get('user_position', 'NOT DETECTED')}\n\n"
+
+        # Board cards
+        log_msg += f"🃏 BOARD CARDS ({data.get('board_card_count', 0)}):\n"
+        if data.get('board_cards'):
+            log_msg += f"  • {', '.join(data['board_cards'])}\n"
+        else:
+            log_msg += f"  • None visible\n"
+        log_msg += "\n"
+
+        # Hero cards
+        log_msg += f"🎴 YOUR HOLE CARDS ({data.get('hero_card_count', 0)}):\n"
+        if data.get('hero_cards'):
+            log_msg += f"  • {', '.join(data['hero_cards'])}\n"
+        else:
+            log_msg += f"  • Not detected\n"
+        log_msg += "\n"
+
+        # Players
+        log_msg += f"👥 PLAYERS ({data.get('seated_players', 0)} seated):\n"
+        log_msg += f"  • Names detected: {data.get('players_with_names', 0)}/{data.get('seated_players', 0)}\n"
+        log_msg += f"  • Stacks detected: {data.get('players_with_stacks', 0)}/{data.get('seated_players', 0)}\n\n"
+
+        for player in data.get('players', []):
+            seat_marker = "🎯" if player['seat'] == data.get('user_position') else "  "
+            log_msg += f"{seat_marker} Seat {player['seat']}: "
+            log_msg += f"{player['name'] or 'NO NAME'} "
+            log_msg += f"(${player['stack']}) "
+            if player['current_bet'] > 0:
+                log_msg += f"[Bet: ${player['current_bet']}] "
+            if player['hole_cards']:
+                log_msg += f"Cards: {', '.join(player['hole_cards'])} "
+            log_msg += f"{'(Active)' if player['active'] else '(Folded)'}"
+            log_msg += "\n"
+
+        # Warnings
+        if report['warnings']:
+            log_msg += f"\n⚠️  WARNINGS ({len(report['warnings'])}):\n"
+            for warning in report['warnings']:
+                log_msg += f"  • {warning}\n"
+
+        log_msg += f"{'='*70}\n"
+
+        # Output to console
+        print(log_msg)
+
+        # Output to UI
+        self.after(0, lambda: self._update_table_status(log_msg))
+
     def _process_table_state(self, table_state):
         """Process detected table state and make decisions."""
         try:
-            status_msg = f"[{datetime.now().strftime('%H:%M:%S')}] Table detected\n"
-            status_msg += f"  Pot: ${table_state.pot_size}\n"
-            status_msg += f"  Stage: {table_state.stage}\n"
-            status_msg += f"  Active players: {table_state.active_players}\n"
-            status_msg += f"  Hero cards: {len(table_state.hero_cards)}\n"
-            
-            self.after(0, lambda: self._update_table_status(status_msg))
+            # Validate and log complete table state
+            validation_report = self._validate_and_log_table_state(table_state)
+            self._log_validation_report(validation_report)
+
+            # Update hand recorder with current table state
+            if self.hand_recorder:
+                try:
+                    self.hand_recorder.update(table_state)
+                    self.after(0, lambda: self._update_table_status("📝 Hand data recorded\n"))
+                except Exception as recorder_error:
+                    print(f"Hand recorder update error: {recorder_error}")
+                    self.after(0, lambda: self._update_table_status(f"⚠️  Hand recording error: {recorder_error}\n"))
+
             if self.coaching_section:
                 self.after(0, lambda ts=table_state: self.coaching_section.handle_table_state(ts))
 
-            # Mirror the live table state into the manual workspace when autopilot
-            # is active.  This keeps the manual tab synchronized with the
-            # detected game so the user can verify that scraping is keeping up.
-            # Only update if the manual panel is available and valid.
-            if hasattr(self, 'manual_panel') and self.manual_panel:
-                def _update_manual_panel(state=table_state):
-                    try:
-                        # Update players
-                        players_map = self.manual_panel.players
-                        # Create a lookup of seat number to existing PlayerInfo
-                        for seat_info in state.seats:
-                            seat_num = seat_info.seat_number
-                            if seat_num in players_map:
-                                p = players_map[seat_num]
-                                # Active/inactive and hero/dealer flags
-                                p.is_active = bool(seat_info.is_active)
-                                p.stack = float(seat_info.stack_size)
-                                p.is_hero = bool(seat_info.is_hero)
-                                p.is_dealer = bool(seat_info.is_dealer)
-                                # Blind positions (if provided in position field)
-                                pos = (seat_info.position or '').upper()
-                                p.is_sb = pos == 'SB'
-                                p.is_bb = pos == 'BB'
-                                # Reset bet amount; autopilot does not track bets yet
-                                p.bet = 0.0
-                        # Update board cards and hero hole cards on the Table View.
-                        # Convert detected Card objects into tuples for the manual panel state
-                        board_tuples: List[Tuple[str, str]] = []
-                        hero_tuples: List[Tuple[str, str]] = []
-                        for c in state.board_cards:
-                            try:
-                                board_tuples.append((c.rank, c.suit))
-                            except Exception:
-                                pass
-                        for c in state.hero_cards:
-                            try:
-                                hero_tuples.append((c.rank, c.suit))
-                            except Exception:
-                                pass
-                        # Assign board and hole cards on the manual panel
-                        self.manual_panel.board_cards = board_tuples
-                        self.manual_panel.hole_cards = hero_tuples
-
-                        # Convert detected cards into core Card objects for visualization
-                        from pokertool.core import Card as CoreCard  # Late import to avoid cycles
-                        board_cards_objs: List[CoreCard] = []
-                        for c in state.board_cards:
-                            try:
-                                board_cards_objs.append(CoreCard(c.rank, c.suit))
-                            except Exception:
-                                pass
-                        hole_cards_objs: List[CoreCard] = []
-                        for c in state.hero_cards:
-                            try:
-                                hole_cards_objs.append(CoreCard(c.rank, c.suit))
-                            except Exception:
-                                pass
-                        # Update table visualization: pass players, pot size, board and hero cards
-                        # The update_table method expects board_cards as a list of CoreCard objects; hero cards
-                        # can be inferred from players mapping (seat.is_hero) but we provide via hole_cards_objs
-                        self.manual_panel.table_viz.update_table(players_map, state.pot_size, board_cards_objs)
-                        # Manually set hero hole cards within the visualization if supported
-                        try:
-                            self.manual_panel.table_viz.hole_cards = hole_cards_objs  # type: ignore[attr-defined]
-                        except Exception:
-                            pass
-                        # Trigger redraw of manual panel controls
-                        try:
-                            self.manual_panel._update_table()
-                        except Exception:
-                            pass
-                    except Exception as update_err:
-                        print(f"Manual panel update error: {update_err}")
-                # Schedule update on the main thread
-                self.after(0, _update_manual_panel)
-            
         except Exception as e:
             print(f"Table state processing error: {e}")
+            self.after(0, lambda: self._update_table_status(f"❌ Processing error: {e}\n"))
     
     def _detect_tables(self):
         """Detect available poker tables with comprehensive error handling."""
@@ -2563,7 +2593,7 @@ Platform: {sys.platform}
             if not self.screen_scraper:
                 self._update_table_status("⚠️ Initializing screen scraper...\n")
                 try:
-                    self.screen_scraper = create_scraper('GENERIC')
+                    self.screen_scraper = create_scraper('BETFAIR')
                     self._update_table_status("✅ Screen scraper initialized\n")
                 except Exception as init_error:
                     self._update_table_status(f"❌ Failed to initialize screen scraper: {init_error}\n")
@@ -2920,10 +2950,7 @@ Platform: {sys.platform}
 
         if getattr(self, 'manual_tab', None):
             self.notebook.select(self.manual_tab)
-            self._update_table_status("✅ Manual Play tab activated.\n")
-
-        if self.manual_section:
-            self.manual_section.focus_workspace()
+            self._update_table_status("✅ LiveTable tab activated.\n")
     
     def _brighten_color(self, hex_color: str, factor: float = 0.2) -> str:
         """Brighten a hex color by a given factor for hover effects."""
@@ -3152,7 +3179,8 @@ Platform: {sys.platform}
                         # Log detection results (only if table detected to reduce noise)
                         if is_detected:
                             msg = f"🔍 Auto-detection: Table found ({confidence:.1%} confidence)"
-                            self.after(0, lambda m=msg: self._log_to_logging_tab(m, 'INFO'))
+                            # Update status display instead of logging to non-existent tab
+                            self.after(0, lambda m=msg: self._update_table_status(m + '\n'))
 
                     except Exception as e:
                         # Silently handle errors to avoid spamming logs
@@ -3231,100 +3259,10 @@ Platform: {sys.platform}
         """
         Get live table data from the screen scraper for LiveTable display.
 
-        Returns a dictionary containing:
-        - status: Table status string
-        - confidence: Detection confidence (0-100)
-        - board_cards: List of community cards
-        - small_blind, big_blind, ante: Blind levels
-        - pot: Current pot size
-        - dealer_seat: Dealer button seat number
-        - players: Dict of player data by seat number
-        - my_hole_cards: Current player's hole cards
-        - recommended_action: AI-recommended action
+        This method delegates to the helper function to keep this file under 25,000 tokens.
         """
-        try:
-            if not self.autopilot_active or not self.screen_scraper:
-                return None
-
-            # Try to get table state from scraper
-            table_state = None
-            if hasattr(self.screen_scraper, 'analyze_table'):
-                table_state = self.screen_scraper.analyze_table()
-
-            if not table_state:
-                return None
-
-            # Build the data structure
-            data = {
-                'status': 'Active',
-                'confidence': 85.0,  # Default confidence
-                'board_cards': [],
-                'small_blind': 0,
-                'big_blind': 0,
-                'ante': 0,
-                'pot': getattr(table_state, 'pot_size', 0),
-                'dealer_seat': 0,
-                'players': {},
-                'my_hole_cards': [],
-                'recommended_action': 'Waiting for game state...'
-            }
-
-            # Extract board cards
-            if hasattr(table_state, 'board_cards') and table_state.board_cards:
-                data['board_cards'] = [str(card) for card in table_state.board_cards]
-
-            # Extract player information
-            if hasattr(table_state, 'players') and table_state.players:
-                for seat_num, player in enumerate(table_state.players, start=1):
-                    if player:
-                        player_data = {
-                            'name': getattr(player, 'name', f'Player {seat_num}'),
-                            'stack': getattr(player, 'stack', 0),
-                            'bet': getattr(player, 'current_bet', 0),
-                            'hole_cards': [],
-                            'status': 'Active' if getattr(player, 'active', True) else 'Folded'
-                        }
-
-                        # Extract hole cards if visible
-                        if hasattr(player, 'hole_cards') and player.hole_cards:
-                            player_data['hole_cards'] = [str(card) for card in player.hole_cards]
-
-                        data['players'][seat_num] = player_data
-
-            # Extract hero's hole cards
-            if hasattr(table_state, 'hero_cards') and table_state.hero_cards:
-                data['my_hole_cards'] = [str(card) for card in table_state.hero_cards]
-
-            # Get recommended action from manual panel if available
-            if hasattr(self, 'manual_panel') and self.manual_panel:
-                try:
-                    # Try to get action from the poker assistant
-                    if hasattr(self.manual_panel, 'get_recommended_action'):
-                        action = self.manual_panel.get_recommended_action()
-                        if action:
-                            data['recommended_action'] = action
-                    elif hasattr(self.manual_panel, 'recommendation_text'):
-                        rec_text = self.manual_panel.recommendation_text.get('1.0', 'end-1c').strip()
-                        if rec_text:
-                            data['recommended_action'] = rec_text
-                except Exception:
-                    pass
-
-            # Try to extract blinds from table state
-            if hasattr(table_state, 'small_blind'):
-                data['small_blind'] = table_state.small_blind
-            if hasattr(table_state, 'big_blind'):
-                data['big_blind'] = table_state.big_blind
-            if hasattr(table_state, 'ante'):
-                data['ante'] = table_state.ante
-            if hasattr(table_state, 'dealer_seat'):
-                data['dealer_seat'] = table_state.dealer_seat
-
-            return data
-
-        except Exception as e:
-            print(f"Error getting live table data: {e}")
-            return None
+        from .enhanced_gui_helpers import get_live_table_data_from_scraper
+        return get_live_table_data_from_scraper(self.screen_scraper)
 
     def _start_screen_update_loop(self):
         """Start continuous screen update loop to follow scraper output."""
@@ -3378,7 +3316,7 @@ Platform: {sys.platform}
                         try:
                             # Try to get basic table state
                             table_state = self.screen_scraper.analyze_table()
-                            if table_state and table_state.pot_size > 0:
+                            if table_state and hasattr(table_state, 'pot_size') and table_state.pot_size is not None and table_state.pot_size > 0:
                                 timestamp = datetime.now().strftime('%H:%M:%S')
                                 msg = f"[{timestamp}] 🎰 Table detected: Pot ${table_state.pot_size}\n"
                                 self.after(0, lambda m=msg: self._update_table_status(m))
@@ -3402,29 +3340,86 @@ Platform: {sys.platform}
         if self._screen_update_thread:
             print("Stopping screen update loop...")
 
+    def _ensure_window_visible(self):
+        """Ensure the window is visible and brought to foreground."""
+        try:
+            # Bring window to front
+            self.lift()
+
+            # Set topmost temporarily to bring to front, then stay above normal windows
+            self.attributes('-topmost', True)
+            self.after(500, lambda: self.attributes('-topmost', False))
+            self.after(600, lambda: self.lift())
+
+            # Focus the window
+            self.focus_force()
+
+            # Make sure it's not iconified
+            if self.state() == 'iconic':
+                self.deiconify()
+
+            print("✓ Window brought to foreground")
+
+            # Start periodic visibility monitoring
+            self.after(5000, self._monitor_window_visibility)
+        except Exception as e:
+            print(f"⚠️  Could not bring window to foreground: {e}")
+
+    def _monitor_window_visibility(self):
+        """Monitor and maintain window visibility every 5 seconds."""
+        try:
+            # Check if window is iconic (minimized)
+            if self.state() == 'iconic':
+                print("⚠️ Window was minimized, restoring...")
+                self.deiconify()
+                self.lift()
+                self.focus_force()
+
+            # Check if window exists and is visible
+            if self.winfo_exists() and self.winfo_viewable():
+                # Window is visible, schedule next check
+                self.after(5000, self._monitor_window_visibility)
+            else:
+                print("⚠️ Window visibility issue detected")
+                self.lift()
+                self.after(5000, self._monitor_window_visibility)
+        except Exception as e:
+            # Window might be destroyed, don't reschedule
+            print(f"Window monitoring stopped: {e}")
+
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""
-        # IMMEDIATE QUIT - don't wait for cleanup
+        print("🛑 Shutting down PokerTool...")
+
         try:
-            # Try quick cleanup but don't block
+            # Stop background threads
             self._screen_update_running = False
             self.autopilot_active = False
+            print("  ✓ Stopped background threads")
+        except Exception as e:
+            print(f"  ⚠ Error stopping threads: {e}")
+
+        try:
+            # Stop screen scraper if running
+            if hasattr(self, 'screen_scraper') and self.screen_scraper:
+                print("  ✓ Screen scraper cleanup")
+        except Exception as e:
+            print(f"  ⚠ Error with scraper cleanup: {e}")
+
+        try:
+            # Release the single-instance lock
+            self.release_single_instance_lock()
+            print("  ✓ Released instance lock")
+        except Exception as e:
+            print(f"  ⚠ Could not release lock: {e}")
+
+        # Close the window cleanly
+        try:
+            self.quit()
+            self.destroy()
+            print("✓ Clean shutdown complete")
         except:
             pass
-        
-        # Force quit immediately
-        self.quit()
-        self.destroy()
-
-        # Release the lock before terminating the process
-        try:
-            self.release_single_instance_lock()
-        except Exception as exc:
-            print(f"⚠️  Could not release single-instance lock: {exc}")
-        
-        # Force exit the entire program
-        import os
-        os._exit(0)
 
 
 # Main application entry point

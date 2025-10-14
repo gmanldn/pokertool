@@ -11,8 +11,6 @@ import threading
 import time
 from typing import Any, Optional, Dict, List
 
-from pokertool.gui import EnhancedPokerAssistantFrame
-
 from .style import COLORS, FONTS
 
 
@@ -20,12 +18,13 @@ class LiveTableSection:
     """Encapsulates the LiveTable tab with real-time scraper data display."""
 
     def __init__(self, host: Any, parent: tk.Misc, *, modules_loaded: bool) -> None:
+        print("[LiveTableSection] __init__ called")
         self.host = host
         self.parent = parent
         self._modules_loaded = modules_loaded
-        self.manual_panel: Optional[EnhancedPokerAssistantFrame] = None
-        self.status_label: Optional[tk.Label] = None
-        
+        print(f"[LiveTableSection] Host type: {type(host).__name__}")
+        print(f"[LiveTableSection] Host has get_live_table_data: {hasattr(host, 'get_live_table_data')}")
+
         # Live table data display widgets
         self.live_data_frame: Optional[tk.Frame] = None
         self.table_canvas: Optional[tk.Canvas] = None
@@ -38,17 +37,47 @@ class LiveTableSection:
         self.table_status_label: Optional[tk.Label] = None
         self.recommended_action_label: Optional[tk.Label] = None
         self.my_cards_labels: List[tk.Label] = []
-        
+
+        # User's handle for position identification
+        self.user_handle: str = ""
+        self.user_seat: int = 1  # Default to seat 1
+
         # Update control
         self._update_thread: Optional[threading.Thread] = None
         self._stop_updates = False
 
+        # Detection status indicators (LED lights)
+        self.status_lights: Dict[str, tk.Label] = {}
+
         self._build_ui()
-        self.update_autopilot_status(host.autopilot_active)
-        self._start_live_updates()
+        self._start_live_updates()  # Start updates FIRST
+        # Delay handle prompt to after GUI is fully shown (3 seconds)
+        self.parent.after(3000, self._prompt_for_handle)
 
     # ------------------------------------------------------------------
+    def _prompt_for_handle(self) -> None:
+        """Prompt user for their poker handle on startup."""
+        try:
+            from tkinter import simpledialog
+
+            # Use simpledialog to ask for handle
+            self.user_handle = simpledialog.askstring(
+                "Player Handle",
+                "Enter your poker handle/username:\n(This helps identify your position at the table)",
+                parent=self.parent
+            )
+
+            if not self.user_handle:
+                self.user_handle = ""  # Empty if cancelled
+            else:
+                self.user_handle = self.user_handle.strip()
+                print(f"User handle set to: {self.user_handle}")
+        except Exception as e:
+            print(f"[LiveTableSection] Could not prompt for handle: {e}")
+            self.user_handle = ""  # Use empty if prompt fails
+
     def _build_ui(self) -> None:
+        print("[LiveTableSection] _build_ui called")
         header_frame = tk.Frame(self.parent, bg=COLORS["bg_dark"])
         header_frame.pack(fill="x", pady=(20, 10))
 
@@ -79,11 +108,75 @@ class LiveTableSection:
         content_frame = tk.Frame(self.parent, bg=COLORS["bg_dark"])
         content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        # Left side: Live table data display
+        # Detection Status Lights Panel (CRITICAL ADDITION)
+        self._build_detection_status_panel(content_frame)
+
+        # Live table data display (full width)
         self._build_live_data_panel(content_frame)
-        
-        # Right side: Manual controls and tips
-        self._build_manual_panel(content_frame)
+
+    def _build_detection_status_panel(self, parent) -> None:
+        """Build compact detection status panel with LED-style indicators."""
+        status_container = tk.LabelFrame(
+            parent,
+            text="🔍 DETECTION STATUS",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_info"],
+            relief=tk.RAISED,
+            bd=2,
+        )
+        status_container.pack(fill="x", pady=(0, 10))
+
+        # Create two rows of 4 indicators each for compact layout
+        indicators_config = [
+            ("Players", "players"),
+            ("Stacks", "stacks"),
+            ("Board", "board"),
+            ("Hole Cards", "hole_cards"),
+            ("Dealer", "dealer"),
+            ("Blinds", "blinds"),
+            ("Bets", "bets"),
+            ("Pot", "pot"),
+        ]
+
+        # Row 1
+        row1_frame = tk.Frame(status_container, bg=COLORS["bg_medium"])
+        row1_frame.pack(fill="x", padx=10, pady=(5, 2))
+
+        # Row 2
+        row2_frame = tk.Frame(status_container, bg=COLORS["bg_medium"])
+        row2_frame.pack(fill="x", padx=10, pady=(2, 5))
+
+        # Add 4 indicators to each row
+        for idx, (label, key) in enumerate(indicators_config):
+            target_frame = row1_frame if idx < 4 else row2_frame
+
+            indicator_frame = tk.Frame(target_frame, bg=COLORS["bg_medium"])
+            indicator_frame.pack(side="left", padx=5, expand=True)
+
+            # LED light (circle)
+            led = tk.Label(
+                indicator_frame,
+                text="●",
+                font=("Arial", 14),
+                bg=COLORS["bg_medium"],
+                fg="#888888",  # Gray = unknown/inactive
+                width=2
+            )
+            led.pack(side="left")
+
+            # Label text
+            label_widget = tk.Label(
+                indicator_frame,
+                text=label,
+                font=("Arial", 9),
+                bg=COLORS["bg_medium"],
+                fg=COLORS["text_primary"]
+            )
+            label_widget.pack(side="left", padx=(2, 0))
+
+            # Store LED reference for updating
+            self.status_lights[key] = led
 
     def _build_live_data_panel(self, parent) -> None:
         """Build the live table data display panel with graphical poker table."""
@@ -96,15 +189,15 @@ class LiveTableSection:
             relief=tk.RAISED,
             bd=2,
         )
-        live_container.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        live_container.pack(fill="both", expand=True)
 
         self.live_data_frame = tk.Frame(live_container, bg=COLORS["bg_dark"])
         self.live_data_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Table status
+        # Table status with extraction method and tournament info
         status_frame = tk.Frame(self.live_data_frame, bg=COLORS["bg_dark"])
         status_frame.pack(fill="x", pady=(0, 10))
-        
+
         tk.Label(
             status_frame,
             text="Table Status:",
@@ -112,7 +205,7 @@ class LiveTableSection:
             bg=COLORS["bg_dark"],
             fg=COLORS["text_primary"],
         ).pack(side="left")
-        
+
         self.table_status_label = tk.Label(
             status_frame,
             text="Waiting for scraper data...",
@@ -121,6 +214,16 @@ class LiveTableSection:
             fg=COLORS["text_secondary"],
         )
         self.table_status_label.pack(side="left", padx=(10, 0))
+
+        # Tournament/Table name display
+        self.tournament_label = tk.Label(
+            status_frame,
+            text="",
+            font=("Arial", 9, "italic"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["accent_info"],
+        )
+        self.tournament_label.pack(side="right", padx=(10, 0))
 
         # Board cards section
         board_frame = tk.LabelFrame(
@@ -375,10 +478,10 @@ class LiveTableSection:
 
     def _create_player_position(self, seat: int, x: float, y: float) -> None:
         """Create a player display at a specific table position."""
-        # Highlight seat 1 (hero position) with distinct visual styling
-        is_hero_seat = (seat == 1)
-        frame_bg = COLORS["accent_success"] if is_hero_seat else COLORS["bg_light"]
-        frame_bd = 3 if is_hero_seat else 2
+        # Initially, no seat is highlighted as hero - will be determined by handle
+        is_hero_seat = False
+        frame_bg = COLORS["bg_light"]
+        frame_bd = 2
 
         # Create frame for this player
         player_frame = tk.Frame(
@@ -393,15 +496,15 @@ class LiveTableSection:
         # Place it on the canvas
         window_id = self.table_canvas.create_window(x, y, window=player_frame)
 
-        # Seat label with hero indicator
-        seat_text = f"🎯 YOU (S{seat})" if is_hero_seat else f"S{seat}"
+        # Seat label (hero indicator will be updated dynamically)
+        seat_text = f"S{seat}"
         seat_label = tk.Label(
             player_frame,
             text=seat_text,
             font=("Arial", 9, "bold"),
             bg=frame_bg,
-            fg="#000000" if is_hero_seat else COLORS["text_secondary"],
-            width=12 if is_hero_seat else 3
+            fg=COLORS["text_secondary"],
+            width=3
         )
         seat_label.grid(row=0, column=0, columnspan=2, sticky="ew")
 
@@ -411,7 +514,7 @@ class LiveTableSection:
             text="Empty",
             font=("Arial", 10, "bold"),
             bg=frame_bg,
-            fg=COLORS["text_primary"] if is_hero_seat else COLORS["text_secondary"],
+            fg=COLORS["text_secondary"],
             width=12
         )
         name_label.grid(row=1, column=0, columnspan=2, pady=2)
@@ -422,11 +525,33 @@ class LiveTableSection:
             text="$0",
             font=("Arial", 9),
             bg=frame_bg,
-            fg="#000000" if is_hero_seat else COLORS["accent_warning"]
+            fg=COLORS["accent_warning"]
         )
         stack_label.grid(row=2, column=0, columnspan=2)
 
-        # Bet
+        # Stats frame (VPIP / AF)
+        stats_frame = tk.Frame(player_frame, bg=frame_bg)
+        stats_frame.grid(row=3, column=0, columnspan=2)
+
+        vpip_label = tk.Label(
+            stats_frame,
+            text="",
+            font=("Arial", 7),
+            bg=frame_bg,
+            fg=COLORS["accent_info"]
+        )
+        vpip_label.pack(side="left", padx=1)
+
+        af_label = tk.Label(
+            stats_frame,
+            text="",
+            font=("Arial", 7),
+            bg=frame_bg,
+            fg=COLORS["accent_info"]
+        )
+        af_label.pack(side="left", padx=1)
+
+        # Bet / Time Bank
         bet_label = tk.Label(
             player_frame,
             text="",
@@ -434,11 +559,11 @@ class LiveTableSection:
             bg=frame_bg,
             fg=COLORS["accent_info"]
         )
-        bet_label.grid(row=3, column=0, columnspan=2)
+        bet_label.grid(row=4, column=0, columnspan=2)
 
         # Cards frame
         cards_frame = tk.Frame(player_frame, bg=frame_bg)
-        cards_frame.grid(row=4, column=0, columnspan=2, pady=2)
+        cards_frame.grid(row=5, column=0, columnspan=2, pady=2)
 
         card1_label = tk.Label(
             cards_frame,
@@ -472,128 +597,244 @@ class LiveTableSection:
             bg=frame_bg,
             fg=COLORS["text_secondary"]
         )
-        status_label.grid(row=5, column=0, columnspan=2)
+        status_label.grid(row=6, column=0, columnspan=2)
 
         # Store references
         self.player_labels[seat] = {
             "frame": player_frame,
             "window_id": window_id,
+            "seat_label": seat_label,
             "name": name_label,
             "stack": stack_label,
+            "vpip": vpip_label,
+            "af": af_label,
             "bet": bet_label,
             "card1": card1_label,
             "card2": card2_label,
             "status": status_label,
         }
 
-    def _build_manual_panel(self, parent) -> None:
-        """Build the manual controls panel."""
-        manual_container = tk.LabelFrame(
-            parent,
-            text="Manual Controls",
-            font=FONTS["heading"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-            relief=tk.RAISED,
-            bd=2,
-        )
-        manual_container.pack(side="right", fill="y", padx=300)
-
-        manual_inner = tk.Frame(manual_container, bg=COLORS["bg_dark"])
-        manual_inner.pack(fill="both", expand=True, padx=10, pady=10)
-
-        if self._modules_loaded:
-            try:
-                self.manual_panel = EnhancedPokerAssistantFrame(manual_inner, auto_pack=False)
-                self.manual_panel.pack(fill="both", expand=True)
-            except Exception as manual_error:
-                self.manual_panel = None
-                fallback = tk.Label(
-                    manual_inner,
-                    text=f"Manual interface unavailable: {manual_error}",
-                    font=FONTS["body"],
-                    bg=COLORS["bg_dark"],
-                    fg=COLORS["accent_danger"],
-                    wraplength=280,
-                    justify="left",
-                )
-                fallback.pack(fill="both", expand=True, pady=20)
-        else:
-            fallback = tk.Label(
-                manual_inner,
-                text="Manual interface modules are not available.",
-                font=FONTS["body"],
-                bg=COLORS["bg_dark"],
-                fg=COLORS["accent_danger"],
-                wraplength=280,
-                justify="left",
-            )
-            fallback.pack(fill="both", expand=True, pady=20)
-
-        # Status and sync info
-        sync_frame = tk.LabelFrame(
-            manual_container,
-            text="Autopilot Sync",
-            font=FONTS["subheading"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-            relief=tk.RAISED,
-            bd=1,
-        )
-        sync_frame.pack(fill="x", pady=(10, 0))
-
-        tk.Label(
-            sync_frame,
-            text="Autopilot status:",
-            font=FONTS["body"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-        ).pack(anchor="w", padx=10, pady=(10, 4))
-
-        self.status_label = tk.Label(
-            sync_frame,
-            text="Inactive",
-            font=FONTS["body"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_secondary"],
-        )
-        self.status_label.pack(anchor="w", padx=10, pady=(0, 10))
-
-        self.host.manual_panel = self.manual_panel
-        self.host.manual_status_label = self.status_label
 
     def _start_live_updates(self) -> None:
         """Start the live data update thread."""
-        if self._update_thread is None or not self._update_thread.is_alive():
-            self._stop_updates = False
-            self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-            self._update_thread.start()
+        print("[LiveTableSection] _start_live_updates called")
+        try:
+            if self._update_thread is None or not self._update_thread.is_alive():
+                print("[LiveTableSection] Starting update thread...")
+                self._stop_updates = False
+                self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
+                self._update_thread.start()
+                print(f"[LiveTableSection] Update thread started: {self._update_thread.is_alive()}")
+            else:
+                print("[LiveTableSection] Update thread already running")
+        except Exception as e:
+            print(f"[LiveTableSection] ERROR starting update thread: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _update_loop(self) -> None:
         """Main update loop for live table data."""
+        print(f"[LiveTable] Update loop STARTED")
+        update_count = 0
+        last_status_log = 0.0
         while not self._stop_updates:
             try:
-                if self.host.autopilot_active and hasattr(self.host, 'get_live_table_data'):
+                # Always try to get live data (don't wait for autopilot)
+                if hasattr(self.host, 'get_live_table_data'):
+                    if update_count == 0:
+                        print(f"[LiveTable] Host has get_live_table_data method ✓")
                     # Get live data from the scraper
                     table_data = self.host.get_live_table_data()
                     if table_data:
+                        update_count += 1
+
+                        # Log comprehensive status every 5 seconds
+                        current_time = time.time()
+                        if current_time - last_status_log >= 5.0:
+                            last_status_log = current_time
+                            players_count = len(table_data.get('players', {}))
+                            active_players = table_data.get('active_players', 0)
+                            confidence = table_data.get('confidence', 0)
+                            data_source = table_data.get('data_source', 'unknown')
+                            pot = table_data.get('pot', 0)
+                            stage = table_data.get('stage', 'unknown')
+
+                            print(f"\n{'='*80}")
+                            print(f"[LiveTable Status] Update #{update_count}")
+                            print(f"  Data Source: {data_source.upper()}")
+                            print(f"  Confidence: {confidence:.1f}%")
+                            print(f"  Active Players: {active_players}/{players_count} seats")
+                            print(f"  Pot: ${pot:.2f}")
+                            print(f"  Stage: {stage.upper()}")
+
+                            # Log active player details
+                            players = table_data.get('players', {})
+                            if players:
+                                print(f"  Players:")
+                                for seat_num in sorted(players.keys()):
+                                    player = players[seat_num]
+                                    if player.get('status') == 'Active':
+                                        name = player.get('name', 'Unknown')
+                                        stack = player.get('stack', 0)
+                                        position = player.get('position', '')
+                                        dealer = " 🔘" if player.get('is_dealer') else ""
+                                        print(f"    Seat {seat_num}: {name} - ${stack:.2f} {position}{dealer}")
+                            print(f"{'='*80}\n")
+
                         self._update_live_display(table_data)
-                        
-                time.sleep(1.0)  # Update every second
+                    else:
+                        if update_count % 20 == 0:
+                            print(f"[LiveTable] No data available (update #{update_count})")
+                else:
+                    print(f"[LiveTable] ERROR: Host does not have get_live_table_data method!")
+                    time.sleep(5)  # Avoid spam
+
+                time.sleep(0.5)  # Update every 500ms for live feel (now uses cached state)
             except Exception as e:
-                print(f"Live update error: {e}")
+                print(f"[LiveTable] Update error: {e}")
+                import traceback
+                traceback.print_exc()
                 time.sleep(2.0)
+
+    def _update_detection_lights(self, table_data: Dict) -> None:
+        """Update LED status lights based on what's actually detected."""
+        # Green = detected & valid, Yellow = uncertain, Red = not detected, Gray = unknown
+
+        # Players detection
+        players = table_data.get('players', {})
+        active_players = sum(1 for p in players.values() if p.get('active', False))
+        if active_players >= 2:
+            self.status_lights['players'].config(fg="#10b981")  # Green
+        elif active_players == 1:
+            self.status_lights['players'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['players'].config(fg="#ef4444")  # Red
+
+        # Stacks detection (check if most players have valid stacks)
+        players_with_stacks = sum(1 for p in players.values() if p.get('stack', 0) > 0)
+        if players_with_stacks >= active_players * 0.7:  # 70% have stacks
+            self.status_lights['stacks'].config(fg="#10b981")  # Green
+        elif players_with_stacks > 0:
+            self.status_lights['stacks'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['stacks'].config(fg="#ef4444")  # Red
+
+        # Board cards detection
+        board_cards = table_data.get('board_cards', [])
+        valid_board = [c for c in board_cards if c and c != '']
+        if len(valid_board) >= 3:  # Flop or later
+            self.status_lights['board'].config(fg="#10b981")  # Green
+        elif len(valid_board) > 0:
+            self.status_lights['board'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['board'].config(fg="#888888")  # Gray (preflop is normal)
+
+        # Hole cards detection
+        my_cards = table_data.get('my_hole_cards', [])
+        valid_my_cards = [c for c in my_cards if c and c != '']
+        if len(valid_my_cards) == 2:
+            self.status_lights['hole_cards'].config(fg="#10b981")  # Green
+        elif len(valid_my_cards) == 1:
+            self.status_lights['hole_cards'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['hole_cards'].config(fg="#ef4444")  # Red
+
+        # Dealer button detection
+        dealer_seat = table_data.get('dealer_seat', 0)
+        if dealer_seat and dealer_seat > 0:
+            self.status_lights['dealer'].config(fg="#10b981")  # Green
+        else:
+            self.status_lights['dealer'].config(fg="#ef4444")  # Red
+
+        # Blinds detection
+        sb = table_data.get('small_blind', 0)
+        bb = table_data.get('big_blind', 0)
+        if sb > 0 and bb > 0:
+            self.status_lights['blinds'].config(fg="#10b981")  # Green
+        elif sb > 0 or bb > 0:
+            self.status_lights['blinds'].config(fg="#f59e0b")  # Yellow
+        else:
+            self.status_lights['blinds'].config(fg="#ef4444")  # Red
+
+        # Bets detection (check if any player has a current bet)
+        players_with_bets = sum(1 for p in players.values() if p.get('bet', 0) > 0)
+        if players_with_bets > 0:
+            self.status_lights['bets'].config(fg="#10b981")  # Green
+        else:
+            self.status_lights['bets'].config(fg="#888888")  # Gray (no bets is normal)
+
+        # Pot detection
+        pot = table_data.get('pot', 0)
+        if pot > 0:
+            self.status_lights['pot'].config(fg="#10b981")  # Green
+        else:
+            self.status_lights['pot'].config(fg="#888888")  # Gray (0 pot at start is normal)
 
     def _update_live_display(self, table_data: Dict) -> None:
         """Update the live display with scraped table data."""
         try:
-            # Update table status
+            # UPDATE DETECTION STATUS LIGHTS FIRST
+            self._update_detection_lights(table_data)
+
+            # Log the received data structure (only once per 20 updates to avoid spam)
+            if not hasattr(self, '_display_update_count'):
+                self._display_update_count = 0
+            self._display_update_count += 1
+
+            if self._display_update_count % 20 == 1:
+                print(f"[LiveTable Display] Update #{self._display_update_count}: Received data with {len(table_data.get('players', {}))} players")
+                print(f"   Confidence: {table_data.get('confidence', 0):.1f}%")
+                print(f"   Pot: ${table_data.get('pot', 0)}, Stage: {table_data.get('stage', 'unknown')}")
+                print(f"   Board: {table_data.get('board_cards', [])}")
+                print(f"   My cards: {table_data.get('my_hole_cards', [])}")
+
+            # Update tournament name
+            if self.tournament_label:
+                tournament_name = table_data.get('tournament_name')
+                if tournament_name:
+                    self.tournament_label.config(text=f"🏆 {tournament_name}")
+                else:
+                    self.tournament_label.config(text="")
+
+            # Update table status with validation info, extraction method and data freshness
             if self.table_status_label:
                 status = table_data.get('status', 'Active')
                 confidence = table_data.get('confidence', 0)
+                validation_complete = table_data.get('validation_complete', False)
+                warnings = table_data.get('warnings', [])
+
+                # Check extraction method
+                extraction_method = table_data.get('extraction_method', 'unknown')
+                extraction_time = table_data.get('extraction_time_ms', 0.0)
+
+                # Check if data is live or cached
+                data_source = table_data.get('data_source', 'unknown')
+                data_age = table_data.get('data_age_seconds', 0.0)
+
+                # Build status text with extraction method and freshness indicator
+                if data_source == 'live':
+                    if extraction_method == 'cdp':
+                        # Chrome DevTools - fastest and most reliable
+                        method_icon = "⚡"
+                        method_text = "CDP"
+                    else:
+                        # Screenshot OCR - slower
+                        method_icon = "📸"
+                        method_text = "OCR"
+
+                    status_text = f"{method_icon} {method_text} ({extraction_time:.0f}ms) - {status} ({confidence:.1f}%)"
+                    status_color = COLORS["accent_success"] if (confidence and confidence > 70 and validation_complete) else COLORS["accent_warning"]
+                else:
+                    # Cached data
+                    status_text = f"💾 CACHED ({data_age:.1f}s ago) - {status} ({confidence:.1f}% confidence)"
+                    status_color = COLORS["accent_info"] if data_age < 5.0 else COLORS["accent_warning"]
+
+                if not validation_complete:
+                    status_text += f" - ⚠️ {len(warnings)} warning(s)"
+
                 self.table_status_label.config(
-                    text=f"{status} ({confidence:.1f}% confidence)",
-                    fg=COLORS["accent_success"] if confidence > 70 else COLORS["accent_warning"]
+                    text=status_text,
+                    fg=status_color
                 )
 
             # Update board cards
@@ -622,6 +863,8 @@ class LiveTableSection:
             # Update dealer button
             if self.dealer_button_label:
                 dealer_seat = table_data.get('dealer_seat', 0)
+                # Handle None values explicitly
+                dealer_seat = dealer_seat if dealer_seat is not None else 0
                 self.dealer_button_label.config(
                     text=f"Seat {dealer_seat}" if dealer_seat > 0 else "Seat -"
                 )
@@ -634,41 +877,156 @@ class LiveTableSection:
 
                     # Update name
                     name = player_info.get('name', 'Empty')
+
+                    # Check if this is the user's seat based on handle
+                    is_user_seat = False
+                    if self.user_handle and name != 'Empty':
+                        is_user_seat = self.user_handle.lower() in name.lower() or name.lower() in self.user_handle.lower()
+                        if is_user_seat and self.user_seat != seat:
+                            self.user_seat = seat
+                            print(f"Detected user at seat {seat}")
+
+                    # Check if this is the active player's turn
+                    is_active_turn = player_info.get('is_active_turn', False)
+
+                    # Determine background color based on player state
+                    if is_active_turn:
+                        # Bright green for active turn
+                        bg_color = "#28a745"
+                        fg_color = "#FFFFFF"
+                        border = 4
+                    elif is_user_seat:
+                        # Blue for user
+                        bg_color = "#4A90E2"
+                        fg_color = "#FFFFFF"
+                        border = 3
+                    else:
+                        # Default
+                        bg_color = COLORS["bg_light"]
+                        fg_color = COLORS["text_primary"] if name != 'Empty' else COLORS["text_secondary"]
+                        border = 2
+
+                    # Apply styling to frame
+                    self.player_labels[seat]["frame"].config(bg=bg_color, bd=border)
+
+                    # Seat label with indicators
+                    seat_label_text = f"S{seat}"
+                    if is_user_seat:
+                        seat_label_text = f"🎯 YOU (S{seat})"
+                    if is_active_turn:
+                        seat_label_text = f"▶ {seat_label_text}"
+
+                    self.player_labels[seat]["seat_label"].config(
+                        text=seat_label_text,
+                        bg=bg_color,
+                        fg=fg_color,
+                        width=12 if is_user_seat else 5
+                    )
+
+                    # Player name
                     self.player_labels[seat]["name"].config(
                         text=name,
-                        fg=COLORS["text_primary"] if name != 'Empty' else COLORS["text_secondary"]
+                        bg=bg_color,
+                        fg=fg_color
+                    )
+
+                    # Stack
+                    self.player_labels[seat]["stack"].config(
+                        bg=bg_color,
+                        fg=fg_color if is_user_seat or is_active_turn else COLORS["accent_warning"]
+                    )
+
+                    # VPIP stat
+                    vpip = player_info.get('vpip')
+                    if vpip is not None:
+                        self.player_labels[seat]["vpip"].config(
+                            text=f"VP:{vpip}%",
+                            bg=bg_color,
+                            fg=fg_color
+                        )
+                    else:
+                        self.player_labels[seat]["vpip"].config(text="", bg=bg_color)
+
+                    # AF stat
+                    af = player_info.get('af')
+                    if af is not None:
+                        self.player_labels[seat]["af"].config(
+                            text=f"AF:{af:.1f}",
+                            bg=bg_color,
+                            fg=fg_color
+                        )
+                    else:
+                        self.player_labels[seat]["af"].config(text="", bg=bg_color)
+
+                    # Bet / Time bank
+                    self.player_labels[seat]["bet"].config(
+                        bg=bg_color,
+                        fg=fg_color if is_user_seat or is_active_turn else COLORS["accent_info"]
+                    )
+
+                    # Status
+                    self.player_labels[seat]["status"].config(
+                        bg=bg_color,
+                        fg=fg_color if is_user_seat or is_active_turn else (
+                            COLORS["accent_success"] if player_info.get('status') == "Active" else COLORS["text_secondary"]
+                        )
                     )
 
                     # Update stack
                     stack = player_info.get('stack', 0)
+                    # Handle None values explicitly
+                    stack = stack if stack is not None else 0
                     self.player_labels[seat]["stack"].config(
                         text=f"${stack}" if stack > 0 else "$0"
                     )
 
-                    # Update bet
+                    # Update bet or time bank
                     bet = player_info.get('bet', 0)
-                    self.player_labels[seat]["bet"].config(
-                        text=f"Bet: ${bet}" if bet > 0 else "Bet: $0"
-                    )
+                    time_bank = player_info.get('time_bank')
 
-                    # Update hole cards
+                    # Handle None values explicitly
+                    bet = bet if bet is not None else 0
+
+                    # Show time bank if present, otherwise show bet
+                    if time_bank is not None and time_bank > 0:
+                        self.player_labels[seat]["bet"].config(
+                            text=f"⏱ Time: {time_bank}s",
+                            fg="#FF6B6B"  # Red for time running out
+                        )
+                    elif bet > 0:
+                        self.player_labels[seat]["bet"].config(
+                            text=f"Bet: ${bet}"
+                        )
+                    else:
+                        self.player_labels[seat]["bet"].config(text="")
+
+                    # Update hole cards (with safe list access)
                     hole_cards = player_info.get('hole_cards', ['', ''])
+                    # Ensure hole_cards is a list with at least 2 elements
+                    if not isinstance(hole_cards, list):
+                        hole_cards = ['', '']
+                    while len(hole_cards) < 2:
+                        hole_cards.append('')
+
                     self.player_labels[seat]["card1"].config(
-                        text=hole_cards[0] if hole_cards[0] else "[ ]"
+                        text=hole_cards[0] if hole_cards[0] else "[]"
                     )
                     self.player_labels[seat]["card2"].config(
-                        text=hole_cards[1] if len(hole_cards) > 1 and hole_cards[1] else "[ ]"
+                        text=hole_cards[1] if hole_cards[1] else "[]"
                     )
 
                     # Update status
                     status = player_info.get('status', '')
                     self.player_labels[seat]["status"].config(
-                        text=status,
-                        fg=COLORS["accent_success"] if status == "Active" else COLORS["text_secondary"]
+                        text=status
                     )
 
-            # Update my hole cards
+            # Update my hole cards (with safe list access)
             my_cards = table_data.get('my_hole_cards', ['', ''])
+            # Ensure my_cards is a list
+            if not isinstance(my_cards, list):
+                my_cards = ['', '']
+
             for i, card_label in enumerate(self.my_cards_labels):
                 if i < len(my_cards) and my_cards[i]:
                     card_label.config(text=my_cards[i], fg=COLORS["accent_success"])
@@ -680,41 +1038,31 @@ class LiveTableSection:
                 action = table_data.get('recommended_action', 'Waiting for game state...')
                 action_color = COLORS["accent_success"]
 
-                # Color code by action type
-                if "FOLD" in action.upper():
-                    action_color = COLORS["accent_danger"]
-                elif "CALL" in action.upper() or "CHECK" in action.upper():
+                # Show validation warnings in action box if data is incomplete
+                warnings = table_data.get('warnings', [])
+                if warnings and not table_data.get('validation_complete', False):
+                    action = "⚠️ DATA VALIDATION WARNINGS:\n\n"
+                    action += "\n".join(f"• {w}" for w in warnings)
                     action_color = COLORS["accent_warning"]
-                elif "RAISE" in action.upper() or "BET" in action.upper():
-                    action_color = COLORS["accent_success"]
-                elif "ALL-IN" in action.upper():
-                    action_color = COLORS["accent_info"]
+                else:
+                    # Color code by action type
+                    if "FOLD" in action.upper():
+                        action_color = COLORS["accent_danger"]
+                    elif "CALL" in action.upper() or "CHECK" in action.upper():
+                        action_color = COLORS["accent_warning"]
+                    elif "RAISE" in action.upper() or "BET" in action.upper():
+                        action_color = COLORS["accent_success"]
+                    elif "ALL-IN" in action.upper():
+                        action_color = COLORS["accent_info"]
 
                 self.recommended_action_label.config(text=action, fg=action_color)
 
         except Exception as e:
+            import traceback
             print(f"Display update error: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
 
     # ------------------------------------------------------------------
-    def update_autopilot_status(self, active: bool) -> None:
-        """Update autopilot status display."""
-        if not self.status_label:
-            return
-        
-        if active:
-            self.status_label.config(text="Active - Live data updating", fg=COLORS["accent_success"])
-        else:
-            self.status_label.config(text="Inactive - Manual mode only", fg=COLORS["text_secondary"])
-
-    def focus_workspace(self) -> None:
-        """Focus the manual workspace."""
-        if self.manual_panel is None:
-            return
-        try:
-            self.manual_panel.focus_set()
-        except Exception:
-            pass
-
     def stop_updates(self) -> None:
         """Stop the live update thread."""
         self._stop_updates = True

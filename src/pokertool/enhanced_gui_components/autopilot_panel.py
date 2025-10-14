@@ -33,9 +33,9 @@ from .style import COLORS, FONTS
 class AutopilotState:
     """State snapshot for Autopilot."""
 
-    active: bool = False
+    active: bool = True
     scraping: bool = False
-    site: str = "GENERIC"
+    site: str = "BETFAIR"
     tables_detected: int = 0
     actions_taken: int = 0
     last_action: str = "None"
@@ -72,6 +72,16 @@ class AutopilotControlPanel(tk.Frame):
 
         self._locale_listener_token = register_locale_listener(self.apply_translations)
         self.apply_translations()
+
+        # Set initial UI state to match autopilot active state
+        if self.state.active:
+            self.autopilot_button.config(bg=COLORS["autopilot_active"])
+            self.status_label.config(fg=COLORS["autopilot_active"])
+            self.state.start_time = datetime.now()
+            # Notify parent that autopilot is active on startup
+            if self.on_toggle_autopilot:
+                # Schedule callback after GUI is fully initialized
+                self.after(100, lambda: self.on_toggle_autopilot(True))
 
         self._on_site_changed()
 
