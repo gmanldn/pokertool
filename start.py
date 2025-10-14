@@ -7,9 +7,11 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v49.0.0
-# last_commit: '2025-10-14T12:00:00Z'
+# version: v60.0.0
+# last_commit: '2025-10-14T14:00:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Added canonical version tracking system with release branch workflow
 # - date: '2025-10-14'
 #   summary: Added 35 comprehensive screen scraping optimizations (speed, accuracy, reliability)
 # - date: '2025-10-14'
@@ -29,7 +31,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v49.0.0
+PokerTool One-Click Launcher - v60.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -50,8 +52,15 @@ import platform
 import shutil
 import argparse
 
-# Version
-__version__ = '49.0.0'
+# Add src to path for version import
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'src'))
+
+# Import canonical version
+try:
+    from pokertool.version import __version__, format_version
+except ImportError:
+    __version__ = '60.0.0'  # Fallback
+    format_version = lambda **kwargs: f"v{__version__}"
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -246,7 +255,7 @@ def launch_enhanced_gui() -> int:
     env['PYTHONPATH'] = str(SRC_DIR)
 
     log("=" * 70)
-    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v49.0.0")
+    log(f"🎰 LAUNCHING POKERTOOL ENHANCED GUI {format_version(include_name=True)}")
     log("=" * 70)
     log("")
     log("Features:")
@@ -314,7 +323,7 @@ def launch_enhanced_gui() -> int:
     # Try launch_gui.py first (direct launcher)
     launcher = ROOT / 'launch_gui.py'
     if launcher.exists():
-        log("Starting Enhanced GUI v49.0.0 via launcher...")
+        log(f"Starting Enhanced GUI {format_version()} via launcher...")
         result = subprocess.run([venv_python, str(launcher)], env=env, cwd=ROOT)
         return result.returncode
 
@@ -335,9 +344,9 @@ def show_banner():
     """Show startup banner."""
     clear_terminal()
     print("=" * 70)
-    print("🎰 POKERTOOL - Enhanced GUI v49.0.0")
+    print(f"🎰 POKERTOOL - Enhanced GUI {format_version()}")
     print("=" * 70)
-    print("Enterprise Edition with AI Learning & 35 Screen Scraping Optimizations")
+    print("Enterprise Edition with AI Learning & Version Tracking System")
     print("")
     print(f"Platform: {platform.system()} {platform.release()}")
     print(f"Python: {sys.version.split()[0]}")
