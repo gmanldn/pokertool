@@ -11,8 +11,8 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 35.0.0
-Last Modified: 2025-10-12
+Version: 36.0.0
+Last Modified: 2025-10-14
 Author: PokerTool Development Team
 License: MIT
 
@@ -21,6 +21,7 @@ Dependencies:
     - Python 3.10+ required
 
 Change Log:
+    - v36.0.0 (2025-10-14): Fixed GUI startup - robust process cleanup, window visibility guarantee, black button text
     - v35.0.0 (2025-10-12): Confidence-Aware Decision API - Uncertainty quantification and risk-adjusted recommendations
     - v34.0.0 (2025-10-12): Enhanced UX - Clear hero position, auto table detection, optimized action blades
     - v33.0.0 (2025-10-12): Comprehensive startup validation system with health monitoring
@@ -34,7 +35,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '35.0.0'
+__version__ = '36.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -311,6 +312,9 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         # CRITICAL: Auto-start background services after GUI is fully initialized
         # All widget updates from threads must use self.after() to be thread-safe
         self.after(100, self._start_background_services_safely)
+
+        # Ensure window is visible and comes to foreground
+        self.after(200, self._ensure_window_visible)
 
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
@@ -3335,6 +3339,25 @@ Platform: {sys.platform}
         self._screen_update_running = False
         if self._screen_update_thread:
             print("Stopping screen update loop...")
+
+    def _ensure_window_visible(self):
+        """Ensure the window is visible and brought to foreground."""
+        try:
+            # Bring window to front
+            self.lift()
+            self.attributes('-topmost', True)
+            self.after_idle(lambda: self.attributes('-topmost', False))
+
+            # Focus the window
+            self.focus_force()
+
+            # Make sure it's not iconified
+            if self.state() == 'iconic':
+                self.deiconify()
+
+            print("✓ Window brought to foreground")
+        except Exception as e:
+            print(f"⚠️  Could not bring window to foreground: {e}")
 
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""

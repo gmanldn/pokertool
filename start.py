@@ -7,9 +7,11 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v33.0.0
-# last_commit: '2025-10-12T17:00:00Z'
+# version: v36.0.0
+# last_commit: '2025-10-14T00:45:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Fixed GUI startup - robust process cleanup, window visibility, black button text
 # - date: '2025-10-12'
 #   summary: Added comprehensive startup validation system with health monitoring
 # - date: '2025-10-12'
@@ -23,7 +25,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v33.0.0
+PokerTool One-Click Launcher - v36.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -45,7 +47,7 @@ import shutil
 import argparse
 
 # Version
-__version__ = '33.0.0'
+__version__ = '36.0.0'
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -158,83 +160,78 @@ def run_tests() -> int:
     return 0
 
 def cleanup_old_processes():
-    """Kill any old pokertool processes before starting (including stuck ones)."""
+    """Kill any old pokertool/GUI processes before starting (including stuck ones)."""
     import time
     import signal
 
     try:
         current_pid = os.getpid()
-        log("Cleaning up previous pokertool instances...")
+        log("Cleaning up previous pokertool/GUI instances...")
 
         if IS_WINDOWS:
-            # Windows: Use taskkill with force flag
-            # First try graceful termination
+            # Windows: Kill any pokertool GUI processes
             subprocess.run(
                 ['taskkill', '/F', '/FI', 'IMAGENAME eq python*', '/FI', f'PID ne {current_pid}'],
                 capture_output=True, timeout=5
             )
         else:
-            # Unix: More robust multi-step cleanup
-            # Step 1: Find all pokertool processes (excluding current)
-            try:
-                result = subprocess.run(
-                    ['pgrep', '-f', 'python.*start\\.py'],
-                    capture_output=True, text=True, timeout=5
-                )
-                pids = [int(pid) for pid in result.stdout.strip().split('\n') if pid and int(pid) != current_pid]
+            # Unix: Kill ALL pokertool-related GUI processes
+            # Patterns to search for
+            patterns = [
+                'python.*start\\.py',
+                'python.*enhanced_gui',
+                'python.*simple_gui',
+                'python.*launch.*gui',
+                'python.*run_gui',
+                'pokertool.*gui'
+            ]
 
-                if pids:
-                    log(f"Found {len(pids)} previous instance(s) to clean up")
+            all_pids = set()
+            for pattern in patterns:
+                try:
+                    result = subprocess.run(
+                        ['pgrep', '-f', pattern],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    pids = [int(pid) for pid in result.stdout.strip().split('\n')
+                           if pid and pid.strip() and int(pid) != current_pid]
+                    all_pids.update(pids)
+                except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
+                    pass
 
-                    # Step 2: Try SIGTERM first (graceful)
-                    for pid in pids:
-                        try:
-                            os.kill(pid, signal.SIGTERM)
-                        except ProcessLookupError:
-                            pass  # Process already gone
-                        except PermissionError:
-                            log(f"⚠️  Cannot terminate PID {pid} (permission denied)")
+            if all_pids:
+                log(f"Found {len(all_pids)} previous instance(s) to clean up")
 
-                    # Step 3: Wait briefly for graceful shutdown
-                    time.sleep(1.0)
+                # Step 1: Try SIGTERM first (graceful)
+                for pid in all_pids:
+                    try:
+                        os.kill(pid, signal.SIGTERM)
+                    except (ProcessLookupError, PermissionError):
+                        pass
 
-                    # Step 4: Force kill any remaining processes with SIGKILL
-                    for pid in pids:
-                        try:
-                            # Check if still running
-                            os.kill(pid, 0)  # Signal 0 checks existence
-                            # Still alive, force kill
-                            os.kill(pid, signal.SIGKILL)
-                            log(f"Force killed stuck process PID {pid}")
-                        except ProcessLookupError:
-                            pass  # Process terminated gracefully
-                        except PermissionError:
-                            log(f"⚠️  Cannot kill PID {pid} (permission denied)")
+                # Step 2: Wait briefly for graceful shutdown
+                time.sleep(1.0)
 
-                    # Step 5: Final wait and verify
-                    time.sleep(0.5)
-                    log("✓ Cleanup complete")
-                else:
-                    log("✓ No previous instances found")
+                # Step 3: Force kill any remaining processes with SIGKILL
+                for pid in all_pids:
+                    try:
+                        os.kill(pid, 0)  # Check if still running
+                        os.kill(pid, signal.SIGKILL)  # Force kill
+                        log(f"Force killed stuck process PID {pid}")
+                    except (ProcessLookupError, PermissionError):
+                        pass
 
-            except subprocess.TimeoutExpired:
-                log("⚠️  Process search timed out, continuing anyway")
-            except FileNotFoundError:
-                # pgrep not available, fallback to pkill
-                log("Using fallback cleanup method...")
-                subprocess.run(
-                    ['pkill', '-9', '-f', 'python.*start\\.py'],
-                    capture_output=True, timeout=5
-                )
                 time.sleep(0.5)
+                log("✓ Cleanup complete")
+            else:
+                log("✓ No previous instances found")
 
     except Exception as e:
-        # Log error but continue - startup should proceed
         log(f"⚠️  Cleanup warning: {e}")
         pass
 
 def launch_enhanced_gui() -> int:
-    """Launch the Enhanced GUI v33.0.0."""
+    """Launch the Enhanced GUI v36.0.0."""
     venv_python = get_venv_python()
 
     # Clean up any old processes first
@@ -245,7 +242,7 @@ def launch_enhanced_gui() -> int:
     env['PYTHONPATH'] = str(SRC_DIR)
 
     log("=" * 70)
-    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v33.0.0")
+    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v36.0.0")
     log("=" * 70)
     log("")
     log("Features:")
@@ -310,11 +307,11 @@ def launch_enhanced_gui() -> int:
         log("  🧠 Learning System: ✓ Ready")
         log("")
 
-    # Try enhanced GUI v2 launcher
-    launcher = ROOT / 'launch_enhanced_gui_v2.py'
+    # Try launch_gui.py first (direct launcher)
+    launcher = ROOT / 'launch_gui.py'
     if launcher.exists():
-        log("Starting Enhanced GUI v33.0.0...")
-        result = subprocess.run([venv_python, str(launcher)], env=env)
+        log("Starting Enhanced GUI v36.0.0 via launcher...")
+        result = subprocess.run([venv_python, str(launcher)], env=env, cwd=ROOT)
         return result.returncode
 
     # Fallback: Try to import and run directly
@@ -334,7 +331,7 @@ def show_banner():
     """Show startup banner."""
     clear_terminal()
     print("=" * 70)
-    print("🎰 POKERTOOL - Enhanced GUI v33.0.0")
+    print("🎰 POKERTOOL - Enhanced GUI v36.0.0")
     print("=" * 70)
     print("Enterprise Edition with AI Learning & Performance Optimization")
     print("")

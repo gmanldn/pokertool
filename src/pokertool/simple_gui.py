@@ -144,9 +144,9 @@ class SimplePokerGUI(tk.Tk):
                 text=label,
                 font=FONTS['heading'],
                 bg=COLORS['bg_light'],
-                fg=COLORS['text_primary'],
+                fg='#000000',  # Black text for clarity
                 activebackground=COLORS['accent_primary'],
-                activeforeground='white',
+                activeforeground='#000000',  # Black text when active
                 relief='flat',
                 bd=0,
                 padx=20,
@@ -228,8 +228,9 @@ class SimplePokerGUI(tk.Tk):
             text="▶ Start Autopilot",
             font=FONTS['heading'],
             bg=COLORS['accent_success'],
-            fg='white',
+            fg='#000000',  # Black text for clarity
             activebackground=COLORS['accent_primary'],
+            activeforeground='#000000',  # Black text when active
             pady=15,
             cursor='hand2',
             command=self._toggle_autopilot
@@ -375,13 +376,13 @@ class SimplePokerGUI(tk.Tk):
                 if sid == section_id:
                     btn.config(
                         bg=COLORS['accent_primary'],
-                        fg='white',
+                        fg='#000000',  # Black text for clarity
                         relief='sunken'
                     )
                 else:
                     btn.config(
                         bg=COLORS['bg_light'],
-                        fg=COLORS['text_primary'],
+                        fg='#000000',  # Black text for clarity
                         relief='flat'
                     )
             print(f"DEBUG: Section '{section_id}' is now displayed")
