@@ -17,7 +17,15 @@ Features:
 - Update throttling (max 2 updates/second)
 - Window positioning/sizing preferences
 
-Version: 1.0.0
+ENHANCED VERSION 2.0:
+- Live detection status panel
+- One-click feedback system
+- Keyboard shortcuts
+- Multi-level information hierarchy
+- Profile system integration
+- Performance tracking
+
+Version: 2.0.0
 """
 
 from __future__ import annotations
@@ -386,6 +394,32 @@ def demo():
     window.mainloop()
 
 
+# ============================================================================
+# ENHANCED VERSION INTEGRATION
+# ============================================================================
+
+# Try to import enhanced version with all improvements
+try:
+    from .enhanced_floating_window import (
+        EnhancedFloatingAdviceWindow,
+        AdviceData,
+        InformationLevel
+    )
+    from .ui_enhancements import DetectionStatus
+    from .ui_profiles_dashboard import ProfileManager, PlayStyle
+
+    ENHANCED_AVAILABLE = True
+
+    # Create convenience alias
+    FloatingAdviceWindowV2 = EnhancedFloatingAdviceWindow
+
+except ImportError as e:
+    ENHANCED_AVAILABLE = False
+    # Keep using basic version
+    FloatingAdviceWindowV2 = FloatingAdviceWindow
+
+
 if __name__ == '__main__':
     print("Starting Floating Advice Window demo...")
+    print(f"Enhanced version available: {ENHANCED_AVAILABLE}")
     demo()

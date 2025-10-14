@@ -7,9 +7,11 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v36.0.0
-# last_commit: '2025-10-14T00:45:00Z'
+# version: v37.0.0
+# last_commit: '2025-10-14T05:00:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Added comprehensive UI enhancements - status panel, feedback, shortcuts, profiles, charts
 # - date: '2025-10-14'
 #   summary: Fixed GUI startup - robust process cleanup, window visibility, black button text
 # - date: '2025-10-12'
@@ -25,7 +27,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v36.0.0
+PokerTool One-Click Launcher - v37.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -47,7 +49,7 @@ import shutil
 import argparse
 
 # Version
-__version__ = '36.0.0'
+__version__ = '37.0.0'
 
 # Constants
 ROOT = Path(__file__).resolve().parent
