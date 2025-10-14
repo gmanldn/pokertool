@@ -140,12 +140,12 @@ class AutopilotControlPanel(tk.Frame):
     # UI construction ------------------------------------------------------
     def _build_ui(self) -> None:
         title_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        title_frame.pack(fill="x", pady=10)
+        title_frame.pack(fill="x", pady=3)
 
         title_label = tk.Label(
             title_frame,
             text="",
-            font=FONTS["title"],
+            font=FONTS["heading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
         )
@@ -154,12 +154,12 @@ class AutopilotControlPanel(tk.Frame):
         self._register_translation(title_label, "autopilot.title")
 
         status_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        status_frame.pack(fill="x", pady=5)
+        status_frame.pack(fill="x", pady=2)
 
         self.status_label = tk.Label(
             status_frame,
             text=translate("autopilot.status.active"),
-            font=FONTS["status"],
+            font=FONTS["subheading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["autopilot_active"],
         )
@@ -169,20 +169,20 @@ class AutopilotControlPanel(tk.Frame):
         always_on_label = tk.Label(
             status_frame,
             text="🔒 ALWAYS ACTIVE",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 9, "bold"),
             bg=COLORS["bg_medium"],
             fg=COLORS["accent_success"],
         )
-        always_on_label.pack(pady=5)
+        always_on_label.pack(pady=2)
 
         # Table Active Indicator
         table_indicator_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        table_indicator_frame.pack(fill="x", pady=10)
+        table_indicator_frame.pack(fill="x", pady=3)
 
         self.table_indicator = tk.Label(
             table_indicator_frame,
             text="● Table: Not Detected",
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_secondary"],
         )
@@ -191,17 +191,17 @@ class AutopilotControlPanel(tk.Frame):
         settings_frame = tk.LabelFrame(
             self,
             text=translate("autopilot.settings.title"),
-            font=FONTS["heading"],
+            font=FONTS["subheading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             relief=tk.RAISED,
-            bd=2,
+            bd=1,
         )
-        settings_frame.pack(fill="x", padx=10, pady=10)
+        settings_frame.pack(fill="x", padx=8, pady=5)
         self._register_translation(settings_frame, "autopilot.settings.title")
 
         site_frame = tk.Frame(settings_frame, bg=COLORS["bg_medium"])
-        site_frame.pack(fill="x", padx=10, pady=5)
+        site_frame.pack(fill="x", padx=8, pady=3)
 
         site_label = tk.Label(
             site_frame,
@@ -238,7 +238,7 @@ class AutopilotControlPanel(tk.Frame):
         site_combo.set(self.state.site)
 
         strategy_frame = tk.Frame(settings_frame, bg=COLORS["bg_medium"])
-        strategy_frame.pack(fill="x", padx=10, pady=5)
+        strategy_frame.pack(fill="x", padx=8, pady=3)
 
         strategy_label = tk.Label(
             strategy_frame,
@@ -265,12 +265,12 @@ class AutopilotControlPanel(tk.Frame):
             settings_frame,
             text=translate("autopilot.settings.auto_detect"),
             variable=self.auto_detect_var,
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_light"],
         )
-        auto_detect_cb.pack(anchor="w", padx=10, pady=2)
+        auto_detect_cb.pack(anchor="w", padx=8, pady=1)
         self._register_translation(auto_detect_cb, "autopilot.settings.auto_detect")
 
         self.auto_scraper_var = tk.BooleanVar(value=True)
@@ -278,12 +278,12 @@ class AutopilotControlPanel(tk.Frame):
             settings_frame,
             text=translate("autopilot.settings.auto_scraper"),
             variable=self.auto_scraper_var,
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_light"],
         )
-        auto_scraper_cb.pack(anchor="w", padx=10, pady=2)
+        auto_scraper_cb.pack(anchor="w", padx=8, pady=1)
         self._register_translation(auto_scraper_cb, "autopilot.settings.auto_scraper")
 
         self.continuous_update_var = tk.BooleanVar(value=True)
@@ -291,12 +291,12 @@ class AutopilotControlPanel(tk.Frame):
             settings_frame,
             text=translate("autopilot.settings.continuous_updates"),
             variable=self.continuous_update_var,
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_light"],
         )
-        continuous_update_cb.pack(anchor="w", padx=10, pady=2)
+        continuous_update_cb.pack(anchor="w", padx=8, pady=1)
         self._register_translation(continuous_update_cb, "autopilot.settings.continuous_updates")
 
         # GTO analysis is now auto-integrated (always enabled)
@@ -305,17 +305,17 @@ class AutopilotControlPanel(tk.Frame):
         stats_frame = tk.LabelFrame(
             self,
             text=translate("autopilot.stats.title"),
-            font=FONTS["heading"],
+            font=FONTS["subheading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             relief=tk.RAISED,
-            bd=2,
+            bd=1,
         )
-        stats_frame.pack(fill="x", padx=10, pady=10)
+        stats_frame.pack(fill="x", padx=8, pady=5)
         self._register_translation(stats_frame, "autopilot.stats.title")
 
         stats_grid = tk.Frame(stats_frame, bg=COLORS["bg_medium"])
-        stats_grid.pack(fill="x", padx=10, pady=10)
+        stats_grid.pack(fill="x", padx=8, pady=5)
 
         tables_header = tk.Label(
             stats_grid,
@@ -390,7 +390,7 @@ class AutopilotControlPanel(tk.Frame):
         self.profit_label.grid(row=1, column=3, sticky="w")
 
         action_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        action_frame.pack(fill="x", padx=10, pady=5)
+        action_frame.pack(fill="x", padx=8, pady=3)
 
         last_action_label = tk.Label(
             action_frame,
