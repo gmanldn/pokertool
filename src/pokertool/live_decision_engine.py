@@ -553,7 +553,7 @@ class LiveDecisionEngine:
         recommendation: Any,
         game_state: GameState
     ) -> LiveAdviceData:
-        """Convert recommendation to LiveAdviceData."""
+        """Convert recommendation to LiveAdviceData with all enhanced metrics."""
         # Map action string to ActionType
         action_map = {
             'fold': ActionType.FOLD,
@@ -564,7 +564,7 @@ class LiveDecisionEngine:
         }
         action = action_map.get(recommendation.action.lower(), ActionType.UNKNOWN)
 
-        # Extract metrics
+        # Extract basic metrics
         confidence = getattr(recommendation, 'recommendation_strength', 0.5)
         win_prob = getattr(recommendation, 'win_probability', 0.5)
         ev = getattr(recommendation, 'ev', None)
@@ -572,6 +572,23 @@ class LiveDecisionEngine:
         # Calculate pot odds
         pot_odds = game_state.call_amount / (game_state.pot_size + game_state.call_amount) \
                    if game_state.pot_size + game_state.call_amount > 0 else None
+
+        # Calculate SPR (Stack-to-Pot Ratio)
+        stack_pot_ratio = game_state.stack_size / game_state.pot_size if game_state.pot_size > 0 else None
+
+        # Calculate outs and percentages
+        outs_count, outs_percentage = self._calculate_outs(game_state)
+
+        # Calculate hand strength percentile
+        hand_percentile = self._calculate_hand_percentile(game_state)
+
+        # Calculate multi-action EVs
+        ev_fold = 0.0
+        ev_call = self._calculate_call_ev(game_state, win_prob) if game_state.call_amount > 0 else 0.0
+        ev_raise = self._calculate_raise_ev(game_state, win_prob) if game_state.stack_size > game_state.call_amount else None
+
+        # Generate bet sizing suggestions
+        bet_sizes = self._generate_bet_sizes(game_state) if action in (ActionType.RAISE, ActionType.ALL_IN) else None
 
         # Get bet size for raises
         action_amount = None
@@ -587,6 +604,11 @@ class LiveDecisionEngine:
             pot_odds=pot_odds
         )
 
+        # Create alternative actions
+        alternative_actions = self._generate_alternative_actions(
+            action, ev_fold, ev_call, ev_raise
+        )
+
         return LiveAdviceData(
             action=action,
             action_amount=action_amount,
@@ -596,8 +618,151 @@ class LiveDecisionEngine:
             has_data=True,
             is_calculating=False,
             ev=ev,
-            pot_odds=pot_odds
+            pot_odds=pot_odds,
+            # New metrics
+            ev_fold=ev_fold,
+            ev_call=ev_call,
+            ev_raise=ev_raise,
+            stack_pot_ratio=stack_pot_ratio,
+            outs_count=outs_count,
+            outs_percentage=outs_percentage,
+            hand_percentile=hand_percentile,
+            bet_sizes=bet_sizes,
+            position=game_state.position,
+            street=game_state.street,
+            alternative_actions=alternative_actions
         )
+
+    def _calculate_outs(self, game_state: GameState) -> tuple:
+        """Calculate outs and improvement percentage."""
+        if not game_state.community_cards or len(game_state.community_cards) < 3:
+            return None, None
+
+        # Simplified outs calculation (would use proper evaluator in production)
+        # For now, return placeholder based on hand strength
+        hand_strength = self.win_calculator._estimate_hand_strength(
+            game_state.hole_cards,
+            game_state.community_cards
+        )
+
+        if hand_strength < 0.4:
+            # Likely drawing hand
+            outs_estimate = 8 + int((0.4 - hand_strength) * 20)
+            cards_remaining = 52 - len(game_state.hole_cards) - len(game_state.community_cards)
+
+            if len(game_state.community_cards) == 3:  # Flop
+                # Two cards to come
+                outs_pct = (1 - ((cards_remaining - outs_estimate) / cards_remaining) ** 2) * 100
+            else:  # Turn
+                # One card to come
+                outs_pct = (outs_estimate / cards_remaining) * 100
+
+            return outs_estimate, outs_pct
+
+        return None, None
+
+    def _calculate_hand_percentile(self, game_state: GameState) -> Optional[float]:
+        """Calculate hand strength as percentile (0-100)."""
+        hand_strength = self.win_calculator._estimate_hand_strength(
+            game_state.hole_cards,
+            game_state.community_cards
+        )
+        # Convert 0-1 strength to percentile (100 = best)
+        return hand_strength * 100
+
+    def _calculate_call_ev(self, game_state: GameState, win_prob: float) -> Optional[float]:
+        """Calculate EV for calling."""
+        if game_state.call_amount == 0:
+            return 0.0
+
+        pot_after_call = game_state.pot_size + game_state.call_amount
+        ev = (win_prob * pot_after_call) - game_state.call_amount
+        return ev
+
+    def _calculate_raise_ev(self, game_state: GameState, win_prob: float) -> Optional[float]:
+        """Calculate approximate EV for raising."""
+        # Simplified EV calculation
+        # Assumes some fold equity and pot building
+        fold_equity = 0.3  # Assume 30% fold equity
+        raise_amount = min(game_state.pot_size * 0.75, game_state.stack_size - game_state.call_amount)
+
+        if raise_amount <= 0:
+            return None
+
+        pot_after_raise = game_state.pot_size + game_state.call_amount + raise_amount
+
+        # EV = (fold equity * current pot) + ((1 - fold equity) * win prob * final pot) - cost
+        ev = (fold_equity * game_state.pot_size) + \
+             ((1 - fold_equity) * win_prob * pot_after_raise) - \
+             (game_state.call_amount + raise_amount)
+
+        return ev
+
+    def _generate_bet_sizes(self, game_state: GameState) -> Dict[str, float]:
+        """Generate bet sizing suggestions."""
+        pot = game_state.pot_size
+        stack = game_state.stack_size - game_state.call_amount
+
+        sizes = {}
+
+        # Standard bet sizes
+        if pot * 0.33 <= stack:
+            sizes["1/3 pot"] = pot * 0.33
+        if pot * 0.5 <= stack:
+            sizes["1/2 pot"] = pot * 0.5
+        if pot * 0.66 <= stack:
+            sizes["2/3 pot"] = pot * 0.66
+        if pot <= stack:
+            sizes["Pot"] = pot
+        if pot * 1.5 <= stack:
+            sizes["1.5x pot"] = pot * 1.5
+
+        # All-in
+        if stack > 0:
+            sizes["All-in"] = stack
+
+        return sizes
+
+    def _generate_alternative_actions(
+        self,
+        primary_action: ActionType,
+        ev_fold: float,
+        ev_call: Optional[float],
+        ev_raise: Optional[float]
+    ) -> list:
+        """Generate alternative actions ranked by EV."""
+        alternatives = []
+
+        # Collect all actions with their EVs
+        action_evs = []
+        action_evs.append(("Fold", ev_fold))
+
+        if ev_call is not None:
+            action_evs.append(("Call", ev_call))
+
+        if ev_raise is not None:
+            action_evs.append(("Raise", ev_raise))
+
+        # Sort by EV (descending)
+        action_evs.sort(key=lambda x: x[1], reverse=True)
+
+        # Return alternatives (exclude primary action and fold)
+        for action_name, ev_value in action_evs:
+            action_str = action_name.lower()
+            # Skip if it's the primary action
+            if action_str == primary_action.value.lower():
+                continue
+
+            alternatives.append({
+                "action": action_name,
+                "ev": ev_value
+            })
+
+            # Only return top 2 alternatives
+            if len(alternatives) >= 2:
+                break
+
+        return alternatives if alternatives else None
 
     def _update_performance_metrics(self, latency_ms: float):
         """Update performance tracking metrics."""
