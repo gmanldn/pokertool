@@ -308,23 +308,19 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self._screen_scraper_ready = False
         self._screen_scraper_health_details: List[str] = []
         self.compact_advice_window = None  # Compact live advice window
-        # Initialize modules
-        self._init_modules()
+
+        # Loading state
+        self._modules_loaded = False
+        self._splash_window = None
+
+        # FAST STARTUP: Show splash immediately, load modules in background
+        self._show_splash_screen()
+
+        # Build minimal UI first (fast)
         self._setup_styles()
-        self._build_ui()
-        self._locale_listener_token = register_locale_listener(self._apply_translations)
-        self._apply_translations()
-        self._init_database()
-        
-        # CRITICAL: Auto-start background services after GUI is fully initialized
-        # All widget updates from threads must use self.after() to be thread-safe
-        self.after(100, self._start_background_services_safely)
 
-        # Ensure window is visible and comes to foreground
-        self.after(200, self._ensure_window_visible)
-
-        # Launch compact live advice window alongside main GUI
-        self.after(500, self._launch_compact_advice_window)
+        # Start async module loading
+        self.after(50, self._async_init_modules)
 
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
@@ -334,7 +330,153 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         if self._lock_path:
             release_lock(self._lock_path)
             self._lock_path = None
-    
+
+    def _show_splash_screen(self):
+        """Show lightweight splash screen immediately."""
+        try:
+            self._splash_window = tk.Toplevel(self)
+            self._splash_window.title("")
+            self._splash_window.overrideredirect(True)
+
+            # Center splash
+            width, height = 400, 250
+            x = (self._splash_window.winfo_screenwidth() // 2) - (width // 2)
+            y = (self._splash_window.winfo_screenheight() // 2) - (height // 2)
+            self._splash_window.geometry(f'{width}x{height}+{x}+{y}')
+
+            # Splash content
+            splash_frame = tk.Frame(self._splash_window, bg='#1a1a1a', relief=tk.RAISED, bd=2)
+            splash_frame.pack(fill='both', expand=True)
+
+            tk.Label(
+                splash_frame,
+                text="🎰 PokerTool",
+                font=("Arial", 24, "bold"),
+                bg='#1a1a1a',
+                fg='#00C853'
+            ).pack(pady=(40, 10))
+
+            tk.Label(
+                splash_frame,
+                text="v66.0.0",
+                font=("Arial", 12),
+                bg='#1a1a1a',
+                fg='#888888'
+            ).pack()
+
+            self._splash_label = tk.Label(
+                splash_frame,
+                text="Initializing...",
+                font=("Arial", 11),
+                bg='#1a1a1a',
+                fg='#FFFFFF'
+            )
+            self._splash_label.pack(pady=(30, 10))
+
+            # Progress bar
+            self._splash_progress = ttk.Progressbar(
+                splash_frame,
+                mode='indeterminate',
+                length=300
+            )
+            self._splash_progress.pack(pady=10)
+            self._splash_progress.start(10)
+
+            self._splash_window.update()
+            self._splash_window.lift()
+            self._splash_window.attributes('-topmost', True)
+
+        except Exception as e:
+            print(f"Could not create splash screen: {e}")
+            self._splash_window = None
+
+    def _update_splash(self, message: str):
+        """Update splash screen message."""
+        if self._splash_window and self._splash_label:
+            try:
+                self._splash_label.config(text=message)
+                self._splash_window.update()
+            except:
+                pass
+
+    def _hide_splash(self):
+        """Hide and destroy splash screen."""
+        if self._splash_window:
+            try:
+                self._splash_window.destroy()
+            except:
+                pass
+            self._splash_window = None
+
+    def _async_init_modules(self):
+        """Initialize modules asynchronously using event loop scheduling."""
+        # Stage 1: Init modules (100ms)
+        self._update_splash("Loading modules...")
+        self.after(100, self._stage1_init_modules)
+
+    def _stage1_init_modules(self):
+        """Stage 1: Initialize modules in background thread."""
+        def init_thread():
+            try:
+                self._init_modules()
+                # Schedule UI build on main thread
+                self.after(0, lambda: self._update_splash("Building interface..."))
+                self.after(50, self._stage2_build_ui)
+            except Exception as e:
+                print(f"Error in stage 1: {e}")
+                import traceback
+                traceback.print_exc()
+                self.after(50, self._stage2_build_ui)
+
+        # Run in background thread so GUI stays responsive
+        thread = threading.Thread(target=init_thread, daemon=True)
+        thread.start()
+
+    def _stage2_build_ui(self):
+        """Stage 2: Build UI."""
+        try:
+            self._build_ui()
+            self._update_splash("Setting up database...")
+            self.after(50, self._stage3_setup_database)
+        except Exception as e:
+            print(f"Error in stage 2: {e}")
+            import traceback
+            traceback.print_exc()
+            self.after(0, self._hide_splash)
+
+    def _stage3_setup_database(self):
+        """Stage 3: Setup database and translations."""
+        try:
+            self._locale_listener_token = register_locale_listener(self._apply_translations)
+            self._apply_translations()
+            self._init_database()
+            self._update_splash("Starting services...")
+            self.after(50, self._stage4_start_services)
+        except Exception as e:
+            print(f"Error in stage 3: {e}")
+            self.after(50, self._stage4_start_services)
+
+    def _stage4_start_services(self):
+        """Stage 4: Start background services."""
+        try:
+            self._start_background_services_safely()
+            self._update_splash("Almost ready...")
+            self.after(100, self._stage5_finalize)
+        except Exception as e:
+            print(f"Error in stage 4: {e}")
+            self.after(100, self._stage5_finalize)
+
+    def _stage5_finalize(self):
+        """Stage 5: Final setup."""
+        try:
+            self._ensure_window_visible()
+            self._launch_compact_advice_window()
+            self._modules_loaded = True
+            self.after(200, self._hide_splash)
+        except Exception as e:
+            print(f"Error in stage 5: {e}")
+            self.after(0, self._hide_splash)
+
     def _init_modules(self):
         """Initialize all poker tool modules."""
         try:

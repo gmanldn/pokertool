@@ -21,10 +21,60 @@ from typing import TYPE_CHECKING, Any, Dict
 if TYPE_CHECKING:
     from typing import Optional
 
+# Import master logger for comprehensive logging
+try:
+    from pokertool.master_logging import get_master_logger, LogCategory
+    MASTER_LOGGER_AVAILABLE = True
+except ImportError:
+    MASTER_LOGGER_AVAILABLE = False
+    print("Warning: Master logger not available")
+
 
 class AutopilotHandlersMixin:
     """Mixin class providing autopilot event handlers."""
-    
+
+    def _is_valid_table(self, table_state) -> bool:
+        """
+        Strict validation to determine if detected table is actually active.
+
+        Prevents false positives by checking multiple criteria:
+        - Minimum 2 active players
+        - Minimum confidence threshold (if available)
+        - Valid blinds or pot size
+        - Reasonable stack sizes
+        """
+        # Check basic player count
+        if not table_state or table_state.active_players < 2:
+            return False
+
+        # Check confidence score if available
+        confidence = getattr(table_state, 'confidence', 0)
+        if confidence > 0 and confidence < 50:  # Less than 50% confidence
+            return False
+
+        # Check that we have valid blind structure OR non-zero pot
+        has_valid_blinds = (
+            getattr(table_state, 'small_blind', 0) > 0 and
+            getattr(table_state, 'big_blind', 0) > 0
+        )
+        has_pot = table_state.pot_size > 0
+
+        if not (has_valid_blinds or has_pot):
+            return False
+
+        # Check that at least one player has a reasonable stack
+        if hasattr(table_state, 'seats'):
+            total_stacks = sum(
+                getattr(seat, 'stack_size', 0)
+                for seat in table_state.seats
+                if getattr(seat, 'is_active', False)
+            )
+            if total_stacks <= 0:
+                return False
+
+        # All validation passed
+        return True
+
     def _handle_autopilot_toggle(self, active: bool) -> None:
         """Handle autopilot activation/deactivation."""
         self.autopilot_active = active
@@ -100,12 +150,40 @@ class AutopilotHandlersMixin:
                 # Detect and analyze tables
                 if self.screen_scraper:
                     table_state = self.screen_scraper.analyze_table()
-                    
-                    # Check if we actually detected a valid table
-                    if table_state and table_state.active_players >= 2:
+
+                    # STRICT validation criteria to prevent false positives
+                    if table_state and self._is_valid_table(table_state):
                         # Valid table detected!
                         table_active = True
-                        table_reason = f"{table_state.active_players} players, pot ${table_state.pot_size}"
+                        table_reason = f"{table_state.active_players} players, pot ${table_state.pot_size}, confidence {getattr(table_state, 'confidence', 0):.1f}%"
+
+                        # Log detailed detection to GUI
+                        detection_log = f"\n{'='*60}\n"
+                        detection_log += f"🎯 TABLE DETECTED - {datetime.now().strftime('%H:%M:%S')}\n"
+                        detection_log += f"{'='*60}\n"
+                        detection_log += f"  Confidence: {getattr(table_state, 'confidence', 0):.1f}%\n"
+                        detection_log += f"  Players: {table_state.active_players}\n"
+                        detection_log += f"  Pot: ${table_state.pot_size:.2f}\n"
+                        detection_log += f"  Stage: {table_state.stage}\n"
+                        detection_log += f"  Hero Cards: {table_state.hero_cards if table_state.hero_cards else 'None'}\n"
+                        detection_log += f"  Board: {table_state.board_cards if table_state.board_cards else 'None'}\n"
+                        detection_log += f"{'='*60}\n"
+                        self.after(0, lambda log=detection_log: self._update_table_status(log))
+
+                        # Log to master logger (permanent record)
+                        if MASTER_LOGGER_AVAILABLE:
+                            logger = get_master_logger()
+                            logger.info(
+                                f"Table detected: {table_state.active_players} players, pot ${table_state.pot_size:.2f}",
+                                category=LogCategory.SCRAPER,
+                                confidence=getattr(table_state, 'confidence', 0),
+                                active_players=table_state.active_players,
+                                pot_size=table_state.pot_size,
+                                stage=table_state.stage,
+                                hero_cards=str(table_state.hero_cards) if table_state.hero_cards else None,
+                                board_cards=str(table_state.board_cards) if table_state.board_cards else None
+                            )
+
                         self._process_table_state(table_state)
 
                         # Auto GTO analysis (now always enabled)
@@ -146,13 +224,86 @@ class AutopilotHandlersMixin:
     def _process_table_state(self, table_state) -> None:
         """Process detected table state and make decisions."""
         try:
-            status_msg = f"[{datetime.now().strftime('%H:%M:%S')}] Table detected\n"
-            status_msg += f"  Pot: ${table_state.pot_size}\n"
-            status_msg += f"  Stage: {table_state.stage}\n"
-            status_msg += f"  Active players: {table_state.active_players}\n"
-            status_msg += f"  Hero cards: {len(table_state.hero_cards)}\n"
-            
-            self.after(0, lambda: self._update_table_status(status_msg))
+            # Build detailed hand information log
+            status_msg = f"\n🃏 HAND DATA - {datetime.now().strftime('%H:%M:%S')}\n"
+            status_msg += f"{'─'*60}\n"
+
+            # Table info
+            status_msg += f"💰 Pot: ${table_state.pot_size:.2f}\n"
+            status_msg += f"📍 Stage: {table_state.stage.upper()}\n"
+            status_msg += f"👥 Active Players: {table_state.active_players}\n"
+
+            # Blinds
+            sb = getattr(table_state, 'small_blind', 0)
+            bb = getattr(table_state, 'big_blind', 0)
+            if sb > 0 or bb > 0:
+                status_msg += f"💵 Blinds: ${sb:.2f}/${bb:.2f}\n"
+
+            # Hero cards (if visible)
+            if table_state.hero_cards:
+                cards_str = ', '.join(str(c) for c in table_state.hero_cards)
+                status_msg += f"🎴 Hero Cards: {cards_str}\n"
+            else:
+                status_msg += f"🎴 Hero Cards: Not visible\n"
+
+            # Board cards (if any)
+            if table_state.board_cards:
+                board_str = ', '.join(str(c) for c in table_state.board_cards)
+                status_msg += f"🃏 Board: {board_str}\n"
+
+            # Player details
+            if hasattr(table_state, 'seats') and table_state.seats:
+                status_msg += f"\n👥 PLAYERS:\n"
+                for seat in table_state.seats:
+                    if getattr(seat, 'is_active', False):
+                        name = getattr(seat, 'name', 'Unknown')
+                        stack = getattr(seat, 'stack_size', 0)
+                        seat_num = getattr(seat, 'seat_number', '?')
+                        position = getattr(seat, 'position', '')
+                        is_hero = getattr(seat, 'is_hero', False)
+                        is_dealer = getattr(seat, 'is_dealer', False)
+
+                        hero_marker = ' 🎯 (YOU)' if is_hero else ''
+                        dealer_marker = ' 🔘' if is_dealer else ''
+                        pos_marker = f' [{position}]' if position else ''
+
+                        status_msg += f"  Seat {seat_num}: {name} - ${stack:.2f}{pos_marker}{hero_marker}{dealer_marker}\n"
+
+            status_msg += f"{'─'*60}\n"
+
+            self.after(0, lambda msg=status_msg: self._update_table_status(msg))
+
+            # Log comprehensive hand data to master logger (permanent record)
+            if MASTER_LOGGER_AVAILABLE:
+                logger = get_master_logger()
+
+                # Build player data for logging
+                player_data = {}
+                if hasattr(table_state, 'seats') and table_state.seats:
+                    for seat in table_state.seats:
+                        if getattr(seat, 'is_active', False):
+                            seat_num = getattr(seat, 'seat_number', 0)
+                            player_data[f'seat_{seat_num}'] = {
+                                'name': getattr(seat, 'name', 'Unknown'),
+                                'stack': getattr(seat, 'stack_size', 0),
+                                'position': getattr(seat, 'position', ''),
+                                'is_hero': getattr(seat, 'is_hero', False),
+                                'is_dealer': getattr(seat, 'is_dealer', False),
+                            }
+
+                logger.info(
+                    f"Hand data: pot ${table_state.pot_size:.2f}, stage {table_state.stage}, {table_state.active_players} players",
+                    category=LogCategory.ANALYSIS,
+                    pot_size=table_state.pot_size,
+                    stage=table_state.stage,
+                    active_players=table_state.active_players,
+                    small_blind=getattr(table_state, 'small_blind', 0),
+                    big_blind=getattr(table_state, 'big_blind', 0),
+                    hero_cards=str(table_state.hero_cards) if table_state.hero_cards else None,
+                    board_cards=str(table_state.board_cards) if table_state.board_cards else None,
+                    players=player_data
+                )
+
             if self.coaching_section:
                 self.after(0, lambda ts=table_state: self.coaching_section.handle_table_state(ts))
 
