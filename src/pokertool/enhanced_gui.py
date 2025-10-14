@@ -11,7 +11,7 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 67.0.0
+Version: 69.1.0
 Last Modified: 2025-10-14
 Author: PokerTool Development Team
 License: MIT
@@ -35,7 +35,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '67.0.0'
+__version__ = '69.1.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -66,6 +66,12 @@ import os
 import subprocess
 
 from .utils.single_instance import acquire_lock, release_lock
+
+# Import canonical version
+try:
+    from .version import __version__ as CANONICAL_VERSION
+except ImportError:
+    CANONICAL_VERSION = '69.1.0'  # Fallback
 
 # Initialize performance telemetry FIRST for startup profiling
 try:
@@ -388,7 +394,7 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
             tk.Label(
                 splash_frame,
-                text="v66.0.0",
+                text=f"v{CANONICAL_VERSION}",
                 font=("Arial", 12),
                 bg='#1a1a1a',
                 fg='#888888'
