@@ -42,6 +42,8 @@ from enum import Enum, auto
 import numpy as np
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import lru_cache
+from collections import OrderedDict
 import json
 
 try:
@@ -201,28 +203,89 @@ class GTOSolution:
     convergence_reached: bool = False
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+class LRUCache:
+    """LRU Cache with size limit and statistics tracking."""
+
+    def __init__(self, max_size: int = 10000):
+        self.cache = OrderedDict()
+        self.max_size = max_size
+        self.hits = 0
+        self.misses = 0
+
+    def get(self, key: str) -> Optional[Any]:
+        """Get value from cache."""
+        if key in self.cache:
+            self.hits += 1
+            # Move to end (most recently used)
+            self.cache.move_to_end(key)
+            return self.cache[key]
+        self.misses += 1
+        return None
+
+    def put(self, key: str, value: Any):
+        """Put value in cache with LRU eviction."""
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        else:
+            self.cache[key] = value
+            # Evict oldest if over size limit
+            if len(self.cache) > self.max_size:
+                self.cache.popitem(last=False)
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        total = self.hits + self.misses
+        hit_rate = self.hits / total if total > 0 else 0.0
+        return {
+            'size': len(self.cache),
+            'max_size': self.max_size,
+            'hits': self.hits,
+            'misses': self.misses,
+            'hit_rate': hit_rate
+        }
+
+    def clear(self):
+        """Clear cache."""
+        self.cache.clear()
+        self.hits = 0
+        self.misses = 0
+
 class EquityCalculator:
-    """Fast equity calculation for poker hands."""
-    
-    def __init__(self):
-        self.cache = {}
+    """Fast equity calculation for poker hands with advanced caching."""
+
+    def __init__(self, cache_dir: str = None, cache_size: int = 10000):
+        self.cache = LRUCache(max_size=cache_size)
+        self.cache_dir = Path(cache_dir) if cache_dir else Path(__file__).parent / "equity_cache"
+        self.cache_dir.mkdir(exist_ok=True)
+        self._load_disk_cache()
+
+        logger.info(f"EquityCalculator initialized with cache dir: {self.cache_dir}, size: {cache_size}")
     
     def calculate_equity(self, hands: List[str], board: List[str] = None, iterations: int = 100000) -> List[float]:
         """
         Calculate equity for multiple hands against each other.
-        
+
         Args:
             hands: List of hole card combinations (e.g., ['AsKh', 'QdQc'])
             board: Community cards (e.g., ['Ah', 'Kc', 'Qh'])
             iterations: Number of Monte Carlo iterations
-            
+
         Returns:
             List of equity values for each hand
         """
         # Create cache key
         cache_key = self._create_cache_key(hands, board, iterations)
-        if cache_key in self.cache:
-            return self.cache[cache_key]
+
+        # Check memory cache first
+        cached_result = self.cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        # Check disk cache
+        disk_result = self._load_from_disk(cache_key)
+        if disk_result is not None:
+            self.cache.put(cache_key, disk_result)
+            return disk_result
         
         board = board or []
         num_hands = len(hands)
@@ -270,9 +333,11 @@ class EquityCalculator:
         
         # Calculate equity percentages
         equities = [w / iterations for w in wins]
-        
-        # Cache result
-        self.cache[cache_key] = equities
+
+        # Cache result in memory and disk
+        self.cache.put(cache_key, equities)
+        self._save_to_disk(cache_key, equities)
+
         return equities
     
     def _create_cache_key(self, hands: List[str], board: List[str], iterations: int) -> str:
@@ -357,6 +422,66 @@ class EquityCalculator:
         else:
             return max(ranks)  # High card
 
+    def _load_disk_cache(self):
+        """Load most recent equity calculations from disk cache on startup."""
+        try:
+            cache_files = sorted(self.cache_dir.glob("*.pkl"), key=lambda p: p.stat().st_mtime, reverse=True)
+            loaded = 0
+            # Load up to 1000 most recent calculations
+            for cache_file in cache_files[:1000]:
+                try:
+                    with open(cache_file, 'rb') as f:
+                        data = pickle.load(f)
+                        if isinstance(data, dict) and 'key' in data and 'equities' in data:
+                            self.cache.put(data['key'], data['equities'])
+                            loaded += 1
+                except Exception:
+                    continue
+            if loaded > 0:
+                logger.info(f"Loaded {loaded} equity calculations from disk cache")
+        except Exception as e:
+            logger.warning(f"Failed to load disk cache: {e}")
+
+    def _load_from_disk(self, cache_key: str) -> Optional[List[float]]:
+        """Load equity calculation from disk cache."""
+        try:
+            cache_file = self.cache_dir / f"{cache_key}.pkl"
+            if cache_file.exists():
+                with open(cache_file, 'rb') as f:
+                    data = pickle.load(f)
+                    if isinstance(data, dict) and 'equities' in data:
+                        return data['equities']
+        except Exception as e:
+            logger.debug(f"Failed to load from disk cache: {e}")
+        return None
+
+    def _save_to_disk(self, cache_key: str, equities: List[float]):
+        """Save equity calculation to disk cache."""
+        try:
+            cache_file = self.cache_dir / f"{cache_key}.pkl"
+            with open(cache_file, 'wb') as f:
+                pickle.dump({'key': cache_key, 'equities': equities}, f)
+        except Exception as e:
+            logger.debug(f"Failed to save to disk cache: {e}")
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        stats = self.cache.get_stats()
+        stats['disk_cache_files'] = len(list(self.cache_dir.glob("*.pkl")))
+        return stats
+
+    def clear_cache(self):
+        """Clear both memory and disk caches."""
+        self.cache.clear()
+        # Clear disk cache (keep last 100 files for warmup)
+        cache_files = sorted(self.cache_dir.glob("*.pkl"), key=lambda p: p.stat().st_mtime, reverse=True)
+        for cache_file in cache_files[100:]:
+            try:
+                cache_file.unlink()
+            except Exception:
+                pass
+        logger.info("Equity calculator cache cleared")
+
 class GTOSolver:
     """
     Advanced GTO solver using counterfactual regret minimization (CFR).
@@ -397,8 +522,15 @@ class GTOSolver:
         # Check cache first
         cache_key = self._create_solution_cache_key(game_state, ranges)
         if cache_key in self.solution_cache:
-            logger.debug("Returning cached GTO solution")
+            logger.debug("Returning cached GTO solution (memory)")
             return self.solution_cache[cache_key]
+
+        # Check disk cache
+        disk_solution = self.load_solution_from_disk(cache_key)
+        if disk_solution is not None:
+            logger.debug("Returning cached GTO solution (disk)")
+            self.solution_cache[cache_key] = disk_solution
+            return disk_solution
         
         logger.info(f"Starting GTO solve for {len(ranges)} players, {max_iterations} iterations")
         

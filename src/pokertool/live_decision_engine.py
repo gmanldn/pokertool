@@ -128,9 +128,9 @@ class WinProbabilityCalculator:
         hole_cards: List[str],
         community_cards: List[str],
         num_opponents: int = 1
-    ) -> float:
+    ) -> Tuple[float, float, float]:
         """
-        Calculate win probability.
+        Calculate win probability with confidence intervals.
 
         Args:
             hole_cards: Player's hole cards
@@ -138,14 +138,15 @@ class WinProbabilityCalculator:
             num_opponents: Number of opponents
 
         Returns:
-            Win probability (0.0-1.0)
+            Tuple of (win_probability, lower_bound, upper_bound) all in range 0.0-1.0
+            The bounds represent 95% confidence interval.
         """
         # Check cache
         cache_key = self._make_cache_key(hole_cards, community_cards, num_opponents)
         if cache_key in self.cache:
             cached_value, cached_time = self.cache[cache_key]
             if time.time() - cached_time < self.cache_ttl:
-                logger.debug(f"Cache hit for win probability: {cached_value:.2%}")
+                logger.debug(f"Cache hit for win probability: {cached_value[0]:.2%}")
                 return cached_value
 
         # Calculate
@@ -155,15 +156,22 @@ class WinProbabilityCalculator:
             else:
                 win_prob = self._calculate_fallback(hole_cards, community_cards, num_opponents)
 
-            # Cache result
-            self.cache[cache_key] = (win_prob, time.time())
+            # Calculate 95% confidence interval
+            # For Monte Carlo with binomial outcomes, standard error = sqrt(p*(1-p)/n)
+            # 95% CI = p ± 1.96 * SE
+            lower_bound, upper_bound = self._calculate_confidence_interval(win_prob, self.iterations)
 
-            logger.debug(f"Calculated win probability: {win_prob:.2%}")
-            return win_prob
+            result = (win_prob, lower_bound, upper_bound)
+
+            # Cache result
+            self.cache[cache_key] = (result, time.time())
+
+            logger.debug(f"Calculated win probability: {win_prob:.2%} [{lower_bound:.2%}, {upper_bound:.2%}]")
+            return result
 
         except Exception as e:
             logger.error(f"Error calculating win probability: {e}")
-            return 0.5  # Fallback to 50%
+            return (0.5, 0.45, 0.55)  # Fallback to 50% with wide interval
 
     def _calculate_with_gto(
         self,
@@ -261,6 +269,46 @@ class WinProbabilityCalculator:
         hole_str = ''.join(sorted(hole_cards))
         comm_str = ''.join(sorted(community_cards)) if community_cards else ''
         return f"{hole_str}|{comm_str}|{num_opponents}"
+
+    def _calculate_confidence_interval(
+        self,
+        win_prob: float,
+        iterations: int,
+        confidence_level: float = 0.95
+    ) -> Tuple[float, float]:
+        """
+        Calculate confidence interval for win probability.
+
+        Uses Wilson score interval for binomial proportions, which is more
+        accurate than normal approximation, especially for extreme probabilities.
+
+        Args:
+            win_prob: Estimated win probability (0.0-1.0)
+            iterations: Number of Monte Carlo iterations
+            confidence_level: Confidence level (default 0.95 for 95% CI)
+
+        Returns:
+            Tuple of (lower_bound, upper_bound)
+        """
+        import math
+
+        # Z-score for confidence level (1.96 for 95%, 2.576 for 99%)
+        z_scores = {0.90: 1.645, 0.95: 1.96, 0.99: 2.576}
+        z = z_scores.get(confidence_level, 1.96)
+
+        # Wilson score interval
+        # More accurate than normal approximation, especially for edge cases
+        n = iterations
+        p = win_prob
+
+        denominator = 1 + (z**2 / n)
+        center = (p + (z**2 / (2*n))) / denominator
+        margin = (z * math.sqrt((p * (1-p) / n) + (z**2 / (4*n**2)))) / denominator
+
+        lower = max(0.0, center - margin)
+        upper = min(1.0, center + margin)
+
+        return (lower, upper)
 
 
 # ============================================================================
@@ -431,14 +479,14 @@ class LiveDecisionEngine:
                     reasoning="Invalid game state"
                 )
 
-            # Calculate win probability
-            win_prob = self._calculate_win_probability(game_state)
+            # Calculate win probability with confidence intervals
+            win_prob, win_prob_lower, win_prob_upper = self._calculate_win_probability(game_state)
 
             # Get decision recommendation
             if self.confidence_api:
-                recommendation = self._get_confidence_recommendation(game_state, win_prob)
+                recommendation = self._get_confidence_recommendation(game_state, win_prob, win_prob_lower, win_prob_upper)
             else:
-                recommendation = self._get_simple_recommendation(game_state, win_prob)
+                recommendation = self._get_simple_recommendation(game_state, win_prob, win_prob_lower, win_prob_upper)
 
             # Convert to LiveAdviceData
             advice = self._convert_to_advice_data(recommendation, game_state)
@@ -467,8 +515,13 @@ class LiveDecisionEngine:
             return False
         return True
 
-    def _calculate_win_probability(self, game_state: GameState) -> float:
-        """Calculate win probability from game state."""
+    def _calculate_win_probability(self, game_state: GameState) -> Tuple[float, float, float]:
+        """
+        Calculate win probability with confidence intervals from game state.
+
+        Returns:
+            Tuple of (win_probability, lower_bound, upper_bound)
+        """
         return self.win_calculator.calculate(
             game_state.hole_cards,
             game_state.community_cards,
@@ -478,7 +531,9 @@ class LiveDecisionEngine:
     def _get_confidence_recommendation(
         self,
         game_state: GameState,
-        win_prob: float
+        win_prob: float,
+        win_prob_lower: float,
+        win_prob_upper: float
     ) -> DecisionRecommendation:
         """Get recommendation using confidence API."""
         try:
@@ -488,28 +543,37 @@ class LiveDecisionEngine:
                 game_state.community_cards
             )
 
+            # Calculate uncertainty from confidence interval width
+            uncertainty_estimate = (win_prob_upper - win_prob_lower) / 2.0
+
             recommendation = self.confidence_api.recommend_decision(
                 hand_strength=hand_strength,
                 pot_size=game_state.pot_size,
                 call_amount=game_state.call_amount,
                 stack_size=game_state.stack_size,
                 opponent_tendencies=game_state.opponent_tendencies,
-                uncertainty_estimate=0.1  # Default uncertainty
+                uncertainty_estimate=uncertainty_estimate
             )
 
             # Override win probability with our calculated value
             recommendation.win_probability = win_prob
+            # Store confidence interval (if recommendation object supports it)
+            if hasattr(recommendation, 'win_prob_lower'):
+                recommendation.win_prob_lower = win_prob_lower
+                recommendation.win_prob_upper = win_prob_upper
 
             return recommendation
 
         except Exception as e:
             logger.error(f"Confidence API error: {e}")
-            return self._get_simple_recommendation(game_state, win_prob)
+            return self._get_simple_recommendation(game_state, win_prob, win_prob_lower, win_prob_upper)
 
     def _get_simple_recommendation(
         self,
         game_state: GameState,
-        win_prob: float
+        win_prob: float,
+        win_prob_lower: float,
+        win_prob_upper: float
     ) -> Any:
         """Simple fallback recommendation without confidence API."""
         # Calculate pot odds
@@ -539,6 +603,8 @@ class LiveDecisionEngine:
                 })
                 self.recommendation_strength = confidence
                 self.win_probability = win_prob
+                self.win_prob_lower = win_prob_lower
+                self.win_prob_upper = win_prob_upper
                 self.ev = 0.0
                 self.ev_confidence_interval = type('obj', (object,), {
                     'mean': 0.0
@@ -567,6 +633,8 @@ class LiveDecisionEngine:
         # Extract basic metrics
         confidence = getattr(recommendation, 'recommendation_strength', 0.5)
         win_prob = getattr(recommendation, 'win_probability', 0.5)
+        win_prob_lower = getattr(recommendation, 'win_prob_lower', win_prob - 0.05)
+        win_prob_upper = getattr(recommendation, 'win_prob_upper', win_prob + 0.05)
         ev = getattr(recommendation, 'ev', None)
 
         # Calculate pot odds
@@ -613,6 +681,8 @@ class LiveDecisionEngine:
             action=action,
             action_amount=action_amount,
             win_probability=win_prob,
+            win_prob_lower=win_prob_lower,
+            win_prob_upper=win_prob_upper,
             confidence=confidence,
             reasoning=reasoning,
             has_data=True,

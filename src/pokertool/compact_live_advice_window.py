@@ -110,6 +110,8 @@ class LiveAdviceData:
 
     # Live metrics
     win_probability: float = 0.0  # 0.0-1.0
+    win_prob_lower: float = 0.0  # Lower bound of 95% CI
+    win_prob_upper: float = 1.0  # Upper bound of 95% CI
     confidence: float = 0.0  # 0.0-1.0
 
     # Explanation
