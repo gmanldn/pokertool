@@ -67,6 +67,30 @@ import subprocess
 
 from .utils.single_instance import acquire_lock, release_lock
 
+# Initialize performance telemetry FIRST for startup profiling
+try:
+    from .performance_telemetry import (
+        init_telemetry, telemetry_section, telemetry_instant, timed
+    )
+    _telemetry = init_telemetry()
+    TELEMETRY_AVAILABLE = True
+except Exception as telemetry_error:
+    print(f"⚠️  Performance telemetry not available: {telemetry_error}")
+    TELEMETRY_AVAILABLE = False
+    # Provide no-op fallbacks
+    def init_telemetry(): pass
+    def telemetry_section(cat, op, det=None):
+        from contextlib import contextmanager
+        @contextmanager
+        def noop():
+            yield
+        return noop()
+    def telemetry_instant(cat, op, det=None): pass
+    def timed(cat, op=None, cap=False):
+        def decorator(func):
+            return func
+        return decorator
+
 def _ensure_scraper_dependencies():
     """Ensure screen scraper dependencies are installed before module imports."""
     critical_deps = [
@@ -313,13 +337,19 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self._modules_loaded = False
         self._splash_window = None
 
+        # TELEMETRY: Record GUI initialization start
+        telemetry_instant('startup', 'gui_init_start', {'version': __version__})
+
         # FAST STARTUP: Show splash immediately, load modules in background
-        self._show_splash_screen()
+        with telemetry_section('startup', 'show_splash_screen'):
+            self._show_splash_screen()
 
         # Build minimal UI first (fast)
-        self._setup_styles()
+        with telemetry_section('startup', 'setup_styles'):
+            self._setup_styles()
 
         # Start async module loading
+        telemetry_instant('startup', 'schedule_async_init')
         self.after(50, self._async_init_modules)
 
         # Ensure graceful shutdown including scraper cleanup
@@ -410,15 +440,19 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
     def _async_init_modules(self):
         """Initialize modules asynchronously using event loop scheduling."""
+        telemetry_instant('startup', 'async_init_modules_start')
         # Stage 1: Init modules (100ms)
         self._update_splash("Loading modules...")
         self.after(100, self._stage1_init_modules)
 
     def _stage1_init_modules(self):
         """Stage 1: Initialize modules in background thread."""
+        telemetry_instant('startup', 'stage1_start')
+
         def init_thread():
             try:
-                self._init_modules()
+                with telemetry_section('startup', 'stage1_init_modules_thread'):
+                    self._init_modules()
                 # Schedule UI build on main thread
                 self.after(0, lambda: self._update_splash("Building interface..."))
                 self.after(50, self._stage2_build_ui)
@@ -434,8 +468,10 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
     def _stage2_build_ui(self):
         """Stage 2: Build UI."""
+        telemetry_instant('startup', 'stage2_start')
         try:
-            self._build_ui()
+            with telemetry_section('startup', 'stage2_build_ui'):
+                self._build_ui()
             self._update_splash("Setting up database...")
             self.after(50, self._stage3_setup_database)
         except Exception as e:
@@ -446,10 +482,13 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
     def _stage3_setup_database(self):
         """Stage 3: Setup database and translations."""
+        telemetry_instant('startup', 'stage3_start')
         try:
-            self._locale_listener_token = register_locale_listener(self._apply_translations)
-            self._apply_translations()
-            self._init_database()
+            with telemetry_section('startup', 'setup_translations'):
+                self._locale_listener_token = register_locale_listener(self._apply_translations)
+                self._apply_translations()
+            with telemetry_section('startup', 'init_database'):
+                self._init_database()
             self._update_splash("Starting services...")
             self.after(50, self._stage4_start_services)
         except Exception as e:
@@ -458,8 +497,10 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
     def _stage4_start_services(self):
         """Stage 4: Start background services."""
+        telemetry_instant('startup', 'stage4_start')
         try:
-            self._start_background_services_safely()
+            with telemetry_section('startup', 'stage4_start_services'):
+                self._start_background_services_safely()
             self._update_splash("Almost ready...")
             self.after(100, self._stage5_finalize)
         except Exception as e:
@@ -468,10 +509,14 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
     def _stage5_finalize(self):
         """Stage 5: Final setup."""
+        telemetry_instant('startup', 'stage5_start')
         try:
-            self._ensure_window_visible()
-            self._launch_compact_advice_window()
+            with telemetry_section('startup', 'ensure_window_visible'):
+                self._ensure_window_visible()
+            with telemetry_section('startup', 'launch_compact_advice_window'):
+                self._launch_compact_advice_window()
             self._modules_loaded = True
+            telemetry_instant('startup', 'gui_init_complete')
             self.after(200, self._hide_splash)
         except Exception as e:
             print(f"Error in stage 5: {e}")
@@ -479,110 +524,120 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
     def _init_modules(self):
         """Initialize all poker tool modules."""
+        telemetry_instant('module_init', 'init_modules_start')
         try:
             if SCREEN_SCRAPER_LOADED:
-                self.screen_scraper = create_scraper('BETFAIR')
-                print("Screen scraper initialized (BETFAIR optimized)")
+                with telemetry_section('module_init', 'screen_scraper'):
+                    self.screen_scraper = create_scraper('BETFAIR')
+                    print("Screen scraper initialized (BETFAIR optimized)")
 
             if GUI_MODULES_LOADED:
-                self.gto_solver = get_gto_solver()
-                self.opponent_modeler = get_opponent_modeling_system()
-                self.multi_table_manager = get_table_manager()
+                with telemetry_section('module_init', 'gto_solver'):
+                    self.gto_solver = get_gto_solver()
+                with telemetry_section('module_init', 'opponent_modeler'):
+                    self.opponent_modeler = get_opponent_modeling_system()
+                with telemetry_section('module_init', 'multi_table_manager'):
+                    self.multi_table_manager = get_table_manager()
                 print("Core modules initialized")
 
             # Initialize hand recorder
             try:
-                if HAND_RECORDER_LOADED and HandRecorder:
-                    self.hand_recorder = HandRecorder()
-                    print("Hand recorder initialized - ready to record hands")
-                else:
-                    print("Warning: HandRecorder not available")
+                with telemetry_section('module_init', 'hand_recorder'):
+                    if HAND_RECORDER_LOADED and HandRecorder:
+                        self.hand_recorder = HandRecorder()
+                        print("Hand recorder initialized - ready to record hands")
+                    else:
+                        print("Warning: HandRecorder not available")
             except Exception as recorder_error:
                 print(f"Hand recorder initialization error: {recorder_error}")
                 self.hand_recorder = None
 
             try:
-                if CoachingSystem:
-                    self.coaching_system = CoachingSystem()
-                    print("Coaching system ready")
-                else:
-                    print("Warning: CoachingSystem class not available")
+                with telemetry_section('module_init', 'coaching_system'):
+                    if CoachingSystem:
+                        self.coaching_system = CoachingSystem()
+                        print("Coaching system ready")
+                    else:
+                        print("Warning: CoachingSystem class not available")
             except Exception as coaching_error:
                 print(f"Coaching system initialization error: {coaching_error}")
                 self.coaching_system = None
 
             try:
-                if AnalyticsDashboard:
-                    self.analytics_dashboard = AnalyticsDashboard()
-                    print("Analytics dashboard loaded")
-                else:
-                    print("Warning: AnalyticsDashboard class not available")
+                with telemetry_section('module_init', 'analytics_dashboard'):
+                    if AnalyticsDashboard:
+                        self.analytics_dashboard = AnalyticsDashboard()
+                        print("Analytics dashboard loaded")
+                    else:
+                        print("Warning: AnalyticsDashboard class not available")
             except Exception as analytics_error:
                 print(f"Analytics dashboard initialization error: {analytics_error}")
                 self.analytics_dashboard = None
 
             try:
-                if GamificationEngine and Achievement and Badge:
-                    self.gamification_engine = GamificationEngine()
-                    if hasattr(self.gamification_engine, 'achievements') and 'volume_grinder' not in self.gamification_engine.achievements:
-                        self.gamification_engine.register_achievement(Achievement(
-                            achievement_id='volume_grinder',
-                            title='Volume Grinder',
-                            description='Play 100 hands in a day',
-                            points=200,
-                            condition={'hands_played': 100}
-                        ))
-                    if hasattr(self.gamification_engine, 'badges') and 'marathon' not in self.gamification_engine.badges:
-                        self.gamification_engine.register_badge(Badge(
-                            badge_id='marathon',
-                            title='Marathon',
-                            description='Maintain a 7-day streak of activity',
-                            tier='gold'
-                        ))
-                    print("Gamification engine ready")
-                else:
-                    print("Warning: Gamification classes not available")
+                with telemetry_section('module_init', 'gamification_engine'):
+                    if GamificationEngine and Achievement and Badge:
+                        self.gamification_engine = GamificationEngine()
+                        if hasattr(self.gamification_engine, 'achievements') and 'volume_grinder' not in self.gamification_engine.achievements:
+                            self.gamification_engine.register_achievement(Achievement(
+                                achievement_id='volume_grinder',
+                                title='Volume Grinder',
+                                description='Play 100 hands in a day',
+                                points=200,
+                                condition={'hands_played': 100}
+                            ))
+                        if hasattr(self.gamification_engine, 'badges') and 'marathon' not in self.gamification_engine.badges:
+                            self.gamification_engine.register_badge(Badge(
+                                badge_id='marathon',
+                                title='Marathon',
+                                description='Maintain a 7-day streak of activity',
+                                tier='gold'
+                            ))
+                        print("Gamification engine ready")
+                    else:
+                        print("Warning: Gamification classes not available")
             except Exception as gamification_error:
                 print(f"Gamification engine initialization error: {gamification_error}")
                 self.gamification_engine = None
 
             try:
-                if (CommunityPlatform and ForumPost and Challenge and 
-                    CommunityTournament and KnowledgeArticle):
-                    self.community_platform = CommunityPlatform()
-                    if hasattr(self.community_platform, 'posts') and not self.community_platform.posts:
-                        self.community_platform.create_post(ForumPost(
-                            post_id='welcome',
-                            author='coach',
-                            title='Welcome to the community',
-                            content='Share your goals and get feedback from other players.',
-                            tags=['announcement']
-                        ))
-                    if hasattr(self.community_platform, 'challenges') and not self.community_platform.challenges:
-                        self.community_platform.create_challenge(Challenge(
-                            challenge_id='daily_focus',
-                            title='Daily Focus Session',
-                            description='Play a focused 30-minute session and post a takeaway.',
-                            reward_points=150
-                        ))
-                    if hasattr(self.community_platform, 'tournaments') and not self.community_platform.tournaments:
-                        self.community_platform.schedule_tournament(CommunityTournament(
-                            tournament_id='community_cup',
-                            name='Community Cup',
-                            start_time=time.time() + 86400,
-                            format='freeroll'
-                        ))
-                    if hasattr(self.community_platform, 'articles') and not self.community_platform.articles:
-                        self.community_platform.add_article(KnowledgeArticle(
-                            article_id='icm_basics',
-                            title='ICM Basics',
-                            author='mentor',
-                            content='Understanding short-stack decisions on the bubble.',
-                            categories=['icm', 'strategy']
-                        ))
-                    print("Community platform ready")
-                else:
-                    print("Warning: Community platform classes not available")
+                with telemetry_section('module_init', 'community_platform'):
+                    if (CommunityPlatform and ForumPost and Challenge and
+                        CommunityTournament and KnowledgeArticle):
+                        self.community_platform = CommunityPlatform()
+                        if hasattr(self.community_platform, 'posts') and not self.community_platform.posts:
+                            self.community_platform.create_post(ForumPost(
+                                post_id='welcome',
+                                author='coach',
+                                title='Welcome to the community',
+                                content='Share your goals and get feedback from other players.',
+                                tags=['announcement']
+                            ))
+                        if hasattr(self.community_platform, 'challenges') and not self.community_platform.challenges:
+                            self.community_platform.create_challenge(Challenge(
+                                challenge_id='daily_focus',
+                                title='Daily Focus Session',
+                                description='Play a focused 30-minute session and post a takeaway.',
+                                reward_points=150
+                            ))
+                        if hasattr(self.community_platform, 'tournaments') and not self.community_platform.tournaments:
+                            self.community_platform.schedule_tournament(CommunityTournament(
+                                tournament_id='community_cup',
+                                name='Community Cup',
+                                start_time=time.time() + 86400,
+                                format='freeroll'
+                            ))
+                        if hasattr(self.community_platform, 'articles') and not self.community_platform.articles:
+                            self.community_platform.add_article(KnowledgeArticle(
+                                article_id='icm_basics',
+                                title='ICM Basics',
+                                author='mentor',
+                                content='Understanding short-stack decisions on the bubble.',
+                                categories=['icm', 'strategy']
+                            ))
+                        print("Community platform ready")
+                    else:
+                        print("Warning: Community platform classes not available")
             except Exception as community_error:
                 print(f"Community platform initialization error: {community_error}")
                 self.community_platform = None
@@ -590,13 +645,14 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
             # Run comprehensive startup validation
             if GUI_MODULES_LOADED:
                 try:
-                    self.startup_validator = StartupValidator(app_instance=self)
-                    self.startup_validation_results = self.startup_validator.validate_all()
+                    with telemetry_section('module_init', 'startup_validator'):
+                        self.startup_validator = StartupValidator(app_instance=self)
+                        self.startup_validation_results = self.startup_validator.validate_all()
 
-                    # Log validation summary
-                    summary = self.startup_validator.get_summary_report()
-                    logging.info("Startup validation completed")
-                    logging.info(f"\n{summary}")
+                        # Log validation summary
+                        summary = self.startup_validator.get_summary_report()
+                        logging.info("Startup validation completed")
+                        logging.info(f"\n{summary}")
 
                     # Check for critical failures
                     if self.startup_validator.has_critical_failures():
