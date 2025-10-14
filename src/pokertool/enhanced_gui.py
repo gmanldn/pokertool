@@ -1064,19 +1064,128 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self.after(150, self._enforce_tab_visibility)
         self.after(500, self._validate_screen_scraper_ready)
         
-        # Add status bar showing tab count (optimized compact size)
+        # Add enhanced status bar with rolling game state display
         status_bar = tk.Frame(main_container, bg=COLORS['bg_medium'], height=18)
         status_bar.pack(side='bottom', fill='x', pady=(3, 0))
 
+        # Static blade count on left
         tab_count_label = tk.Label(
             status_bar,
-            text=f"✓ {len(built_tabs)} blades ready",
-            font=('Arial', 8),
+            text=f"✓ {len(built_tabs)} blades",
+            font=('Arial', 8, 'bold'),
             bg=COLORS['bg_medium'],
             fg=COLORS['accent_success']
         )
         tab_count_label.pack(side='left', padx=10, pady=2)
         self.tab_count_label = tab_count_label
+
+        # Rolling game state display in center
+        self.status_text_label = tk.Label(
+            status_bar,
+            text="Ready to analyze poker hands",
+            font=('Arial', 8),
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_secondary'],
+            anchor='w'
+        )
+        self.status_text_label.pack(side='left', fill='x', expand=True, padx=5, pady=2)
+
+        # Version info on right
+        version_label = tk.Label(
+            status_bar,
+            text=f"v{__version__}",
+            font=('Arial', 8),
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_muted']
+        )
+        version_label.pack(side='right', padx=10, pady=2)
+
+        # Initialize rolling status updater
+        self._status_messages = []
+        self._status_index = 0
+        self._start_status_roller()
+
+    def _start_status_roller(self):
+        """Start the rolling status text updater."""
+        self._update_rolling_status()
+
+    def _update_rolling_status(self):
+        """Update rolling status with game state information."""
+        try:
+            if not hasattr(self, 'status_text_label'):
+                return
+
+            # Build status messages from current game state
+            messages = []
+
+            # Check if we have active poker data
+            if hasattr(self, 'manual_section') and hasattr(self.manual_section, 'live_table'):
+                live_table = self.manual_section.live_table
+
+                # Pot size
+                if hasattr(live_table, 'pot') and live_table.pot and live_table.pot > 0:
+                    messages.append(f"💰 Pot: ${live_table.pot:.2f}")
+
+                # Player count
+                if hasattr(live_table, 'players') and live_table.players:
+                    active_players = len([p for p in live_table.players if p and getattr(p, 'active', True)])
+                    if active_players > 0:
+                        messages.append(f"👥 {active_players} players active")
+
+                # Street
+                if hasattr(live_table, 'street') and live_table.street:
+                    messages.append(f"📍 {live_table.street.capitalize()}")
+
+                # Win probability if available
+                if hasattr(self, 'compact_window') and self.compact_window:
+                    try:
+                        if hasattr(self.compact_window, 'current_advice'):
+                            advice = self.compact_window.current_advice
+                            if advice and hasattr(advice, 'win_probability'):
+                                win_pct = advice.win_probability * 100
+                                messages.append(f"📊 Win prob: {win_pct:.1f}%")
+                    except:
+                        pass
+
+            # Default messages if no game state
+            if not messages:
+                messages = [
+                    "✨ Ready to analyze poker hands",
+                    "🎯 GTO solver with 60-80% cache speedup",
+                    "📈 95% confidence intervals on all probabilities",
+                    "🎨 Professional formatting and color coding",
+                    "🚀 Enhanced decision engine active",
+                    "🔍 Real-time screen scraping ready",
+                    "💡 Manual entry mode available",
+                    "🧠 ML opponent modeling enabled",
+                    "⚡ Optimized for performance",
+                ]
+
+            # Store messages for cycling
+            self._status_messages = messages
+
+            # Get current message
+            if self._status_messages:
+                message = self._status_messages[self._status_index % len(self._status_messages)]
+                self.status_text_label.config(text=message)
+
+                # Advance to next message
+                self._status_index += 1
+
+            # Schedule next update (rotate every 4 seconds)
+            self.after(4000, self._update_rolling_status)
+
+        except Exception as e:
+            # Silently fail to avoid breaking UI
+            pass
+
+    def update_status_message(self, message: str):
+        """Manually update status bar with a specific message."""
+        try:
+            if hasattr(self, 'status_text_label'):
+                self.status_text_label.config(text=message)
+        except:
+            pass
 
     def _select_default_tab(self) -> None:
         """Ensure a sensible default tab stays selected after any recovery."""

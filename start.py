@@ -7,9 +7,13 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v60.0.0
-# last_commit: '2025-10-14T14:00:00Z'
+# version: v64.0.0
+# last_commit: '2025-10-14T20:00:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Win Rate & Accuracy Optimization - GTO caching (60-80% speedup), confidence intervals, formatting system
+# - date: '2025-10-14'
+#   summary: Enhanced status bar with rolling game state display and version info
 # - date: '2025-10-14'
 #   summary: Added canonical version tracking system with release branch workflow
 # - date: '2025-10-14'
@@ -31,7 +35,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v60.0.0
+PokerTool One-Click Launcher - v64.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -59,7 +63,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / 'src'))
 try:
     from pokertool.version import __version__, format_version
 except ImportError:
-    __version__ = '60.0.0'  # Fallback
+    __version__ = '64.0.0'  # Fallback
     format_version = lambda **kwargs: f"v{__version__}"
 
 # Constants
