@@ -1229,10 +1229,11 @@ class PokerScreenScraper:
                 return cached
 
             # Get learned best strategies (if available)
-            strategy_order = ['bilateral_otsu', 'clahe_otsu', 'adaptive', 'simple']
+            # ENHANCED: Added more advanced strategies
+            strategy_order = ['bilateral_clahe', 'morphological', 'hybrid', 'bilateral_otsu', 'clahe_otsu', 'adaptive', 'simple']
             if self.learning_system:
                 learned_strategies = self.learning_system.get_best_ocr_strategies(
-                    ExtractionType.POT_SIZE, top_k=4
+                    ExtractionType.POT_SIZE, top_k=6
                 )
                 if learned_strategies:
                     strategy_order = learned_strategies + strategy_order
@@ -1243,20 +1244,68 @@ class PokerScreenScraper:
             # Multi-pass approach for pot detection
             gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
-            # Strategy dictionary with preprocessing
+            # Helper function for upscaling
+            def upscale(img: np.ndarray, scale: float = 3.0) -> np.ndarray:
+                return cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+
+            # Strategy dictionary with preprocessing (ENHANCED)
             strategies = {
+                # Original strategies
                 'bilateral_otsu': lambda: cv2.threshold(
-                    cv2.bilateralFilter(gray, 11, 100, 100),
+                    upscale(cv2.bilateralFilter(gray, 11, 100, 100)),
                     0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
                 )[1],
                 'clahe_otsu': lambda: cv2.threshold(
-                    cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8)).apply(gray),
+                    upscale(cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8)).apply(gray)),
                     0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
                 )[1],
                 'adaptive': lambda: cv2.adaptiveThreshold(
-                    gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+                    upscale(gray), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
                 ),
-                'simple': lambda: cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)[1]
+                'simple': lambda: cv2.threshold(upscale(gray), 127, 255, cv2.THRESH_BINARY)[1],
+
+                # ENHANCED: New advanced strategies
+                'bilateral_clahe': lambda: (
+                    # Combined bilateral + CLAHE + morphological closing
+                    lambda denoised: (
+                        lambda enhanced: (
+                            lambda morph: cv2.adaptiveThreshold(
+                                morph, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+                            )
+                        )(cv2.morphologyEx(enhanced, cv2.MORPH_CLOSE, np.ones((2, 2), np.uint8)))
+                    )(cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8)).apply(denoised))
+                )(upscale(cv2.bilateralFilter(gray, 9, 75, 75)))
+                ,
+
+                'morphological': lambda: (
+                    # Morphological text enhancement with top-hat transform
+                    lambda denoised: (
+                        lambda tophat: (
+                            lambda sharpened: (
+                                lambda binary: cv2.morphologyEx(
+                                    binary, cv2.MORPH_CLOSE, np.ones((2, 2), np.uint8)
+                                )
+                            )(cv2.threshold(sharpened, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1])
+                        )(cv2.filter2D(tophat + denoised, -1, np.array([[-1,-1,-1],[-1,9,-1],[-1,-1,-1]])))
+                    )(cv2.morphologyEx(denoised, cv2.MORPH_TOPHAT, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))))
+                )(upscale(cv2.fastNlMeansDenoising(gray, None, h=10)))
+                ,
+
+                'hybrid': lambda: (
+                    # Hybrid multi-stage: bilateral + CLAHE + unsharp + adaptive
+                    lambda denoised: (
+                        lambda enhanced: (
+                            lambda unsharp: (
+                                lambda combined: cv2.adaptiveThreshold(
+                                    combined, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+                                )
+                            )(cv2.addWeighted(unsharp, 0.8,
+                              cv2.morphologyEx(unsharp, cv2.MORPH_GRADIENT,
+                                             cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))), 0.2, 0))
+                        )(cv2.addWeighted(enhanced, 1.5, cv2.GaussianBlur(enhanced, (5,5), 1.0), -0.5, 0))
+                    )(cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8,8)).apply(denoised))
+                )(upscale(cv2.bilateralFilter(gray, 9, 75, 75)))
+                ,
             }
 
             # OCR configs
@@ -1292,14 +1341,51 @@ class PokerScreenScraper:
                             pass
 
                     if all_text:
-                        # Find potential pot values
-                        matches = re.findall(r'(?:POT[:\s]*)?[\$]?\s*([0-9][0-9,]*\.?[0-9]*)', all_text, re.IGNORECASE)
+                        # ENHANCED: Improved number parsing with multiple regex patterns
+                        # Try multiple number extraction patterns in order of specificity
+                        patterns = [
+                            # Pattern 1: POT label with amount (e.g., "POT: $123.45" or "POT 123.45")
+                            r'POT[:\s]*[\$£€]?\s*([0-9][0-9,]*\.?[0-9]*)',
+                            # Pattern 2: Currency symbol followed by number (e.g., "$123.45")
+                            r'[\$£€]\s*([0-9][0-9,]*\.?[0-9]+)',
+                            # Pattern 3: Number with thousand separators (e.g., "1,234.56")
+                            r'\b([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]+)?)\b',
+                            # Pattern 4: Simple decimal number (e.g., "123.45")
+                            r'\b([0-9]+\.[0-9]{2})\b',
+                            # Pattern 5: Integer number (e.g., "123")
+                            r'\b([0-9]+)\b',
+                        ]
+
+                        matches = []
+                        for pattern in patterns:
+                            found = re.findall(pattern, all_text, re.IGNORECASE)
+                            if found:
+                                matches.extend(found)
+                                # If we found matches with a specific pattern, prefer those
+                                if len(found) > 0 and pattern in patterns[:3]:  # Prefer first 3 patterns
+                                    break
+
                         if matches:
+                            # Choose the number with the most characters (likely the actual value)
                             num_str = max(matches, key=lambda s: len(s.replace(',', '').replace('.', '')))
-                            num_str = num_str.replace(',', '').strip()
+
+                            # Clean and normalize the number string
+                            num_str = num_str.replace(',', '').replace(' ', '').strip()
+
+                            # Handle common OCR errors in numbers
+                            ocr_corrections = {
+                                'O': '0', 'o': '0',  # Letter O -> Zero
+                                'l': '1', 'I': '1',  # Letter l/I -> One
+                                'S': '5', 's': '5',  # Letter S -> Five
+                                'B': '8',             # Letter B -> Eight
+                                'Z': '2',             # Letter Z -> Two
+                            }
+                            for wrong, right in ocr_corrections.items():
+                                num_str = num_str.replace(wrong, right)
+
                             try:
                                 result = float(num_str)
-                                if result > 0:
+                                if result > 0 and result < 100000:  # Sanity check
                                     best_result = result
                                     successful_strategy = strategy_id
 
@@ -1314,7 +1400,7 @@ class PokerScreenScraper:
 
                                     # Found good result, can break early
                                     break
-                            except Exception:
+                            except (ValueError, OverflowError):
                                 pass
 
                 except Exception as e:
@@ -1605,6 +1691,12 @@ class PokerScreenScraper:
                             # Clean up name - capitalize first letter if all lowercase
                             if name and name.islower():
                                 name = name.capitalize()
+
+                            # ENHANCED: Apply fuzzy matching to correct OCR errors
+                            if self.learning_system and name:
+                                corrected_name, match_confidence = self._fuzzy_match_player_name(name)
+                                if match_confidence > 0.75:  # High confidence match
+                                    name = corrected_name
 
                     # Determine active if we have ANY text detected (more lenient)
                     # Even partial detection means someone is at this seat
@@ -2112,6 +2204,73 @@ class PokerScreenScraper:
 
         state.timestamp = time.time()
         return state
+
+    def _levenshtein_distance(self, s1: str, s2: str) -> int:
+        """Calculate Levenshtein distance between two strings for fuzzy matching."""
+        if len(s1) < len(s2):
+            return self._levenshtein_distance(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+
+    def _fuzzy_match_player_name(self, extracted_name: str, threshold: float = 0.75) -> Tuple[str, float]:
+        """
+        Fuzzy match player name against known names using Levenshtein distance.
+
+        ENHANCED: Corrects OCR errors by matching against learned player names.
+
+        Args:
+            extracted_name: Name extracted via OCR
+            threshold: Minimum similarity score (0-1)
+
+        Returns:
+            Tuple of (matched_name, confidence_score)
+        """
+        if not extracted_name or len(extracted_name) < 2:
+            return extracted_name, 0.0
+
+        # Get known names from learning system
+        known_names = []
+        if self.learning_system:
+            known_names = list(self.learning_system.learned_patterns.get('player_names', set()))
+
+        if not known_names:
+            return extracted_name, 0.5
+
+        extracted_lower = extracted_name.lower()
+        best_match = extracted_name
+        best_score = 0.0
+
+        for known_name in known_names:
+            known_lower = known_name.lower()
+
+            # Exact match
+            if extracted_lower == known_lower:
+                return known_name, 1.0
+
+            # Calculate similarity
+            distance = self._levenshtein_distance(extracted_lower, known_lower)
+            max_len = max(len(extracted_lower), len(known_lower))
+            similarity = 1.0 - (distance / max_len)
+
+            if similarity > best_score:
+                best_score = similarity
+                best_match = known_name
+
+        if best_score >= threshold:
+            logger.debug(f"Fuzzy matched '{extracted_name}' -> '{best_match}' ({best_score:.2f})")
+            return best_match, best_score
+        return extracted_name, 0.5
 
     def _compute_image_hash(self, image: np.ndarray) -> str:
         """
