@@ -1434,6 +1434,25 @@ class PokerScreenScraper:
                                         except ValueError:
                                             pass  # Keep original if ensemble gives non-numeric
 
+                                    # Character-level confidence analysis for critical validation
+                                    char_analysis = self._analyze_character_confidence(
+                                        thresh_img,
+                                        config='--psm 7 -c tessedit_char_whitelist=0123456789.,$£€'
+                                    )
+
+                                    # If character-level analysis shows unreliable result, log warning
+                                    if not char_analysis['overall_reliable'] and char_analysis['suspicious_chars']:
+                                        logger.warning(
+                                            f"[CHAR-LEVEL] Pot ${result:.2f} has low-confidence characters: "
+                                            f"min={char_analysis['min_confidence']:.0f}, "
+                                            f"mean={char_analysis['mean_confidence']:.0f}, "
+                                            f"suspicious={len(char_analysis['suspicious_chars'])}"
+                                        )
+                                        # If reliability is very poor (mean < 60), skip this result
+                                        if char_analysis['mean_confidence'] < 60.0:
+                                            logger.debug(f"Skipping result due to very low character confidence")
+                                            continue  # Try next strategy
+
                                     best_result = result
                                     successful_strategy = strategy_id
 
@@ -2359,6 +2378,114 @@ class PokerScreenScraper:
         except Exception as e:
             logger.debug(f"Ensemble validation failed: {e}")
             return extracted_value, 0.8
+
+    def _analyze_character_confidence(self, roi: np.ndarray, config: str = '--psm 7') -> Dict[str, any]:
+        """
+        Analyze character-level confidence for OCR result.
+
+        CHARACTER-LEVEL ANALYSIS: Detects unreliable individual characters that may be OCR errors.
+        Critical for numeric values where single-digit errors are catastrophic ($100 vs $1000).
+
+        Args:
+            roi: Region of interest image
+            config: Tesseract config string
+
+        Returns:
+            Dict containing:
+                - text: Extracted text
+                - char_confidences: List of (char, confidence) tuples
+                - min_confidence: Lowest character confidence (0-100)
+                - mean_confidence: Average confidence (0-100)
+                - std_confidence: Standard deviation of confidence
+                - suspicious_chars: List of (char, conf) for chars below threshold
+                - overall_reliable: Boolean indicating if result is trustworthy
+        """
+        if not pytesseract:
+            return {
+                'text': '',
+                'char_confidences': [],
+                'min_confidence': 0.0,
+                'mean_confidence': 0.0,
+                'std_confidence': 0.0,
+                'suspicious_chars': [],
+                'overall_reliable': False
+            }
+
+        try:
+            # Get detailed OCR output with character-level data
+            data = pytesseract.image_to_data(roi, config=config, output_type=pytesseract.Output.DICT)  # type: ignore
+
+            # Extract character-level confidences
+            char_confidences = []
+            full_text = []
+
+            for i, text in enumerate(data['text']):
+                conf = int(data['conf'][i])
+                if conf >= 0 and text.strip():  # Valid detection
+                    for char in text:
+                        char_confidences.append((char, conf))
+                        full_text.append(char)
+
+            if not char_confidences:
+                return {
+                    'text': '',
+                    'char_confidences': [],
+                    'min_confidence': 0.0,
+                    'mean_confidence': 0.0,
+                    'std_confidence': 0.0,
+                    'suspicious_chars': [],
+                    'overall_reliable': False
+                }
+
+            # Calculate statistics
+            confidences = [c[1] for c in char_confidences]
+            min_conf = min(confidences)
+            mean_conf = sum(confidences) / len(confidences)
+
+            # Calculate standard deviation
+            variance = sum((c - mean_conf) ** 2 for c in confidences) / len(confidences)
+            std_conf = variance ** 0.5
+
+            # Identify suspicious characters (below threshold)
+            CONFIDENCE_THRESHOLD = 60  # Characters below this are suspicious
+            suspicious_chars = [(char, conf) for char, conf in char_confidences if conf < CONFIDENCE_THRESHOLD]
+
+            # Determine overall reliability
+            # Criteria: mean_conf >= 70, min_conf >= 50, and no more than 1 suspicious char
+            overall_reliable = (
+                mean_conf >= 70.0 and
+                min_conf >= 50.0 and
+                len(suspicious_chars) <= 1
+            )
+
+            result_text = ''.join(full_text)
+
+            # Log suspicious results for debugging
+            if suspicious_chars:
+                susp_str = ', '.join([f"'{c}':{conf}" for c, conf in suspicious_chars])
+                logger.debug(f"Suspicious chars in '{result_text}': {susp_str}")
+
+            return {
+                'text': result_text,
+                'char_confidences': char_confidences,
+                'min_confidence': min_conf,
+                'mean_confidence': mean_conf,
+                'std_confidence': std_conf,
+                'suspicious_chars': suspicious_chars,
+                'overall_reliable': overall_reliable
+            }
+
+        except Exception as e:
+            logger.debug(f"Character confidence analysis failed: {e}")
+            return {
+                'text': '',
+                'char_confidences': [],
+                'min_confidence': 0.0,
+                'mean_confidence': 0.0,
+                'std_confidence': 0.0,
+                'suspicious_chars': [],
+                'overall_reliable': False
+            }
 
     def _levenshtein_distance(self, s1: str, s2: str) -> int:
         """Calculate Levenshtein distance between two strings for fuzzy matching."""
