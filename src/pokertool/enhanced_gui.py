@@ -247,8 +247,8 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self._lock_path = lock_path
         
         self.title(translate('app.title'))
-        self.geometry('1400x900')  # Compact size for better visibility
-        self.minsize(1200, 800)     # Reasonable minimum
+        self.geometry('1300x850')  # Optimized compact size for better fit
+        self.minsize(1100, 750)     # Flexible minimum for various screens
         self.configure(bg=COLORS['bg_dark'])
         
         # Maximize window on startup for best tab visibility
@@ -1053,7 +1053,9 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
                 self.notebook.select(built_tabs[0][0])
         
         # CRITICAL: Force notebook to update and show all tabs
-        self.notebook.update_idletasks()
+        # TEMPORARILY DISABLED: update_idletasks() causes segfault on macOS (showRootWindow crash)
+        # TODO: Replace with after() callback once mainloop starts
+        # self.notebook.update_idletasks()
         self._select_default_tab()
         
         # Log tab visibility for debugging
@@ -1062,14 +1064,14 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self.after(150, self._enforce_tab_visibility)
         self.after(500, self._validate_screen_scraper_ready)
         
-        # Add status bar showing tab count
-        status_bar = tk.Frame(main_container, bg=COLORS['bg_medium'], height=25)
-        status_bar.pack(side='bottom', fill='x', pady=(5, 0))
-        
+        # Add status bar showing tab count (optimized compact size)
+        status_bar = tk.Frame(main_container, bg=COLORS['bg_medium'], height=18)
+        status_bar.pack(side='bottom', fill='x', pady=(3, 0))
+
         tab_count_label = tk.Label(
             status_bar,
-            text=f"✓ {len(built_tabs)} blades ready - use the navigation bar above to switch views",
-            font=('Arial', 9),
+            text=f"✓ {len(built_tabs)} blades ready",
+            font=('Arial', 8),
             bg=COLORS['bg_medium'],
             fg=COLORS['accent_success']
         )

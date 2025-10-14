@@ -56,8 +56,10 @@ def _is_tk_ready() -> Tuple[bool, Optional[str]]:
         return False, str(exc)
 
     try:
-        interp = tkinter.Tcl()
-        interp.eval('package require Tk')
+        # Test if we can actually create a Tk root window (more reliable than Tcl package check)
+        root = tkinter.Tk()
+        root.withdraw()  # Hide the test window
+        root.destroy()
         return True, None
     except Exception as exc:
         return False, str(exc)

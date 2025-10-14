@@ -55,10 +55,10 @@ class ActionType(Enum):
 
 class WindowMode(Enum):
     """Window display modes with different sizes and information density."""
-    ULTRA_COMPACT = ("ultra", 200, 120)  # Minimal: Action + Win% only
-    COMPACT = ("compact", 300, 180)      # Current: Basic info
-    STANDARD = ("standard", 400, 280)    # More metrics
-    DETAILED = ("detailed", 500, 400)    # All features
+    ULTRA_COMPACT = ("ultra", 180, 110)  # Minimal: Action + Win% only - optimized
+    COMPACT = ("compact", 280, 160)      # Current: Basic info - optimized smaller
+    STANDARD = ("standard", 380, 260)    # More metrics - optimized
+    DETAILED = ("detailed", 480, 380)    # All features - optimized
 
     def __init__(self, mode_id: str, width: int, height: int):
         self.mode_id = mode_id
@@ -650,7 +650,7 @@ class CompactLiveAdviceWindow:
         """Create main action display."""
         # Adjust height based on window mode
         height = 60 if self.window_mode == WindowMode.ULTRA_COMPACT else 50
-        font_size = 48 if self.window_mode == WindowMode.ULTRA_COMPACT else 42
+        font_size = 40 if self.window_mode == WindowMode.ULTRA_COMPACT else 36  # Reduced for compact UI
 
         action_frame = tk.Frame(self.main_frame, bg=self.colors['BG_PRIMARY'], height=height)
         action_frame.pack(fill=tk.X, pady=(4, 0))
@@ -679,7 +679,7 @@ class CompactLiveAdviceWindow:
         tk.Label(
             label_frame,
             text="Win: ",
-            font=("Arial", 18),
+            font=("Arial", 14),  # Reduced for compact UI
             fg=self.colors['TEXT_SECONDARY'],
             bg=self.colors['BG_PRIMARY']
         ).pack(side=tk.LEFT)
@@ -688,7 +688,7 @@ class CompactLiveAdviceWindow:
             label_frame,
             initial_value=0,
             suffix="%",
-            font=("Arial", 24, "bold"),
+            font=("Arial", 20, "bold"),  # Reduced for compact UI
             fg=self.colors['TEXT_PRIMARY'],
             bg=self.colors['BG_PRIMARY']
         )

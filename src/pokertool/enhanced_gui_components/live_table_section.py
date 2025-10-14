@@ -50,7 +50,9 @@ class LiveTableSection:
         self.status_lights: Dict[str, tk.Label] = {}
 
         self._build_ui()
-        self._start_live_updates()  # Start updates FIRST
+        # TEMPORARILY DISABLED: LiveTable updates cause segfault due to OCR thread-safety issues
+        # TODO: Implement thread-safe OCR or use main thread callbacks
+        # self._start_live_updates()  # Start updates FIRST
         # Handle prompt disabled - user can configure handle in settings if needed
         # self.parent.after(3000, self._prompt_for_handle)
 
