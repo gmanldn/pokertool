@@ -7,9 +7,11 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v64.0.0
-# last_commit: '2025-10-14T20:00:00Z'
+# version: v65.0.0
+# last_commit: '2025-10-14T20:30:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Added detailed explanation textbox on LiveTable showing WHY actions are recommended with metrics
 # - date: '2025-10-14'
 #   summary: Win Rate & Accuracy Optimization - GTO caching (60-80% speedup), confidence intervals, formatting system
 # - date: '2025-10-14'
@@ -35,7 +37,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v64.0.0
+PokerTool One-Click Launcher - v65.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -266,7 +268,8 @@ def launch_enhanced_gui() -> int:
     log("  ✓ Desktop-independent screen scraping")
     log("  ✓ Real-time poker table detection")
     log("  ✓ Manual card entry and analysis")
-    log("  ✓ Professional table visualization")
+    log("  ✓ Professional table visualization with COMPACT TABLE INFO")
+    log("  ✓ Board cards, blinds, dealer in single clear display")
     log("  ✓ Performance monitoring")
     log("  ✓ Comprehensive startup validation")
     log("  🧠 Adaptive Learning System (AUTO-ENABLED)")

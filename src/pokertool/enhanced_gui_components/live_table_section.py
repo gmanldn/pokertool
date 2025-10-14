@@ -13,6 +13,14 @@ from typing import Any, Optional, Dict, List
 
 from .style import COLORS, FONTS
 
+# Import detailed advice explainer
+try:
+    from ..detailed_advice_explainer import get_detailed_explainer
+    EXPLAINER_AVAILABLE = True
+except ImportError:
+    EXPLAINER_AVAILABLE = False
+    print("[LiveTableSection] Warning: detailed_advice_explainer not available")
+
 
 class LiveTableSection:
     """Encapsulates the LiveTable tab with real-time scraper data display."""
@@ -36,6 +44,7 @@ class LiveTableSection:
         self.dealer_button_label: Optional[tk.Label] = None
         self.table_status_label: Optional[tk.Label] = None
         self.recommended_action_label: Optional[tk.Label] = None
+        self.detailed_explanation_label: Optional[tk.Label] = None
         self.my_cards_labels: List[tk.Label] = []
 
         # User's handle for position identification
@@ -226,114 +235,138 @@ class LiveTableSection:
         )
         self.tournament_label.pack(side="right", padx=(10, 0))
 
-        # Board cards section
-        board_frame = tk.LabelFrame(
+        # COMPACT TABLE INFO PANEL - Combines board, blinds, pot, and dealer
+        table_info_frame = tk.LabelFrame(
             self.live_data_frame,
-            text="Board Cards",
-            font=FONTS["subheading"],
+            text="🎴 TABLE INFO",
+            font=("Arial", 14, "bold"),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
+            relief=tk.RAISED,
+            bd=3,
         )
-        board_frame.pack(fill="x", pady=(0, 10))
+        table_info_frame.pack(fill="x", pady=(0, 10))
 
-        board_cards_frame = tk.Frame(board_frame, bg=COLORS["bg_medium"])
-        board_cards_frame.pack(pady=5)
+        # Main container with padding
+        info_container = tk.Frame(table_info_frame, bg=COLORS["bg_medium"])
+        info_container.pack(fill="x", padx=15, pady=15)
+
+        # Top row: Blinds/Ante info on left, Dealer button on right
+        top_row = tk.Frame(info_container, bg=COLORS["bg_medium"])
+        top_row.pack(fill="x", pady=(0, 10))
+
+        # Left side: Blinds and Ante
+        blinds_container = tk.Frame(top_row, bg=COLORS["bg_light"], relief=tk.GROOVE, bd=2)
+        blinds_container.pack(side="left", padx=(0, 10))
+
+        tk.Label(
+            blinds_container,
+            text="BLINDS:",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(10, 5))
+
+        self.blinds_label = tk.Label(
+            blinds_container,
+            text="$-/$-",
+            font=("Arial", 14, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["accent_warning"],
+        )
+        self.blinds_label.pack(side="left", padx=(0, 15))
+
+        tk.Label(
+            blinds_container,
+            text="ANTE:",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(0, 5))
+
+        self.ante_label = tk.Label(
+            blinds_container,
+            text="$-",
+            font=("Arial", 14, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["accent_warning"],
+        )
+        self.ante_label.pack(side="left", padx=(0, 10))
+
+        # Right side: Dealer button
+        dealer_container = tk.Frame(top_row, bg=COLORS["bg_light"], relief=tk.GROOVE, bd=2)
+        dealer_container.pack(side="right")
+
+        tk.Label(
+            dealer_container,
+            text="🔘 DEALER:",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(10, 5))
+
+        self.dealer_button_label = tk.Label(
+            dealer_container,
+            text="Seat -",
+            font=("Arial", 14, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["accent_info"],
+        )
+        self.dealer_button_label.pack(side="left", padx=(0, 10))
+
+        # Middle row: Board cards (centered and prominent)
+        board_row = tk.Frame(info_container, bg=COLORS["bg_medium"])
+        board_row.pack(fill="x", pady=(0, 10))
+
+        tk.Label(
+            board_row,
+            text="BOARD:",
+            font=("Arial", 11, "bold"),
+            bg=COLORS["bg_medium"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(0, 10))
+
+        board_cards_frame = tk.Frame(board_row, bg="#1a1a1a", relief=tk.SUNKEN, bd=2)
+        board_cards_frame.pack(side="left", padx=(0, 0))
 
         self.board_labels = []
         for i in range(5):  # 5 community cards max
             card_label = tk.Label(
                 board_cards_frame,
                 text="[ ]",
-                font=("Courier", 12, "bold"),
-                bg=COLORS["bg_light"],
-                fg=COLORS["text_primary"],
+                font=("Courier", 16, "bold"),
+                bg="#ffffff",
+                fg="#000000",
                 width=4,
                 relief=tk.RAISED,
-                bd=1,
+                bd=2,
             )
-            card_label.pack(side="left", padx=2)
+            card_label.pack(side="left", padx=3, pady=5)
             self.board_labels.append(card_label)
 
-        # Game info section
-        game_info_frame = tk.Frame(self.live_data_frame, bg=COLORS["bg_dark"])
-        game_info_frame.pack(fill="x", pady=(0, 10))
+        # Bottom row: Pot display (centered and large)
+        pot_row = tk.Frame(info_container, bg=COLORS["bg_medium"])
+        pot_row.pack(fill="x")
 
-        # Blinds and ante
-        blinds_frame = tk.Frame(game_info_frame, bg=COLORS["bg_dark"])
-        blinds_frame.pack(side="left", fill="x", expand=True)
-
-        tk.Label(
-            blinds_frame,
-            text="Blinds:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["text_primary"],
-        ).pack(side="left")
-
-        self.blinds_label = tk.Label(
-            blinds_frame,
-            text="$-/$-",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["accent_warning"],
-        )
-        self.blinds_label.pack(side="left", padx=(5, 15))
+        pot_container = tk.Frame(pot_row, bg=COLORS["bg_light"], relief=tk.GROOVE, bd=3)
+        pot_container.pack(expand=True)
 
         tk.Label(
-            blinds_frame,
-            text="Ante:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
+            pot_container,
+            text="💰 POT:",
+            font=("Arial", 12, "bold"),
+            bg=COLORS["bg_light"],
             fg=COLORS["text_primary"],
-        ).pack(side="left")
-
-        self.ante_label = tk.Label(
-            blinds_frame,
-            text="$-",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["accent_warning"],
-        )
-        self.ante_label.pack(side="left", padx=(5, 15))
-
-        # Pot display
-        tk.Label(
-            blinds_frame,
-            text="Pot:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["text_primary"],
-        ).pack(side="left")
+        ).pack(side="left", padx=(15, 5))
 
         self.pot_label = tk.Label(
-            blinds_frame,
+            pot_container,
             text="$0",
-            font=("Helvetica", 11, "bold"),
-            bg=COLORS["bg_dark"],
+            font=("Arial", 18, "bold"),
+            bg=COLORS["bg_light"],
             fg=COLORS["accent_success"],
         )
-        self.pot_label.pack(side="left", padx=(5, 15))
-
-        # Dealer button
-        dealer_frame = tk.Frame(game_info_frame, bg=COLORS["bg_dark"])
-        dealer_frame.pack(side="right")
-
-        tk.Label(
-            dealer_frame,
-            text="Dealer:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["text_primary"],
-        ).pack(side="left")
-
-        self.dealer_button_label = tk.Label(
-            dealer_frame,
-            text="Seat -",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["accent_info"],
-        )
-        self.dealer_button_label.pack(side="left", padx=(5, 0))
+        self.pot_label.pack(side="left", padx=(0, 15))
 
         # Graphical poker table section
         table_canvas_frame = tk.Frame(self.live_data_frame, bg=COLORS["table_felt"])
@@ -395,7 +428,7 @@ class LiveTableSection:
             relief=tk.RAISED,
             bd=3,
         )
-        action_frame.pack(fill="both", expand=True, pady=(0, 10))
+        action_frame.pack(fill="x", pady=(0, 10))
 
         self.recommended_action_label = tk.Label(
             action_frame,
@@ -410,7 +443,152 @@ class LiveTableSection:
             padx=20,
             pady=20,
         )
-        self.recommended_action_label.pack(fill="both", expand=True, padx=10, pady=10)
+        self.recommended_action_label.pack(fill="x", padx=10, pady=10)
+
+        # Detailed explanation box
+        explanation_frame = tk.LabelFrame(
+            self.live_data_frame,
+            text="📖 DETAILED EXPLANATION - Why This Action?",
+            font=FONTS["heading"],
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_info"],
+            relief=tk.RAISED,
+            bd=3,
+        )
+        explanation_frame.pack(fill="both", expand=True, pady=(0, 10))
+
+        # Create a text widget with scrollbar for better readability
+        explanation_container = tk.Frame(explanation_frame, bg=COLORS["bg_dark"])
+        explanation_container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Scrollbar
+        explanation_scrollbar = tk.Scrollbar(explanation_container)
+        explanation_scrollbar.pack(side="right", fill="y")
+
+        # Text widget for detailed explanation
+        self.detailed_explanation_text = tk.Text(
+            explanation_container,
+            font=("Arial", 11),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["text_primary"],
+            wrap="word",
+            relief=tk.SUNKEN,
+            bd=2,
+            padx=15,
+            pady=15,
+            height=12,
+            state="disabled",  # Read-only
+            yscrollcommand=explanation_scrollbar.set,
+        )
+        self.detailed_explanation_text.pack(side="left", fill="both", expand=True)
+        explanation_scrollbar.config(command=self.detailed_explanation_text.yview)
+
+        # Configure text tags for formatting
+        self.detailed_explanation_text.tag_config(
+            "heading",
+            font=("Arial", 11, "bold"),
+            foreground=COLORS["accent_info"]
+        )
+        self.detailed_explanation_text.tag_config(
+            "emphasis",
+            font=("Arial", 11, "bold"),
+            foreground=COLORS["accent_success"]
+        )
+        self.detailed_explanation_text.tag_config(
+            "warning",
+            foreground=COLORS["accent_warning"]
+        )
+
+    def _update_detailed_explanation(self, table_data: Dict) -> None:
+        """Update the detailed explanation text with advice reasoning."""
+        try:
+            if not EXPLAINER_AVAILABLE:
+                # Show a message if explainer is not available
+                explanation = (
+                    "⏳ Detailed explanations are loading...\n\n"
+                    "The system will provide comprehensive reasoning once autopilot is active."
+                )
+                self._set_explanation_text(explanation)
+                return
+
+            # Get advice data from table_data if available
+            advice_data = table_data.get('advice_data')
+
+            if not advice_data:
+                # Create default message when no advice is available
+                explanation = (
+                    "⏳ Waiting for game state...\n\n"
+                    "Once autopilot detects a decision point, detailed advice will appear here explaining:\n"
+                    "  • What action to take and why\n"
+                    "  • Key metrics supporting the decision\n"
+                    "  • Alternative actions and their expected values\n"
+                    "  • Strategic context for the situation"
+                )
+                self._set_explanation_text(explanation)
+                return
+
+            # Generate detailed explanation using the explainer
+            explainer = get_detailed_explainer()
+            explanation = explainer.generate_detailed_explanation(advice_data)
+            self._set_explanation_text(explanation)
+
+        except Exception as e:
+            import traceback
+            print(f"[LiveTableSection] Error updating explanation: {e}")
+            print(traceback.format_exc())
+            self._set_explanation_text(
+                f"⚠️ Error generating explanation: {str(e)}\n\n"
+                "Please check logs for details."
+            )
+
+    def _set_explanation_text(self, text: str) -> None:
+        """Update the text widget with new explanation text."""
+        if not hasattr(self, 'detailed_explanation_text'):
+            return
+
+        try:
+            # Enable editing temporarily
+            self.detailed_explanation_text.config(state="normal")
+
+            # Clear existing content
+            self.detailed_explanation_text.delete("1.0", "end")
+
+            # Insert new text
+            self.detailed_explanation_text.insert("1.0", text)
+
+            # Apply formatting to special sections
+            self._apply_explanation_formatting()
+
+            # Disable editing again (read-only)
+            self.detailed_explanation_text.config(state="disabled")
+
+            # Scroll to top
+            self.detailed_explanation_text.see("1.0")
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error setting explanation text: {e}")
+
+    def _apply_explanation_formatting(self) -> None:
+        """Apply text formatting tags to the explanation text."""
+        try:
+            # Get all text
+            content = self.detailed_explanation_text.get("1.0", "end")
+
+            # Find and tag section headers (lines with emoji icons)
+            for line_num, line in enumerate(content.split('\n'), start=1):
+                if line.startswith('💡') or line.startswith('📊') or \
+                   line.startswith('📈') or line.startswith('🔄'):
+                    # Tag this line as heading
+                    start_idx = f"{line_num}.0"
+                    end_idx = f"{line_num}.end"
+                    self.detailed_explanation_text.tag_add("heading", start_idx, end_idx)
+
+                # Highlight important numbers (percentages, dollar amounts)
+                if '%' in line or '$' in line:
+                    self.detailed_explanation_text.tag_add("emphasis", start_idx, end_idx)
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error applying formatting: {e}")
 
     def _draw_poker_table(self) -> None:
         """Draw the oval poker table on the canvas."""
@@ -882,13 +1060,18 @@ class LiveTableSection:
                     fg=status_color
                 )
 
-            # Update board cards
+            # Update board cards with suit colors
             board_cards = table_data.get('board_cards', [])
             for i, card_label in enumerate(self.board_labels):
                 if i < len(board_cards) and board_cards[i]:
-                    card_label.config(text=board_cards[i], fg=COLORS["accent_success"])
+                    card = board_cards[i]
+                    # Determine card color based on suit
+                    card_color = "#000000"  # Default black
+                    if '♥' in card or '♦' in card or 'h' in card.lower() or 'd' in card.lower():
+                        card_color = "#dc2626"  # Red for hearts/diamonds
+                    card_label.config(text=card, fg=card_color, bg="#ffffff")
                 else:
-                    card_label.config(text="[ ]", fg=COLORS["text_secondary"])
+                    card_label.config(text="[ ]", fg="#666666", bg="#cccccc")
 
             # Update blinds and ante
             if self.blinds_label:
@@ -1101,6 +1284,9 @@ class LiveTableSection:
                         action_color = COLORS["accent_info"]
 
                 self.recommended_action_label.config(text=action, fg=action_color)
+
+            # Update detailed explanation
+            self._update_detailed_explanation(table_data)
 
         except Exception as e:
             import traceback
