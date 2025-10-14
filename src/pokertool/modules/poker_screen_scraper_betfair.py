@@ -755,8 +755,19 @@ class PokerScreenScraper:
         self.last_small_blind = 0.5  # Default to 0.5 (standard SB)
 
         # Smart result caching (improves performance for unchanged screens)
-        self.result_cache = {}  # image_hash -> (result, timestamp)
-        self.cache_ttl = 0.5  # Cache valid for 500ms
+        self.result_cache = {}  # full_key -> (result, timestamp, access_count)
+
+        # ENHANCED: Adaptive TTL based on extraction type
+        # Faster-changing data gets shorter TTL, static data gets longer TTL
+        self.cache_ttl_map = {
+            'pot_size': 0.3,        # Pot changes frequently (short TTL)
+            'board_cards': 1.0,     # Board less likely to change mid-hand
+            'hero_cards': 2.0,      # Hero cards stable during hand
+            'blinds': 5.0,          # Blinds very stable
+            'table_detection': 1.0, # Table position stable
+            'default': 0.5          # Default TTL
+        }
+
         self.cache_hits = 0
         self.cache_misses = 0
 
@@ -2733,24 +2744,61 @@ class PokerScreenScraper:
             return best_match, best_score
         return extracted_name, 0.5
 
-    def _compute_image_hash(self, image: np.ndarray) -> str:
+    def _compute_image_hash(self, image: np.ndarray, use_perceptual: bool = True) -> str:
         """
         Compute fast hash of image for caching.
 
-        Uses a downscaled version for speed.
+        ENHANCED: Uses perceptual hashing for better similarity detection.
+        Perceptual hashing is resilient to minor image changes (brightness, slight shifts).
+
+        Args:
+            image: Input image
+            use_perceptual: If True, use perceptual hash (slower but better), else use MD5
+
+        Returns:
+            Hash string
         """
         try:
-            # Downsample to 32x32 for fast hash
-            small = cv2.resize(image, (32, 32))
-            # Simple hash based on mean values
-            hash_str = hashlib.md5(small.tobytes()).hexdigest()[:16]
-            return hash_str
-        except:
+            if use_perceptual:
+                # Perceptual hash (pHash-like algorithm)
+                # 1. Convert to grayscale
+                if len(image.shape) == 3:
+                    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                else:
+                    gray = image
+
+                # 2. Resize to 32x32 (good balance between speed and discrimination)
+                resized = cv2.resize(gray, (32, 32), interpolation=cv2.INTER_AREA)
+
+                # 3. Apply DCT (Discrete Cosine Transform) to get frequency components
+                dct = cv2.dct(np.float32(resized))
+
+                # 4. Keep only top-left 8x8 (low frequency components)
+                dct_low = dct[0:8, 0:8]
+
+                # 5. Compute average (excluding DC component at [0,0])
+                avg = np.mean(dct_low[1:, 1:])
+
+                # 6. Generate hash bits (1 if > avg, 0 otherwise)
+                hash_bits = (dct_low.flatten() > avg).astype(int)
+
+                # 7. Convert to hex string (64 bits total)
+                hash_str = ''.join([str(b) for b in hash_bits])
+                return hash_str
+            else:
+                # Fast MD5 hash (exact matching only)
+                small = cv2.resize(image, (32, 32))
+                hash_str = hashlib.md5(small.tobytes()).hexdigest()[:16]
+                return hash_str
+        except Exception as e:
+            logger.debug(f"Image hashing failed: {e}")
             return ""
 
     def _get_cached_result(self, cache_key: str, image_hash: str) -> Optional[Any]:
         """
         Get cached result if available and fresh.
+
+        ENHANCED: Uses adaptive TTL based on extraction type.
 
         Args:
             cache_key: Type of cached data (e.g., 'pot_size', 'players')
@@ -2761,12 +2809,17 @@ class PokerScreenScraper:
         """
         full_key = f"{cache_key}_{image_hash}"
         if full_key in self.result_cache:
-            result, timestamp = self.result_cache[full_key]
+            result, timestamp, access_count = self.result_cache[full_key]
             age = time.time() - timestamp
 
-            if age < self.cache_ttl:
+            # Get adaptive TTL for this extraction type
+            ttl = self.cache_ttl_map.get(cache_key, self.cache_ttl_map['default'])
+
+            if age < ttl:
+                # Increment access count (for LFU eviction)
+                self.result_cache[full_key] = (result, timestamp, access_count + 1)
                 self.cache_hits += 1
-                logger.debug(f"Cache hit: {cache_key} (age: {age*1000:.0f}ms)")
+                logger.debug(f"Cache hit: {cache_key} (age: {age*1000:.0f}ms, TTL: {ttl*1000:.0f}ms, accesses: {access_count + 1})")
                 return result
 
             # Expired, remove
@@ -2779,23 +2832,30 @@ class PokerScreenScraper:
         """
         Cache a result.
 
+        ENHANCED: Uses LFU (Least Frequently Used) eviction strategy.
+
         Args:
             cache_key: Type of cached data
             image_hash: Hash of image
             result: Result to cache
         """
         full_key = f"{cache_key}_{image_hash}"
-        self.result_cache[full_key] = (result, time.time())
+        self.result_cache[full_key] = (result, time.time(), 1)  # (result, timestamp, access_count)
 
-        # Cleanup old cache entries (keep last 50)
-        if len(self.result_cache) > 50:
-            # Remove oldest entries
+        # Cleanup cache entries with LFU eviction (keep last 100)
+        MAX_CACHE_SIZE = 100
+        if len(self.result_cache) > MAX_CACHE_SIZE:
+            # Remove least frequently used entries (using access_count + age combination)
+            # Older entries with low access count are prioritized for removal
             sorted_keys = sorted(
                 self.result_cache.items(),
-                key=lambda x: x[1][1]
+                key=lambda x: (x[1][2], -x[1][1])  # Sort by (access_count ASC, -timestamp DESC)
             )
-            for key, _ in sorted_keys[:-50]:
+            # Remove bottom 20% to avoid frequent cleanup
+            num_to_remove = max(1, len(self.result_cache) - MAX_CACHE_SIZE + 20)
+            for key, _ in sorted_keys[:num_to_remove]:
                 del self.result_cache[key]
+            logger.debug(f"Cache evicted {num_to_remove} entries (LFU strategy)")
 
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get caching performance statistics."""
