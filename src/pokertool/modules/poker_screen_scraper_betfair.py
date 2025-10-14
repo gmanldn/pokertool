@@ -1286,6 +1286,27 @@ class PokerScreenScraper:
                     seen = set()
                     strategy_order = [s for s in strategy_order if not (s in seen or seen.add(s))]
 
+            # PERFORMANCE: Filter out consistently failing strategies
+            # Skip strategies with < 10% success rate (if we have enough data)
+            if 'pot' in self.strategy_performance:
+                filtered_order = []
+                for strategy in strategy_order:
+                    if strategy in self.strategy_performance['pot']:
+                        successes, total = self.strategy_performance['pot'][strategy]
+                        if total >= 10:  # Only filter if we have enough data
+                            success_rate = successes / total
+                            if success_rate < 0.10:  # Less than 10% success
+                                logger.debug(f"[SKIP] Strategy '{strategy}' has {success_rate:.1%} success rate, skipping")
+                                continue  # Skip this strategy
+                    filtered_order.append(strategy)
+                strategy_order = filtered_order
+
+            # PERFORMANCE: Limit maximum strategies tried (prevent excessive retries)
+            MAX_STRATEGIES = 5
+            if len(strategy_order) > MAX_STRATEGIES:
+                logger.debug(f"[LIMIT] Trying top {MAX_STRATEGIES} of {len(strategy_order)} strategies")
+                strategy_order = strategy_order[:MAX_STRATEGIES]
+
             # Multi-pass approach for pot detection
             gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
@@ -1485,6 +1506,15 @@ class PokerScreenScraper:
                                             strategy_id,
                                             execution_time
                                         )
+
+                                    # PERFORMANCE: Early exit for high-confidence results
+                                    # If character-level confidence is very high, skip remaining strategies
+                                    if char_analysis['overall_reliable'] and char_analysis['mean_confidence'] >= 85.0:
+                                        logger.debug(
+                                            f"[EARLY EXIT] High-confidence result (mean={char_analysis['mean_confidence']:.0f}), "
+                                            f"skipping {len(strategy_order) - (strategy_order.index(strategy_id) + 1)} remaining strategies"
+                                        )
+                                        break  # Exit immediately
 
                                     # Found good result, can break early
                                     break
