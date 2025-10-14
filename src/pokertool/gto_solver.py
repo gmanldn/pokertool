@@ -61,6 +61,20 @@ try:
 except ImportError:
     from pokertool.error_handling import retry_on_failure
 
+# Performance telemetry
+try:
+    from .performance_telemetry import telemetry_section, telemetry_instant
+    TELEMETRY_AVAILABLE = True
+except ImportError:
+    TELEMETRY_AVAILABLE = False
+    # No-op fallback
+    from contextlib import contextmanager
+    @contextmanager
+    def telemetry_section(cat, op, det=None):
+        yield
+    def telemetry_instant(cat, op, det=None):
+        pass
+
 logger = logging.getLogger(__name__)
 
 class Action(Enum):
@@ -273,6 +287,8 @@ class EquityCalculator:
         Returns:
             List of equity values for each hand
         """
+        telemetry_instant('gto', 'calculate_equity', {'hands': len(hands), 'iterations': iterations})
+
         # Create cache key
         cache_key = self._create_cache_key(hands, board, iterations)
 
@@ -503,19 +519,21 @@ class GTOSolver:
         logger.info(f"GTO Solver initialized with cache directory: {self.cache_dir}")
     
     @retry_on_failure(max_retries=3, delay=1.0)
-    def solve(self, game_state: GameState, ranges: Dict[str, Range], 
+    def solve(self, game_state: GameState, ranges: Dict[str, Range],
               max_iterations: int = None) -> GTOSolution:
         """
         Solve for GTO strategy using CFR algorithm.
-        
+
         Args:
             game_state: Current game state
             ranges: Player ranges
             max_iterations: Maximum CFR iterations
-            
+
         Returns:
             GTOSolution with optimal strategies
         """
+        telemetry_instant('gto', 'solve', {'players': len(ranges), 'max_iterations': max_iterations or self.max_iterations})
+
         start_time = time.time()
         max_iterations = max_iterations or self.max_iterations
         

@@ -26,6 +26,20 @@ import hashlib
 
 logger = logging.getLogger(__name__)
 
+# Performance telemetry
+try:
+    from ..performance_telemetry import telemetry_section, telemetry_instant
+    TELEMETRY_AVAILABLE = True
+except ImportError:
+    TELEMETRY_AVAILABLE = False
+    # No-op fallback
+    from contextlib import contextmanager
+    @contextmanager
+    def telemetry_section(cat, op, det=None):
+        yield
+    def telemetry_instant(cat, op, det=None):
+        pass
+
 # Check for required dependencies
 try:
     import cv2
@@ -1494,6 +1508,7 @@ class PokerScreenScraper:
         FAST PATH: If connected to Chrome via CDP, uses direct DOM extraction (10-100x faster)
         FALLBACK: Uses screenshot OCR if CDP not available
         """
+        telemetry_instant('scraper', 'analyze_table_start')
         start_time = time.time()
         extraction_start = start_time
 
@@ -1501,7 +1516,8 @@ class PokerScreenScraper:
             # FAST PATH: Try CDP extraction first (if connected)
             if self.cdp_connected and self.cdp_scraper:
                 try:
-                    cdp_data = self.cdp_scraper.extract_table_data()
+                    with telemetry_section('scraper', 'cdp_extraction'):
+                        cdp_data = self.cdp_scraper.extract_table_data()
                     if cdp_data:
                         # Store CDP data for learning comparison
                         self.last_cdp_data = cdp_data
@@ -1532,7 +1548,8 @@ class PokerScreenScraper:
 
             # FALLBACK: Screenshot-based OCR extraction
             if image is None:
-                image = self.capture_table()
+                with telemetry_section('scraper', 'capture_table'):
+                    image = self.capture_table()
 
             if image is None:
                 logger.debug("[TABLE DETECTION] No image captured")
@@ -1558,7 +1575,8 @@ class PokerScreenScraper:
                     logger.debug(f"[INCREMENTAL] Screen changed (diff={diff_ratio:.1%}), performing full extraction")
 
             # Step 1: Detect if this is a poker table
-            is_poker, confidence, details = self.detect_poker_table(image)
+            with telemetry_section('scraper', 'detect_poker_table'):
+                is_poker, confidence, details = self.detect_poker_table(image)
 
             # CHANGED: Don't immediately return empty state on low confidence
             # Instead, attempt to extract data anyway and let the caller decide
@@ -1601,40 +1619,41 @@ class PokerScreenScraper:
             parallel_enabled = True  # Can be toggled for debugging
 
             if parallel_enabled:
-                # Define extraction tasks
-                tasks = {
-                    'pot': lambda: self._extract_pot_size(image),
-                    'hero_cards': lambda: self._extract_hero_cards(image),
-                    'board_cards': lambda: self._extract_board_cards(image),
-                    'blinds': lambda: self._extract_blinds(image)
-                }
+                with telemetry_section('scraper', 'parallel_extraction'):
+                    # Define extraction tasks
+                    tasks = {
+                        'pot': lambda: self._extract_pot_size(image),
+                        'hero_cards': lambda: self._extract_hero_cards(image),
+                        'board_cards': lambda: self._extract_board_cards(image),
+                        'blinds': lambda: self._extract_blinds(image)
+                    }
 
-                # Execute in parallel with ThreadPoolExecutor
-                extraction_results = {}
-                with ThreadPoolExecutor(max_workers=4) as executor:
-                    # Submit all tasks
-                    futures = {executor.submit(task): name for name, task in tasks.items()}
+                    # Execute in parallel with ThreadPoolExecutor
+                    extraction_results = {}
+                    with ThreadPoolExecutor(max_workers=4) as executor:
+                        # Submit all tasks
+                        futures = {executor.submit(task): name for name, task in tasks.items()}
 
-                    # Collect results as they complete
-                    for future in as_completed(futures):
-                        task_name = futures[future]
-                        try:
-                            extraction_results[task_name] = future.result()
-                        except Exception as e:
-                            logger.error(f"Parallel extraction failed for {task_name}: {e}")
-                            # Provide default values on failure
-                            if task_name == 'pot':
-                                extraction_results[task_name] = 0.0
-                            elif task_name in ['hero_cards', 'board_cards']:
-                                extraction_results[task_name] = []
-                            elif task_name == 'blinds':
-                                extraction_results[task_name] = (0.0, 0.0, 0.0)
+                        # Collect results as they complete
+                        for future in as_completed(futures):
+                            task_name = futures[future]
+                            try:
+                                extraction_results[task_name] = future.result()
+                            except Exception as e:
+                                logger.error(f"Parallel extraction failed for {task_name}: {e}")
+                                # Provide default values on failure
+                                if task_name == 'pot':
+                                    extraction_results[task_name] = 0.0
+                                elif task_name in ['hero_cards', 'board_cards']:
+                                    extraction_results[task_name] = []
+                                elif task_name == 'blinds':
+                                    extraction_results[task_name] = (0.0, 0.0, 0.0)
 
-                # Unpack results
-                state.pot_size = extraction_results.get('pot', 0.0)
-                state.hero_cards = extraction_results.get('hero_cards', [])
-                state.board_cards = extraction_results.get('board_cards', [])
-                state.small_blind, state.big_blind, state.ante = extraction_results.get('blinds', (0.0, 0.0, 0.0))
+                    # Unpack results
+                    state.pot_size = extraction_results.get('pot', 0.0)
+                    state.hero_cards = extraction_results.get('hero_cards', [])
+                    state.board_cards = extraction_results.get('board_cards', [])
+                    state.small_blind, state.big_blind, state.ante = extraction_results.get('blinds', (0.0, 0.0, 0.0))
             else:
                 # Sequential extraction (fallback for debugging)
                 state.pot_size = self._extract_pot_size(image)
@@ -1673,7 +1692,8 @@ class PokerScreenScraper:
             if should_log_details:
                 logger.info("-" * 80)
                 logger.info("👥 PLAYERS:")
-            state.seats = self._extract_seat_info(image)
+            with telemetry_section('scraper', 'extract_seat_info'):
+                state.seats = self._extract_seat_info(image)
             state.active_players = sum(1 for seat in state.seats if seat.is_active)
 
             if should_log_details:

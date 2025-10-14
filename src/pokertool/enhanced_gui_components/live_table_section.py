@@ -13,6 +13,20 @@ from typing import Any, Optional, Dict, List
 
 from .style import COLORS, FONTS
 
+# Performance telemetry
+try:
+    from ..performance_telemetry import telemetry_section, telemetry_instant
+    TELEMETRY_AVAILABLE = True
+except ImportError:
+    TELEMETRY_AVAILABLE = False
+    # No-op fallback
+    from contextlib import contextmanager
+    @contextmanager
+    def telemetry_section(cat, op, det=None):
+        yield
+    def telemetry_instant(cat, op, det=None):
+        pass
+
 # Import detailed advice explainer
 try:
     from ..detailed_advice_explainer import get_detailed_explainer
@@ -26,6 +40,7 @@ class LiveTableSection:
     """Encapsulates the LiveTable tab with real-time scraper data display."""
 
     def __init__(self, host: Any, parent: tk.Misc, *, modules_loaded: bool) -> None:
+        telemetry_instant('ui', 'live_table_section_init')
         print("[LiveTableSection] __init__ called")
         self.host = host
         self.parent = parent
@@ -87,7 +102,12 @@ class LiveTableSection:
             self.user_handle = ""  # Use empty if prompt fails
 
     def _build_ui(self) -> None:
-        print("[LiveTableSection] _build_ui called")
+        with telemetry_section('ui', 'live_table_build_ui'):
+            print("[LiveTableSection] _build_ui called")
+            self._build_ui_internal()
+
+    def _build_ui_internal(self) -> None:
+        """Internal UI building implementation."""
         header_frame = tk.Frame(self.parent, bg=COLORS["bg_dark"])
         header_frame.pack(fill="x", pady=(20, 10))
 
