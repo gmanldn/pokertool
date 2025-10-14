@@ -51,8 +51,8 @@ class LiveTableSection:
 
         self._build_ui()
         self._start_live_updates()  # Start updates FIRST
-        # Delay handle prompt to after GUI is fully shown (3 seconds)
-        self.parent.after(3000, self._prompt_for_handle)
+        # Handle prompt disabled - user can configure handle in settings if needed
+        # self.parent.after(3000, self._prompt_for_handle)
 
     # ------------------------------------------------------------------
     def _prompt_for_handle(self) -> None:
