@@ -21,6 +21,8 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -1039,19 +1041,60 @@ class PokerScreenScraper:
                 logger.info("📊 EXTRACTING TABLE DATA:")
                 logger.info("-" * 80)
 
-            # Pot size
-            state.pot_size = self._extract_pot_size(image)
+            # PERFORMANCE: Parallel extraction of independent regions
+            # Extract pot, hero cards, board cards, and blinds concurrently
+            parallel_enabled = True  # Can be toggled for debugging
+
+            if parallel_enabled:
+                # Define extraction tasks
+                tasks = {
+                    'pot': lambda: self._extract_pot_size(image),
+                    'hero_cards': lambda: self._extract_hero_cards(image),
+                    'board_cards': lambda: self._extract_board_cards(image),
+                    'blinds': lambda: self._extract_blinds(image)
+                }
+
+                # Execute in parallel with ThreadPoolExecutor
+                extraction_results = {}
+                with ThreadPoolExecutor(max_workers=4) as executor:
+                    # Submit all tasks
+                    futures = {executor.submit(task): name for name, task in tasks.items()}
+
+                    # Collect results as they complete
+                    for future in as_completed(futures):
+                        task_name = futures[future]
+                        try:
+                            extraction_results[task_name] = future.result()
+                        except Exception as e:
+                            logger.error(f"Parallel extraction failed for {task_name}: {e}")
+                            # Provide default values on failure
+                            if task_name == 'pot':
+                                extraction_results[task_name] = 0.0
+                            elif task_name in ['hero_cards', 'board_cards']:
+                                extraction_results[task_name] = []
+                            elif task_name == 'blinds':
+                                extraction_results[task_name] = (0.0, 0.0, 0.0)
+
+                # Unpack results
+                state.pot_size = extraction_results.get('pot', 0.0)
+                state.hero_cards = extraction_results.get('hero_cards', [])
+                state.board_cards = extraction_results.get('board_cards', [])
+                state.small_blind, state.big_blind, state.ante = extraction_results.get('blinds', (0.0, 0.0, 0.0))
+            else:
+                # Sequential extraction (fallback for debugging)
+                state.pot_size = self._extract_pot_size(image)
+                state.hero_cards = self._extract_hero_cards(image)
+                state.board_cards = self._extract_board_cards(image)
+                state.small_blind, state.big_blind, state.ante = self._extract_blinds(image)
+
+            # Logging
             if should_log_details:
                 logger.info(f"💰 POT: ${state.pot_size:.2f}")
 
-            # Hero cards
-            state.hero_cards = self._extract_hero_cards(image)
             hero_cards_str = ', '.join([str(c) for c in state.hero_cards]) if state.hero_cards else "None"
             if should_log_details:
                 logger.info(f"🎴 MY HOLE CARDS: {hero_cards_str}")
 
-            # Board cards
-            state.board_cards = self._extract_board_cards(image)
             board_str = ', '.join([str(c) for c in state.board_cards]) if state.board_cards else "None"
             if should_log_details:
                 logger.info(f"🃏 BOARD: {board_str}")
@@ -1060,9 +1103,6 @@ class PokerScreenScraper:
             state.stage = self._detect_game_stage(state.board_cards)
             if should_log_details:
                 logger.info(f"📍 STAGE: {state.stage.upper()}")
-
-            # Blind amounts - try to extract from table UI
-            state.small_blind, state.big_blind, state.ante = self._extract_blinds(image)
 
             # Store blinds for domain validation context
             if state.big_blind > 0:
