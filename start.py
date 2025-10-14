@@ -7,9 +7,11 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v37.0.0
-# last_commit: '2025-10-14T05:00:00Z'
+# version: v49.0.0
+# last_commit: '2025-10-14T12:00:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Added 35 comprehensive screen scraping optimizations (speed, accuracy, reliability)
 # - date: '2025-10-14'
 #   summary: Added comprehensive UI enhancements - status panel, feedback, shortcuts, profiles, charts
 # - date: '2025-10-14'
@@ -27,7 +29,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v37.0.0
+PokerTool One-Click Launcher - v49.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -49,7 +51,7 @@ import shutil
 import argparse
 
 # Version
-__version__ = '37.0.0'
+__version__ = '49.0.0'
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -244,7 +246,7 @@ def launch_enhanced_gui() -> int:
     env['PYTHONPATH'] = str(SRC_DIR)
 
     log("=" * 70)
-    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v36.0.0")
+    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v49.0.0")
     log("=" * 70)
     log("")
     log("Features:")
@@ -312,7 +314,7 @@ def launch_enhanced_gui() -> int:
     # Try launch_gui.py first (direct launcher)
     launcher = ROOT / 'launch_gui.py'
     if launcher.exists():
-        log("Starting Enhanced GUI v36.0.0 via launcher...")
+        log("Starting Enhanced GUI v49.0.0 via launcher...")
         result = subprocess.run([venv_python, str(launcher)], env=env, cwd=ROOT)
         return result.returncode
 
@@ -333,9 +335,9 @@ def show_banner():
     """Show startup banner."""
     clear_terminal()
     print("=" * 70)
-    print("🎰 POKERTOOL - Enhanced GUI v36.0.0")
+    print("🎰 POKERTOOL - Enhanced GUI v49.0.0")
     print("=" * 70)
-    print("Enterprise Edition with AI Learning & Performance Optimization")
+    print("Enterprise Edition with AI Learning & 35 Screen Scraping Optimizations")
     print("")
     print(f"Platform: {platform.system()} {platform.release()}")
     print(f"Python: {sys.version.split()[0]}")
