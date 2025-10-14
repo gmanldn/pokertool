@@ -248,6 +248,16 @@ class BetfairPokerDetector:
         self.consistency_window: int = 5  # Frames to check for consistency
         self.consistency_threshold: float = 0.6  # 60% of frames must agree
 
+        # ADAPTIVE THRESHOLD AUTO-TUNING
+        self.adaptive_threshold_enabled: bool = True
+        self.current_threshold: float = DETECTION_THRESHOLD  # Start with default
+        self.threshold_min: float = 0.25  # Don't go below 25%
+        self.threshold_max: float = 0.65  # Don't go above 65%
+        self.threshold_adjustment_rate: float = 0.02  # 2% adjustment per tuning
+        self.performance_window: deque = deque(maxlen=50)  # Last 50 detection attempts
+        self.tuning_interval: int = 20  # Tune every 20 detections
+        self.target_false_positive_rate: float = 0.05  # Target 5% false positive rate
+
     def detect(self, image: np.ndarray) -> DetectionResult:
         """
         Detect Betfair Poker table in the given image using a weighted
@@ -492,10 +502,17 @@ class BetfairPokerDetector:
             }
 
             # Determine detection based on threshold
-            detected = total_confidence >= DETECTION_THRESHOLD
+            # ADAPTIVE THRESHOLD: Use current threshold if adaptive is enabled
+            threshold = self.current_threshold if self.adaptive_threshold_enabled else DETECTION_THRESHOLD
+            detected = total_confidence >= threshold
+
             if detected:
                 self.success_count += 1
                 details['strategy'] = 'betfair_weighted'
+
+            # Record threshold used
+            details['threshold_used'] = threshold
+            details['threshold_adaptive'] = self.adaptive_threshold_enabled
 
             time_ms = (time.time() - start_time) * 1000
             return DetectionResult(
@@ -859,6 +876,127 @@ class BetfairPokerDetector:
         else:
             # Temporal consistency disabled - just run detection
             return self.detect(image)
+
+    def record_detection_feedback(self, was_correct: bool, confidence: float):
+        """
+        Record feedback about detection accuracy for adaptive threshold tuning.
+
+        ADAPTIVE THRESHOLD: Tracks detection performance to auto-tune threshold.
+
+        Args:
+            was_correct: Whether the detection was correct (True) or incorrect (False)
+            confidence: Confidence score of the detection
+        """
+        if not self.adaptive_threshold_enabled:
+            return
+
+        # Record performance
+        self.performance_window.append({
+            'correct': was_correct,
+            'confidence': confidence,
+            'timestamp': time.time(),
+            'threshold': self.current_threshold
+        })
+
+        # Trigger tuning if we have enough samples
+        if len(self.performance_window) >= self.tuning_interval:
+            if len(self.performance_window) % self.tuning_interval == 0:
+                self._tune_detection_threshold()
+
+    def _tune_detection_threshold(self):
+        """
+        Automatically tune detection threshold based on recent performance.
+
+        ADAPTIVE THRESHOLD: Adjusts threshold to optimize detection accuracy.
+
+        Strategy:
+        - If too many false positives -> increase threshold
+        - If too many false negatives -> decrease threshold
+        - Use exponential moving average for smooth adjustments
+        - Clamp to min/max bounds
+        """
+        if len(self.performance_window) < self.tuning_interval:
+            return
+
+        # Analyze recent performance
+        recent = list(self.performance_window)
+
+        # Calculate metrics
+        total = len(recent)
+        correct = sum(1 for p in recent if p['correct'])
+        incorrect = total - correct
+
+        # Separate false positives and false negatives
+        # False positive: detected but shouldn't have (high confidence, incorrect)
+        # False negative: not detected but should have (low confidence, incorrect)
+        false_positives = sum(1 for p in recent if not p['correct'] and p['confidence'] >= self.current_threshold)
+        false_negatives = sum(1 for p in recent if not p['correct'] and p['confidence'] < self.current_threshold)
+
+        # Calculate rates
+        accuracy = correct / max(total, 1)
+        fp_rate = false_positives / max(total, 1)
+        fn_rate = false_negatives / max(total, 1)
+
+        # Current threshold
+        old_threshold = self.current_threshold
+
+        # Decision logic
+        adjustment = 0.0
+
+        if fp_rate > self.target_false_positive_rate:
+            # Too many false positives - increase threshold (be more strict)
+            adjustment = self.threshold_adjustment_rate
+            logger.info(f"[ADAPTIVE] False positive rate high ({fp_rate:.1%}) - increasing threshold")
+
+        elif fn_rate > 0.1:  # More than 10% false negatives
+            # Too many false negatives - decrease threshold (be more lenient)
+            adjustment = -self.threshold_adjustment_rate
+            logger.info(f"[ADAPTIVE] False negative rate high ({fn_rate:.1%}) - decreasing threshold")
+
+        elif accuracy > 0.95 and fp_rate < 0.02:
+            # Excellent performance with very low false positives - can be slightly more lenient
+            adjustment = -self.threshold_adjustment_rate * 0.5
+            logger.debug(f"[ADAPTIVE] Excellent performance ({accuracy:.1%}) - slight decrease")
+
+        # Apply adjustment with bounds
+        if adjustment != 0.0:
+            self.current_threshold = np.clip(
+                self.current_threshold + adjustment,
+                self.threshold_min,
+                self.threshold_max
+            )
+
+            logger.info(
+                f"[ADAPTIVE] Threshold adjusted: {old_threshold:.2f} -> {self.current_threshold:.2f} "
+                f"(accuracy: {accuracy:.1%}, FP: {fp_rate:.1%}, FN: {fn_rate:.1%})"
+            )
+
+    def get_adaptive_threshold_stats(self) -> Dict[str, Any]:
+        """Get adaptive threshold statistics."""
+        if not self.adaptive_threshold_enabled:
+            return {'enabled': False}
+
+        recent = list(self.performance_window)
+        if not recent:
+            return {
+                'enabled': True,
+                'current_threshold': self.current_threshold,
+                'samples': 0
+            }
+
+        correct = sum(1 for p in recent if p['correct'])
+        accuracy = correct / len(recent)
+
+        return {
+            'enabled': True,
+            'current_threshold': self.current_threshold,
+            'default_threshold': DETECTION_THRESHOLD,
+            'threshold_range': (self.threshold_min, self.threshold_max),
+            'samples': len(recent),
+            'accuracy': accuracy,
+            'adjustment_rate': self.threshold_adjustment_rate,
+            'tuning_interval': self.tuning_interval
+        }
 
 
 class UniversalPokerDetector:
