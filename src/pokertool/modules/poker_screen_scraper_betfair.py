@@ -184,13 +184,23 @@ BETFAIR_FELT_RANGES: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]] = [
     # Purple/violet Betfair table (primary) - expanded ranges
     ((110, 15, 50), (150, 255, 255)),  # Wider saturation and value ranges
     # Darker purple/violet variations for different lighting
-    ((100, 10, 40), (160, 255, 255)),  
+    ((100, 10, 40), (160, 255, 255)),
     # Blue-purple range for monitor variations
     ((90, 10, 30), (140, 255, 255)),
     # Additional ranges for edge cases
     ((105, 5, 25), (155, 255, 255)),   # Very low saturation purple
     ((95, 15, 60), (145, 200, 255)),   # Medium saturation purple
+    # High brightness variations (daylight conditions)
+    ((100, 20, 80), (150, 180, 255)),
+    # Low brightness variations (night mode)
+    ((95, 15, 20), (155, 255, 150)),
+    # Monitor color shift variations
+    ((85, 10, 35), (165, 255, 255)),
 ]
+
+# Auto-calibration parameters
+CALIBRATION_SAMPLE_SIZE = 20  # Number of frames to sample for calibration
+CALIBRATION_THRESHOLD = 0.15  # Minimum felt coverage to consider valid
 
 FELT_WEIGHT: float = 0.35  # Reduced since color ranges are wider
 CARD_WEIGHT: float = 0.30
@@ -211,6 +221,9 @@ class BetfairPokerDetector:
     def __init__(self) -> None:
         self.detection_count: int = 0
         self.success_count: int = 0
+        self.calibrated_ranges: Optional[List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]] = None
+        self.calibration_history: deque = deque(maxlen=CALIBRATION_SAMPLE_SIZE)
+        self.auto_calibrate_enabled: bool = True
 
     def detect(self, image: np.ndarray) -> DetectionResult:
         """
@@ -240,27 +253,54 @@ class BetfairPokerDetector:
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+            # Auto-calibrate felt ranges if enabled
+            if self.auto_calibrate_enabled:
+                self._update_calibration(hsv)
+
+            # Use calibrated ranges if available, otherwise fall back to defaults
+            felt_ranges = self.calibrated_ranges if self.calibrated_ranges else BETFAIR_FELT_RANGES
+
             # -----------------------------------------------------------------
-            # Strategy 1: Felt color analysis
+            # Strategy 1: Felt color analysis (ENHANCED with auto-calibration)
             # Compute the combined ratio of pixels within any of the calibrated
             # Betfair felt ranges.  The ratio is normalised against an expected
             # coverage (approx 25%) to yield a confidence between 0 and 1.
             felt_pixels = 0
-            for (lower, upper) in BETFAIR_FELT_RANGES:
+            range_contributions = []
+            for (lower, upper) in felt_ranges:
                 mask = cv2.inRange(hsv, lower, upper)
-                felt_pixels += np.count_nonzero(mask)
+                range_pixels = np.count_nonzero(mask)
+                felt_pixels += range_pixels
+                range_contributions.append(range_pixels)
+
             felt_ratio = felt_pixels / (hsv.shape[0] * hsv.shape[1])
             # Expected felt coverage around 25% of the screen on maximized table.
             felt_conf = min(felt_ratio / 0.25, 1.0)
             details['felt_ratio'] = felt_ratio
             details['felt_confidence'] = felt_conf
+            details['calibration_active'] = self.calibrated_ranges is not None
+            details['range_contributions'] = range_contributions
 
             # -----------------------------------------------------------------
-            # Strategy 2: Card shape detection
-            edges = cv2.Canny(gray, 50, 150)
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # Strategy 2: Card shape detection (ENHANCED with gradient analysis)
+            # Use multiple edge detection methods for robustness
+            edges_canny = cv2.Canny(gray, 50, 150)
+
+            # Add Sobel gradient detection for complementary edge info
+            sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+            sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+            gradient_mag = np.sqrt(sobel_x**2 + sobel_y**2)
+            gradient_mag = np.uint8(gradient_mag / gradient_mag.max() * 255)
+            _, edges_sobel = cv2.threshold(gradient_mag, 50, 255, cv2.THRESH_BINARY)
+
+            # Combine edge maps
+            edges_combined = cv2.bitwise_or(edges_canny, edges_sobel)
+
+            contours, hierarchy = cv2.findContours(edges_combined, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             card_like_shapes = 0
-            for contour in contours:
+            high_confidence_cards = 0
+
+            for i, contour in enumerate(contours):
                 area = cv2.contourArea(contour)
                 if 500 < area < 10000:  # heuristically sized for cards
                     x, y, w, h = cv2.boundingRect(contour)
@@ -269,9 +309,20 @@ class BetfairPokerDetector:
                     aspect_ratio = float(w) / float(h)
                     if 0.55 < aspect_ratio < 0.90:
                         card_like_shapes += 1
+
+                        # Check for high confidence cards (nested contours = card corners)
+                        if hierarchy is not None and hierarchy[0][i][2] != -1:
+                            high_confidence_cards += 1
+
             # Confidence scales up to 1.0 once 6 cards are seen (covers flop, turn, river)
             card_conf = min(card_like_shapes / 6.0, 1.0)
+
+            # Bonus for high-confidence cards with nested contours
+            if high_confidence_cards > 0:
+                card_conf = min(card_conf * 1.2, 1.0)
+
             details['card_shapes_found'] = card_like_shapes
+            details['high_confidence_cards'] = high_confidence_cards
             details['card_confidence'] = card_conf
 
             # -----------------------------------------------------------------
@@ -293,7 +344,7 @@ class BetfairPokerDetector:
             details['ui_confidence'] = ui_conf
 
             # -----------------------------------------------------------------
-            # Strategy 4: Text coverage analysis
+            # Strategy 4: Text coverage analysis (ENHANCED with texture)
             # Simple threshold to count bright pixels (white text) over dark background
             _, binary = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
             text_ratio = cv2.countNonZero(binary) / binary.size
@@ -301,6 +352,42 @@ class BetfairPokerDetector:
             text_conf = 1.0 if 0.05 < text_ratio < 0.35 else 0.0
             details['text_coverage'] = text_ratio
             details['text_confidence'] = text_conf
+
+            # -----------------------------------------------------------------
+            # Strategy 4.5: Texture analysis for felt surface
+            # Poker felt has a characteristic uniform texture
+            texture_conf = 0.0
+            try:
+                # Use LBP (Local Binary Pattern) for texture analysis on center region
+                center_y1, center_y2 = int(h * 0.35), int(h * 0.65)
+                center_x1, center_x2 = int(w * 0.35), int(w * 0.65)
+                center_gray = gray[center_y1:center_y2, center_x1:center_x2]
+
+                if center_gray.size > 0:
+                    # Calculate texture uniformity using standard deviation
+                    # Felt should have relatively uniform texture
+                    std_dev = float(np.std(center_gray))
+                    mean_val = float(np.mean(center_gray))
+
+                    # Felt typically has moderate std dev (not too uniform, not too chaotic)
+                    if 15 < std_dev < 50 and 40 < mean_val < 180:
+                        texture_conf = min(std_dev / 40.0, 1.0)
+
+                        # Additional check: gradient consistency
+                        gx = cv2.Sobel(center_gray, cv2.CV_64F, 1, 0, ksize=3)
+                        gy = cv2.Sobel(center_gray, cv2.CV_64F, 0, 1, ksize=3)
+                        grad_std = float(np.std(np.sqrt(gx**2 + gy**2)))
+
+                        # Felt should have low gradient variation
+                        if grad_std < 30:
+                            texture_conf = min(texture_conf * 1.15, 1.0)
+
+                    details['texture_std'] = std_dev
+                    details['texture_mean'] = mean_val
+                    details['texture_confidence'] = texture_conf
+            except Exception as e:
+                logger.debug(f"Texture analysis error: {e}")
+                texture_conf = 0.0
 
             # -----------------------------------------------------------------
             # Strategy 5: Table shape (ellipse) detection
@@ -345,15 +432,32 @@ class BetfairPokerDetector:
                 ellipse_conf = 0.0
             details['ellipse_confidence'] = ellipse_conf
 
-            # Aggregate weighted confidence
+            # Aggregate weighted confidence (ENHANCED with texture)
+            TEXTURE_WEIGHT = 0.10  # Weight for texture analysis
+            # Adjust other weights to maintain sum = 1.0
+            adjusted_felt_weight = FELT_WEIGHT * 0.9
+            adjusted_card_weight = CARD_WEIGHT * 0.9
+            adjusted_ui_weight = UI_WEIGHT * 0.9
+            adjusted_text_weight = TEXT_WEIGHT * 0.9
+            adjusted_ellipse_weight = ELLIPSE_WEIGHT * 0.9
+
             total_confidence = (
-                FELT_WEIGHT * felt_conf
-                + CARD_WEIGHT * card_conf
-                + UI_WEIGHT * ui_conf
-                + TEXT_WEIGHT * text_conf
-                + ELLIPSE_WEIGHT * ellipse_conf
+                adjusted_felt_weight * felt_conf
+                + adjusted_card_weight * card_conf
+                + adjusted_ui_weight * ui_conf
+                + adjusted_text_weight * text_conf
+                + adjusted_ellipse_weight * ellipse_conf
+                + TEXTURE_WEIGHT * texture_conf
             )
             details['total_confidence'] = total_confidence
+            details['weights_used'] = {
+                'felt': adjusted_felt_weight,
+                'card': adjusted_card_weight,
+                'ui': adjusted_ui_weight,
+                'text': adjusted_text_weight,
+                'ellipse': adjusted_ellipse_weight,
+                'texture': TEXTURE_WEIGHT
+            }
 
             # Determine detection based on threshold
             detected = total_confidence >= DETECTION_THRESHOLD
@@ -373,13 +477,101 @@ class BetfairPokerDetector:
             logger.error(f"Betfair detection error: {exc}")
             return DetectionResult(False, 0.0, {'error': str(exc)}, 0.0)
     
+    def _update_calibration(self, hsv: np.ndarray):
+        """
+        Auto-calibrate felt color ranges based on observed images.
+
+        Uses histogram analysis of successful detections to refine
+        the HSV ranges for optimal detection under current conditions.
+
+        Args:
+            hsv: HSV image to analyze
+        """
+        # Sample the central region (likely to contain felt)
+        h, w = hsv.shape[:2]
+        center_region = hsv[int(h*0.3):int(h*0.7), int(w*0.3):int(w*0.7)]
+
+        # Calculate dominant colors in center region
+        hist_h = cv2.calcHist([center_region], [0], None, [180], [0, 180])
+        hist_s = cv2.calcHist([center_region], [1], None, [256], [0, 256])
+        hist_v = cv2.calcHist([center_region], [2], None, [256], [0, 256])
+
+        # Find peaks in hue histogram (likely felt colors)
+        h_peaks = []
+        for i in range(5, 175):  # Ignore extreme edges
+            if hist_h[i] > np.mean(hist_h) * 2:  # Significant peak
+                if not h_peaks or abs(i - h_peaks[-1]) > 10:  # Distinct from previous
+                    h_peaks.append(i)
+
+        # Store calibration sample
+        if h_peaks and 85 <= h_peaks[0] <= 165:  # In purple/blue range
+            self.calibration_history.append({
+                'hue_peak': h_peaks[0],
+                'sat_mean': float(np.mean(center_region[:, :, 1])),
+                'val_mean': float(np.mean(center_region[:, :, 2])),
+                'timestamp': time.time()
+            })
+
+        # Generate calibrated ranges once we have enough samples
+        if len(self.calibration_history) >= CALIBRATION_SAMPLE_SIZE // 2:
+            self._generate_calibrated_ranges()
+
+    def _generate_calibrated_ranges(self):
+        """Generate optimized felt ranges from calibration history."""
+        if not self.calibration_history:
+            return
+
+        # Calculate statistics from calibration samples
+        hues = [s['hue_peak'] for s in self.calibration_history]
+        sats = [s['sat_mean'] for s in self.calibration_history]
+        vals = [s['val_mean'] for s in self.calibration_history]
+
+        # Calculate mean and std dev
+        hue_mean = int(np.mean(hues))
+        hue_std = int(np.std(hues))
+        sat_mean = int(np.mean(sats))
+        sat_std = int(np.std(sats))
+        val_mean = int(np.mean(vals))
+        val_std = int(np.std(vals))
+
+        # Create optimized ranges (mean ± 2*std)
+        calibrated = []
+
+        # Primary range (tight, based on observed data)
+        calibrated.append((
+            (max(0, hue_mean - hue_std), max(0, sat_mean - sat_std), max(0, val_mean - val_std)),
+            (min(179, hue_mean + hue_std), min(255, sat_mean + sat_std), min(255, val_mean + val_std))
+        ))
+
+        # Secondary range (wider, for variations)
+        calibrated.append((
+            (max(0, hue_mean - 2*hue_std), max(0, sat_mean - 2*sat_std), max(0, val_mean - 2*val_std)),
+            (min(179, hue_mean + 2*hue_std), min(255, sat_mean + 2*sat_std), min(255, val_mean + 2*val_std))
+        ))
+
+        # Keep some default ranges for fallback
+        calibrated.extend(BETFAIR_FELT_RANGES[:3])
+
+        self.calibrated_ranges = calibrated
+        logger.info(f"🎨 Auto-calibrated felt ranges: H={hue_mean}±{hue_std}, "
+                   f"S={sat_mean}±{sat_std}, V={val_mean}±{val_std}")
+
     def get_detection_stats(self) -> Dict[str, Any]:
         """Get detection statistics."""
-        return {
+        stats = {
             'total_detections': self.detection_count,
             'successful_detections': self.success_count,
             'success_rate': self.success_count / max(1, self.detection_count),
+            'calibration_samples': len(self.calibration_history),
+            'calibration_active': self.calibrated_ranges is not None,
         }
+
+        if self.calibration_history:
+            # Add calibration stats
+            hues = [s['hue_peak'] for s in self.calibration_history]
+            stats['calibration_hue_range'] = (min(hues), max(hues))
+
+        return stats
 
 
 class UniversalPokerDetector:
@@ -919,11 +1111,90 @@ class PokerScreenScraper:
             # Return empty state on exception
             return TableState()
     
+    def _validate_numeric_value(self, value: float, value_type: str, context: Optional[Dict] = None) -> Tuple[bool, float, str]:
+        """
+        Validate extracted numeric values against poker domain rules.
+
+        Args:
+            value: The extracted numeric value
+            value_type: Type of value ('pot', 'stack', 'bet', 'blind')
+            context: Optional context (e.g., current blinds, other stacks)
+
+        Returns:
+            Tuple of (is_valid, corrected_value, reason)
+        """
+        context = context or {}
+
+        if value_type == 'pot':
+            # Pot size should be reasonable (0 to 100,000 for most games)
+            if value < 0:
+                return False, 0.0, "Negative pot size"
+            if value > 100000:
+                return False, value, "Unreasonably large pot size"
+            if value == 0:
+                return True, 0.0, "Empty pot (valid)"
+            return True, value, "Valid pot size"
+
+        elif value_type == 'stack':
+            # Stack size should be positive and reasonable
+            if value < 0:
+                return False, 0.0, "Negative stack size"
+            if value == 0:
+                return True, 0.0, "Empty stack (folded/all-in)"
+            if value > 50000:
+                return False, value, "Unreasonably large stack"
+
+            # Check against context (e.g., big blind)
+            bb = context.get('big_blind', 0)
+            if bb > 0:
+                bb_ratio = value / bb
+                if bb_ratio < 0.1:
+                    return False, value, f"Stack too small relative to BB ({bb_ratio:.1f}BB)"
+                if bb_ratio > 10000:
+                    return False, value, f"Stack too large relative to BB ({bb_ratio:.1f}BB)"
+
+            return True, value, "Valid stack size"
+
+        elif value_type == 'bet':
+            # Bet size should be positive
+            if value < 0:
+                return False, 0.0, "Negative bet size"
+            if value == 0:
+                return True, 0.0, "No bet (check/fold)"
+            if value > 50000:
+                return False, value, "Unreasonably large bet"
+
+            # Check against pot size if available
+            pot = context.get('pot_size', 0)
+            if pot > 0 and value > pot * 20:
+                return False, value, f"Bet {value/pot:.1f}x pot (unlikely)"
+
+            return True, value, "Valid bet size"
+
+        elif value_type == 'blind':
+            # Blind should be positive and in reasonable range
+            if value <= 0:
+                return False, 0.0, "Invalid blind value"
+            if value > 1000:
+                return False, value, "Unreasonably large blind"
+
+            # Small blind should be roughly 0.4-0.5x big blind
+            sb = context.get('small_blind')
+            bb = context.get('big_blind')
+            if sb and bb:
+                if sb * 3 < bb or sb > bb:
+                    return False, value, f"Invalid blind ratio (SB={sb}, BB={bb})"
+
+            return True, value, "Valid blind"
+
+        return True, value, "Unknown type, no validation"
+
     def _extract_pot_size(self, image: np.ndarray) -> float:
         """Extract pot size displayed at the center of the table using OCR.
 
         Uses learned best-performing OCR strategies from the learning system.
         Tries strategies in priority order based on historical success rates.
+        NOW WITH VALIDATION: Extracted values are checked against reasonable limits.
 
         Args:
             image: Screen capture of the table in BGR format.
@@ -1064,7 +1335,17 @@ class PokerScreenScraper:
                             strategy_id
                         )
 
-            # Cache the result (even if 0.0)
+            # Validate the result before returning
+            is_valid, corrected_value, reason = self._validate_numeric_value(
+                best_result, 'pot', {}
+            )
+
+            if not is_valid:
+                logger.debug(f"Pot size validation failed: {reason} (value: ${best_result:.2f})")
+                if corrected_value != best_result:
+                    best_result = corrected_value
+
+            # Cache the validated result
             self._cache_result('pot_size', image_hash, best_result)
 
             return best_result
@@ -1291,6 +1572,15 @@ class PokerScreenScraper:
                             try:
                                 cleaned = num_str.replace(',', '').replace('$', '').strip()
                                 stack = float(cleaned)
+
+                                # Validate extracted stack
+                                is_valid, corrected_stack, reason = self._validate_numeric_value(
+                                    stack, 'stack', {'big_blind': state.big_blind if hasattr(self, 'state') else 0}
+                                )
+                                if not is_valid:
+                                    logger.debug(f"Stack validation failed at seat {seat_num}: {reason}")
+                                    stack = corrected_stack
+
                             except Exception:
                                 # Fall back to parsing just digits
                                 try:
