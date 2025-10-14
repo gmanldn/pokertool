@@ -43,13 +43,32 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-14',
-    'release_name': 'Process Management',
+    'release_name': 'Reliability & Resilience',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '69.0.0',
+        'date': '2025-10-14',
+        'name': 'Reliability & Resilience',
+        'description': 'High-impact reliability improvements for 99.9%+ uptime',
+        'highlights': [
+            'Chrome DevTools scraper: Retry logic with exponential backoff (3 attempts, 2-8s delays)',
+            'Chrome DevTools scraper: Connection health monitoring with auto-reconnection',
+            'Chrome DevTools scraper: Timeout protection (10s connection, 5s command timeouts)',
+            'Chrome DevTools scraper: Failure tracking and circuit breaker pattern',
+            'Input validation: Comprehensive card, bet, player, and table data validation',
+            'Input validation: Automatic sanitization and type coercion',
+            'Input validation: XSS/injection pattern detection',
+            'Watchdog timer: Stuck operation detection with configurable timeouts',
+            'Watchdog timer: Thread-safe operation monitoring with stack trace logging',
+            'Watchdog timer: Automatic cleanup and recovery actions',
+            'Expected improvement: 99.9%+ uptime, <5s recovery from failures',
+        ],
+    },
     {
         'version': '68.0.0',
         'date': '2025-10-14',

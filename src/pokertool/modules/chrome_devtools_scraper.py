@@ -88,20 +88,30 @@ class ChromeDevToolsScraper:
 
     Requires Chrome to be launched with remote debugging enabled:
     chrome --remote-debugging-port=9222 [URL]
+
+    Features:
+    - Automatic retry with exponential backoff
+    - Connection health monitoring
+    - Graceful degradation on failure
+    - Timeout protection
     """
 
-    def __init__(self, host: str = "localhost", port: int = 9222):
+    def __init__(self, host: str = "localhost", port: int = 9222, max_retries: int = 3):
         """Initialize CDP scraper."""
         self.connection = ChromeConnection(host=host, port=port)
         self.connected = False
         self.ws = None
         self.message_id = 0
+        self.max_retries = max_retries
+        self.consecutive_failures = 0
+        self.last_success_time = time.time()
+        self.connection_timeout = 10.0  # seconds
 
-        logger.info(f"ChromeDevToolsScraper initialized (CDP endpoint: {host}:{port})")
+        logger.info(f"ChromeDevToolsScraper initialized (CDP endpoint: {host}:{port}, retries: {max_retries})")
 
     def connect(self, tab_filter: str = "betfair") -> bool:
         """
-        Connect to Chrome and find the Betfair poker tab.
+        Connect to Chrome and find the Betfair poker tab with automatic retry.
 
         Args:
             tab_filter: String to match in tab URL/title (default: "betfair")
@@ -113,76 +123,172 @@ class ChromeDevToolsScraper:
             logger.error("Chrome DevTools Protocol not available - install websocket-client")
             return False
 
-        try:
-            import requests
+        for attempt in range(self.max_retries):
+            try:
+                import requests
 
-            # Get list of open tabs
-            response = requests.get(f"http://{self.connection.host}:{self.connection.port}/json")
-            tabs = response.json()
+                # Get list of open tabs with timeout
+                response = requests.get(
+                    f"http://{self.connection.host}:{self.connection.port}/json",
+                    timeout=self.connection_timeout
+                )
 
-            # Find Betfair poker tab
-            poker_tab = None
-            for tab in tabs:
-                url = tab.get('url', '').lower()
-                title = tab.get('title', '').lower()
-                if tab_filter.lower() in url or tab_filter.lower() in title:
-                    poker_tab = tab
-                    break
+                if response.status_code != 200:
+                    raise ConnectionError(f"HTTP {response.status_code}: {response.text}")
 
-            if not poker_tab:
-                logger.warning(f"No tab found matching '{tab_filter}'")
-                logger.info(f"Available tabs: {[t.get('title') for t in tabs]}")
+                tabs = response.json()
+
+                # Find Betfair poker tab
+                poker_tab = None
+                for tab in tabs:
+                    url = tab.get('url', '').lower()
+                    title = tab.get('title', '').lower()
+                    if tab_filter.lower() in url or tab_filter.lower() in title:
+                        poker_tab = tab
+                        break
+
+                if not poker_tab:
+                    logger.warning(f"No tab found matching '{tab_filter}'")
+                    logger.info(f"Available tabs: {[t.get('title') for t in tabs]}")
+                    if attempt < self.max_retries - 1:
+                        delay = min(2.0 * (2 ** attempt), 8.0)
+                        logger.info(f"Retrying in {delay:.1f}s... (attempt {attempt + 1}/{self.max_retries})")
+                        time.sleep(delay)
+                        continue
+                    return False
+
+                # Connect to tab's WebSocket with timeout
+                self.connection.websocket_url = poker_tab['webSocketDebuggerUrl']
+                self.connection.tab_url = poker_tab['url']
+
+                logger.info(f"Found Betfair tab: {poker_tab.get('title')}")
+                logger.info(f"URL: {self.connection.tab_url}")
+
+                # Establish WebSocket connection with timeout
+                self.ws = websocket.create_connection(
+                    self.connection.websocket_url,
+                    timeout=self.connection_timeout
+                )
+                self.connected = True
+
+                # Enable DOM inspection
+                self._send_command("DOM.enable")
+                self._send_command("Runtime.enable")
+
+                # Reset failure counter on success
+                self.consecutive_failures = 0
+                self.last_success_time = time.time()
+
+                logger.info("✓ Chrome DevTools Protocol connected successfully")
+                return True
+
+            except (ConnectionError, requests.exceptions.RequestException,
+                    websocket.WebSocketException) as e:
+                self.consecutive_failures += 1
+                logger.error(f"Connection attempt {attempt + 1}/{self.max_retries} failed: {e}")
+
+                if attempt < self.max_retries - 1:
+                    delay = min(2.0 * (2 ** attempt), 8.0)
+                    logger.info(f"Retrying in {delay:.1f}s...")
+                    time.sleep(delay)
+                else:
+                    logger.error("All connection attempts failed - Chrome may not be running with debugging enabled")
+
+            except Exception as e:
+                logger.error(f"Unexpected error during connection: {e}", exc_info=True)
                 return False
 
-            # Connect to tab's WebSocket
-            self.connection.websocket_url = poker_tab['webSocketDebuggerUrl']
-            self.connection.tab_url = poker_tab['url']
-
-            logger.info(f"Found Betfair tab: {poker_tab.get('title')}")
-            logger.info(f"URL: {self.connection.tab_url}")
-
-            # Establish WebSocket connection
-            self.ws = websocket.create_connection(self.connection.websocket_url)
-            self.connected = True
-
-            # Enable DOM inspection
-            self._send_command("DOM.enable")
-            self._send_command("Runtime.enable")
-
-            logger.info("✓ Chrome DevTools Protocol connected successfully")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to connect to Chrome: {e}")
-            return False
+        return False
 
     def disconnect(self):
         """Disconnect from Chrome."""
         if self.ws:
             try:
                 self.ws.close()
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"Error during disconnect: {e}")
+        self.ws = None
         self.connected = False
         logger.info("Disconnected from Chrome")
 
+    def _check_connection_health(self) -> bool:
+        """
+        Check if connection is healthy and reconnect if needed.
+
+        Returns:
+            True if connection is healthy or reconnected successfully
+        """
+        if not self.connected or not self.ws:
+            logger.warning("Connection lost - attempting to reconnect...")
+            return self.connect()
+
+        # Check if connection has been inactive too long
+        if time.time() - self.last_success_time > 300.0:  # 5 minutes
+            logger.warning("Connection inactive for 5 minutes - reconnecting...")
+            self.disconnect()
+            return self.connect()
+
+        # Check if too many consecutive failures
+        if self.consecutive_failures >= 5:
+            logger.error("Too many consecutive failures - reconnecting...")
+            self.disconnect()
+            return self.connect()
+
+        return True
+
     def _send_command(self, method: str, params: Optional[Dict] = None) -> Optional[Dict]:
-        """Send a CDP command and return response."""
+        """
+        Send a CDP command and return response with timeout protection.
+
+        Args:
+            method: CDP method name
+            params: Method parameters
+
+        Returns:
+            Response dict or None on error
+        """
         if not self.ws:
+            logger.error("Cannot send command - no WebSocket connection")
             return None
 
-        self.message_id += 1
-        message = {
-            "id": self.message_id,
-            "method": method,
-            "params": params or {}
-        }
+        try:
+            self.message_id += 1
+            message = {
+                "id": self.message_id,
+                "method": method,
+                "params": params or {}
+            }
 
-        self.ws.send(json.dumps(message))
+            # Set socket timeout
+            self.ws.settimeout(5.0)
 
-        # Wait for response
-        response = self.ws.recv()
-        return json.loads(response)
+            self.ws.send(json.dumps(message))
+
+            # Wait for response with timeout
+            response = self.ws.recv()
+            result = json.loads(response)
+
+            # Update success time
+            self.last_success_time = time.time()
+            self.consecutive_failures = max(0, self.consecutive_failures - 1)
+
+            return result
+
+        except websocket.WebSocketTimeoutException:
+            self.consecutive_failures += 1
+            logger.error(f"Command '{method}' timed out")
+            return None
+
+        except websocket.WebSocketException as e:
+            self.consecutive_failures += 1
+            logger.error(f"WebSocket error during command '{method}': {e}")
+            self.connected = False
+            return None
+
+        except Exception as e:
+            self.consecutive_failures += 1
+            logger.error(f"Error sending command '{method}': {e}")
+            return None
 
     def _execute_js(self, script: str) -> Any:
         """Execute JavaScript in the page and return result."""
@@ -198,13 +304,14 @@ class ChromeDevToolsScraper:
 
     def extract_table_data(self) -> Optional[BetfairTableData]:
         """
-        Extract complete table data from Betfair poker page.
+        Extract complete table data from Betfair poker page with health checks.
 
         Returns:
             BetfairTableData with all table information, or None if extraction fails
         """
-        if not self.connected:
-            logger.warning("Not connected to Chrome - call connect() first")
+        # Check and restore connection health
+        if not self._check_connection_health():
+            logger.error("Connection health check failed - cannot extract data")
             return None
 
         start_time = time.time()
@@ -420,14 +527,41 @@ class ChromeDevToolsScraper:
             # Calculate extraction time
             data.extraction_time_ms = (time.time() - start_time) * 1000
 
+            # Update success metrics
+            self.consecutive_failures = 0
+            self.last_success_time = time.time()
+
             logger.info(f"✓ CDP extraction complete: {data.active_players} players, "
                        f"pot=${data.pot_size:.2f}, stage={data.stage} ({data.extraction_time_ms:.1f}ms)")
 
             return data
 
+        except websocket.WebSocketException as e:
+            self.consecutive_failures += 1
+            logger.error(f"CDP WebSocket error during extraction: {e}")
+            self.connected = False
+            return None
+
         except Exception as e:
+            self.consecutive_failures += 1
             logger.error(f"CDP extraction failed: {e}", exc_info=True)
             return None
+
+    def get_connection_stats(self) -> Dict[str, Any]:
+        """
+        Get connection statistics and health information.
+
+        Returns:
+            Dict with connection stats
+        """
+        return {
+            'connected': self.connected,
+            'consecutive_failures': self.consecutive_failures,
+            'last_success_seconds_ago': time.time() - self.last_success_time,
+            'connection_healthy': self.consecutive_failures < 3,
+            'websocket_url': self.connection.websocket_url,
+            'tab_url': self.connection.tab_url
+        }
 
     def is_connected(self) -> bool:
         """Check if connected to Chrome."""
