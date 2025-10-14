@@ -43,13 +43,27 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-14',
-    'release_name': 'Scraping Excellence',
+    'release_name': 'Compact Live Advice',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '61.0.0',
+        'date': '2025-10-14',
+        'name': 'Compact Live Advice',
+        'description': 'Ultra-compact always-on-top floating advice window with real-time updates',
+        'highlights': [
+            'Compact 300x180px always-on-top window',
+            'Live win probability with Monte Carlo (10k iterations)',
+            'Confidence-based recommendations with visual meters',
+            'Real-time updates (2/sec) with smart caching',
+            'Background threading and performance optimizations',
+            'Complete GUI and scraper integration',
+        ],
+    },
     {
         'version': '60.0.0',
         'date': '2025-10-14',
