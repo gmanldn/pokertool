@@ -445,10 +445,10 @@ class LiveTableSection:
         )
         self.recommended_action_label.pack(fill="x", padx=10, pady=10)
 
-        # Detailed explanation box
+        # Detailed explanation box with header and copy button
         explanation_frame = tk.LabelFrame(
             self.live_data_frame,
-            text="📖 DETAILED EXPLANATION - Why This Action?",
+            text="",
             font=FONTS["heading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["accent_info"],
@@ -456,6 +456,33 @@ class LiveTableSection:
             bd=3,
         )
         explanation_frame.pack(fill="both", expand=True, pady=(0, 10))
+
+        # Header row with title and copy button
+        header_frame = tk.Frame(explanation_frame, bg=COLORS["bg_medium"])
+        header_frame.pack(fill="x", padx=5, pady=(5, 0))
+
+        tk.Label(
+            header_frame,
+            text="📖 DETAILED EXPLANATION - Why This Action?",
+            font=FONTS["heading"],
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_info"],
+        ).pack(side="left")
+
+        copy_button = tk.Button(
+            header_frame,
+            text="📋 Copy",
+            font=("Arial", 9),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+            relief=tk.RAISED,
+            bd=1,
+            padx=10,
+            pady=2,
+            command=self._copy_explanation_to_clipboard,
+            cursor="hand2"
+        )
+        copy_button.pack(side="right", padx=5)
 
         # Create a text widget with scrollbar for better readability
         explanation_container = tk.Frame(explanation_frame, bg=COLORS["bg_dark"])
@@ -483,21 +510,126 @@ class LiveTableSection:
         self.detailed_explanation_text.pack(side="left", fill="both", expand=True)
         explanation_scrollbar.config(command=self.detailed_explanation_text.yview)
 
-        # Configure text tags for formatting
+        # Visual metrics panel
+        visual_metrics_frame = tk.Frame(explanation_frame, bg=COLORS["bg_dark"])
+        visual_metrics_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        # Hand strength gauge
+        strength_frame = tk.LabelFrame(
+            visual_metrics_frame,
+            text="Hand Strength",
+            font=("Arial", 9, "bold"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["text_secondary"]
+        )
+        strength_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+
+        self.strength_canvas = tk.Canvas(
+            strength_frame,
+            height=25,
+            bg=COLORS["bg_dark"],
+            highlightthickness=0
+        )
+        self.strength_canvas.pack(fill="x", padx=5, pady=5)
+
+        # EV comparison chart
+        ev_frame = tk.LabelFrame(
+            visual_metrics_frame,
+            text="EV Comparison",
+            font=("Arial", 9, "bold"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["text_secondary"]
+        )
+        ev_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        self.ev_canvas = tk.Canvas(
+            ev_frame,
+            height=60,
+            bg=COLORS["bg_dark"],
+            highlightthickness=0
+        )
+        self.ev_canvas.pack(fill="x", padx=5, pady=5)
+
+        # Configure text tags for formatting with enhanced color coding
         self.detailed_explanation_text.tag_config(
-            "heading",
-            font=("Arial", 11, "bold"),
-            foreground=COLORS["accent_info"]
+            "action_header",
+            font=("Arial", 12, "bold"),
+            foreground=COLORS["accent_success"],
+            spacing1=5
         )
         self.detailed_explanation_text.tag_config(
-            "emphasis",
+            "why_header",
             font=("Arial", 11, "bold"),
+            foreground=COLORS["accent_info"],
+            spacing1=5
+        )
+        self.detailed_explanation_text.tag_config(
+            "metrics_header",
+            font=("Arial", 11, "bold"),
+            foreground=COLORS["accent_warning"],
+            spacing1=5
+        )
+        self.detailed_explanation_text.tag_config(
+            "alternatives_header",
+            font=("Arial", 11, "bold"),
+            foreground="#9C27B0",  # Purple for alternatives
+            spacing1=5
+        )
+        self.detailed_explanation_text.tag_config(
+            "metric_value",
+            font=("Arial", 10, "bold"),
             foreground=COLORS["accent_success"]
         )
         self.detailed_explanation_text.tag_config(
-            "warning",
-            foreground=COLORS["accent_warning"]
+            "warning_text",
+            foreground=COLORS["accent_danger"],
+            font=("Arial", 10, "bold")
         )
+        self.detailed_explanation_text.tag_config(
+            "positive_ev",
+            foreground="#00C853",
+            font=("Arial", 10, "bold")
+        )
+        self.detailed_explanation_text.tag_config(
+            "negative_ev",
+            foreground="#DD2C00",
+            font=("Arial", 10, "bold")
+        )
+        self.detailed_explanation_text.tag_config(
+            "section_content",
+            font=("Arial", 10),
+            lmargin1=15,
+            lmargin2=15
+        )
+
+    def _copy_explanation_to_clipboard(self) -> None:
+        """Copy the detailed explanation text to clipboard."""
+        try:
+            if hasattr(self, 'detailed_explanation_text'):
+                # Get all text from the widget
+                explanation = self.detailed_explanation_text.get("1.0", "end-1c")
+
+                # Copy to clipboard
+                self.parent.clipboard_clear()
+                self.parent.clipboard_append(explanation)
+
+                # Show brief feedback (button text change)
+                # Find the copy button and update its text temporarily
+                for widget in self.parent.winfo_children():
+                    if isinstance(widget, tk.LabelFrame):
+                        for child in widget.winfo_children():
+                            if isinstance(child, tk.Frame):
+                                for btn in child.winfo_children():
+                                    if isinstance(btn, tk.Button) and "Copy" in btn['text']:
+                                        original_text = btn['text']
+                                        btn.config(text="✓ Copied!")
+                                        self.parent.after(2000, lambda: btn.config(text=original_text))
+                                        break
+
+                print("[LiveTableSection] Explanation copied to clipboard")
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error copying to clipboard: {e}")
 
     def _update_detailed_explanation(self, table_data: Dict) -> None:
         """Update the detailed explanation text with advice reasoning."""
@@ -569,26 +701,57 @@ class LiveTableSection:
             print(f"[LiveTableSection] Error setting explanation text: {e}")
 
     def _apply_explanation_formatting(self) -> None:
-        """Apply text formatting tags to the explanation text."""
+        """Apply text formatting tags to the explanation text with enhanced color coding."""
         try:
             # Get all text
             content = self.detailed_explanation_text.get("1.0", "end")
+            lines = content.split('\n')
 
-            # Find and tag section headers (lines with emoji icons)
-            for line_num, line in enumerate(content.split('\n'), start=1):
-                if line.startswith('💡') or line.startswith('📊') or \
-                   line.startswith('📈') or line.startswith('🔄'):
-                    # Tag this line as heading
-                    start_idx = f"{line_num}.0"
-                    end_idx = f"{line_num}.end"
-                    self.detailed_explanation_text.tag_add("heading", start_idx, end_idx)
+            # Apply formatting line by line
+            for line_num, line in enumerate(lines, start=1):
+                start_idx = f"{line_num}.0"
+                end_idx = f"{line_num}.end"
 
-                # Highlight important numbers (percentages, dollar amounts)
-                if '%' in line or '$' in line:
-                    self.detailed_explanation_text.tag_add("emphasis", start_idx, end_idx)
+                # Section headers with specific colors
+                if line.startswith('💡'):
+                    self.detailed_explanation_text.tag_add("action_header", start_idx, end_idx)
+                elif line.startswith('📊 WHY:'):
+                    self.detailed_explanation_text.tag_add("why_header", start_idx, end_idx)
+                elif line.startswith('📈 METRICS:'):
+                    self.detailed_explanation_text.tag_add("metrics_header", start_idx, end_idx)
+                elif line.startswith('🔄 ALTERNATIVES:'):
+                    self.detailed_explanation_text.tag_add("alternatives_header", start_idx, end_idx)
+
+                # Highlight metric values (percentages and dollar amounts)
+                import re
+
+                # Find all percentages
+                for match in re.finditer(r'\d+\.?\d*%', line):
+                    match_start = f"{line_num}.{match.start()}"
+                    match_end = f"{line_num}.{match.end()}"
+                    self.detailed_explanation_text.tag_add("metric_value", match_start, match_end)
+
+                # Find all dollar amounts
+                for match in re.finditer(r'\$[\d,]+\.?\d*', line):
+                    match_start = f"{line_num}.{match.start()}"
+                    match_end = f"{line_num}.{match.end()}"
+                    value_str = match.group()
+                    # Color code based on positive/negative
+                    if '+' in line[:match.start()]:
+                        self.detailed_explanation_text.tag_add("positive_ev", match_start, match_end)
+                    elif '-' in line[:match.start()] or 'loses' in line.lower() or 'negative' in line.lower():
+                        self.detailed_explanation_text.tag_add("negative_ev", match_start, match_end)
+                    else:
+                        self.detailed_explanation_text.tag_add("metric_value", match_start, match_end)
+
+                # Highlight warnings
+                if '⚠️' in line or 'warning' in line.lower() or 'caution' in line.lower():
+                    self.detailed_explanation_text.tag_add("warning_text", start_idx, end_idx)
 
         except Exception as e:
             print(f"[LiveTableSection] Error applying formatting: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _draw_poker_table(self) -> None:
         """Draw the oval poker table on the canvas."""
@@ -1288,10 +1451,169 @@ class LiveTableSection:
             # Update detailed explanation
             self._update_detailed_explanation(table_data)
 
+            # Update visual metrics
+            self._update_visual_metrics(table_data)
+
         except Exception as e:
             import traceback
             print(f"Display update error: {e}")
             print(f"Traceback: {traceback.format_exc()}")
+
+    def _update_visual_metrics(self, table_data: Dict) -> None:
+        """Update visual metrics displays (hand strength gauge and EV chart)."""
+        try:
+            # Get advice data
+            advice_data = table_data.get('advice_data')
+            if not advice_data or not advice_data.has_data:
+                return
+
+            # Update hand strength gauge
+            self._draw_hand_strength_gauge(advice_data)
+
+            # Update EV comparison chart
+            self._draw_ev_comparison_chart(advice_data)
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error updating visual metrics: {e}")
+
+    def _draw_hand_strength_gauge(self, advice_data) -> None:
+        """Draw hand strength gauge as a progress bar."""
+        try:
+            if not hasattr(self, 'strength_canvas'):
+                return
+
+            canvas = self.strength_canvas
+            canvas.delete("all")
+
+            # Get canvas dimensions
+            width = canvas.winfo_width()
+            if width <= 1:
+                width = 300  # Default width
+
+            height = 25
+
+            # Get hand strength (0-100)
+            strength = advice_data.hand_percentile or (advice_data.win_probability * 100 if advice_data.win_probability else 50)
+
+            # Draw background
+            canvas.create_rectangle(0, 0, width, height, fill="#2a2a2a", outline="#444444")
+
+            # Calculate fill width
+            fill_width = (strength / 100) * width
+
+            # Color code based on strength
+            if strength >= 80:
+                fill_color = "#00C853"  # Green
+            elif strength >= 60:
+                fill_color = "#64DD17"  # Light green
+            elif strength >= 40:
+                fill_color = "#FFD600"  # Yellow
+            elif strength >= 20:
+                fill_color = "#FF6D00"  # Orange
+            else:
+                fill_color = "#DD2C00"  # Red
+
+            # Draw fill
+            if fill_width > 0:
+                canvas.create_rectangle(0, 0, fill_width, height, fill=fill_color, outline="")
+
+            # Draw percentage text
+            text = f"{strength:.0f}%"
+            canvas.create_text(
+                width / 2, height / 2,
+                text=text,
+                font=("Arial", 11, "bold"),
+                fill="#FFFFFF"
+            )
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error drawing hand strength gauge: {e}")
+
+    def _draw_ev_comparison_chart(self, advice_data) -> None:
+        """Draw EV comparison as horizontal bar chart."""
+        try:
+            if not hasattr(self, 'ev_canvas'):
+                return
+
+            canvas = self.ev_canvas
+            canvas.delete("all")
+
+            # Get canvas dimensions
+            width = canvas.winfo_width()
+            if width <= 1:
+                width = 300  # Default width
+
+            height = 60
+
+            # Collect EV values for all actions
+            ev_data = []
+            if advice_data.ev_fold is not None:
+                ev_data.append(("Fold", advice_data.ev_fold))
+            if advice_data.ev_call is not None:
+                ev_data.append(("Call", advice_data.ev_call))
+            if advice_data.ev_raise is not None:
+                ev_data.append(("Raise", advice_data.ev_raise))
+
+            if not ev_data:
+                return
+
+            # Find max absolute value for scaling
+            max_abs_ev = max(abs(ev) for _, ev in ev_data)
+            if max_abs_ev == 0:
+                max_abs_ev = 1  # Avoid division by zero
+
+            # Draw bars
+            bar_height = height // len(ev_data)
+            for i, (action, ev) in enumerate(ev_data):
+                y = i * bar_height
+
+                # Calculate bar width (proportional to EV)
+                bar_width = abs(ev) / max_abs_ev * (width * 0.7)
+
+                # Color code
+                if ev > 0:
+                    color = "#00C853"  # Green for positive EV
+                elif ev < 0:
+                    color = "#DD2C00"  # Red for negative EV
+                else:
+                    color = "#888888"  # Gray for zero
+
+                # Draw bar from center
+                center_x = width * 0.15
+                if ev >= 0:
+                    canvas.create_rectangle(
+                        center_x, y + 2,
+                        center_x + bar_width, y + bar_height - 2,
+                        fill=color, outline=""
+                    )
+                else:
+                    canvas.create_rectangle(
+                        center_x - bar_width, y + 2,
+                        center_x, y + bar_height - 2,
+                        fill=color, outline=""
+                    )
+
+                # Draw action label
+                canvas.create_text(
+                    10, y + bar_height // 2,
+                    text=action,
+                    font=("Arial", 8),
+                    fill="#FFFFFF",
+                    anchor="w"
+                )
+
+                # Draw EV value
+                ev_text = f"${ev:+.1f}"
+                canvas.create_text(
+                    width - 10, y + bar_height // 2,
+                    text=ev_text,
+                    font=("Arial", 8, "bold"),
+                    fill=color,
+                    anchor="e"
+                )
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error drawing EV comparison chart: {e}")
 
     # ------------------------------------------------------------------
     def stop_updates(self) -> None:

@@ -11,22 +11,48 @@ Takes LiveAdviceData and creates readable, detailed reasoning that explains:
 - Key metrics supporting the decision
 - Alternative actions and why they're inferior
 - Strategic context
+- Table texture analysis
+- Position-specific advice
+- Tournament considerations
 
-Version: 65.0.0
+Version: 66.0.0
 Author: PokerTool Development Team
 """
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List, Dict, Any
+from enum import Enum
 from .compact_live_advice_window import LiveAdviceData, ActionType
+
+
+class VerbosityLevel(Enum):
+    """Explanation verbosity levels."""
+    CONCISE = "concise"  # Brief, essential info only
+    STANDARD = "standard"  # Balanced detail (default)
+    DETAILED = "detailed"  # Comprehensive analysis
+
+
+class BoardTexture(Enum):
+    """Board texture classifications."""
+    DRY = "dry"  # Low connectivity, few draws
+    WET = "wet"  # High connectivity, many draws
+    DYNAMIC = "dynamic"  # Mix of draws and made hands
 
 
 class DetailedAdviceExplainer:
     """Generate detailed, multi-line explanations for poker decisions."""
 
-    @staticmethod
-    def generate_detailed_explanation(advice_data: LiveAdviceData) -> str:
+    def __init__(self, verbosity: VerbosityLevel = VerbosityLevel.STANDARD):
+        """
+        Initialize explainer with verbosity setting.
+
+        Args:
+            verbosity: Level of detail in explanations
+        """
+        self.verbosity = verbosity
+
+    def generate_detailed_explanation(self, advice_data: LiveAdviceData) -> str:
         """
         Generate detailed explanation from advice data.
 
@@ -42,24 +68,45 @@ class DetailedAdviceExplainer:
         lines = []
 
         # 1. PRIMARY RECOMMENDATION
-        action_text = DetailedAdviceExplainer._format_action_recommendation(advice_data)
+        action_text = self._format_action_recommendation(advice_data)
         lines.append(f"💡 {action_text}")
         lines.append("")
 
         # 2. WHY THIS ACTION (based on key metrics)
-        why_text = DetailedAdviceExplainer._generate_why_section(advice_data)
+        why_text = self._generate_why_section(advice_data)
         lines.append(f"📊 WHY: {why_text}")
         lines.append("")
 
-        # 3. KEY METRICS
-        metrics_text = DetailedAdviceExplainer._format_key_metrics(advice_data)
+        # 3. TABLE TEXTURE ANALYSIS (if post-flop)
+        if self.verbosity in [VerbosityLevel.STANDARD, VerbosityLevel.DETAILED]:
+            texture_text = self._analyze_board_texture(advice_data)
+            if texture_text:
+                lines.append(f"🎴 BOARD: {texture_text}")
+                lines.append("")
+
+        # 4. POSITION-SPECIFIC ADVICE
+        if self.verbosity == VerbosityLevel.DETAILED:
+            position_text = self._get_position_advice(advice_data)
+            if position_text:
+                lines.append(f"📍 POSITION: {position_text}")
+                lines.append("")
+
+        # 5. TOURNAMENT CONSIDERATIONS
+        if self.verbosity == VerbosityLevel.DETAILED and advice_data.street == 'preflop':
+            preflop_text = self._get_preflop_context(advice_data)
+            if preflop_text:
+                lines.append(f"🎯 PRE-FLOP: {preflop_text}")
+                lines.append("")
+
+        # 6. KEY METRICS
+        metrics_text = self._format_key_metrics(advice_data)
         if metrics_text:
             lines.append(f"📈 METRICS:")
             lines.append(metrics_text)
             lines.append("")
 
-        # 4. ALTERNATIVE ACTIONS (if available)
-        alternatives_text = DetailedAdviceExplainer._format_alternatives(advice_data)
+        # 7. ALTERNATIVE ACTIONS (if available)
+        alternatives_text = self._format_alternatives(advice_data)
         if alternatives_text:
             lines.append(f"🔄 ALTERNATIVES:")
             lines.append(alternatives_text)
@@ -329,6 +376,131 @@ class DetailedAdviceExplainer:
                 lines.append(f"  • {action_name}: Less optimal than recommended action")
 
         return "\n".join(lines)
+
+    def _analyze_board_texture(self, advice_data: LiveAdviceData) -> Optional[str]:
+        """
+        Analyze and explain board texture.
+
+        Returns explanation of board characteristics (wet/dry, draws available).
+        """
+        if not advice_data.street or advice_data.street == 'preflop':
+            return None
+
+        # Placeholder for now - would need actual board cards to analyze
+        # In future, parse board to detect:
+        # - Flush draws (3+ same suit)
+        # - Straight draws (connected cards)
+        # - Paired boards
+        # - High cards vs low cards
+
+        parts = []
+
+        # Generic texture advice based on outs if available
+        if advice_data.outs_count:
+            if advice_data.outs_count >= 12:
+                parts.append("Very wet board with many draws available.")
+            elif advice_data.outs_count >= 8:
+                parts.append("Drawing-heavy board with multiple ways to improve.")
+            elif advice_data.outs_count >= 4:
+                parts.append("Some drawing opportunities present.")
+            else:
+                parts.append("Dry board with limited draws.")
+
+        return " ".join(parts) if parts else None
+
+    def _get_position_advice(self, advice_data: LiveAdviceData) -> Optional[str]:
+        """
+        Generate position-specific strategic advice.
+
+        Returns tips based on table position.
+        """
+        if not advice_data.position:
+            return None
+
+        position = advice_data.position.upper()
+        action = advice_data.action
+
+        advice_map = {
+            'BTN': {
+                ActionType.RAISE: "Button position gives maximum fold equity and post-flop control.",
+                ActionType.CALL: "Good position allows you to see how others act and control pot size.",
+                ActionType.FOLD: "Even in position, sometimes folding is correct to avoid difficult spots."
+            },
+            'SB': {
+                ActionType.RAISE: "Raising from SB helps define ranges but you'll be out of position postflop.",
+                ActionType.CALL: "SB calls can be tricky - you're out of position with half a bet already in.",
+                ActionType.FOLD: "Folding from SB is often correct - you're out of position and losing 0.5BB is fine."
+            },
+            'BB': {
+                ActionType.RAISE: "3-betting from BB defends your blind and reduces opponent's positional advantage.",
+                ActionType.CALL: "BB has pot odds to call wider, but be cautious out of position.",
+                ActionType.FOLD: "Despite getting good odds, folding protects you from difficult postflop spots."
+            },
+            'EP': {
+                ActionType.RAISE: "Early position requires strong hands - you'll face multiple opponents.",
+                ActionType.CALL: "EP calls are vulnerable to raises behind you. Consider range carefully.",
+                ActionType.FOLD: "Folding marginal hands from EP is disciplined play."
+            },
+            'MP': {
+                ActionType.RAISE: "Middle position allows for some wider opens than EP but stay cautious.",
+                ActionType.CALL: "MP calls can isolate or trap, but watch for late position aggression.",
+                ActionType.FOLD: "Folding medium-strength hands from MP avoids tricky situations."
+            },
+            'CO': {
+                ActionType.RAISE: "Cutoff is a premium stealing position - good fold equity.",
+                ActionType.CALL: "CO calls can set up squeeze plays or allow favorable postflop position.",
+                ActionType.FOLD: "Even from CO, folding weak holdings against strong ranges is correct."
+            }
+        }
+
+        # Get position-specific advice
+        if position in advice_map and action in advice_map[position]:
+            return advice_map[position][action]
+
+        # Generic position advice
+        if position in ['BTN', 'CO']:
+            return "Late position provides informational and strategic advantages."
+        elif position in ['SB', 'BB', 'EP']:
+            return "Early position requires tighter ranges and caution."
+        else:
+            return "Middle position balances range width with positional considerations."
+
+    def _get_preflop_context(self, advice_data: LiveAdviceData) -> Optional[str]:
+        """
+        Generate pre-flop specific context and advice.
+
+        Returns tips for pre-flop decision making.
+        """
+        if advice_data.street != 'preflop':
+            return None
+
+        parts = []
+
+        # Hand strength percentile advice
+        if advice_data.hand_percentile:
+            percentile = advice_data.hand_percentile
+            if percentile >= 90:
+                parts.append("Premium hand - should be played aggressively in most situations.")
+            elif percentile >= 75:
+                parts.append("Strong hand - good for value raises and 3-bets.")
+            elif percentile >= 60:
+                parts.append("Playable hand - consider position and action before you.")
+            elif percentile >= 40:
+                parts.append("Marginal hand - position and table dynamics are crucial.")
+            else:
+                parts.append("Below-average hand - usually fold unless in late position or blind.")
+
+        # SPR considerations
+        if advice_data.stack_pot_ratio:
+            spr = advice_data.stack_pot_ratio
+            if spr <= 5:
+                parts.append("Low SPR suggests playing for stacks with strong holdings.")
+            elif spr <= 13:
+                parts.append("Medium SPR allows for postflop play with good hands.")
+            else:
+                parts.append("High SPR means deep stacks - implied odds matter more.")
+
+        return " ".join(parts) if parts else None
 
 
 # Singleton instance for easy access

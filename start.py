@@ -7,9 +7,11 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v65.0.0
-# last_commit: '2025-10-14T20:30:00Z'
+# version: v66.0.0
+# last_commit: '2025-10-14T21:00:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Enhanced explanations with visualizations, position advice, board texture analysis, and copy button
 # - date: '2025-10-14'
 #   summary: Added detailed explanation textbox on LiveTable showing WHY actions are recommended with metrics
 # - date: '2025-10-14'
@@ -37,7 +39,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v65.0.0
+PokerTool One-Click Launcher - v66.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
