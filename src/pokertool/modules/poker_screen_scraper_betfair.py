@@ -237,6 +237,11 @@ class BetfairPokerDetector:
         self.calibration_history: deque = deque(maxlen=CALIBRATION_SAMPLE_SIZE)
         self.auto_calibrate_enabled: bool = True
 
+        # MULTI-SCALE DETECTION: Configuration
+        self.multi_scale_enabled: bool = True
+        self.scale_factors: List[float] = [0.75, 1.0, 1.25]  # Scales to try
+        self.adaptive_scale_selection: bool = True  # Auto-select scales by resolution
+
     def detect(self, image: np.ndarray) -> DetectionResult:
         """
         Detect Betfair Poker table in the given image using a weighted
@@ -252,6 +257,10 @@ class BetfairPokerDetector:
             DetectionResult indicating whether a poker table was found,
             confidence score and diagnostic details.
         """
+        # MULTI-SCALE DETECTION: Route to multi-scale method if enabled
+        if self.multi_scale_enabled:
+            return self.detect_multi_scale(image)
+
         start_time = time.time()
         self.detection_count += 1
 
@@ -584,6 +593,144 @@ class BetfairPokerDetector:
             stats['calibration_hue_range'] = (min(hues), max(hues))
 
         return stats
+
+    def _select_optimal_scales(self, image: np.ndarray) -> List[float]:
+        """
+        Adaptively select optimal scale factors based on image resolution.
+
+        MULTI-SCALE DETECTION: Different resolutions benefit from different scales.
+
+        Args:
+            image: Input image
+
+        Returns:
+            List of scale factors to try
+        """
+        if not self.adaptive_scale_selection:
+            return self.scale_factors
+
+        h, w = image.shape[:2]
+        pixels = h * w
+
+        # Small resolution (≤ 1366x768 ≈ 1M pixels)
+        if pixels <= 1_050_000:
+            return [1.0, 1.25, 1.5]  # Upscale for better detail
+
+        # Medium resolution (1920x1080 ≈ 2M pixels)
+        elif pixels <= 2_200_000:
+            return [0.75, 1.0, 1.25]  # Balanced approach
+
+        # Large resolution (2560x1440 ≈ 3.6M pixels)
+        elif pixels <= 3_800_000:
+            return [0.5, 0.75, 1.0]  # Downscale for efficiency
+
+        # Very large (4K: 3840x2160 ≈ 8M pixels)
+        else:
+            return [0.4, 0.6, 0.8]  # Heavy downscale for 4K+
+
+    def _detect_at_scale(self, image: np.ndarray, scale: float) -> DetectionResult:
+        """
+        Run detection at a specific scale.
+
+        MULTI-SCALE DETECTION: Detects table at given scale factor.
+
+        Args:
+            image: Original image
+            scale: Scale factor (e.g., 0.5 = half size, 2.0 = double size)
+
+        Returns:
+            DetectionResult at this scale
+        """
+        # Resize image
+        if scale != 1.0:
+            h, w = image.shape[:2]
+            new_h, new_w = int(h * scale), int(w * scale)
+
+            # Avoid too small images
+            if new_h < 100 or new_w < 100:
+                return DetectionResult(False, 0.0, {'error': 'scale_too_small'}, 0.0)
+
+            # Use appropriate interpolation
+            interp = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_CUBIC
+            scaled_image = cv2.resize(image, (new_w, new_h), interpolation=interp)
+        else:
+            scaled_image = image
+
+        # Run detection on scaled image (use the existing detect logic)
+        # To avoid infinite recursion, temporarily disable multi-scale
+        original_multi_scale = self.multi_scale_enabled
+        self.multi_scale_enabled = False
+
+        result = self.detect(scaled_image)
+
+        # Restore multi-scale setting
+        self.multi_scale_enabled = original_multi_scale
+
+        # Add scale info to details
+        result.details['scale'] = scale
+
+        return result
+
+    def detect_multi_scale(self, image: np.ndarray) -> DetectionResult:
+        """
+        Detect poker table using multi-scale approach.
+
+        MULTI-SCALE DETECTION: Tries detection at multiple scales and
+        selects the best result based on confidence.
+
+        Benefits:
+        - Robust to different screen resolutions
+        - Works with zoomed/scaled poker clients
+        - Handles high-DPI displays
+
+        Args:
+            image: Input image
+
+        Returns:
+            Best detection result across all scales
+        """
+        start_time = time.time()
+
+        # Select optimal scales for this image
+        scales = self._select_optimal_scales(image)
+
+        # Try detection at each scale
+        results = []
+        for scale in scales:
+            result = self._detect_at_scale(image, scale)
+            results.append(result)
+
+            # Early exit if we find high-confidence detection
+            if result.detected and result.confidence >= 0.9:
+                logger.debug(f"[MULTI-SCALE] Early exit at scale {scale:.2f}x "
+                           f"(confidence: {result.confidence:.1%})")
+                result.details['multi_scale'] = {
+                    'scales_tried': scales[:scales.index(scale) + 1],
+                    'best_scale': scale,
+                    'early_exit': True
+                }
+                return result
+
+        # Select best result (highest confidence)
+        best_result = max(results, key=lambda r: r.confidence)
+
+        # Aggregate metadata
+        confidences_by_scale = {r.details.get('scale', 1.0): r.confidence
+                               for r in results}
+
+        best_result.details['multi_scale'] = {
+            'scales_tried': scales,
+            'best_scale': best_result.details.get('scale', 1.0),
+            'confidences_by_scale': confidences_by_scale,
+            'early_exit': False,
+            'time_ms': (time.time() - start_time) * 1000
+        }
+
+        logger.debug(f"[MULTI-SCALE] Best: {best_result.details['scale']:.2f}x "
+                    f"(conf: {best_result.confidence:.1%}) "
+                    f"from {confidences_by_scale}")
+
+        return best_result
 
 
 class UniversalPokerDetector:
