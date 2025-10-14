@@ -50,9 +50,8 @@ class LiveTableSection:
         self.status_lights: Dict[str, tk.Label] = {}
 
         self._build_ui()
-        # TEMPORARILY DISABLED: LiveTable updates cause segfault due to OCR thread-safety issues
-        # TODO: Implement thread-safe OCR or use main thread callbacks
-        # self._start_live_updates()  # Start updates FIRST
+        # Use main thread callbacks for thread-safe updates (fixes segfault issue)
+        self.parent.after(1000, self._start_main_thread_updates)
         # Handle prompt disabled - user can configure handle in settings if needed
         # self.parent.after(3000, self._prompt_for_handle)
 
@@ -617,22 +616,66 @@ class LiveTableSection:
         }
 
 
-    def _start_live_updates(self) -> None:
-        """Start the live data update thread."""
-        print("[LiveTableSection] _start_live_updates called")
+    def _start_main_thread_updates(self) -> None:
+        """Start thread-safe live data updates using main thread callbacks."""
+        print("[LiveTableSection] Starting main thread updates (thread-safe)")
+        self._stop_updates = False
+        self._update_count = 0
+        self._last_status_log = 0.0
+        self._main_thread_update_loop()
+
+    def _main_thread_update_loop(self) -> None:
+        """Main thread update loop using after() callbacks - THREAD SAFE."""
+        if self._stop_updates:
+            print("[LiveTableSection] Updates stopped")
+            return
+
         try:
-            if self._update_thread is None or not self._update_thread.is_alive():
-                print("[LiveTableSection] Starting update thread...")
-                self._stop_updates = False
-                self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-                self._update_thread.start()
-                print(f"[LiveTableSection] Update thread started: {self._update_thread.is_alive()}")
+            # Get live data from the scraper (this should be thread-safe)
+            if hasattr(self.host, 'get_live_table_data'):
+                table_data = self.host.get_live_table_data()
+                if table_data:
+                    self._update_count += 1
+
+                    # Log comprehensive status every 5 seconds
+                    import time
+                    current_time = time.time()
+                    if current_time - self._last_status_log >= 5.0:
+                        self._last_status_log = current_time
+                        players_count = len(table_data.get('players', {}))
+                        active_players = table_data.get('active_players', 0)
+                        confidence = table_data.get('confidence', 0)
+                        data_source = table_data.get('data_source', 'unknown')
+                        pot = table_data.get('pot', 0)
+                        stage = table_data.get('stage', 'unknown')
+
+                        print(f"\n{'='*80}")
+                        print(f"[LiveTable Status] Update #{self._update_count}")
+                        print(f"  Data Source: {data_source.upper()}")
+                        print(f"  Confidence: {confidence:.1f}%")
+                        print(f"  Active Players: {active_players}/{players_count} seats")
+                        print(f"  Pot: ${pot:.2f}")
+                        print(f"  Stage: {stage.upper()}")
+                        print(f"{'='*80}\n")
+
+                    # Update display (safe - we're on main thread)
+                    self._update_live_display(table_data)
+                elif self._update_count % 20 == 0:
+                    print(f"[LiveTable] No data available (update #{self._update_count})")
             else:
-                print("[LiveTableSection] Update thread already running")
+                print(f"[LiveTable] ERROR: Host does not have get_live_table_data method!")
         except Exception as e:
-            print(f"[LiveTableSection] ERROR starting update thread: {e}")
+            print(f"[LiveTable] Update error: {e}")
             import traceback
             traceback.print_exc()
+
+        # Schedule next update (500ms for responsive feel)
+        self.parent.after(500, self._main_thread_update_loop)
+
+    def _start_live_updates(self) -> None:
+        """DEPRECATED: Old background thread method - kept for backward compatibility."""
+        print("[LiveTableSection] _start_live_updates called - redirecting to thread-safe method")
+        self._start_main_thread_updates()
 
     def _update_loop(self) -> None:
         """Main update loop for live table data."""
