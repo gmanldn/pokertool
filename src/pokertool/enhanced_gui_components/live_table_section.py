@@ -852,13 +852,19 @@ class LiveTableSection:
                     else:
                         self.player_labels[seat]["bet"].config(text="")
 
-                    # Update hole cards
+                    # Update hole cards (with safe list access)
                     hole_cards = player_info.get('hole_cards', ['', ''])
+                    # Ensure hole_cards is a list with at least 2 elements
+                    if not isinstance(hole_cards, list):
+                        hole_cards = ['', '']
+                    while len(hole_cards) < 2:
+                        hole_cards.append('')
+
                     self.player_labels[seat]["card1"].config(
                         text=hole_cards[0] if hole_cards[0] else "[]"
                     )
                     self.player_labels[seat]["card2"].config(
-                        text=hole_cards[1] if len(hole_cards) > 1 and hole_cards[1] else "[]"
+                        text=hole_cards[1] if hole_cards[1] else "[]"
                     )
 
                     # Update status
@@ -867,8 +873,12 @@ class LiveTableSection:
                         text=status
                     )
 
-            # Update my hole cards
+            # Update my hole cards (with safe list access)
             my_cards = table_data.get('my_hole_cards', ['', ''])
+            # Ensure my_cards is a list
+            if not isinstance(my_cards, list):
+                my_cards = ['', '']
+
             for i, card_label in enumerate(self.my_cards_labels):
                 if i < len(my_cards) and my_cards[i]:
                     card_label.config(text=my_cards[i], fg=COLORS["accent_success"])
@@ -900,7 +910,9 @@ class LiveTableSection:
                 self.recommended_action_label.config(text=action, fg=action_color)
 
         except Exception as e:
+            import traceback
             print(f"Display update error: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
 
     # ------------------------------------------------------------------
     def stop_updates(self) -> None:

@@ -3361,27 +3361,37 @@ Platform: {sys.platform}
 
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""
-        # IMMEDIATE QUIT - don't wait for cleanup
+        print("🛑 Shutting down PokerTool...")
+
         try:
-            # Try quick cleanup but don't block
+            # Stop background threads
             self._screen_update_running = False
             self.autopilot_active = False
+            print("  ✓ Stopped background threads")
+        except Exception as e:
+            print(f"  ⚠ Error stopping threads: {e}")
+
+        try:
+            # Stop screen scraper if running
+            if hasattr(self, 'screen_scraper') and self.screen_scraper:
+                print("  ✓ Screen scraper cleanup")
+        except Exception as e:
+            print(f"  ⚠ Error with scraper cleanup: {e}")
+
+        try:
+            # Release the single-instance lock
+            self.release_single_instance_lock()
+            print("  ✓ Released instance lock")
+        except Exception as e:
+            print(f"  ⚠ Could not release lock: {e}")
+
+        # Close the window cleanly
+        try:
+            self.quit()
+            self.destroy()
+            print("✓ Clean shutdown complete")
         except:
             pass
-        
-        # Force quit immediately
-        self.quit()
-        self.destroy()
-
-        # Release the lock before terminating the process
-        try:
-            self.release_single_instance_lock()
-        except Exception as exc:
-            print(f"⚠️  Could not release single-instance lock: {exc}")
-        
-        # Force exit the entire program
-        import os
-        os._exit(0)
 
 
 # Main application entry point
