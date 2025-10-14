@@ -174,6 +174,15 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
                 player_stack = getattr(player, 'stack_size', 0) or getattr(player, 'stack', 0)
                 is_active = getattr(player, 'is_active', False)
 
+                # Filter out invalid/placeholder names when no real table is detected
+                # Common OCR errors or placeholder names: "you", "player", single letters, etc.
+                if player_name:
+                    name_lower = player_name.strip().lower()
+                    invalid_names = {'you', 'player', 'empty', 'seat', '-', '?', 'n/a'}
+                    # Also reject single character names (likely OCR errors)
+                    if name_lower in invalid_names or (len(name_lower) == 1 and not name_lower.isdigit()):
+                        player_name = None  # Treat as empty
+
                 print(f"[get_live_table_data] Processing player {i}: seat={seat_num}, name='{player_name}', stack=${player_stack}, active={is_active}")
 
                 # Count this player

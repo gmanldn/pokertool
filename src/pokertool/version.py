@@ -43,13 +43,27 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-14',
-    'release_name': 'Enterprise Power Pack',
+    'release_name': 'Dual Window UX & Data Quality',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '63.0.0',
+        'date': '2025-10-14',
+        'name': 'Dual Window UX & Data Quality',
+        'description': 'Automatic compact window launch + intelligent false positive filtering',
+        'highlights': [
+            'Compact Live Advice Window now launches automatically with main GUI',
+            'Dual window setup: Main control panel + Always-on-top compact advisor',
+            'Intelligent player name filtering (removes "you", "player", single letters)',
+            'False positive elimination when no poker table is detected',
+            'Disabled intrusive handle popup on LiveTable startup',
+            'Clean shutdown handling for both windows',
+        ],
+    },
     {
         'version': '62.0.0',
         'date': '2025-10-14',

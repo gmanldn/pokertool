@@ -301,6 +301,7 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self.blade_bar: Optional[tk.Frame] = None
         self._screen_scraper_ready = False
         self._screen_scraper_health_details: List[str] = []
+        self.compact_advice_window = None  # Compact live advice window
         # Initialize modules
         self._init_modules()
         self._setup_styles()
@@ -315,6 +316,9 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
 
         # Ensure window is visible and comes to foreground
         self.after(200, self._ensure_window_visible)
+
+        # Launch compact live advice window alongside main GUI
+        self.after(500, self._launch_compact_advice_window)
 
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
@@ -3387,6 +3391,25 @@ Platform: {sys.platform}
             # Window might be destroyed, don't reschedule
             print(f"Window monitoring stopped: {e}")
 
+    def _launch_compact_advice_window(self):
+        """Launch the compact live advice window alongside the main GUI."""
+        try:
+            print("🚀 Launching Compact Live Advice Window...")
+            from .compact_live_advice_window import CompactLiveAdviceWindow
+
+            # Create compact window as a separate toplevel (not child of main window)
+            self.compact_advice_window = CompactLiveAdviceWindow()
+            print("✓ Compact Live Advice Window launched successfully")
+
+        except ImportError as e:
+            print(f"⚠️  Compact window module not available: {e}")
+            self.compact_advice_window = None
+        except Exception as e:
+            print(f"⚠️  Failed to launch compact window: {e}")
+            import traceback
+            traceback.print_exc()
+            self.compact_advice_window = None
+
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""
         print("🛑 Shutting down PokerTool...")
@@ -3405,6 +3428,17 @@ Platform: {sys.platform}
                 print("  ✓ Screen scraper cleanup")
         except Exception as e:
             print(f"  ⚠ Error with scraper cleanup: {e}")
+
+        try:
+            # Close compact advice window if it exists
+            if hasattr(self, 'compact_advice_window') and self.compact_advice_window:
+                try:
+                    self.compact_advice_window.destroy()
+                    print("  ✓ Compact advice window closed")
+                except:
+                    pass
+        except Exception as e:
+            print(f"  ⚠ Error closing compact window: {e}")
 
         try:
             # Release the single-instance lock
