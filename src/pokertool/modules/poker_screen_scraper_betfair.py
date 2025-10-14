@@ -778,6 +778,14 @@ class PokerScreenScraper:
         self.false_positive_count = 0
         self.true_positive_count = 0
 
+        # Incremental update detection
+        self.last_image_hash = None
+        self.last_full_state = None
+        self.last_full_extraction_time = 0
+        self.incremental_update_threshold = 0.05  # 5% pixel difference threshold
+        self.incremental_skips = 0
+        self.incremental_enabled = True
+
         # Screen capture
         if SCRAPER_DEPENDENCIES_AVAILABLE:
             self.sct = mss.mss()
@@ -1002,6 +1010,25 @@ class PokerScreenScraper:
                 logger.debug("[TABLE DETECTION] No image captured")
                 return TableState()
 
+            # PERFORMANCE: Incremental update detection
+            # Check if image has changed significantly since last extraction
+            if self.incremental_enabled and self.last_full_state is not None:
+                diff_ratio = self._compute_image_difference(image, self.last_image_hash)
+
+                # If change is below threshold, return cached state
+                if diff_ratio < self.incremental_update_threshold:
+                    self.incremental_skips += 1
+                    logger.debug(
+                        f"[INCREMENTAL] Screen unchanged (diff={diff_ratio:.1%}), "
+                        f"returning cached state (skips: {self.incremental_skips})"
+                    )
+                    # Return copy of last state with updated timestamp
+                    cached_state = deepcopy(self.last_full_state)
+                    cached_state.extraction_time_ms = 1.0  # Minimal time for cache hit
+                    return cached_state
+                else:
+                    logger.debug(f"[INCREMENTAL] Screen changed (diff={diff_ratio:.1%}), performing full extraction")
+
             # Step 1: Detect if this is a poker table
             is_poker, confidence, details = self.detect_poker_table(image)
 
@@ -1193,6 +1220,12 @@ class PokerScreenScraper:
                     )
                 except Exception as e:
                     logger.debug(f"CDP comparison failed: {e}")
+
+            # INCREMENTAL UPDATE: Store state for next frame comparison
+            if self.incremental_enabled:
+                self.last_image_hash = image.copy()
+                self.last_full_state = deepcopy(state)
+                self.last_full_extraction_time = time.time()
 
             # ALWAYS return state with whatever data we extracted, even at low confidence
             return state
@@ -2979,6 +3012,52 @@ class PokerScreenScraper:
             # Fallback to simple detection
             contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             return [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
+
+    def _compute_image_difference(self, img1: np.ndarray, img2: np.ndarray) -> float:
+        """
+        Compute normalized difference between two images.
+
+        INCREMENTAL UPDATE: Fast pixel-wise comparison to detect screen changes.
+        Uses downscaled images for speed.
+
+        Args:
+            img1: First image
+            img2: Second image
+
+        Returns:
+            Difference ratio (0.0 = identical, 1.0 = completely different)
+        """
+        if img1 is None or img2 is None:
+            return 1.0
+
+        try:
+            # Resize to small size for fast comparison (64x64 is enough)
+            small_size = (64, 64)
+            small1 = cv2.resize(img1, small_size, interpolation=cv2.INTER_AREA)
+            small2 = cv2.resize(img2, small_size, interpolation=cv2.INTER_AREA)
+
+            # Convert to grayscale for simpler comparison
+            if len(small1.shape) == 3:
+                small1 = cv2.cvtColor(small1, cv2.COLOR_BGR2GRAY)
+            if len(small2.shape) == 3:
+                small2 = cv2.cvtColor(small2, cv2.COLOR_BGR2GRAY)
+
+            # Compute absolute difference
+            diff = cv2.absdiff(small1, small2)
+
+            # Count pixels that differ by more than threshold (10 intensity levels)
+            threshold = 10
+            changed_pixels = np.count_nonzero(diff > threshold)
+            total_pixels = diff.size
+
+            # Return ratio of changed pixels
+            difference_ratio = changed_pixels / total_pixels
+
+            return difference_ratio
+
+        except Exception as e:
+            logger.debug(f"Image difference computation failed: {e}")
+            return 1.0  # Assume changed on error
 
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get caching performance statistics."""
