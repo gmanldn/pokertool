@@ -3397,8 +3397,8 @@ Platform: {sys.platform}
             print("🚀 Launching Compact Live Advice Window...")
             from .compact_live_advice_window import CompactLiveAdviceWindow
 
-            # Create compact window as a separate toplevel (not child of main window)
-            self.compact_advice_window = CompactLiveAdviceWindow()
+            # Create compact window as a Toplevel window (child of main window to avoid crashes)
+            self.compact_advice_window = CompactLiveAdviceWindow(parent=self)
             print("✓ Compact Live Advice Window launched successfully")
 
         except ImportError as e:
