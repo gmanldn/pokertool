@@ -43,13 +43,28 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-14',
-    'release_name': 'Performance & Responsiveness',
+    'release_name': 'Process Management',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '68.0.0',
+        'date': '2025-10-14',
+        'name': 'Process Management',
+        'description': 'Comprehensive process cleanup utility for managing pokertool instances',
+        'highlights': [
+            'Added kill.py utility for managing pokertool processes',
+            'Cross-platform support (macOS, Linux, Windows)',
+            'Graceful shutdown with SIGTERM → SIGKILL fallback',
+            'Force kill mode for stuck processes',
+            'List mode to view running processes',
+            'Smart detection of all pokertool-related processes',
+            'Safe exclusion of current process from cleanup',
+        ],
+    },
     {
         'version': '67.0.0',
         'date': '2025-10-14',
