@@ -242,6 +242,12 @@ class BetfairPokerDetector:
         self.scale_factors: List[float] = [0.75, 1.0, 1.25]  # Scales to try
         self.adaptive_scale_selection: bool = True  # Auto-select scales by resolution
 
+        # TEMPORAL CONSISTENCY: Frame history tracking
+        self.temporal_consistency_enabled: bool = True
+        self.detection_history: deque = deque(maxlen=10)  # Last 10 frames
+        self.consistency_window: int = 5  # Frames to check for consistency
+        self.consistency_threshold: float = 0.6  # 60% of frames must agree
+
     def detect(self, image: np.ndarray) -> DetectionResult:
         """
         Detect Betfair Poker table in the given image using a weighted
@@ -257,6 +263,11 @@ class BetfairPokerDetector:
             DetectionResult indicating whether a poker table was found,
             confidence score and diagnostic details.
         """
+        # TEMPORAL CONSISTENCY: Route to temporal consistency check if enabled
+        # (This will internally call multi-scale or single-scale detection)
+        if self.temporal_consistency_enabled:
+            return self.detect_with_temporal_consistency(image)
+
         # MULTI-SCALE DETECTION: Route to multi-scale method if enabled
         if self.multi_scale_enabled:
             return self.detect_multi_scale(image)
@@ -731,6 +742,123 @@ class BetfairPokerDetector:
                     f"from {confidences_by_scale}")
 
         return best_result
+
+    def _check_temporal_consistency(self, current_result: DetectionResult) -> DetectionResult:
+        """
+        Check temporal consistency across frames to reduce false positives/negatives.
+
+        TEMPORAL CONSISTENCY: Smooths detection results across frames to prevent flapping.
+
+        Strategy:
+        - Track recent detection results
+        - Require consistent detection across multiple frames
+        - Smooth confidence scores using historical data
+        - Prevent rapid state changes
+
+        Args:
+            current_result: Detection result from current frame
+
+        Returns:
+            Adjusted detection result with temporal consistency applied
+        """
+        # Add current result to history
+        self.detection_history.append({
+            'detected': current_result.detected,
+            'confidence': current_result.confidence,
+            'timestamp': time.time()
+        })
+
+        # Not enough history yet - return current result
+        if len(self.detection_history) < self.consistency_window:
+            current_result.details['temporal_consistency'] = {
+                'applied': False,
+                'reason': 'insufficient_history',
+                'history_size': len(self.detection_history)
+            }
+            return current_result
+
+        # Analyze recent history (last consistency_window frames)
+        recent_history = list(self.detection_history)[-self.consistency_window:]
+
+        # Count detections and calculate average confidence
+        detections_count = sum(1 for h in recent_history if h['detected'])
+        confidences = [h['confidence'] for h in recent_history]
+        avg_confidence = np.mean(confidences)
+        max_confidence = np.max(confidences)
+
+        # Calculate detection ratio
+        detection_ratio = detections_count / len(recent_history)
+
+        # Decision logic
+        should_detect = detection_ratio >= self.consistency_threshold
+        adjusted_confidence = avg_confidence
+
+        # Boost confidence if consistently detected
+        if should_detect and detections_count == len(recent_history):
+            # Perfect consistency - boost confidence
+            adjusted_confidence = min(avg_confidence * 1.1, 1.0)
+
+        # Apply hysteresis for state changes
+        if current_result.detected != should_detect:
+            # State change detected - log it
+            logger.debug(
+                f"[TEMPORAL] State change: {current_result.detected} -> {should_detect} "
+                f"(ratio: {detection_ratio:.1%}, threshold: {self.consistency_threshold:.1%})"
+            )
+
+        # Create adjusted result
+        adjusted_result = DetectionResult(
+            detected=should_detect,
+            confidence=adjusted_confidence,
+            details={
+                **current_result.details,
+                'temporal_consistency': {
+                    'applied': True,
+                    'original_detected': current_result.detected,
+                    'original_confidence': current_result.confidence,
+                    'detection_ratio': detection_ratio,
+                    'avg_confidence': avg_confidence,
+                    'max_confidence': max_confidence,
+                    'detections_in_window': detections_count,
+                    'window_size': len(recent_history),
+                    'state_changed': current_result.detected != should_detect
+                }
+            },
+            time_ms=current_result.time_ms
+        )
+
+        return adjusted_result
+
+    def detect_with_temporal_consistency(self, image: np.ndarray) -> DetectionResult:
+        """
+        Detect poker table with temporal consistency checking.
+
+        TEMPORAL CONSISTENCY: Main entry point that combines detection with temporal smoothing.
+
+        Args:
+            image: Input image
+
+        Returns:
+            Detection result with temporal consistency applied
+        """
+        # Run base detection (multi-scale or single-scale)
+        if self.temporal_consistency_enabled:
+            # Temporarily disable temporal to get raw result
+            original_temporal = self.temporal_consistency_enabled
+            self.temporal_consistency_enabled = False
+
+            result = self.detect(image)
+
+            # Re-enable temporal
+            self.temporal_consistency_enabled = original_temporal
+
+            # Apply temporal consistency
+            adjusted_result = self._check_temporal_consistency(result)
+
+            return adjusted_result
+        else:
+            # Temporal consistency disabled - just run detection
+            return self.detect(image)
 
 
 class UniversalPokerDetector:
