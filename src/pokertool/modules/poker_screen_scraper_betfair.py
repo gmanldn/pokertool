@@ -750,6 +750,10 @@ class PokerScreenScraper:
         self.stop_event = None
         self.state_history = deque(maxlen=100)
 
+        # Blind tracking for domain validation
+        self.last_big_blind = 1.0  # Default to 1.0 for BB-relative validation
+        self.last_small_blind = 0.5  # Default to 0.5 (standard SB)
+
         # Smart result caching (improves performance for unchanged screens)
         self.result_cache = {}  # image_hash -> (result, timestamp)
         self.cache_ttl = 0.5  # Cache valid for 500ms
@@ -1048,6 +1052,13 @@ class PokerScreenScraper:
 
             # Blind amounts - try to extract from table UI
             state.small_blind, state.big_blind, state.ante = self._extract_blinds(image)
+
+            # Store blinds for domain validation context
+            if state.big_blind > 0:
+                self.last_big_blind = state.big_blind
+            if state.small_blind > 0:
+                self.last_small_blind = state.small_blind
+
             if should_log_details and (state.small_blind > 0 or state.big_blind > 0):
                 logger.info(f"💰 BLINDS: ${state.small_blind:.2f}/${state.big_blind:.2f}" +
                           (f" (ante ${state.ante:.2f})" if state.ante > 0 else ""))
@@ -1452,6 +1463,16 @@ class PokerScreenScraper:
                                         if char_analysis['mean_confidence'] < 60.0:
                                             logger.debug(f"Skipping result due to very low character confidence")
                                             continue  # Try next strategy
+
+                                    # Poker domain validation
+                                    validation_context = {
+                                        'big_blind': self.last_big_blind if hasattr(self, 'last_big_blind') else 1.0,
+                                        'small_blind': self.last_small_blind if hasattr(self, 'last_small_blind') else 0.5,
+                                    }
+                                    is_valid, reason = self._validate_poker_domain(result, 'pot', validation_context)
+                                    if not is_valid:
+                                        logger.warning(f"[DOMAIN] Pot ${result:.2f} rejected: {reason}")
+                                        continue  # Try next strategy
 
                                     best_result = result
                                     successful_strategy = strategy_id
@@ -2486,6 +2507,134 @@ class PokerScreenScraper:
                 'suspicious_chars': [],
                 'overall_reliable': False
             }
+
+    def _validate_poker_domain(self, value: float, value_type: str, context: Dict[str, any] = None) -> Tuple[bool, str]:
+        """
+        Validate extracted values against poker domain rules.
+
+        POKER DOMAIN VALIDATION: Catches impossible/unlikely values based on poker rules.
+        Prevents accepting OCR errors that produce nonsensical game states.
+
+        Args:
+            value: The value to validate
+            value_type: Type of value ('pot', 'stack', 'bet', 'blind', 'bb_multiplier')
+            context: Additional context (big_blind, small_blind, max_stack, etc.)
+
+        Returns:
+            Tuple of (is_valid, reason_if_invalid)
+        """
+        if context is None:
+            context = {}
+
+        big_blind = context.get('big_blind', 1.0)  # Default BB = 1.0 for relative validation
+        small_blind = context.get('small_blind', 0.5)
+        max_stack = context.get('max_stack', 0.0)
+        pot_size = context.get('pot_size', 0.0)
+
+        if value_type == 'pot':
+            # Pot size validation
+            if value < 0:
+                return False, "Pot cannot be negative"
+
+            if value == 0:
+                # Zero pot is valid (preflop with no action)
+                return True, ""
+
+            # Pot should be >= big blind (minimum bet)
+            if big_blind > 0 and value < big_blind * 0.5:
+                return False, f"Pot ${value:.2f} < 0.5 BB (too small)"
+
+            # Pot should not exceed reasonable maximum (10,000 BB)
+            if big_blind > 0 and value > big_blind * 10000:
+                return False, f"Pot ${value:.2f} > 10,000 BB (impossibly large)"
+
+            # Check if pot is a reasonable denomination (multiples of 0.01 typically)
+            if value < 0.01 and value > 0:
+                return False, "Pot amount too small (< $0.01)"
+
+            return True, ""
+
+        elif value_type == 'stack':
+            # Stack size validation
+            if value < 0:
+                return False, "Stack cannot be negative"
+
+            if value == 0:
+                # Zero stack is valid (all-in or bust)
+                return True, ""
+
+            # Stack should be within reasonable range (0.5 BB to 5000 BB)
+            if big_blind > 0:
+                bb_ratio = value / big_blind
+                if bb_ratio < 0.5:
+                    return False, f"Stack {bb_ratio:.1f} BB < 0.5 BB (too small)"
+                if bb_ratio > 5000:
+                    return False, f"Stack {bb_ratio:.0f} BB > 5000 BB (impossibly large)"
+
+            # Stack should not exceed pot by ridiculous amount (unless deep stack)
+            if pot_size > 0 and value > pot_size * 1000:
+                return False, f"Stack {value:.2f} >> pot {pot_size:.2f} (ratio too high)"
+
+            return True, ""
+
+        elif value_type == 'bet':
+            # Bet/raise size validation
+            if value < 0:
+                return False, "Bet cannot be negative"
+
+            if value == 0:
+                # Zero bet is valid (check/fold)
+                return True, ""
+
+            # Bet should be >= big blind (minimum bet)
+            if big_blind > 0 and value < big_blind * 0.9:
+                return False, f"Bet ${value:.2f} < BB (below minimum)"
+
+            # Bet should not exceed max_stack (player's stack)
+            if max_stack > 0 and value > max_stack:
+                return False, f"Bet ${value:.2f} > stack ${max_stack:.2f}"
+
+            # Bet should be reasonable relative to pot
+            if pot_size > 0 and value > pot_size * 100:
+                return False, f"Bet {value:.2f} >> pot {pot_size:.2f} (ratio too high)"
+
+            return True, ""
+
+        elif value_type == 'blind':
+            # Blind amount validation
+            if value < 0:
+                return False, "Blind cannot be negative"
+
+            if value == 0:
+                return False, "Blind cannot be zero"
+
+            # Blinds should be within reasonable range ($0.01 to $1000)
+            if value < 0.01:
+                return False, "Blind < $0.01 (too small)"
+            if value > 1000:
+                return False, "Blind > $1000 (too large)"
+
+            # Check small blind / big blind ratio (should be ~0.5)
+            if big_blind > 0 and small_blind > 0:
+                ratio = small_blind / big_blind
+                if ratio < 0.3 or ratio > 0.7:
+                    return False, f"SB/BB ratio {ratio:.2f} outside normal range (0.3-0.7)"
+
+            return True, ""
+
+        elif value_type == 'bb_multiplier':
+            # Big blind multiplier validation (for pot/stack sizing)
+            if value < 0:
+                return False, "BB multiplier cannot be negative"
+
+            # Should be within reasonable range (0 to 5000 BB)
+            if value > 5000:
+                return False, f"BB multiplier {value:.0f} > 5000 (impossibly large)"
+
+            return True, ""
+
+        # Unknown type - default to accepting
+        return True, ""
 
     def _levenshtein_distance(self, s1: str, s2: str) -> int:
         """Calculate Levenshtein distance between two strings for fuzzy matching."""
