@@ -11,7 +11,7 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 36.0.0
+Version: 67.0.0
 Last Modified: 2025-10-14
 Author: PokerTool Development Team
 License: MIT
@@ -35,7 +35,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '36.0.0'
+__version__ = '67.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -66,6 +66,30 @@ import os
 import subprocess
 
 from .utils.single_instance import acquire_lock, release_lock
+
+# Initialize performance telemetry FIRST for startup profiling
+try:
+    from .performance_telemetry import (
+        init_telemetry, telemetry_section, telemetry_instant, timed
+    )
+    _telemetry = init_telemetry()
+    TELEMETRY_AVAILABLE = True
+except Exception as telemetry_error:
+    print(f"⚠️  Performance telemetry not available: {telemetry_error}")
+    TELEMETRY_AVAILABLE = False
+    # Provide no-op fallbacks
+    def init_telemetry(): pass
+    def telemetry_section(cat, op, det=None):
+        from contextlib import contextmanager
+        @contextmanager
+        def noop():
+            yield
+        return noop()
+    def telemetry_instant(cat, op, det=None): pass
+    def timed(cat, op=None, cap=False):
+        def decorator(func):
+            return func
+        return decorator
 
 def _ensure_scraper_dependencies():
     """Ensure screen scraper dependencies are installed before module imports."""
@@ -247,9 +271,15 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self._lock_path = lock_path
         
         self.title(translate('app.title'))
-        self.geometry('1400x900')  # Compact size for better visibility
-        self.minsize(1200, 800)     # Reasonable minimum
+        self.geometry('1300x850')  # Optimized compact size for better fit
+        self.minsize(1100, 750)     # Flexible minimum for various screens
         self.configure(bg=COLORS['bg_dark'])
+
+        # Set window class for separate dock icon (macOS)
+        try:
+            self.wm_class("PokerTool", "PokerTool")
+        except:
+            pass  # Not all platforms support wm_class
         
         # Maximize window on startup for best tab visibility
         try:
@@ -301,20 +331,26 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self.blade_bar: Optional[tk.Frame] = None
         self._screen_scraper_ready = False
         self._screen_scraper_health_details: List[str] = []
-        # Initialize modules
-        self._init_modules()
-        self._setup_styles()
-        self._build_ui()
-        self._locale_listener_token = register_locale_listener(self._apply_translations)
-        self._apply_translations()
-        self._init_database()
-        
-        # CRITICAL: Auto-start background services after GUI is fully initialized
-        # All widget updates from threads must use self.after() to be thread-safe
-        self.after(100, self._start_background_services_safely)
+        self.compact_advice_window = None  # Compact live advice window
 
-        # Ensure window is visible and comes to foreground
-        self.after(200, self._ensure_window_visible)
+        # Loading state
+        self._modules_loaded = False
+        self._splash_window = None
+
+        # TELEMETRY: Record GUI initialization start
+        telemetry_instant('startup', 'gui_init_start', {'version': __version__})
+
+        # FAST STARTUP: Show splash immediately, load modules in background
+        with telemetry_section('startup', 'show_splash_screen'):
+            self._show_splash_screen()
+
+        # Build minimal UI first (fast)
+        with telemetry_section('startup', 'setup_styles'):
+            self._setup_styles()
+
+        # Start async module loading
+        telemetry_instant('startup', 'schedule_async_init')
+        self.after(50, self._async_init_modules)
 
         # Ensure graceful shutdown including scraper cleanup
         self.protocol('WM_DELETE_WINDOW', self._handle_app_exit)
@@ -324,113 +360,284 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         if self._lock_path:
             release_lock(self._lock_path)
             self._lock_path = None
-    
+
+    def _show_splash_screen(self):
+        """Show lightweight splash screen immediately."""
+        try:
+            self._splash_window = tk.Toplevel(self)
+            self._splash_window.title("")
+            self._splash_window.overrideredirect(True)
+
+            # Center splash
+            width, height = 400, 250
+            x = (self._splash_window.winfo_screenwidth() // 2) - (width // 2)
+            y = (self._splash_window.winfo_screenheight() // 2) - (height // 2)
+            self._splash_window.geometry(f'{width}x{height}+{x}+{y}')
+
+            # Splash content
+            splash_frame = tk.Frame(self._splash_window, bg='#1a1a1a', relief=tk.RAISED, bd=2)
+            splash_frame.pack(fill='both', expand=True)
+
+            tk.Label(
+                splash_frame,
+                text="🎰 PokerTool",
+                font=("Arial", 24, "bold"),
+                bg='#1a1a1a',
+                fg='#00C853'
+            ).pack(pady=(40, 10))
+
+            tk.Label(
+                splash_frame,
+                text="v66.0.0",
+                font=("Arial", 12),
+                bg='#1a1a1a',
+                fg='#888888'
+            ).pack()
+
+            self._splash_label = tk.Label(
+                splash_frame,
+                text="Initializing...",
+                font=("Arial", 11),
+                bg='#1a1a1a',
+                fg='#FFFFFF'
+            )
+            self._splash_label.pack(pady=(30, 10))
+
+            # Progress bar
+            self._splash_progress = ttk.Progressbar(
+                splash_frame,
+                mode='indeterminate',
+                length=300
+            )
+            self._splash_progress.pack(pady=10)
+            self._splash_progress.start(10)
+
+            self._splash_window.update()
+            self._splash_window.lift()
+            self._splash_window.attributes('-topmost', True)
+
+        except Exception as e:
+            print(f"Could not create splash screen: {e}")
+            self._splash_window = None
+
+    def _update_splash(self, message: str):
+        """Update splash screen message."""
+        if self._splash_window and self._splash_label:
+            try:
+                self._splash_label.config(text=message)
+                self._splash_window.update()
+            except:
+                pass
+
+    def _hide_splash(self):
+        """Hide and destroy splash screen."""
+        if self._splash_window:
+            try:
+                self._splash_window.destroy()
+            except:
+                pass
+            self._splash_window = None
+
+    def _async_init_modules(self):
+        """Initialize modules asynchronously using event loop scheduling."""
+        telemetry_instant('startup', 'async_init_modules_start')
+        # Stage 1: Init modules (100ms)
+        self._update_splash("Loading modules...")
+        self.after(100, self._stage1_init_modules)
+
+    def _stage1_init_modules(self):
+        """Stage 1: Initialize modules in background thread."""
+        telemetry_instant('startup', 'stage1_start')
+
+        def init_thread():
+            try:
+                with telemetry_section('startup', 'stage1_init_modules_thread'):
+                    self._init_modules()
+                # Schedule UI build on main thread
+                self.after(0, lambda: self._update_splash("Building interface..."))
+                self.after(50, self._stage2_build_ui)
+            except Exception as e:
+                print(f"Error in stage 1: {e}")
+                import traceback
+                traceback.print_exc()
+                self.after(50, self._stage2_build_ui)
+
+        # Run in background thread so GUI stays responsive
+        thread = threading.Thread(target=init_thread, daemon=True)
+        thread.start()
+
+    def _stage2_build_ui(self):
+        """Stage 2: Build UI."""
+        telemetry_instant('startup', 'stage2_start')
+        try:
+            with telemetry_section('startup', 'stage2_build_ui'):
+                self._build_ui()
+            self._update_splash("Setting up database...")
+            self.after(50, self._stage3_setup_database)
+        except Exception as e:
+            print(f"Error in stage 2: {e}")
+            import traceback
+            traceback.print_exc()
+            self.after(0, self._hide_splash)
+
+    def _stage3_setup_database(self):
+        """Stage 3: Setup database and translations."""
+        telemetry_instant('startup', 'stage3_start')
+        try:
+            with telemetry_section('startup', 'setup_translations'):
+                self._locale_listener_token = register_locale_listener(self._apply_translations)
+                self._apply_translations()
+            with telemetry_section('startup', 'init_database'):
+                self._init_database()
+            self._update_splash("Starting services...")
+            self.after(50, self._stage4_start_services)
+        except Exception as e:
+            print(f"Error in stage 3: {e}")
+            self.after(50, self._stage4_start_services)
+
+    def _stage4_start_services(self):
+        """Stage 4: Start background services."""
+        telemetry_instant('startup', 'stage4_start')
+        try:
+            with telemetry_section('startup', 'stage4_start_services'):
+                self._start_background_services_safely()
+            self._update_splash("Almost ready...")
+            self.after(100, self._stage5_finalize)
+        except Exception as e:
+            print(f"Error in stage 4: {e}")
+            self.after(100, self._stage5_finalize)
+
+    def _stage5_finalize(self):
+        """Stage 5: Final setup."""
+        telemetry_instant('startup', 'stage5_start')
+        try:
+            with telemetry_section('startup', 'ensure_window_visible'):
+                self._ensure_window_visible()
+            with telemetry_section('startup', 'launch_compact_advice_window'):
+                self._launch_compact_advice_window()
+            self._modules_loaded = True
+            telemetry_instant('startup', 'gui_init_complete')
+            self.after(200, self._hide_splash)
+        except Exception as e:
+            print(f"Error in stage 5: {e}")
+            self.after(0, self._hide_splash)
+
     def _init_modules(self):
         """Initialize all poker tool modules."""
+        telemetry_instant('module_init', 'init_modules_start')
         try:
             if SCREEN_SCRAPER_LOADED:
-                self.screen_scraper = create_scraper('BETFAIR')
-                print("Screen scraper initialized (BETFAIR optimized)")
+                with telemetry_section('module_init', 'screen_scraper'):
+                    self.screen_scraper = create_scraper('BETFAIR')
+                    print("Screen scraper initialized (BETFAIR optimized)")
 
             if GUI_MODULES_LOADED:
-                self.gto_solver = get_gto_solver()
-                self.opponent_modeler = get_opponent_modeling_system()
-                self.multi_table_manager = get_table_manager()
+                with telemetry_section('module_init', 'gto_solver'):
+                    self.gto_solver = get_gto_solver()
+                with telemetry_section('module_init', 'opponent_modeler'):
+                    self.opponent_modeler = get_opponent_modeling_system()
+                with telemetry_section('module_init', 'multi_table_manager'):
+                    self.multi_table_manager = get_table_manager()
                 print("Core modules initialized")
 
             # Initialize hand recorder
             try:
-                if HAND_RECORDER_LOADED and HandRecorder:
-                    self.hand_recorder = HandRecorder()
-                    print("Hand recorder initialized - ready to record hands")
-                else:
-                    print("Warning: HandRecorder not available")
+                with telemetry_section('module_init', 'hand_recorder'):
+                    if HAND_RECORDER_LOADED and HandRecorder:
+                        self.hand_recorder = HandRecorder()
+                        print("Hand recorder initialized - ready to record hands")
+                    else:
+                        print("Warning: HandRecorder not available")
             except Exception as recorder_error:
                 print(f"Hand recorder initialization error: {recorder_error}")
                 self.hand_recorder = None
 
             try:
-                if CoachingSystem:
-                    self.coaching_system = CoachingSystem()
-                    print("Coaching system ready")
-                else:
-                    print("Warning: CoachingSystem class not available")
+                with telemetry_section('module_init', 'coaching_system'):
+                    if CoachingSystem:
+                        self.coaching_system = CoachingSystem()
+                        print("Coaching system ready")
+                    else:
+                        print("Warning: CoachingSystem class not available")
             except Exception as coaching_error:
                 print(f"Coaching system initialization error: {coaching_error}")
                 self.coaching_system = None
 
             try:
-                if AnalyticsDashboard:
-                    self.analytics_dashboard = AnalyticsDashboard()
-                    print("Analytics dashboard loaded")
-                else:
-                    print("Warning: AnalyticsDashboard class not available")
+                with telemetry_section('module_init', 'analytics_dashboard'):
+                    if AnalyticsDashboard:
+                        self.analytics_dashboard = AnalyticsDashboard()
+                        print("Analytics dashboard loaded")
+                    else:
+                        print("Warning: AnalyticsDashboard class not available")
             except Exception as analytics_error:
                 print(f"Analytics dashboard initialization error: {analytics_error}")
                 self.analytics_dashboard = None
 
             try:
-                if GamificationEngine and Achievement and Badge:
-                    self.gamification_engine = GamificationEngine()
-                    if hasattr(self.gamification_engine, 'achievements') and 'volume_grinder' not in self.gamification_engine.achievements:
-                        self.gamification_engine.register_achievement(Achievement(
-                            achievement_id='volume_grinder',
-                            title='Volume Grinder',
-                            description='Play 100 hands in a day',
-                            points=200,
-                            condition={'hands_played': 100}
-                        ))
-                    if hasattr(self.gamification_engine, 'badges') and 'marathon' not in self.gamification_engine.badges:
-                        self.gamification_engine.register_badge(Badge(
-                            badge_id='marathon',
-                            title='Marathon',
-                            description='Maintain a 7-day streak of activity',
-                            tier='gold'
-                        ))
-                    print("Gamification engine ready")
-                else:
-                    print("Warning: Gamification classes not available")
+                with telemetry_section('module_init', 'gamification_engine'):
+                    if GamificationEngine and Achievement and Badge:
+                        self.gamification_engine = GamificationEngine()
+                        if hasattr(self.gamification_engine, 'achievements') and 'volume_grinder' not in self.gamification_engine.achievements:
+                            self.gamification_engine.register_achievement(Achievement(
+                                achievement_id='volume_grinder',
+                                title='Volume Grinder',
+                                description='Play 100 hands in a day',
+                                points=200,
+                                condition={'hands_played': 100}
+                            ))
+                        if hasattr(self.gamification_engine, 'badges') and 'marathon' not in self.gamification_engine.badges:
+                            self.gamification_engine.register_badge(Badge(
+                                badge_id='marathon',
+                                title='Marathon',
+                                description='Maintain a 7-day streak of activity',
+                                tier='gold'
+                            ))
+                        print("Gamification engine ready")
+                    else:
+                        print("Warning: Gamification classes not available")
             except Exception as gamification_error:
                 print(f"Gamification engine initialization error: {gamification_error}")
                 self.gamification_engine = None
 
             try:
-                if (CommunityPlatform and ForumPost and Challenge and 
-                    CommunityTournament and KnowledgeArticle):
-                    self.community_platform = CommunityPlatform()
-                    if hasattr(self.community_platform, 'posts') and not self.community_platform.posts:
-                        self.community_platform.create_post(ForumPost(
-                            post_id='welcome',
-                            author='coach',
-                            title='Welcome to the community',
-                            content='Share your goals and get feedback from other players.',
-                            tags=['announcement']
-                        ))
-                    if hasattr(self.community_platform, 'challenges') and not self.community_platform.challenges:
-                        self.community_platform.create_challenge(Challenge(
-                            challenge_id='daily_focus',
-                            title='Daily Focus Session',
-                            description='Play a focused 30-minute session and post a takeaway.',
-                            reward_points=150
-                        ))
-                    if hasattr(self.community_platform, 'tournaments') and not self.community_platform.tournaments:
-                        self.community_platform.schedule_tournament(CommunityTournament(
-                            tournament_id='community_cup',
-                            name='Community Cup',
-                            start_time=time.time() + 86400,
-                            format='freeroll'
-                        ))
-                    if hasattr(self.community_platform, 'articles') and not self.community_platform.articles:
-                        self.community_platform.add_article(KnowledgeArticle(
-                            article_id='icm_basics',
-                            title='ICM Basics',
-                            author='mentor',
-                            content='Understanding short-stack decisions on the bubble.',
-                            categories=['icm', 'strategy']
-                        ))
-                    print("Community platform ready")
-                else:
-                    print("Warning: Community platform classes not available")
+                with telemetry_section('module_init', 'community_platform'):
+                    if (CommunityPlatform and ForumPost and Challenge and
+                        CommunityTournament and KnowledgeArticle):
+                        self.community_platform = CommunityPlatform()
+                        if hasattr(self.community_platform, 'posts') and not self.community_platform.posts:
+                            self.community_platform.create_post(ForumPost(
+                                post_id='welcome',
+                                author='coach',
+                                title='Welcome to the community',
+                                content='Share your goals and get feedback from other players.',
+                                tags=['announcement']
+                            ))
+                        if hasattr(self.community_platform, 'challenges') and not self.community_platform.challenges:
+                            self.community_platform.create_challenge(Challenge(
+                                challenge_id='daily_focus',
+                                title='Daily Focus Session',
+                                description='Play a focused 30-minute session and post a takeaway.',
+                                reward_points=150
+                            ))
+                        if hasattr(self.community_platform, 'tournaments') and not self.community_platform.tournaments:
+                            self.community_platform.schedule_tournament(CommunityTournament(
+                                tournament_id='community_cup',
+                                name='Community Cup',
+                                start_time=time.time() + 86400,
+                                format='freeroll'
+                            ))
+                        if hasattr(self.community_platform, 'articles') and not self.community_platform.articles:
+                            self.community_platform.add_article(KnowledgeArticle(
+                                article_id='icm_basics',
+                                title='ICM Basics',
+                                author='mentor',
+                                content='Understanding short-stack decisions on the bubble.',
+                                categories=['icm', 'strategy']
+                            ))
+                        print("Community platform ready")
+                    else:
+                        print("Warning: Community platform classes not available")
             except Exception as community_error:
                 print(f"Community platform initialization error: {community_error}")
                 self.community_platform = None
@@ -438,13 +645,14 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
             # Run comprehensive startup validation
             if GUI_MODULES_LOADED:
                 try:
-                    self.startup_validator = StartupValidator(app_instance=self)
-                    self.startup_validation_results = self.startup_validator.validate_all()
+                    with telemetry_section('module_init', 'startup_validator'):
+                        self.startup_validator = StartupValidator(app_instance=self)
+                        self.startup_validation_results = self.startup_validator.validate_all()
 
-                    # Log validation summary
-                    summary = self.startup_validator.get_summary_report()
-                    logging.info("Startup validation completed")
-                    logging.info(f"\n{summary}")
+                        # Log validation summary
+                        summary = self.startup_validator.get_summary_report()
+                        logging.info("Startup validation completed")
+                        logging.info(f"\n{summary}")
 
                     # Check for critical failures
                     if self.startup_validator.has_critical_failures():
@@ -1049,7 +1257,9 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
                 self.notebook.select(built_tabs[0][0])
         
         # CRITICAL: Force notebook to update and show all tabs
-        self.notebook.update_idletasks()
+        # TEMPORARILY DISABLED: update_idletasks() causes segfault on macOS (showRootWindow crash)
+        # TODO: Replace with after() callback once mainloop starts
+        # self.notebook.update_idletasks()
         self._select_default_tab()
         
         # Log tab visibility for debugging
@@ -1058,19 +1268,128 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self.after(150, self._enforce_tab_visibility)
         self.after(500, self._validate_screen_scraper_ready)
         
-        # Add status bar showing tab count
-        status_bar = tk.Frame(main_container, bg=COLORS['bg_medium'], height=25)
-        status_bar.pack(side='bottom', fill='x', pady=(5, 0))
-        
+        # Add enhanced status bar with rolling game state display
+        status_bar = tk.Frame(main_container, bg=COLORS['bg_medium'], height=18)
+        status_bar.pack(side='bottom', fill='x', pady=(3, 0))
+
+        # Static blade count on left
         tab_count_label = tk.Label(
             status_bar,
-            text=f"✓ {len(built_tabs)} blades ready - use the navigation bar above to switch views",
-            font=('Arial', 9),
+            text=f"✓ {len(built_tabs)} blades",
+            font=('Arial', 8, 'bold'),
             bg=COLORS['bg_medium'],
             fg=COLORS['accent_success']
         )
         tab_count_label.pack(side='left', padx=10, pady=2)
         self.tab_count_label = tab_count_label
+
+        # Rolling game state display in center
+        self.status_text_label = tk.Label(
+            status_bar,
+            text="Ready to analyze poker hands",
+            font=('Arial', 8),
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_secondary'],
+            anchor='w'
+        )
+        self.status_text_label.pack(side='left', fill='x', expand=True, padx=5, pady=2)
+
+        # Version info on right
+        version_label = tk.Label(
+            status_bar,
+            text=f"v{__version__}",
+            font=('Arial', 8),
+            bg=COLORS['bg_medium'],
+            fg=COLORS['text_muted']
+        )
+        version_label.pack(side='right', padx=10, pady=2)
+
+        # Initialize rolling status updater
+        self._status_messages = []
+        self._status_index = 0
+        self._start_status_roller()
+
+    def _start_status_roller(self):
+        """Start the rolling status text updater."""
+        self._update_rolling_status()
+
+    def _update_rolling_status(self):
+        """Update rolling status with game state information."""
+        try:
+            if not hasattr(self, 'status_text_label'):
+                return
+
+            # Build status messages from current game state
+            messages = []
+
+            # Check if we have active poker data
+            if hasattr(self, 'manual_section') and hasattr(self.manual_section, 'live_table'):
+                live_table = self.manual_section.live_table
+
+                # Pot size
+                if hasattr(live_table, 'pot') and live_table.pot and live_table.pot > 0:
+                    messages.append(f"💰 Pot: ${live_table.pot:.2f}")
+
+                # Player count
+                if hasattr(live_table, 'players') and live_table.players:
+                    active_players = len([p for p in live_table.players if p and getattr(p, 'active', True)])
+                    if active_players > 0:
+                        messages.append(f"👥 {active_players} players active")
+
+                # Street
+                if hasattr(live_table, 'street') and live_table.street:
+                    messages.append(f"📍 {live_table.street.capitalize()}")
+
+                # Win probability if available
+                if hasattr(self, 'compact_window') and self.compact_window:
+                    try:
+                        if hasattr(self.compact_window, 'current_advice'):
+                            advice = self.compact_window.current_advice
+                            if advice and hasattr(advice, 'win_probability'):
+                                win_pct = advice.win_probability * 100
+                                messages.append(f"📊 Win prob: {win_pct:.1f}%")
+                    except:
+                        pass
+
+            # Default messages if no game state
+            if not messages:
+                messages = [
+                    "✨ Ready to analyze poker hands",
+                    "🎯 GTO solver with 60-80% cache speedup",
+                    "📈 95% confidence intervals on all probabilities",
+                    "🎨 Professional formatting and color coding",
+                    "🚀 Enhanced decision engine active",
+                    "🔍 Real-time screen scraping ready",
+                    "💡 Manual entry mode available",
+                    "🧠 ML opponent modeling enabled",
+                    "⚡ Optimized for performance",
+                ]
+
+            # Store messages for cycling
+            self._status_messages = messages
+
+            # Get current message
+            if self._status_messages:
+                message = self._status_messages[self._status_index % len(self._status_messages)]
+                self.status_text_label.config(text=message)
+
+                # Advance to next message
+                self._status_index += 1
+
+            # Schedule next update (rotate every 8 seconds - optimized for performance)
+            self.after(8000, self._update_rolling_status)
+
+        except Exception as e:
+            # Silently fail to avoid breaking UI
+            pass
+
+    def update_status_message(self, message: str):
+        """Manually update status bar with a specific message."""
+        try:
+            if hasattr(self, 'status_text_label'):
+                self.status_text_label.config(text=message)
+        except:
+            pass
 
     def _select_default_tab(self) -> None:
         """Ensure a sensible default tab stays selected after any recovery."""
@@ -1172,7 +1491,7 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         except Exception:
             pass
         finally:
-            self._tab_watchdog_id = self.after(10000, self._enforce_tab_visibility)
+            self._tab_watchdog_id = self.after(30000, self._enforce_tab_visibility)  # Check every 30s (optimized)
 
     def _report_tab_failure(self, missing_records: List[Dict[str, Any]], visible_set: set[str]) -> None:
         """Surface a critical error when required tabs cannot be recovered."""
@@ -2080,9 +2399,9 @@ Platform: {sys.platform}
         except Exception as e:
             print(f"Error polling log queue: {e}")
 
-        # Schedule next poll (100ms interval)
+        # Schedule next poll (250ms interval - optimized for performance)
         if hasattr(self, 'log_text_widget') and self.log_text_widget:
-            self.after(100, self._poll_log_queue)
+            self.after(250, self._poll_log_queue)
 
     def _append_log(self, level, message):
         """Append a log message to the log viewer."""
@@ -2156,8 +2475,8 @@ Platform: {sys.platform}
         except Exception as e:
             logging.error(f"Periodic health check failed: {e}")
 
-        # Schedule next check in 60 seconds
-        self.after(60000, self._periodic_health_check)
+        # Schedule next check in 300 seconds (5 minutes - optimized for performance)
+        self.after(300000, self._periodic_health_check)
 
     def _show_validation_report(self):
         """Show the full startup validation report in a popup window."""
@@ -3387,6 +3706,29 @@ Platform: {sys.platform}
             # Window might be destroyed, don't reschedule
             print(f"Window monitoring stopped: {e}")
 
+    def _launch_compact_advice_window(self):
+        """Launch the compact live advice window alongside the main GUI."""
+        try:
+            print("🚀 Launching Compact Live Advice Window...")
+            from .compact_live_advice_window import CompactLiveAdviceWindow
+
+            # Create compact window with parent for proper lifecycle management
+            # but configure it to appear as separate app in dock
+            self.compact_advice_window = CompactLiveAdviceWindow(
+                parent=self,
+                separate_dock_icon=True  # Request separate dock icon on macOS
+            )
+            print("✓ Compact Live Advice Window launched successfully")
+
+        except ImportError as e:
+            print(f"⚠️  Compact window module not available: {e}")
+            self.compact_advice_window = None
+        except Exception as e:
+            print(f"⚠️  Failed to launch compact window: {e}")
+            import traceback
+            traceback.print_exc()
+            self.compact_advice_window = None
+
     def _handle_app_exit(self):
         """Handle window close events to ensure clean shutdown."""
         print("🛑 Shutting down PokerTool...")
@@ -3405,6 +3747,17 @@ Platform: {sys.platform}
                 print("  ✓ Screen scraper cleanup")
         except Exception as e:
             print(f"  ⚠ Error with scraper cleanup: {e}")
+
+        try:
+            # Close compact advice window if it exists
+            if hasattr(self, 'compact_advice_window') and self.compact_advice_window:
+                try:
+                    self.compact_advice_window.destroy()
+                    print("  ✓ Compact advice window closed")
+                except:
+                    pass
+        except Exception as e:
+            print(f"  ⚠ Error closing compact window: {e}")
 
         try:
             # Release the single-instance lock

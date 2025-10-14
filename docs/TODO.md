@@ -47,19 +47,499 @@ MACHINE-READABLE-HEADER-END -->
 
 | Priority | Count | Percentage |
 |----------|-------|------------|
-| CRITICAL | 0     | 0.0%       |
+| CRITICAL | 35    | 100.0%     |
 | HIGH     | 0     | 0.0%       |
 | MEDIUM   | 0     | 0.0%       |
 | LOW      | 0     | 0.0%       |
 
-**TOTAL REMAINING TASKS: 0**
+**TOTAL REMAINING TASKS: 35**
 **COMPLETED TASKS: 54**
 
-Backlog reopened to focus on scraping resilience and predictive accuracy.
+**NEW FOCUS: COMPREHENSIVE SCREEN SCRAPING SPEED, ACCURACY & RELIABILITY IMPROVEMENTS**
+
+Backlog reopened to focus on scraping speed (2-5x), accuracy (95%+), and reliability (99.9% uptime).
 
 ---
 
-## New Backlog Tasks
+## New Backlog Tasks - Screen Scraping Speed, Accuracy & Reliability (v49.0.0)
+
+### 🚀 SPEED IMPROVEMENTS (12 tasks)
+
+### 1. SCRAPE-015: Region-of-Interest (ROI) Tracking System
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: Track which screen regions change between frames and only process those regions
+- **How It Works**: Maintain a frame buffer, compute per-region differences using hash/checksum, mark changed regions, only extract from changed ROIs
+- **Expected Improvement**: 3-4x faster when table is stable (most of the time)
+- **Steps to Implement**:
+  - [ ] Define standard ROI grid (pot, board, 9 seats, action buttons)
+  - [ ] Implement fast region hashing (perceptual hash per ROI)
+  - [ ] Build difference detector with configurable sensitivity
+  - [ ] Integrate with scraper to skip unchanged regions
+  - [ ] Add metrics tracking (regions processed, skip rate)
+  - [ ] Comprehensive tests
+
+### 2. SCRAPE-016: Frame Differencing Engine
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 2
+- **Objective**: Skip entire frame processing if screen is unchanged (<5% pixel difference)
+- **How It Works**: Compute structural similarity (SSIM) between current and previous frame, skip if similarity >95%
+- **Expected Improvement**: 5-10x faster during idle periods (waiting for action)
+- **Steps to Implement**:
+  - [ ] Implement fast SSIM calculation (downsampled comparison)
+  - [ ] Add configurable skip threshold (default 95%)
+  - [ ] Integrate frame skip logic into main scraper loop
+  - [ ] Add frame skip metrics and logging
+  - [ ] Tests for various change scenarios
+
+### 3. SCRAPE-017: Smart OCR Result Caching
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: Cache OCR results and invalidate only when region changes
+- **How It Works**: LRU cache keyed by (region_hash, extraction_type), invalidate when region pixels change
+- **Expected Improvement**: 2-3x faster for stable elements (player names, blinds)
+- **Steps to Implement**:
+  - [ ] Implement cache with LRU eviction (max 1000 entries)
+  - [ ] Create region hash function (fast, collision-resistant)
+  - [ ] Add cache hit/miss metrics
+  - [ ] Implement smart invalidation rules
+  - [ ] Tests for cache correctness and performance
+
+### 4. SCRAPE-018: Parallel Multi-Region Extraction
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 4
+- **Objective**: Extract pot, cards, and all seat information concurrently
+- **How It Works**: ThreadPoolExecutor with 4-8 workers, submit all extractions simultaneously, gather results
+- **Expected Improvement**: 2-3x faster overall extraction (CPU-bound operations parallelized)
+- **Steps to Implement**:
+  - [ ] Refactor extraction functions to be thread-safe
+  - [ ] Implement parallel extraction orchestrator
+  - [ ] Add timeout handling for slow extractions
+  - [ ] Build result aggregation logic
+  - [ ] Comprehensive concurrency tests
+
+### 5. SCRAPE-019: Memory-Mapped Screen Capture
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: Zero-copy screen capture using shared memory
+- **How It Works**: mmap framebuffer or use OS-specific APIs (macOS: CGDisplayStream, Windows: DXGI Desktop Duplication)
+- **Expected Improvement**: 40-60% faster capture (eliminate memcpy overhead)
+- **Steps to Implement**:
+  - [ ] Implement platform-specific capture (macOS/Windows/Linux)
+  - [ ] Add fallback to mss for unsupported platforms
+  - [ ] Build memory-mapped buffer manager
+  - [ ] Add capture performance benchmarks
+  - [ ] Tests for all platforms
+
+### 6. SCRAPE-020: Compiled Preprocessing Kernels
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 4
+- **Objective**: Compile hot-path preprocessing operations (blur, threshold, morphology)
+- **How It Works**: Use Numba JIT or Cython to compile critical image processing loops
+- **Expected Improvement**: 2-4x faster preprocessing
+- **Steps to Implement**:
+  - [ ] Profile preprocessing to find hottest functions
+  - [ ] Convert to Numba JIT with @njit decorator
+  - [ ] Add Cython fallback for compatibility
+  - [ ] Benchmark compiled vs Python versions
+  - [ ] Tests for numerical accuracy
+
+### 7. SCRAPE-021: Batch Region Processing
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 3
+- **Objective**: Process multiple screen regions in single GPU call
+- **How It Works**: Stack all ROIs into tensor, run single batch preprocessing/OCR operation
+- **Expected Improvement**: 1.5-2x faster when GPU is available
+- **Steps to Implement**:
+  - [ ] Implement ROI batching logic (collect, pad, stack)
+  - [ ] Modify GPU preprocessing to accept batches
+  - [ ] Add batch size optimization
+  - [ ] Tests for batch correctness
+
+### 8. SCRAPE-022: Adaptive Sampling Rate
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 2
+- **Objective**: Adjust scraping frequency based on table activity
+- **How It Works**: Fast sampling (10 FPS) during action, slow (1 FPS) when idle, detect activity via frame diff
+- **Expected Improvement**: 50% reduced CPU usage overall
+- **Steps to Implement**:
+  - [ ] Implement activity detector (motion detection)
+  - [ ] Build adaptive rate controller (PID-like)
+  - [ ] Add rate limits (min 1 FPS, max 10 FPS)
+  - [ ] Tests for rate adaptation
+
+### 9. SCRAPE-023: Incremental Table Updates
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 3
+- **Objective**: Only re-extract elements that have changed since last frame
+- **How It Works**: Track extracted values, detect changes, only update changed fields in TableState
+- **Expected Improvement**: 2-3x faster for partial updates
+- **Steps to Implement**:
+  - [ ] Implement per-field change detection
+  - [ ] Build incremental update logic
+  - [ ] Add field-level timestamps
+  - [ ] Tests for correctness
+
+### 10. SCRAPE-024: Hardware Decode Acceleration
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 4
+- **Objective**: Use GPU video decode for screen capture
+- **How It Works**: Treat screen as video stream, use hardware H.264/VP9 decode for capture
+- **Expected Improvement**: 30-50% faster capture with GPU offload
+- **Steps to Implement**:
+  - [ ] Implement hardware decode capture (NVDEC, VDA, VAAPI)
+  - [ ] Add quality/latency trade-off controls
+  - [ ] Fallback to standard capture if unavailable
+  - [ ] Benchmark capture performance
+
+### 11. SCRAPE-025: OCR Engine Prioritization
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Try fastest OCR engine first, fallback to slower/more accurate if confidence low
+- **How It Works**: Tesseract (fast) → PaddleOCR (medium) → EasyOCR (slow+accurate), stop when confidence >80%
+- **Expected Improvement**: 40-60% faster OCR on average
+- **Steps to Implement**:
+  - [ ] Implement cascading OCR with confidence thresholds
+  - [ ] Add per-engine timeout controls
+  - [ ] Track which engine wins most often
+  - [ ] Tests for cascade logic
+
+### 12. SCRAPE-026: Lazy Extraction Strategy
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Extract only fields needed for current decision
+- **How It Works**: Priority extraction (pot, hero cards, current bet) → optional (all seats, timer) if needed
+- **Expected Improvement**: 30-50% faster when full extraction not needed
+- **Steps to Implement**:
+  - [ ] Implement priority-based extraction
+  - [ ] Add extraction budget system
+  - [ ] Tests for partial extraction correctness
+
+---
+
+### 🎯 ACCURACY IMPROVEMENTS (13 tasks)
+
+### 13. SCRAPE-027: Multi-Frame Temporal Consensus
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: Smooth pot, stack, and bet values over 3-5 frames to eliminate OCR noise
+- **How It Works**: Sliding window median filter, outlier rejection, confidence-weighted averaging
+- **Expected Improvement**: 90%+ accuracy for numeric fields (currently ~75-85%)
+- **Steps to Implement**:
+  - [ ] Implement sliding window buffer (5 frames)
+  - [ ] Build median/mode consensus calculator
+  - [ ] Add confidence weighting
+  - [ ] Outlier detection and rejection
+  - [ ] Tests with noisy synthetic data
+
+### 14. SCRAPE-028: Context-Aware Pot Validation
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: Validate pot size using game state continuity (pot_new = pot_old + sum(bets))
+- **How It Works**: Track previous pot and bets, compute expected pot, reject if actual differs by >10%
+- **Expected Improvement**: 95%+ pot accuracy with auto-correction
+- **Steps to Implement**:
+  - [ ] Implement pot continuity tracker
+  - [ ] Build bet aggregation logic
+  - [ ] Add pot correction when validation fails
+  - [ ] Tests for various betting scenarios
+
+### 15. SCRAPE-029: Card Recognition ML Model
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 6
+- **Objective**: CNN-based card detection for 99%+ accuracy
+- **How It Works**: Train small CNN on card images, classify rank+suit, much faster than OCR
+- **Expected Improvement**: 99%+ card accuracy (vs 85-90% OCR)
+- **Steps to Implement**:
+  - [ ] Collect/generate training data (5000+ card images)
+  - [ ] Train CNN model (MobileNetV3-small backbone)
+  - [ ] Implement inference pipeline
+  - [ ] Add confidence scoring
+  - [ ] Comprehensive accuracy tests
+
+### 16. SCRAPE-030: Spatial Relationship Validator
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: Validate geometric consistency (pot near center, cards near seats, buttons at bottom)
+- **How It Works**: Define expected spatial layout, measure actual positions, reject if outside bounds
+- **Expected Improvement**: Eliminate 80%+ of false extractions
+- **Steps to Implement**:
+  - [ ] Define spatial layout model
+  - [ ] Implement position validator
+  - [ ] Add layout learning from valid frames
+  - [ ] Tests for layout violations
+
+### 17. SCRAPE-031: Geometric Calibration System
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 4
+- **Objective**: Correct for screen distortion, scaling, rotation
+- **How It Works**: Detect table ellipse, compute homography, apply perspective correction
+- **Expected Improvement**: 10-15% accuracy improvement on non-standard displays
+- **Steps to Implement**:
+  - [ ] Implement ellipse detection
+  - [ ] Calculate homography matrix
+  - [ ] Apply perspective warp
+  - [ ] Add calibration persistence
+  - [ ] Tests for various distortions
+
+### 18. SCRAPE-032**: Adaptive Regional Thresholding
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 3
+- **Objective**: Optimize brightness/contrast per screen region
+- **How It Works**: Histogram analysis per ROI, adaptive CLAHE parameters, per-region thresholds
+- **Expected Improvement**: 15-20% OCR accuracy improvement
+- **Steps to Implement**:
+  - [ ] Implement per-region histogram analysis
+  - [ ] Build adaptive CLAHE parameter selection
+  - [ ] Add threshold learning system
+  - [ ] Tests on varied lighting conditions
+
+### 19. SCRAPE-033: Confidence-Based Re-extraction
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 2
+- **Objective**: Automatically retry extractions with low confidence
+- **How It Works**: If confidence <60%, try different preprocessing, wait 100ms, re-extract
+- **Expected Improvement**: 10-15% fewer failed extractions
+- **Steps to Implement**:
+  - [ ] Implement confidence threshold checking
+  - [ ] Build retry strategy (different preprocessing)
+  - [ ] Add max retry limit (3 attempts)
+  - [ ] Tests for retry scenarios
+
+### 20. SCRAPE-034: Player Action State Machine
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 3
+- **Objective**: Track player action sequences for validation
+- **How It Works**: State machine per player (idle→betting→called→folded), reject invalid transitions
+- **Expected Improvement**: Eliminate 70%+ of action detection errors
+- **Steps to Implement**:
+  - [ ] Define player state machine
+  - [ ] Implement state tracker
+  - [ ] Add transition validation
+  - [ ] Tests for all valid/invalid transitions
+
+### 21. SCRAPE-035: Card Suit Color Validation
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Cross-check suit against card color (hearts/diamonds=red, spades/clubs=black)
+- **How It Works**: Extract dominant color from card region, validate against suit
+- **Expected Improvement**: 5-10% fewer suit errors
+- **Steps to Implement**:
+  - [ ] Implement color extraction
+  - [ ] Build suit-color validator
+  - [ ] Add correction logic
+  - [ ] Tests for color validation
+
+### 22. SCRAPE-036: Blinds Consistency Checker
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Validate SB/BB against known blind structures
+- **How It Works**: Maintain database of blind levels, validate extracted blinds, suggest corrections
+- **Expected Improvement**: 95%+ blind accuracy
+- **Steps to Implement**:
+  - [ ] Build blind structure database
+  - [ ] Implement blind validator
+  - [ ] Add auto-correction
+  - [ ] Tests for various blind levels
+
+### 23. SCRAPE-037: Stack Change Tracking
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Detect impossible stack changes (e.g., +$1000 without winning pot)
+- **How It Works**: Track stack deltas, validate against pots won/lost, reject invalid changes
+- **Expected Improvement**: Eliminate 60%+ of stack errors
+- **Steps to Implement**:
+  - [ ] Implement stack delta tracker
+  - [ ] Build change validator
+  - [ ] Add correction/alert logic
+  - [ ] Tests for stack changes
+
+### 24. SCRAPE-038: OCR Post-Processing Rules
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Apply poker-specific text cleanup (O→0, l→1, $S→$5, etc.)
+- **How It Works**: Rule-based post-processing, context-aware corrections, confidence boosting
+- **Expected Improvement**: 10-15% OCR accuracy improvement
+- **Steps to Implement**:
+  - [ ] Build correction rule engine
+  - [ ] Add context-aware rules
+  - [ ] Implement confidence adjustment
+  - [ ] Tests for all correction rules
+
+### 25. SCRAPE-039: Multi-Strategy Fusion
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 4
+- **Objective**: Combine CDP, OCR, and Vision results with weighted voting
+- **How It Works**: Extract from all 3 sources, confidence-weighted majority vote, trust hierarchy (CDP>Vision>OCR)
+- **Expected Improvement**: 98%+ accuracy through redundancy
+- **Steps to Implement**:
+  - [ ] Implement multi-source extraction
+  - [ ] Build weighted voting system
+  - [ ] Add confidence calibration
+  - [ ] Tests for fusion scenarios
+
+---
+
+### 🛡️ RELIABILITY IMPROVEMENTS (10 tasks)
+
+### 26. SCRAPE-040: Automatic Recovery Manager
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: Detect extraction failures and automatically recover
+- **How It Works**: Monitor extraction success rate, trigger recovery actions (restart, recalibrate, fallback mode)
+- **Expected Improvement**: 99.9% uptime (vs 95% currently)
+- **Steps to Implement**:
+  - [ ] Implement failure detection
+  - [ ] Build recovery action system
+  - [ ] Add escalating recovery strategies
+  - [ ] Tests for recovery scenarios
+
+### 27. SCRAPE-041: Redundant Extraction Paths
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 3
+- **Objective**: CDP primary, OCR backup, Vision tertiary fallback
+- **How It Works**: Try extraction methods in order, fall back if previous fails, track which method succeeds
+- **Expected Improvement**: 99%+ extraction success rate
+- **Steps to Implement**:
+  - [ ] Implement fallback chain
+  - [ ] Add method tracking
+  - [ ] Build seamless failover
+  - [ ] Tests for all fallback paths
+
+### 28. SCRAPE-042: Health Monitoring Dashboard
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 3
+- **Objective**: Track extraction success rates per field, alert on degradation
+- **How It Works**: Real-time metrics dashboard, per-field success tracking, alerting when success <90%
+- **Expected Improvement**: Proactive issue detection
+- **Steps to Implement**:
+  - [ ] Build metrics collection system
+  - [ ] Implement dashboard UI
+  - [ ] Add alerting thresholds
+  - [ ] Tests for metrics accuracy
+
+### 29. SCRAPE-043: Graceful Degradation System
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 2
+- **Objective**: Return partial data when full extraction fails
+- **How It Works**: Mark fields as unknown/uncertain, provide best-effort data, flag low confidence
+- **Expected Improvement**: Always return usable data
+- **Steps to Implement**:
+  - [ ] Implement partial state builder
+  - [ ] Add confidence flags per field
+  - [ ] Build degradation levels
+  - [ ] Tests for partial data scenarios
+
+### 30. SCRAPE-044: State Persistence Layer
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 3
+- **Objective**: Save/restore table state across application restarts
+- **How It Works**: Serialize table state to JSON, load on startup, resume from last known state
+- **Expected Improvement**: Zero state loss on restart
+- **Steps to Implement**:
+  - [ ] Implement state serialization
+  - [ ] Build persistence manager
+  - [ ] Add state validation on load
+  - [ ] Tests for persistence
+
+### 31. SCRAPE-045: Error Pattern Detector
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 3
+- **Objective**: Identify recurring extraction failures and suggest fixes
+- **How It Works**: Log failures with context, pattern matching, generate diagnostic reports
+- **Expected Improvement**: Faster root cause identification
+- **Steps to Implement**:
+  - [ ] Implement failure logging
+  - [ ] Build pattern detection
+  - [ ] Add diagnostic reporting
+  - [ ] Tests for pattern matching
+
+### 32. SCRAPE-046: Watchdog Timer System
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Kill and restart hung extraction operations
+- **How It Works**: Monitor operation duration, terminate if exceeds timeout (5s), restart scraper thread
+- **Expected Improvement**: No hung operations
+- **Steps to Implement**:
+  - [ ] Implement watchdog timer
+  - [ ] Add operation timeout tracking
+  - [ ] Build restart mechanism
+  - [ ] Tests for timeout scenarios
+
+### 33. SCRAPE-047: Resource Leak Detection
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Monitor memory/GPU usage, alert on leaks
+- **How It Works**: Track resource usage over time, detect gradual increases, alert when thresholds exceeded
+- **Expected Improvement**: Zero resource leaks
+- **Steps to Implement**:
+  - [ ] Implement resource tracking
+  - [ ] Build leak detection algorithm
+  - [ ] Add alerting system
+  - [ ] Tests for leak detection
+
+### 34. SCRAPE-048: Extraction Quality Metrics
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 2
+- **Objective**: Per-field confidence tracking over time
+- **How It Works**: Log confidence scores, compute moving averages, visualize trends
+- **Expected Improvement**: Data-driven optimization
+- **Steps to Implement**:
+  - [ ] Implement metrics collection
+  - [ ] Build trend analysis
+  - [ ] Add visualization
+  - [ ] Tests for metrics
+
+### 35. SCRAPE-049: Automatic Recalibration
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 3
+- **Objective**: Re-run setup/calibration when detection degrades
+- **How It Works**: Monitor detection confidence, trigger recalibration when <80% for 10+ frames
+- **Expected Improvement**: Self-healing system
+- **Steps to Implement**:
+  - [ ] Implement degradation detector
+  - [ ] Build recalibration trigger
+  - [ ] Add calibration automation
+  - [ ] Tests for recalibration
+
+---
+
+## Previously Completed Tasks
 
 ### 1. SCRAPE-010: Adaptive UI Change Detection
 - **Status**: COMPLETED (2025-10-06)

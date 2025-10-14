@@ -59,17 +59,17 @@ COLORS = {
 }
 
 FONTS = {
-    "title": ("Arial", 22, "bold"),         # Reduced from 28
-    "heading": ("Arial", 14, "bold"),       # Reduced from 18
-    "subheading": ("Arial", 11, "bold"),    # Reduced from 14
-    "section": ("Arial", 13, "bold"),       # Reduced from 16
-    "body": ("Arial", 11, "bold"),          # Reduced from 14
-    "button": ("Arial", 10, "bold"),        # Reduced from 12
-    "small": ("Arial", 9),                  # Reduced from 11
-    "autopilot": ("Arial", 16, "bold"),     # Reduced from 20
-    "status": ("Arial", 13, "bold"),        # Reduced from 16
-    "analysis": ("Consolas", 10, "bold"),   # Reduced from 12
-    "mono": ("Courier New", 9),             # Reduced from 11
+    "title": ("Arial", 18, "bold"),         # Further reduced for compact UI
+    "heading": ("Arial", 12, "bold"),       # Further reduced
+    "subheading": ("Arial", 10, "bold"),    # Further reduced
+    "section": ("Arial", 11, "bold"),       # Further reduced
+    "body": ("Arial", 10),                  # Further reduced, removed bold for readability
+    "button": ("Arial", 9, "bold"),         # Further reduced
+    "small": ("Arial", 8),                  # Further reduced
+    "autopilot": ("Arial", 14, "bold"),     # Further reduced
+    "status": ("Arial", 11, "bold"),        # Further reduced
+    "analysis": ("Consolas", 9),            # Further reduced, removed bold
+    "mono": ("Courier New", 8),             # Further reduced
 }
 
 __all__ = ["COLORS", "FONTS"]

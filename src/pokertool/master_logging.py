@@ -71,10 +71,16 @@ __author__ = 'PokerTool Development Team'
 
 # Global configuration
 MASTER_LOG_DIR = Path.cwd() / 'logs'
-MASTER_LOG_FILE = MASTER_LOG_DIR / 'pokertool_master.log'
-ERROR_LOG_FILE = MASTER_LOG_DIR / 'pokertool_errors.log'
-PERFORMANCE_LOG_FILE = MASTER_LOG_DIR / 'pokertool_performance.log'
-SECURITY_LOG_FILE = MASTER_LOG_DIR / 'pokertool_security.log'
+MASTER_LOG_FILE = MASTER_LOG_DIR / 'pokertool_master.log'  # 3-month rotation
+ERROR_LOG_FILE = MASTER_LOG_DIR / 'pokertool_errors.log'    # Permanent (feedback system)
+PERFORMANCE_LOG_FILE = MASTER_LOG_DIR / 'pokertool_performance.log'  # Permanent (feedback system)
+SECURITY_LOG_FILE = MASTER_LOG_DIR / 'pokertool_security.log'  # Permanent (feedback system)
+
+# Log Retention Policy:
+# - MASTER_LOG: 3 months (90 days) - Daily rotation with automatic cleanup
+# - ERROR_LOG: Permanent - Kept for feedback and analysis systems
+# - PERFORMANCE_LOG: Permanent - Kept for feedback and analysis systems
+# - SECURITY_LOG: Permanent - Kept for audit trail and security analysis
 
 # Create logs directory
 MASTER_LOG_DIR.mkdir(exist_ok=True)
@@ -202,9 +208,16 @@ class MasterLogger:
         self.master_logger.setLevel(logging.DEBUG)
         self.master_logger.handlers.clear()
         
-        # Rotating file handler for master log
-        master_handler = logging.handlers.RotatingFileHandler(
-            MASTER_LOG_FILE, maxBytes=50*1024*1024, backupCount=10
+        # Time-based rotating file handler for master log (keeps 3 months / 90 days)
+        # Rotates daily and keeps 90 backup files = 90 days = ~3 months
+        master_handler = logging.handlers.TimedRotatingFileHandler(
+            MASTER_LOG_FILE,
+            when='midnight',  # Rotate at midnight
+            interval=1,       # Every 1 day
+            backupCount=90,   # Keep 90 days = 3 months
+            encoding='utf-8',
+            delay=False,
+            utc=False
         )
         master_formatter = logging.Formatter(
             '%(asctime)s | %(levelname)8s | %(name)s | %(message)s',
@@ -212,6 +225,9 @@ class MasterLogger:
         )
         master_handler.setFormatter(master_formatter)
         self.master_logger.addHandler(master_handler)
+
+        # Add a note about log rotation to the log
+        self.master_logger.info("Master log rotation configured: Daily rotation, 90 days retention (3 months)")
         
         # Console handler for immediate feedback
         console_handler = logging.StreamHandler(sys.stdout)

@@ -174,6 +174,15 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
                 player_stack = getattr(player, 'stack_size', 0) or getattr(player, 'stack', 0)
                 is_active = getattr(player, 'is_active', False)
 
+                # Filter out invalid/placeholder names when no real table is detected
+                # Common OCR errors or placeholder names: "you", "player", single letters, etc.
+                if player_name:
+                    name_lower = player_name.strip().lower()
+                    invalid_names = {'you', 'player', 'empty', 'seat', '-', '?', 'n/a'}
+                    # Also reject single character names (likely OCR errors)
+                    if name_lower in invalid_names or (len(name_lower) == 1 and not name_lower.isdigit()):
+                        player_name = None  # Treat as empty
+
                 print(f"[get_live_table_data] Processing player {i}: seat={seat_num}, name='{player_name}', stack=${player_stack}, active={is_active}")
 
                 # Count this player
@@ -241,8 +250,16 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
         if data['dealer_seat'] == 0 or data['dealer_seat'] is None:
             data['warnings'].append("Dealer button position not detected")
 
-        # TODO: Implement GTO-based recommendation system
-        # For now, recommended_action remains "Waiting for game state..."
+        # Generate advice data if we have sufficient table information
+        advice_data = _generate_advice_data(table_state, data)
+        if advice_data:
+            data['advice_data'] = advice_data
+            # Update recommended_action text for backward compatibility
+            if advice_data.has_data:
+                action_text = advice_data.action.value
+                if advice_data.action_amount:
+                    action_text += f" ${advice_data.action_amount:.0f}"
+                data['recommended_action'] = action_text
 
         # Add metadata about data freshness
         data['data_source'] = 'live'
@@ -280,6 +297,82 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
             print(f"[get_live_table_data] Returning cached data after exception (age: {_last_table_data['data_age_seconds']:.1f}s)")
             return _last_table_data
 
+        return None
+
+
+def _generate_advice_data(table_state, table_data: Dict[str, Any]):
+    """
+    Generate LiveAdviceData from table state for detailed explanations.
+
+    Args:
+        table_state: Raw table state from scraper
+        table_data: Processed table data dictionary
+
+    Returns:
+        LiveAdviceData object or None if insufficient data
+    """
+    try:
+        # Import here to avoid circular dependencies
+        from pokertool.live_decision_engine import LiveDecisionEngine, GameState
+        from pokertool.compact_live_advice_window import LiveAdviceData, ActionType
+
+        # Check if we have enough data for advice generation
+        hero_cards = table_data.get('my_hole_cards', [])
+        if not hero_cards or len(hero_cards) < 2:
+            # No hero cards, can't generate advice
+            return None
+
+        # Check if it's hero's turn (optional - generate advice anyway for educational purposes)
+        # active_turn_seat = table_data.get('active_turn_seat', 0)
+        # my_seat = ... (we'd need to track this)
+
+        # Build GameState from table_data
+        game_state = GameState(
+            hole_cards=hero_cards,
+            community_cards=table_data.get('board_cards', []),
+            pot_size=float(table_data.get('pot', 0)),
+            call_amount=0.0,  # TODO: Extract from active player or betting action
+            min_raise=float(table_data.get('big_blind', 0.10)) * 2,
+            max_raise=1000.0,  # TODO: Extract from hero's stack
+            stack_size=100.0,  # TODO: Extract hero's actual stack
+            position=table_data.get('position', 'unknown'),
+            num_opponents=max(1, table_data.get('active_players', 1) - 1),
+            street=table_data.get('stage', 'preflop'),
+            is_tournament=bool(table_data.get('tournament_name')),
+            blinds=(
+                float(table_data.get('small_blind', 0.05)),
+                float(table_data.get('big_blind', 0.10))
+            )
+        )
+
+        # Try to extract hero's stack and call amount from players data
+        players = table_data.get('players', {})
+        for seat, player in players.items():
+            # TODO: Identify hero's seat (need handle matching or other logic)
+            # For now, use first player with cards as placeholder
+            if player.get('hole_cards') and len(player.get('hole_cards', [])) >= 2:
+                game_state.stack_size = float(player.get('stack', 100.0))
+                break
+
+        # Create a simple decision engine (singleton pattern would be better for performance)
+        # For now, create a new one each time
+        if not hasattr(_generate_advice_data, '_engine_cache'):
+            _generate_advice_data._engine_cache = LiveDecisionEngine(
+                bankroll=10000.0,
+                win_calc_iterations=5000  # Reduced for speed
+            )
+
+        engine = _generate_advice_data._engine_cache
+
+        # Generate advice
+        advice = engine.get_live_advice(game_state)
+
+        return advice
+
+    except Exception as e:
+        print(f"[_generate_advice_data] Error generating advice: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 

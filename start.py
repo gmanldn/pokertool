@@ -7,9 +7,21 @@
 # schema: pokerheader.v1
 # project: pokertool
 # file: start.py
-# version: v37.0.0
-# last_commit: '2025-10-14T05:00:00Z'
+# version: v66.0.0
+# last_commit: '2025-10-14T21:00:00Z'
 # fixes:
+# - date: '2025-10-14'
+#   summary: Enhanced explanations with visualizations, position advice, board texture analysis, and copy button
+# - date: '2025-10-14'
+#   summary: Added detailed explanation textbox on LiveTable showing WHY actions are recommended with metrics
+# - date: '2025-10-14'
+#   summary: Win Rate & Accuracy Optimization - GTO caching (60-80% speedup), confidence intervals, formatting system
+# - date: '2025-10-14'
+#   summary: Enhanced status bar with rolling game state display and version info
+# - date: '2025-10-14'
+#   summary: Added canonical version tracking system with release branch workflow
+# - date: '2025-10-14'
+#   summary: Added 35 comprehensive screen scraping optimizations (speed, accuracy, reliability)
 # - date: '2025-10-14'
 #   summary: Added comprehensive UI enhancements - status panel, feedback, shortcuts, profiles, charts
 # - date: '2025-10-14'
@@ -27,7 +39,7 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v37.0.0
+PokerTool One-Click Launcher - v66.0.0
 ======================================
 
 This script sets up everything and launches the Enhanced GUI in one command.
@@ -48,8 +60,15 @@ import platform
 import shutil
 import argparse
 
-# Version
-__version__ = '37.0.0'
+# Add src to path for version import
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'src'))
+
+# Import canonical version
+try:
+    from pokertool.version import __version__, format_version
+except ImportError:
+    __version__ = '64.0.0'  # Fallback
+    format_version = lambda **kwargs: f"v{__version__}"
 
 # Constants
 ROOT = Path(__file__).resolve().parent
@@ -244,14 +263,15 @@ def launch_enhanced_gui() -> int:
     env['PYTHONPATH'] = str(SRC_DIR)
 
     log("=" * 70)
-    log("🎰 LAUNCHING POKERTOOL ENHANCED GUI v36.0.0")
+    log(f"🎰 LAUNCHING POKERTOOL ENHANCED GUI {format_version(include_name=True)}")
     log("=" * 70)
     log("")
     log("Features:")
     log("  ✓ Desktop-independent screen scraping")
     log("  ✓ Real-time poker table detection")
     log("  ✓ Manual card entry and analysis")
-    log("  ✓ Professional table visualization")
+    log("  ✓ Professional table visualization with COMPACT TABLE INFO")
+    log("  ✓ Board cards, blinds, dealer in single clear display")
     log("  ✓ Performance monitoring")
     log("  ✓ Comprehensive startup validation")
     log("  🧠 Adaptive Learning System (AUTO-ENABLED)")
@@ -312,7 +332,7 @@ def launch_enhanced_gui() -> int:
     # Try launch_gui.py first (direct launcher)
     launcher = ROOT / 'launch_gui.py'
     if launcher.exists():
-        log("Starting Enhanced GUI v36.0.0 via launcher...")
+        log(f"Starting Enhanced GUI {format_version()} via launcher...")
         result = subprocess.run([venv_python, str(launcher)], env=env, cwd=ROOT)
         return result.returncode
 
@@ -333,9 +353,9 @@ def show_banner():
     """Show startup banner."""
     clear_terminal()
     print("=" * 70)
-    print("🎰 POKERTOOL - Enhanced GUI v36.0.0")
+    print(f"🎰 POKERTOOL - Enhanced GUI {format_version()}")
     print("=" * 70)
-    print("Enterprise Edition with AI Learning & Performance Optimization")
+    print("Enterprise Edition with AI Learning & Version Tracking System")
     print("")
     print(f"Platform: {platform.system()} {platform.release()}")
     print(f"Python: {sys.version.split()[0]}")

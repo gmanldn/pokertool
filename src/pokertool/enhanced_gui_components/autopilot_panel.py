@@ -73,15 +73,14 @@ class AutopilotControlPanel(tk.Frame):
         self._locale_listener_token = register_locale_listener(self.apply_translations)
         self.apply_translations()
 
-        # Set initial UI state to match autopilot active state
-        if self.state.active:
-            self.autopilot_button.config(bg=COLORS["autopilot_active"])
-            self.status_label.config(fg=COLORS["autopilot_active"])
-            self.state.start_time = datetime.now()
-            # Notify parent that autopilot is active on startup
-            if self.on_toggle_autopilot:
-                # Schedule callback after GUI is fully initialized
-                self.after(100, lambda: self.on_toggle_autopilot(True))
+        # Set initial UI state - autopilot is always active
+        self.state.active = True
+        self.state.start_time = datetime.now()
+        self.status_label.config(fg=COLORS["autopilot_active"])
+        # Notify parent that autopilot is active on startup
+        if self.on_toggle_autopilot:
+            # Schedule callback after GUI is fully initialized
+            self.after(100, lambda: self.on_toggle_autopilot(True))
 
         self._on_site_changed()
 
@@ -119,12 +118,8 @@ class AutopilotControlPanel(tk.Frame):
             except tk.TclError:
                 continue
 
-        if self.state.active:
-            self.status_label.config(text=translate("autopilot.status.active"))
-            self.autopilot_button.config(text=translate("autopilot.button.stop"))
-        else:
-            self.status_label.config(text=translate("autopilot.status.inactive"))
-            self.autopilot_button.config(text=translate("autopilot.button.start"))
+        # Autopilot is always active
+        self.status_label.config(text=translate("autopilot.status.active"))
 
         if self.state.last_action_key:
             self.last_action_label.config(text=translate(self.state.last_action_key))
@@ -145,12 +140,12 @@ class AutopilotControlPanel(tk.Frame):
     # UI construction ------------------------------------------------------
     def _build_ui(self) -> None:
         title_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        title_frame.pack(fill="x", pady=10)
+        title_frame.pack(fill="x", pady=3)
 
         title_label = tk.Label(
             title_frame,
             text="",
-            font=FONTS["title"],
+            font=FONTS["heading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
         )
@@ -159,60 +154,54 @@ class AutopilotControlPanel(tk.Frame):
         self._register_translation(title_label, "autopilot.title")
 
         status_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        status_frame.pack(fill="x", pady=5)
+        status_frame.pack(fill="x", pady=2)
 
         self.status_label = tk.Label(
             status_frame,
-            text=translate("autopilot.status.inactive"),
-            font=FONTS["status"],
+            text=translate("autopilot.status.active"),
+            font=FONTS["subheading"],
             bg=COLORS["bg_medium"],
-            fg=COLORS["autopilot_inactive"],
+            fg=COLORS["autopilot_active"],
         )
         self.status_label.pack()
-        
+
+        # Always-On indicator
+        always_on_label = tk.Label(
+            status_frame,
+            text="🔒 ALWAYS ACTIVE",
+            font=("Arial", 9, "bold"),
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_success"],
+        )
+        always_on_label.pack(pady=2)
+
         # Table Active Indicator
         table_indicator_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        table_indicator_frame.pack(fill="x", pady=5)
-        
+        table_indicator_frame.pack(fill="x", pady=3)
+
         self.table_indicator = tk.Label(
             table_indicator_frame,
             text="● Table: Not Detected",
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_secondary"],
         )
         self.table_indicator.pack()
 
-        self.autopilot_button = tk.Button(
-            self,
-            text=translate("autopilot.button.start"),
-            font=FONTS["autopilot"],
-            bg=COLORS["autopilot_inactive"],
-            fg="#000000",  # Black text for better visibility
-            activebackground=COLORS["autopilot_active"],
-            activeforeground="#000000",  # Black text on active too
-            relief=tk.RAISED,
-            bd=5,
-            width=20,
-            height=3,
-            command=self._toggle_autopilot,
-        )
-        self.autopilot_button.pack(pady=20)
-
         settings_frame = tk.LabelFrame(
             self,
             text=translate("autopilot.settings.title"),
-            font=FONTS["heading"],
+            font=FONTS["subheading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             relief=tk.RAISED,
-            bd=2,
+            bd=1,
         )
-        settings_frame.pack(fill="x", padx=10, pady=10)
+        settings_frame.pack(fill="x", padx=8, pady=5)
         self._register_translation(settings_frame, "autopilot.settings.title")
 
         site_frame = tk.Frame(settings_frame, bg=COLORS["bg_medium"])
-        site_frame.pack(fill="x", padx=10, pady=5)
+        site_frame.pack(fill="x", padx=8, pady=3)
 
         site_label = tk.Label(
             site_frame,
@@ -249,7 +238,7 @@ class AutopilotControlPanel(tk.Frame):
         site_combo.set(self.state.site)
 
         strategy_frame = tk.Frame(settings_frame, bg=COLORS["bg_medium"])
-        strategy_frame.pack(fill="x", padx=10, pady=5)
+        strategy_frame.pack(fill="x", padx=8, pady=3)
 
         strategy_label = tk.Label(
             strategy_frame,
@@ -276,12 +265,12 @@ class AutopilotControlPanel(tk.Frame):
             settings_frame,
             text=translate("autopilot.settings.auto_detect"),
             variable=self.auto_detect_var,
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_light"],
         )
-        auto_detect_cb.pack(anchor="w", padx=10, pady=2)
+        auto_detect_cb.pack(anchor="w", padx=8, pady=1)
         self._register_translation(auto_detect_cb, "autopilot.settings.auto_detect")
 
         self.auto_scraper_var = tk.BooleanVar(value=True)
@@ -289,12 +278,12 @@ class AutopilotControlPanel(tk.Frame):
             settings_frame,
             text=translate("autopilot.settings.auto_scraper"),
             variable=self.auto_scraper_var,
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_light"],
         )
-        auto_scraper_cb.pack(anchor="w", padx=10, pady=2)
+        auto_scraper_cb.pack(anchor="w", padx=8, pady=1)
         self._register_translation(auto_scraper_cb, "autopilot.settings.auto_scraper")
 
         self.continuous_update_var = tk.BooleanVar(value=True)
@@ -302,12 +291,12 @@ class AutopilotControlPanel(tk.Frame):
             settings_frame,
             text=translate("autopilot.settings.continuous_updates"),
             variable=self.continuous_update_var,
-            font=FONTS["body"],
+            font=("Arial", 10),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_light"],
         )
-        continuous_update_cb.pack(anchor="w", padx=10, pady=2)
+        continuous_update_cb.pack(anchor="w", padx=8, pady=1)
         self._register_translation(continuous_update_cb, "autopilot.settings.continuous_updates")
 
         # GTO analysis is now auto-integrated (always enabled)
@@ -316,17 +305,17 @@ class AutopilotControlPanel(tk.Frame):
         stats_frame = tk.LabelFrame(
             self,
             text=translate("autopilot.stats.title"),
-            font=FONTS["heading"],
+            font=FONTS["subheading"],
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
             relief=tk.RAISED,
-            bd=2,
+            bd=1,
         )
-        stats_frame.pack(fill="x", padx=10, pady=10)
+        stats_frame.pack(fill="x", padx=8, pady=5)
         self._register_translation(stats_frame, "autopilot.stats.title")
 
         stats_grid = tk.Frame(stats_frame, bg=COLORS["bg_medium"])
-        stats_grid.pack(fill="x", padx=10, pady=10)
+        stats_grid.pack(fill="x", padx=8, pady=5)
 
         tables_header = tk.Label(
             stats_grid,
@@ -401,7 +390,7 @@ class AutopilotControlPanel(tk.Frame):
         self.profit_label.grid(row=1, column=3, sticky="w")
 
         action_frame = tk.Frame(self, bg=COLORS["bg_medium"])
-        action_frame.pack(fill="x", padx=10, pady=5)
+        action_frame.pack(fill="x", padx=8, pady=3)
 
         last_action_label = tk.Label(
             action_frame,
@@ -424,20 +413,9 @@ class AutopilotControlPanel(tk.Frame):
 
     # Interaction ----------------------------------------------------------
     def _toggle_autopilot(self) -> None:
-        self.state.active = not self.state.active
-
-        if self.state.active:
-            self.state.start_time = datetime.now()
-            self.autopilot_button.config(bg=COLORS["autopilot_active"])
-            self.status_label.config(fg=COLORS["autopilot_active"])
-        else:
-            self.autopilot_button.config(bg=COLORS["autopilot_inactive"])
-            self.status_label.config(fg=COLORS["autopilot_inactive"])
-
-        self.apply_translations()
-
-        if self.on_toggle_autopilot:
-            self.on_toggle_autopilot(self.state.active)
+        """Autopilot is always on - toggle disabled."""
+        # No-op: Autopilot cannot be toggled off
+        pass
 
     def _on_site_changed(self, _event=None) -> None:
         selected_site = self.site_var.get()
@@ -446,37 +424,15 @@ class AutopilotControlPanel(tk.Frame):
             self.on_settings_changed("site", selected_site)
 
     def _start_animation(self) -> None:
-        if not self.animation_running:
-            self.animation_running = True
-            self._animation_id = self.after(500, self._animate_status)
+        # Animation disabled for better performance - keep status color static
+        self.animation_running = False
+        # Set status label to active color (no blinking)
+        if hasattr(self, 'status_label'):
+            self.status_label.config(fg=COLORS["autopilot_active"])
 
     def _animate_status(self) -> None:
-        if not self.animation_running:
-            return
-
-        try:
-            if not self.winfo_exists():
-                self.animation_running = False
-                return
-
-            if self.state.active:
-                current_color = self.status_label.cget("fg")
-                new_color = (
-                    COLORS["autopilot_standby"]
-                    if current_color == COLORS["autopilot_active"]
-                    else COLORS["autopilot_active"]
-                )
-                self.status_label.config(fg=new_color)
-
-            if self.animation_running and self.winfo_exists():
-                self._animation_id = self.after(500, self._animate_status)
-        except tk.TclError:
-            self.animation_running = False
-            self._animation_id = None
-        except Exception as exc:
-            print(f"Animation error: {exc}")
-            self.animation_running = False
-            self._animation_id = None
+        # Animation disabled for better performance
+        pass
 
     def update_statistics(self, stats_update: Dict[str, Any]) -> None:
         if "tables_detected" in stats_update:

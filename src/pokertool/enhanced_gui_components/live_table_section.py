@@ -13,11 +13,34 @@ from typing import Any, Optional, Dict, List
 
 from .style import COLORS, FONTS
 
+# Performance telemetry
+try:
+    from ..performance_telemetry import telemetry_section, telemetry_instant
+    TELEMETRY_AVAILABLE = True
+except ImportError:
+    TELEMETRY_AVAILABLE = False
+    # No-op fallback
+    from contextlib import contextmanager
+    @contextmanager
+    def telemetry_section(cat, op, det=None):
+        yield
+    def telemetry_instant(cat, op, det=None):
+        pass
+
+# Import detailed advice explainer
+try:
+    from ..detailed_advice_explainer import get_detailed_explainer
+    EXPLAINER_AVAILABLE = True
+except ImportError:
+    EXPLAINER_AVAILABLE = False
+    print("[LiveTableSection] Warning: detailed_advice_explainer not available")
+
 
 class LiveTableSection:
     """Encapsulates the LiveTable tab with real-time scraper data display."""
 
     def __init__(self, host: Any, parent: tk.Misc, *, modules_loaded: bool) -> None:
+        telemetry_instant('ui', 'live_table_section_init')
         print("[LiveTableSection] __init__ called")
         self.host = host
         self.parent = parent
@@ -36,6 +59,7 @@ class LiveTableSection:
         self.dealer_button_label: Optional[tk.Label] = None
         self.table_status_label: Optional[tk.Label] = None
         self.recommended_action_label: Optional[tk.Label] = None
+        self.detailed_explanation_label: Optional[tk.Label] = None
         self.my_cards_labels: List[tk.Label] = []
 
         # User's handle for position identification
@@ -50,9 +74,10 @@ class LiveTableSection:
         self.status_lights: Dict[str, tk.Label] = {}
 
         self._build_ui()
-        self._start_live_updates()  # Start updates FIRST
-        # Delay handle prompt to after GUI is fully shown (3 seconds)
-        self.parent.after(3000, self._prompt_for_handle)
+        # Use main thread callbacks for thread-safe updates (fixes segfault issue)
+        self.parent.after(1000, self._start_main_thread_updates)
+        # Handle prompt disabled - user can configure handle in settings if needed
+        # self.parent.after(3000, self._prompt_for_handle)
 
     # ------------------------------------------------------------------
     def _prompt_for_handle(self) -> None:
@@ -77,7 +102,12 @@ class LiveTableSection:
             self.user_handle = ""  # Use empty if prompt fails
 
     def _build_ui(self) -> None:
-        print("[LiveTableSection] _build_ui called")
+        with telemetry_section('ui', 'live_table_build_ui'):
+            print("[LiveTableSection] _build_ui called")
+            self._build_ui_internal()
+
+    def _build_ui_internal(self) -> None:
+        """Internal UI building implementation."""
         header_frame = tk.Frame(self.parent, bg=COLORS["bg_dark"])
         header_frame.pack(fill="x", pady=(20, 10))
 
@@ -225,114 +255,138 @@ class LiveTableSection:
         )
         self.tournament_label.pack(side="right", padx=(10, 0))
 
-        # Board cards section
-        board_frame = tk.LabelFrame(
+        # COMPACT TABLE INFO PANEL - Combines board, blinds, pot, and dealer
+        table_info_frame = tk.LabelFrame(
             self.live_data_frame,
-            text="Board Cards",
-            font=FONTS["subheading"],
+            text="🎴 TABLE INFO",
+            font=("Arial", 14, "bold"),
             bg=COLORS["bg_medium"],
             fg=COLORS["text_primary"],
+            relief=tk.RAISED,
+            bd=3,
         )
-        board_frame.pack(fill="x", pady=(0, 10))
+        table_info_frame.pack(fill="x", pady=(0, 10))
 
-        board_cards_frame = tk.Frame(board_frame, bg=COLORS["bg_medium"])
-        board_cards_frame.pack(pady=5)
+        # Main container with padding
+        info_container = tk.Frame(table_info_frame, bg=COLORS["bg_medium"])
+        info_container.pack(fill="x", padx=15, pady=15)
+
+        # Top row: Blinds/Ante info on left, Dealer button on right
+        top_row = tk.Frame(info_container, bg=COLORS["bg_medium"])
+        top_row.pack(fill="x", pady=(0, 10))
+
+        # Left side: Blinds and Ante
+        blinds_container = tk.Frame(top_row, bg=COLORS["bg_light"], relief=tk.GROOVE, bd=2)
+        blinds_container.pack(side="left", padx=(0, 10))
+
+        tk.Label(
+            blinds_container,
+            text="BLINDS:",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(10, 5))
+
+        self.blinds_label = tk.Label(
+            blinds_container,
+            text="$-/$-",
+            font=("Arial", 14, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["accent_warning"],
+        )
+        self.blinds_label.pack(side="left", padx=(0, 15))
+
+        tk.Label(
+            blinds_container,
+            text="ANTE:",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(0, 5))
+
+        self.ante_label = tk.Label(
+            blinds_container,
+            text="$-",
+            font=("Arial", 14, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["accent_warning"],
+        )
+        self.ante_label.pack(side="left", padx=(0, 10))
+
+        # Right side: Dealer button
+        dealer_container = tk.Frame(top_row, bg=COLORS["bg_light"], relief=tk.GROOVE, bd=2)
+        dealer_container.pack(side="right")
+
+        tk.Label(
+            dealer_container,
+            text="🔘 DEALER:",
+            font=("Arial", 10, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(10, 5))
+
+        self.dealer_button_label = tk.Label(
+            dealer_container,
+            text="Seat -",
+            font=("Arial", 14, "bold"),
+            bg=COLORS["bg_light"],
+            fg=COLORS["accent_info"],
+        )
+        self.dealer_button_label.pack(side="left", padx=(0, 10))
+
+        # Middle row: Board cards (centered and prominent)
+        board_row = tk.Frame(info_container, bg=COLORS["bg_medium"])
+        board_row.pack(fill="x", pady=(0, 10))
+
+        tk.Label(
+            board_row,
+            text="BOARD:",
+            font=("Arial", 11, "bold"),
+            bg=COLORS["bg_medium"],
+            fg=COLORS["text_primary"],
+        ).pack(side="left", padx=(0, 10))
+
+        board_cards_frame = tk.Frame(board_row, bg="#1a1a1a", relief=tk.SUNKEN, bd=2)
+        board_cards_frame.pack(side="left", padx=(0, 0))
 
         self.board_labels = []
         for i in range(5):  # 5 community cards max
             card_label = tk.Label(
                 board_cards_frame,
                 text="[ ]",
-                font=("Courier", 12, "bold"),
-                bg=COLORS["bg_light"],
-                fg=COLORS["text_primary"],
+                font=("Courier", 16, "bold"),
+                bg="#ffffff",
+                fg="#000000",
                 width=4,
                 relief=tk.RAISED,
-                bd=1,
+                bd=2,
             )
-            card_label.pack(side="left", padx=2)
+            card_label.pack(side="left", padx=3, pady=5)
             self.board_labels.append(card_label)
 
-        # Game info section
-        game_info_frame = tk.Frame(self.live_data_frame, bg=COLORS["bg_dark"])
-        game_info_frame.pack(fill="x", pady=(0, 10))
+        # Bottom row: Pot display (centered and large)
+        pot_row = tk.Frame(info_container, bg=COLORS["bg_medium"])
+        pot_row.pack(fill="x")
 
-        # Blinds and ante
-        blinds_frame = tk.Frame(game_info_frame, bg=COLORS["bg_dark"])
-        blinds_frame.pack(side="left", fill="x", expand=True)
-
-        tk.Label(
-            blinds_frame,
-            text="Blinds:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["text_primary"],
-        ).pack(side="left")
-
-        self.blinds_label = tk.Label(
-            blinds_frame,
-            text="$-/$-",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["accent_warning"],
-        )
-        self.blinds_label.pack(side="left", padx=(5, 15))
+        pot_container = tk.Frame(pot_row, bg=COLORS["bg_light"], relief=tk.GROOVE, bd=3)
+        pot_container.pack(expand=True)
 
         tk.Label(
-            blinds_frame,
-            text="Ante:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
+            pot_container,
+            text="💰 POT:",
+            font=("Arial", 12, "bold"),
+            bg=COLORS["bg_light"],
             fg=COLORS["text_primary"],
-        ).pack(side="left")
-
-        self.ante_label = tk.Label(
-            blinds_frame,
-            text="$-",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["accent_warning"],
-        )
-        self.ante_label.pack(side="left", padx=(5, 15))
-
-        # Pot display
-        tk.Label(
-            blinds_frame,
-            text="Pot:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["text_primary"],
-        ).pack(side="left")
+        ).pack(side="left", padx=(15, 5))
 
         self.pot_label = tk.Label(
-            blinds_frame,
+            pot_container,
             text="$0",
-            font=("Helvetica", 11, "bold"),
-            bg=COLORS["bg_dark"],
+            font=("Arial", 18, "bold"),
+            bg=COLORS["bg_light"],
             fg=COLORS["accent_success"],
         )
-        self.pot_label.pack(side="left", padx=(5, 15))
-
-        # Dealer button
-        dealer_frame = tk.Frame(game_info_frame, bg=COLORS["bg_dark"])
-        dealer_frame.pack(side="right")
-
-        tk.Label(
-            dealer_frame,
-            text="Dealer:",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["text_primary"],
-        ).pack(side="left")
-
-        self.dealer_button_label = tk.Label(
-            dealer_frame,
-            text="Seat -",
-            font=FONTS["body"],
-            bg=COLORS["bg_dark"],
-            fg=COLORS["accent_info"],
-        )
-        self.dealer_button_label.pack(side="left", padx=(5, 0))
+        self.pot_label.pack(side="left", padx=(0, 15))
 
         # Graphical poker table section
         table_canvas_frame = tk.Frame(self.live_data_frame, bg=COLORS["table_felt"])
@@ -394,7 +448,7 @@ class LiveTableSection:
             relief=tk.RAISED,
             bd=3,
         )
-        action_frame.pack(fill="both", expand=True, pady=(0, 10))
+        action_frame.pack(fill="x", pady=(0, 10))
 
         self.recommended_action_label = tk.Label(
             action_frame,
@@ -409,7 +463,315 @@ class LiveTableSection:
             padx=20,
             pady=20,
         )
-        self.recommended_action_label.pack(fill="both", expand=True, padx=10, pady=10)
+        self.recommended_action_label.pack(fill="x", padx=10, pady=10)
+
+        # Detailed explanation box with header and copy button
+        explanation_frame = tk.LabelFrame(
+            self.live_data_frame,
+            text="",
+            font=FONTS["heading"],
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_info"],
+            relief=tk.RAISED,
+            bd=3,
+        )
+        explanation_frame.pack(fill="both", expand=True, pady=(0, 10))
+
+        # Header row with title and copy button
+        header_frame = tk.Frame(explanation_frame, bg=COLORS["bg_medium"])
+        header_frame.pack(fill="x", padx=5, pady=(5, 0))
+
+        tk.Label(
+            header_frame,
+            text="📖 DETAILED EXPLANATION - Why This Action?",
+            font=FONTS["heading"],
+            bg=COLORS["bg_medium"],
+            fg=COLORS["accent_info"],
+        ).pack(side="left")
+
+        copy_button = tk.Button(
+            header_frame,
+            text="📋 Copy",
+            font=("Arial", 9),
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+            relief=tk.RAISED,
+            bd=1,
+            padx=10,
+            pady=2,
+            command=self._copy_explanation_to_clipboard,
+            cursor="hand2"
+        )
+        copy_button.pack(side="right", padx=5)
+
+        # Create a text widget with scrollbar for better readability
+        explanation_container = tk.Frame(explanation_frame, bg=COLORS["bg_dark"])
+        explanation_container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Scrollbar
+        explanation_scrollbar = tk.Scrollbar(explanation_container)
+        explanation_scrollbar.pack(side="right", fill="y")
+
+        # Text widget for detailed explanation
+        self.detailed_explanation_text = tk.Text(
+            explanation_container,
+            font=("Arial", 11),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["text_primary"],
+            wrap="word",
+            relief=tk.SUNKEN,
+            bd=2,
+            padx=15,
+            pady=15,
+            height=12,
+            state="disabled",  # Read-only
+            yscrollcommand=explanation_scrollbar.set,
+        )
+        self.detailed_explanation_text.pack(side="left", fill="both", expand=True)
+        explanation_scrollbar.config(command=self.detailed_explanation_text.yview)
+
+        # Visual metrics panel
+        visual_metrics_frame = tk.Frame(explanation_frame, bg=COLORS["bg_dark"])
+        visual_metrics_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        # Hand strength gauge
+        strength_frame = tk.LabelFrame(
+            visual_metrics_frame,
+            text="Hand Strength",
+            font=("Arial", 9, "bold"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["text_secondary"]
+        )
+        strength_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+
+        self.strength_canvas = tk.Canvas(
+            strength_frame,
+            height=25,
+            bg=COLORS["bg_dark"],
+            highlightthickness=0
+        )
+        self.strength_canvas.pack(fill="x", padx=5, pady=5)
+
+        # EV comparison chart
+        ev_frame = tk.LabelFrame(
+            visual_metrics_frame,
+            text="EV Comparison",
+            font=("Arial", 9, "bold"),
+            bg=COLORS["bg_dark"],
+            fg=COLORS["text_secondary"]
+        )
+        ev_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        self.ev_canvas = tk.Canvas(
+            ev_frame,
+            height=60,
+            bg=COLORS["bg_dark"],
+            highlightthickness=0
+        )
+        self.ev_canvas.pack(fill="x", padx=5, pady=5)
+
+        # Configure text tags for formatting with enhanced color coding
+        self.detailed_explanation_text.tag_config(
+            "action_header",
+            font=("Arial", 12, "bold"),
+            foreground=COLORS["accent_success"],
+            spacing1=5
+        )
+        self.detailed_explanation_text.tag_config(
+            "why_header",
+            font=("Arial", 11, "bold"),
+            foreground=COLORS["accent_info"],
+            spacing1=5
+        )
+        self.detailed_explanation_text.tag_config(
+            "metrics_header",
+            font=("Arial", 11, "bold"),
+            foreground=COLORS["accent_warning"],
+            spacing1=5
+        )
+        self.detailed_explanation_text.tag_config(
+            "alternatives_header",
+            font=("Arial", 11, "bold"),
+            foreground="#9C27B0",  # Purple for alternatives
+            spacing1=5
+        )
+        self.detailed_explanation_text.tag_config(
+            "metric_value",
+            font=("Arial", 10, "bold"),
+            foreground=COLORS["accent_success"]
+        )
+        self.detailed_explanation_text.tag_config(
+            "warning_text",
+            foreground=COLORS["accent_danger"],
+            font=("Arial", 10, "bold")
+        )
+        self.detailed_explanation_text.tag_config(
+            "positive_ev",
+            foreground="#00C853",
+            font=("Arial", 10, "bold")
+        )
+        self.detailed_explanation_text.tag_config(
+            "negative_ev",
+            foreground="#DD2C00",
+            font=("Arial", 10, "bold")
+        )
+        self.detailed_explanation_text.tag_config(
+            "section_content",
+            font=("Arial", 10),
+            lmargin1=15,
+            lmargin2=15
+        )
+
+    def _copy_explanation_to_clipboard(self) -> None:
+        """Copy the detailed explanation text to clipboard."""
+        try:
+            if hasattr(self, 'detailed_explanation_text'):
+                # Get all text from the widget
+                explanation = self.detailed_explanation_text.get("1.0", "end-1c")
+
+                # Copy to clipboard
+                self.parent.clipboard_clear()
+                self.parent.clipboard_append(explanation)
+
+                # Show brief feedback (button text change)
+                # Find the copy button and update its text temporarily
+                for widget in self.parent.winfo_children():
+                    if isinstance(widget, tk.LabelFrame):
+                        for child in widget.winfo_children():
+                            if isinstance(child, tk.Frame):
+                                for btn in child.winfo_children():
+                                    if isinstance(btn, tk.Button) and "Copy" in btn['text']:
+                                        original_text = btn['text']
+                                        btn.config(text="✓ Copied!")
+                                        self.parent.after(2000, lambda: btn.config(text=original_text))
+                                        break
+
+                print("[LiveTableSection] Explanation copied to clipboard")
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error copying to clipboard: {e}")
+
+    def _update_detailed_explanation(self, table_data: Dict) -> None:
+        """Update the detailed explanation text with advice reasoning."""
+        try:
+            if not EXPLAINER_AVAILABLE:
+                # Show a message if explainer is not available
+                explanation = (
+                    "⏳ Detailed explanations are loading...\n\n"
+                    "The system will provide comprehensive reasoning once autopilot is active."
+                )
+                self._set_explanation_text(explanation)
+                return
+
+            # Get advice data from table_data if available
+            advice_data = table_data.get('advice_data')
+
+            if not advice_data:
+                # Create default message when no advice is available
+                explanation = (
+                    "⏳ Waiting for game state...\n\n"
+                    "Once autopilot detects a decision point, detailed advice will appear here explaining:\n"
+                    "  • What action to take and why\n"
+                    "  • Key metrics supporting the decision\n"
+                    "  • Alternative actions and their expected values\n"
+                    "  • Strategic context for the situation"
+                )
+                self._set_explanation_text(explanation)
+                return
+
+            # Generate detailed explanation using the explainer
+            explainer = get_detailed_explainer()
+            explanation = explainer.generate_detailed_explanation(advice_data)
+            self._set_explanation_text(explanation)
+
+        except Exception as e:
+            import traceback
+            print(f"[LiveTableSection] Error updating explanation: {e}")
+            print(traceback.format_exc())
+            self._set_explanation_text(
+                f"⚠️ Error generating explanation: {str(e)}\n\n"
+                "Please check logs for details."
+            )
+
+    def _set_explanation_text(self, text: str) -> None:
+        """Update the text widget with new explanation text."""
+        if not hasattr(self, 'detailed_explanation_text'):
+            return
+
+        try:
+            # Enable editing temporarily
+            self.detailed_explanation_text.config(state="normal")
+
+            # Clear existing content
+            self.detailed_explanation_text.delete("1.0", "end")
+
+            # Insert new text
+            self.detailed_explanation_text.insert("1.0", text)
+
+            # Apply formatting to special sections
+            self._apply_explanation_formatting()
+
+            # Disable editing again (read-only)
+            self.detailed_explanation_text.config(state="disabled")
+
+            # Scroll to top
+            self.detailed_explanation_text.see("1.0")
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error setting explanation text: {e}")
+
+    def _apply_explanation_formatting(self) -> None:
+        """Apply text formatting tags to the explanation text with enhanced color coding."""
+        try:
+            # Get all text
+            content = self.detailed_explanation_text.get("1.0", "end")
+            lines = content.split('\n')
+
+            # Apply formatting line by line
+            for line_num, line in enumerate(lines, start=1):
+                start_idx = f"{line_num}.0"
+                end_idx = f"{line_num}.end"
+
+                # Section headers with specific colors
+                if line.startswith('💡'):
+                    self.detailed_explanation_text.tag_add("action_header", start_idx, end_idx)
+                elif line.startswith('📊 WHY:'):
+                    self.detailed_explanation_text.tag_add("why_header", start_idx, end_idx)
+                elif line.startswith('📈 METRICS:'):
+                    self.detailed_explanation_text.tag_add("metrics_header", start_idx, end_idx)
+                elif line.startswith('🔄 ALTERNATIVES:'):
+                    self.detailed_explanation_text.tag_add("alternatives_header", start_idx, end_idx)
+
+                # Highlight metric values (percentages and dollar amounts)
+                import re
+
+                # Find all percentages
+                for match in re.finditer(r'\d+\.?\d*%', line):
+                    match_start = f"{line_num}.{match.start()}"
+                    match_end = f"{line_num}.{match.end()}"
+                    self.detailed_explanation_text.tag_add("metric_value", match_start, match_end)
+
+                # Find all dollar amounts
+                for match in re.finditer(r'\$[\d,]+\.?\d*', line):
+                    match_start = f"{line_num}.{match.start()}"
+                    match_end = f"{line_num}.{match.end()}"
+                    value_str = match.group()
+                    # Color code based on positive/negative
+                    if '+' in line[:match.start()]:
+                        self.detailed_explanation_text.tag_add("positive_ev", match_start, match_end)
+                    elif '-' in line[:match.start()] or 'loses' in line.lower() or 'negative' in line.lower():
+                        self.detailed_explanation_text.tag_add("negative_ev", match_start, match_end)
+                    else:
+                        self.detailed_explanation_text.tag_add("metric_value", match_start, match_end)
+
+                # Highlight warnings
+                if '⚠️' in line or 'warning' in line.lower() or 'caution' in line.lower():
+                    self.detailed_explanation_text.tag_add("warning_text", start_idx, end_idx)
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error applying formatting: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _draw_poker_table(self) -> None:
         """Draw the oval poker table on the canvas."""
@@ -615,22 +977,66 @@ class LiveTableSection:
         }
 
 
-    def _start_live_updates(self) -> None:
-        """Start the live data update thread."""
-        print("[LiveTableSection] _start_live_updates called")
+    def _start_main_thread_updates(self) -> None:
+        """Start thread-safe live data updates using main thread callbacks."""
+        print("[LiveTableSection] Starting main thread updates (thread-safe)")
+        self._stop_updates = False
+        self._update_count = 0
+        self._last_status_log = 0.0
+        self._main_thread_update_loop()
+
+    def _main_thread_update_loop(self) -> None:
+        """Main thread update loop using after() callbacks - THREAD SAFE."""
+        if self._stop_updates:
+            print("[LiveTableSection] Updates stopped")
+            return
+
         try:
-            if self._update_thread is None or not self._update_thread.is_alive():
-                print("[LiveTableSection] Starting update thread...")
-                self._stop_updates = False
-                self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-                self._update_thread.start()
-                print(f"[LiveTableSection] Update thread started: {self._update_thread.is_alive()}")
+            # Get live data from the scraper (this should be thread-safe)
+            if hasattr(self.host, 'get_live_table_data'):
+                table_data = self.host.get_live_table_data()
+                if table_data:
+                    self._update_count += 1
+
+                    # Log comprehensive status every 5 seconds
+                    import time
+                    current_time = time.time()
+                    if current_time - self._last_status_log >= 5.0:
+                        self._last_status_log = current_time
+                        players_count = len(table_data.get('players', {}))
+                        active_players = table_data.get('active_players', 0)
+                        confidence = table_data.get('confidence', 0)
+                        data_source = table_data.get('data_source', 'unknown')
+                        pot = table_data.get('pot', 0)
+                        stage = table_data.get('stage', 'unknown')
+
+                        print(f"\n{'='*80}")
+                        print(f"[LiveTable Status] Update #{self._update_count}")
+                        print(f"  Data Source: {data_source.upper()}")
+                        print(f"  Confidence: {confidence:.1f}%")
+                        print(f"  Active Players: {active_players}/{players_count} seats")
+                        print(f"  Pot: ${pot:.2f}")
+                        print(f"  Stage: {stage.upper()}")
+                        print(f"{'='*80}\n")
+
+                    # Update display (safe - we're on main thread)
+                    self._update_live_display(table_data)
+                elif self._update_count % 20 == 0:
+                    print(f"[LiveTable] No data available (update #{self._update_count})")
             else:
-                print("[LiveTableSection] Update thread already running")
+                print(f"[LiveTable] ERROR: Host does not have get_live_table_data method!")
         except Exception as e:
-            print(f"[LiveTableSection] ERROR starting update thread: {e}")
+            print(f"[LiveTable] Update error: {e}")
             import traceback
             traceback.print_exc()
+
+        # Schedule next update (500ms for responsive feel)
+        self.parent.after(500, self._main_thread_update_loop)
+
+    def _start_live_updates(self) -> None:
+        """DEPRECATED: Old background thread method - kept for backward compatibility."""
+        print("[LiveTableSection] _start_live_updates called - redirecting to thread-safe method")
+        self._start_main_thread_updates()
 
     def _update_loop(self) -> None:
         """Main update loop for live table data."""
@@ -837,13 +1243,18 @@ class LiveTableSection:
                     fg=status_color
                 )
 
-            # Update board cards
+            # Update board cards with suit colors
             board_cards = table_data.get('board_cards', [])
             for i, card_label in enumerate(self.board_labels):
                 if i < len(board_cards) and board_cards[i]:
-                    card_label.config(text=board_cards[i], fg=COLORS["accent_success"])
+                    card = board_cards[i]
+                    # Determine card color based on suit
+                    card_color = "#000000"  # Default black
+                    if '♥' in card or '♦' in card or 'h' in card.lower() or 'd' in card.lower():
+                        card_color = "#dc2626"  # Red for hearts/diamonds
+                    card_label.config(text=card, fg=card_color, bg="#ffffff")
                 else:
-                    card_label.config(text="[ ]", fg=COLORS["text_secondary"])
+                    card_label.config(text="[ ]", fg="#666666", bg="#cccccc")
 
             # Update blinds and ante
             if self.blinds_label:
@@ -1057,10 +1468,172 @@ class LiveTableSection:
 
                 self.recommended_action_label.config(text=action, fg=action_color)
 
+            # Update detailed explanation
+            self._update_detailed_explanation(table_data)
+
+            # Update visual metrics
+            self._update_visual_metrics(table_data)
+
         except Exception as e:
             import traceback
             print(f"Display update error: {e}")
             print(f"Traceback: {traceback.format_exc()}")
+
+    def _update_visual_metrics(self, table_data: Dict) -> None:
+        """Update visual metrics displays (hand strength gauge and EV chart)."""
+        try:
+            # Get advice data
+            advice_data = table_data.get('advice_data')
+            if not advice_data or not advice_data.has_data:
+                return
+
+            # Update hand strength gauge
+            self._draw_hand_strength_gauge(advice_data)
+
+            # Update EV comparison chart
+            self._draw_ev_comparison_chart(advice_data)
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error updating visual metrics: {e}")
+
+    def _draw_hand_strength_gauge(self, advice_data) -> None:
+        """Draw hand strength gauge as a progress bar."""
+        try:
+            if not hasattr(self, 'strength_canvas'):
+                return
+
+            canvas = self.strength_canvas
+            canvas.delete("all")
+
+            # Get canvas dimensions
+            width = canvas.winfo_width()
+            if width <= 1:
+                width = 300  # Default width
+
+            height = 25
+
+            # Get hand strength (0-100)
+            strength = advice_data.hand_percentile or (advice_data.win_probability * 100 if advice_data.win_probability else 50)
+
+            # Draw background
+            canvas.create_rectangle(0, 0, width, height, fill="#2a2a2a", outline="#444444")
+
+            # Calculate fill width
+            fill_width = (strength / 100) * width
+
+            # Color code based on strength
+            if strength >= 80:
+                fill_color = "#00C853"  # Green
+            elif strength >= 60:
+                fill_color = "#64DD17"  # Light green
+            elif strength >= 40:
+                fill_color = "#FFD600"  # Yellow
+            elif strength >= 20:
+                fill_color = "#FF6D00"  # Orange
+            else:
+                fill_color = "#DD2C00"  # Red
+
+            # Draw fill
+            if fill_width > 0:
+                canvas.create_rectangle(0, 0, fill_width, height, fill=fill_color, outline="")
+
+            # Draw percentage text
+            text = f"{strength:.0f}%"
+            canvas.create_text(
+                width / 2, height / 2,
+                text=text,
+                font=("Arial", 11, "bold"),
+                fill="#FFFFFF"
+            )
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error drawing hand strength gauge: {e}")
+
+    def _draw_ev_comparison_chart(self, advice_data) -> None:
+        """Draw EV comparison as horizontal bar chart."""
+        try:
+            if not hasattr(self, 'ev_canvas'):
+                return
+
+            canvas = self.ev_canvas
+            canvas.delete("all")
+
+            # Get canvas dimensions
+            width = canvas.winfo_width()
+            if width <= 1:
+                width = 300  # Default width
+
+            height = 60
+
+            # Collect EV values for all actions
+            ev_data = []
+            if advice_data.ev_fold is not None:
+                ev_data.append(("Fold", advice_data.ev_fold))
+            if advice_data.ev_call is not None:
+                ev_data.append(("Call", advice_data.ev_call))
+            if advice_data.ev_raise is not None:
+                ev_data.append(("Raise", advice_data.ev_raise))
+
+            if not ev_data:
+                return
+
+            # Find max absolute value for scaling
+            max_abs_ev = max(abs(ev) for _, ev in ev_data)
+            if max_abs_ev == 0:
+                max_abs_ev = 1  # Avoid division by zero
+
+            # Draw bars
+            bar_height = height // len(ev_data)
+            for i, (action, ev) in enumerate(ev_data):
+                y = i * bar_height
+
+                # Calculate bar width (proportional to EV)
+                bar_width = abs(ev) / max_abs_ev * (width * 0.7)
+
+                # Color code
+                if ev > 0:
+                    color = "#00C853"  # Green for positive EV
+                elif ev < 0:
+                    color = "#DD2C00"  # Red for negative EV
+                else:
+                    color = "#888888"  # Gray for zero
+
+                # Draw bar from center
+                center_x = width * 0.15
+                if ev >= 0:
+                    canvas.create_rectangle(
+                        center_x, y + 2,
+                        center_x + bar_width, y + bar_height - 2,
+                        fill=color, outline=""
+                    )
+                else:
+                    canvas.create_rectangle(
+                        center_x - bar_width, y + 2,
+                        center_x, y + bar_height - 2,
+                        fill=color, outline=""
+                    )
+
+                # Draw action label
+                canvas.create_text(
+                    10, y + bar_height // 2,
+                    text=action,
+                    font=("Arial", 8),
+                    fill="#FFFFFF",
+                    anchor="w"
+                )
+
+                # Draw EV value
+                ev_text = f"${ev:+.1f}"
+                canvas.create_text(
+                    width - 10, y + bar_height // 2,
+                    text=ev_text,
+                    font=("Arial", 8, "bold"),
+                    fill=color,
+                    anchor="e"
+                )
+
+        except Exception as e:
+            print(f"[LiveTableSection] Error drawing EV comparison chart: {e}")
 
     # ------------------------------------------------------------------
     def stop_updates(self) -> None:
