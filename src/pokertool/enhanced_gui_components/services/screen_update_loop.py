@@ -81,7 +81,7 @@ class ScreenUpdateLoopMixin:
                         except Exception as e:
                             pass  # Silently continue on errors
                     
-                    time.sleep(1)  # Update every second
+                    time.sleep(2)  # Update every 2 seconds (optimized for performance)
                     
                 except Exception as e:
                     print(f"Update loop error: {e}")

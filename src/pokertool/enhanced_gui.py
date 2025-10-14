@@ -11,7 +11,7 @@ This module provides functionality for enhanced gui operations
 within the PokerTool application ecosystem.
 
 Module: pokertool.enhanced_gui
-Version: 36.0.0
+Version: 67.0.0
 Last Modified: 2025-10-14
 Author: PokerTool Development Team
 License: MIT
@@ -35,7 +35,7 @@ Change Log:
     - v18.0.0 (2025-09-15): Initial implementation
 """
 
-__version__ = '36.0.0'
+__version__ = '67.0.0'
 __author__ = 'PokerTool Development Team'
 __copyright__ = 'Copyright (c) 2025 PokerTool'
 __license__ = 'MIT'
@@ -1376,8 +1376,8 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
                 # Advance to next message
                 self._status_index += 1
 
-            # Schedule next update (rotate every 4 seconds)
-            self.after(4000, self._update_rolling_status)
+            # Schedule next update (rotate every 8 seconds - optimized for performance)
+            self.after(8000, self._update_rolling_status)
 
         except Exception as e:
             # Silently fail to avoid breaking UI
@@ -1491,7 +1491,7 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         except Exception:
             pass
         finally:
-            self._tab_watchdog_id = self.after(10000, self._enforce_tab_visibility)
+            self._tab_watchdog_id = self.after(30000, self._enforce_tab_visibility)  # Check every 30s (optimized)
 
     def _report_tab_failure(self, missing_records: List[Dict[str, Any]], visible_set: set[str]) -> None:
         """Surface a critical error when required tabs cannot be recovered."""
@@ -2399,9 +2399,9 @@ Platform: {sys.platform}
         except Exception as e:
             print(f"Error polling log queue: {e}")
 
-        # Schedule next poll (100ms interval)
+        # Schedule next poll (250ms interval - optimized for performance)
         if hasattr(self, 'log_text_widget') and self.log_text_widget:
-            self.after(100, self._poll_log_queue)
+            self.after(250, self._poll_log_queue)
 
     def _append_log(self, level, message):
         """Append a log message to the log viewer."""
@@ -2475,8 +2475,8 @@ Platform: {sys.platform}
         except Exception as e:
             logging.error(f"Periodic health check failed: {e}")
 
-        # Schedule next check in 60 seconds
-        self.after(60000, self._periodic_health_check)
+        # Schedule next check in 300 seconds (5 minutes - optimized for performance)
+        self.after(300000, self._periodic_health_check)
 
     def _show_validation_report(self):
         """Show the full startup validation report in a popup window."""

@@ -353,7 +353,7 @@ class AnimatedProgressBar(tk.Canvas):
         if abs(self.target_value - self.value) > 0.01:
             self.value += step
             self._update_bar()
-            self.after(16, self._animate_to_target)  # 60fps
+            self.after(33, self._animate_to_target)  # 30fps (optimized for performance)
         else:
             self.value = self.target_value
             self._update_bar()
@@ -393,7 +393,7 @@ class AnimatedNumber(tk.Label):
         if abs(self.target_value - self.current_value) > 0.5:
             self.current_value += step
             self._update_display()
-            self.after(16, self._animate_to_target)  # 60fps
+            self.after(33, self._animate_to_target)  # 30fps (optimized for performance)
         else:
             self.current_value = self.target_value
             self._update_display()

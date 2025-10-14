@@ -43,13 +43,29 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-14',
-    'release_name': 'Dual Window UX & Data Quality',
+    'release_name': 'Performance & Responsiveness',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '67.0.0',
+        'date': '2025-10-14',
+        'name': 'Performance & Responsiveness',
+        'description': '10 interface performance optimizations for faster, smoother UI',
+        'highlights': [
+            'Reduced log polling: 100ms → 250ms (60% fewer operations)',
+            'Optimized screen updates: 1s → 2s interval (50% less overhead)',
+            'Disabled autopilot animation (cleaner, more performant)',
+            'Slower rolling status: 4s → 8s (less distraction)',
+            'Tab watchdog: 10s → 30s (67% fewer checks)',
+            'Health checks: 60s → 300s (80% reduction)',
+            'Compact window animation: 60fps → 30fps (50% less CPU)',
+            'Overall: Faster UI response, smoother interactions',
+        ],
+    },
     {
         'version': '63.0.0',
         'date': '2025-10-14',

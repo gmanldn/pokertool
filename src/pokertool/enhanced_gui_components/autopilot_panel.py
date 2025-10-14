@@ -424,37 +424,15 @@ class AutopilotControlPanel(tk.Frame):
             self.on_settings_changed("site", selected_site)
 
     def _start_animation(self) -> None:
-        if not self.animation_running:
-            self.animation_running = True
-            self._animation_id = self.after(500, self._animate_status)
+        # Animation disabled for better performance - keep status color static
+        self.animation_running = False
+        # Set status label to active color (no blinking)
+        if hasattr(self, 'status_label'):
+            self.status_label.config(fg=COLORS["autopilot_active"])
 
     def _animate_status(self) -> None:
-        if not self.animation_running:
-            return
-
-        try:
-            if not self.winfo_exists():
-                self.animation_running = False
-                return
-
-            if self.state.active:
-                current_color = self.status_label.cget("fg")
-                new_color = (
-                    COLORS["autopilot_standby"]
-                    if current_color == COLORS["autopilot_active"]
-                    else COLORS["autopilot_active"]
-                )
-                self.status_label.config(fg=new_color)
-
-            if self.animation_running and self.winfo_exists():
-                self._animation_id = self.after(500, self._animate_status)
-        except tk.TclError:
-            self.animation_running = False
-            self._animation_id = None
-        except Exception as exc:
-            print(f"Animation error: {exc}")
-            self.animation_running = False
-            self._animation_id = None
+        # Animation disabled for better performance
+        pass
 
     def update_statistics(self, stats_update: Dict[str, Any]) -> None:
         if "tables_detected" in stats_update:
