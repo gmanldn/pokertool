@@ -250,6 +250,12 @@ class IntegratedPokerAssistant(HandHistoryTabMixin, tk.Tk):
         self.geometry('1300x850')  # Optimized compact size for better fit
         self.minsize(1100, 750)     # Flexible minimum for various screens
         self.configure(bg=COLORS['bg_dark'])
+
+        # Set window class for separate dock icon (macOS)
+        try:
+            self.wm_class("PokerTool", "PokerTool")
+        except:
+            pass  # Not all platforms support wm_class
         
         # Maximize window on startup for best tab visibility
         try:
@@ -3508,8 +3514,12 @@ Platform: {sys.platform}
             print("🚀 Launching Compact Live Advice Window...")
             from .compact_live_advice_window import CompactLiveAdviceWindow
 
-            # Create compact window as a Toplevel window (child of main window to avoid crashes)
-            self.compact_advice_window = CompactLiveAdviceWindow(parent=self)
+            # Create compact window with parent for proper lifecycle management
+            # but configure it to appear as separate app in dock
+            self.compact_advice_window = CompactLiveAdviceWindow(
+                parent=self,
+                separate_dock_icon=True  # Request separate dock icon on macOS
+            )
             print("✓ Compact Live Advice Window launched successfully")
 
         except ImportError as e:

@@ -426,7 +426,8 @@ class CompactLiveAdviceWindow:
         position: tuple = None,
         auto_hide: bool = True,
         window_mode: WindowMode = WindowMode.COMPACT,
-        theme_mode: ThemeMode = ThemeMode.LIGHT
+        theme_mode: ThemeMode = ThemeMode.LIGHT,
+        separate_dock_icon: bool = False
     ):
         """
         Initialize compact live advice window.
@@ -437,12 +438,26 @@ class CompactLiveAdviceWindow:
             auto_hide: Auto-fade when inactive
             window_mode: Display mode (ultra-compact, compact, standard, detailed)
             theme_mode: Theme (light, dark, auto)
+            separate_dock_icon: If True, configure for separate dock icon (macOS)
         """
         # Create window
         if parent:
             self.root = tk.Toplevel(parent)
         else:
             self.root = tk.Tk()
+
+        # Configure for separate dock icon on macOS
+        if separate_dock_icon:
+            try:
+                # Set different window class to separate from parent
+                self.root.wm_class("PokerToolAdvice", "PokerToolAdvice")
+
+                # Ungroup from parent window
+                self.root.wm_group("")
+
+                print("  ✓ Compact window configured for separate dock icon")
+            except Exception as e:
+                print(f"  ⚠️  Could not configure separate dock icon: {e}")
 
         # Display mode and theme
         self.window_mode = window_mode
