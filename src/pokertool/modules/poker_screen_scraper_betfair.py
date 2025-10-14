@@ -57,6 +57,16 @@ except ImportError:
     LEARNING_SYSTEM_AVAILABLE = False
     logger.warning("Learning system not available")
 
+# Import OCR ensemble (optional, for enhanced accuracy)
+OCR_ENSEMBLE_AVAILABLE = False
+try:
+    from ..ocr_ensemble import get_ocr_ensemble, FieldType as EnsembleFieldType
+    OCR_ENSEMBLE_AVAILABLE = True
+    logger.info("✓ OCR Ensemble system available")
+except ImportError:
+    logger.debug("OCR Ensemble not available (optional)")
+    EnsembleFieldType = None
+
 
 # ============================================================================
 # Data Models
@@ -712,6 +722,25 @@ class PokerScreenScraper:
             except Exception as e:
                 logger.warning(f"Could not initialize learning system: {e}")
 
+        # Initialize OCR ensemble for enhanced accuracy (optional)
+        self.ocr_ensemble = None
+        self.use_ensemble = False
+        if OCR_ENSEMBLE_AVAILABLE:
+            try:
+                self.ocr_ensemble = get_ocr_ensemble()
+                # Only use ensemble if multiple engines are available
+                if len(self.ocr_ensemble.engines_available) >= 2:
+                    self.use_ensemble = True
+                    logger.info(f"🎯 OCR Ensemble enabled ({len(self.ocr_ensemble.engines_available)} engines)")
+                else:
+                    logger.debug("OCR Ensemble has <2 engines, using single engine mode")
+            except Exception as e:
+                logger.debug(f"OCR Ensemble initialization failed: {e}")
+
+        # Adaptive strategy selection
+        self.strategy_performance = {}  # {extraction_type: {strategy: (successes, total)}}
+        self.adaptive_mode_enabled = True
+
         # State management
         self.calibrated = False
         self.last_state = None
@@ -1229,8 +1258,13 @@ class PokerScreenScraper:
                 return cached
 
             # Get learned best strategies (if available)
-            # ENHANCED: Added more advanced strategies
-            strategy_order = ['bilateral_clahe', 'morphological', 'hybrid', 'bilateral_otsu', 'clahe_otsu', 'adaptive', 'simple']
+            # ENHANCED: Added more advanced strategies + adaptive reordering
+            default_strategy_order = ['bilateral_clahe', 'morphological', 'hybrid', 'bilateral_otsu', 'clahe_otsu', 'adaptive', 'simple']
+
+            # Apply adaptive strategy selection based on historical performance
+            strategy_order = self._select_optimal_strategies('pot', default_strategy_order)
+
+            # Also consider learning system recommendations
             if self.learning_system:
                 learned_strategies = self.learning_system.get_best_ocr_strategies(
                     ExtractionType.POT_SIZE, top_k=6
@@ -1386,6 +1420,20 @@ class PokerScreenScraper:
                             try:
                                 result = float(num_str)
                                 if result > 0 and result < 100000:  # Sanity check
+                                    # Record success for adaptive learning
+                                    self._record_strategy_result('pot', strategy_id, True)
+
+                                    # Optionally validate with ensemble (if available)
+                                    if self.use_ensemble:
+                                        validated_result, ensemble_conf = self._validate_with_ensemble(
+                                            roi, str(result), 'pot'
+                                        )
+                                        try:
+                                            result = float(validated_result)
+                                            logger.debug(f"Ensemble confidence: {ensemble_conf:.2f}")
+                                        except ValueError:
+                                            pass  # Keep original if ensemble gives non-numeric
+
                                     best_result = result
                                     successful_strategy = strategy_id
 
@@ -1405,7 +1453,10 @@ class PokerScreenScraper:
 
                 except Exception as e:
                     logger.debug(f"Strategy {strategy_id} failed: {e}")
-                    # Record failure
+                    # Record failure for adaptive learning
+                    self._record_strategy_result('pot', strategy_id, False)
+
+                    # Also record in learning system if available
                     if self.learning_system:
                         self.learning_system.record_ocr_failure(
                             ExtractionType.POT_SIZE,
@@ -2204,6 +2255,110 @@ class PokerScreenScraper:
 
         state.timestamp = time.time()
         return state
+
+    def _select_optimal_strategies(self, extraction_type: str, default_strategies: List[str]) -> List[str]:
+        """
+        Select optimal OCR strategies based on historical performance.
+
+        ADAPTIVE: Dynamically reorders strategies based on success rates.
+
+        Args:
+            extraction_type: Type of extraction ('pot', 'stack', 'name', etc.)
+            default_strategies: Default strategy order
+
+        Returns:
+            Optimized list of strategies to try
+        """
+        if not self.adaptive_mode_enabled or extraction_type not in self.strategy_performance:
+            return default_strategies
+
+        # Get performance data
+        perf = self.strategy_performance[extraction_type]
+
+        # Calculate success rates
+        strategy_scores = []
+        for strategy in default_strategies:
+            if strategy in perf:
+                successes, total = perf[strategy]
+                if total > 0:
+                    success_rate = successes / total
+                    strategy_scores.append((strategy, success_rate, total))
+                else:
+                    strategy_scores.append((strategy, 0.5, 0))  # Neutral for untried
+            else:
+                strategy_scores.append((strategy, 0.5, 0))  # Neutral for new strategies
+
+        # Sort by success rate (descending), then by total attempts (experience)
+        strategy_scores.sort(key=lambda x: (x[1], x[2]), reverse=True)
+
+        # Return reordered strategies
+        optimized = [s[0] for s in strategy_scores]
+
+        if optimized != default_strategies[:len(optimized)]:
+            logger.debug(f"Adapted strategy order for {extraction_type}: {optimized[:3]}")
+
+        return optimized
+
+    def _record_strategy_result(self, extraction_type: str, strategy: str, success: bool):
+        """Record the success/failure of an OCR strategy for adaptive learning."""
+        if extraction_type not in self.strategy_performance:
+            self.strategy_performance[extraction_type] = {}
+
+        if strategy not in self.strategy_performance[extraction_type]:
+            self.strategy_performance[extraction_type][strategy] = [0, 0]  # [successes, total]
+
+        self.strategy_performance[extraction_type][strategy][1] += 1  # Increment total
+        if success:
+            self.strategy_performance[extraction_type][strategy][0] += 1  # Increment successes
+
+    def _validate_with_ensemble(self, roi: np.ndarray, extracted_value: str, field_type: str) -> Tuple[str, float]:
+        """
+        Validate and potentially correct OCR result using ensemble voting.
+
+        ENHANCED: Uses multiple OCR engines for cross-validation.
+
+        Args:
+            roi: Region of interest image
+            extracted_value: Value extracted by primary OCR
+            field_type: Type of field ('pot', 'stack', 'name', etc.)
+
+        Returns:
+            Tuple of (validated_value, confidence_score)
+        """
+        if not self.use_ensemble or not self.ocr_ensemble:
+            return extracted_value, 0.8  # Return original with default confidence
+
+        try:
+            # Map field types to ensemble FieldType
+            field_type_map = {
+                'pot': EnsembleFieldType.POT_SIZE if EnsembleFieldType else None,
+                'stack': EnsembleFieldType.STACK_SIZE if EnsembleFieldType else None,
+                'bet': EnsembleFieldType.BET_SIZE if EnsembleFieldType else None,
+                'name': EnsembleFieldType.PLAYER_NAME if EnsembleFieldType else None,
+            }
+
+            ensemble_field_type = field_type_map.get(field_type)
+            if not ensemble_field_type:
+                return extracted_value, 0.8
+
+            # Run ensemble OCR
+            result = self.ocr_ensemble.recognize(roi, ensemble_field_type)
+
+            # If ensemble agrees with our extraction, boost confidence
+            if result.text.strip().lower() == extracted_value.strip().lower():
+                return extracted_value, min(result.confidence * 1.2, 1.0)
+
+            # If ensemble has higher confidence, use its result
+            if result.confidence > 0.85 and result.validation_passed:
+                logger.debug(f"Ensemble override: '{extracted_value}' -> '{result.text}' ({result.confidence:.2f})")
+                return result.text, result.confidence
+
+            # Otherwise, return original with moderate confidence
+            return extracted_value, 0.7
+
+        except Exception as e:
+            logger.debug(f"Ensemble validation failed: {e}")
+            return extracted_value, 0.8
 
     def _levenshtein_distance(self, s1: str, s2: str) -> int:
         """Calculate Levenshtein distance between two strings for fuzzy matching."""
