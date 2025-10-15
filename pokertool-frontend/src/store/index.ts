@@ -4,6 +4,8 @@ import gameReducer from './slices/gameSlice';
 import adviceReducer from './slices/adviceSlice';
 import sessionReducer from './slices/sessionSlice';
 import settingsReducer from './slices/settingsSlice';
+import bankrollReducer from './slices/bankrollSlice';
+import tournamentReducer from './slices/tournamentSlice';
 
 // Configure store with all slices
 export const store = configureStore({
@@ -12,6 +14,8 @@ export const store = configureStore({
     advice: adviceReducer,
     session: sessionReducer,
     settings: settingsReducer,
+    bankroll: bankrollReducer,
+    tournament: tournamentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -47,7 +51,7 @@ export const loadState = (): Partial<RootState> | undefined => {
 // Save state to localStorage
 export const saveState = (state: RootState) => {
   try {
-    // Only persist settings and session data (not real-time game/advice state)
+    // Only persist settings, session, bankroll, and tournament data (not real-time game/advice state)
     const stateToPersist = {
       settings: state.settings,
       session: {
@@ -55,6 +59,8 @@ export const saveState = (state: RootState) => {
         // Don't persist real-time metrics
         connected: false,
       },
+      bankroll: state.bankroll,
+      tournament: state.tournament,
     };
     const serializedState = JSON.stringify(stateToPersist);
     localStorage.setItem('pokertool-state', serializedState);
