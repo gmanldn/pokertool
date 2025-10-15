@@ -2359,7 +2359,14 @@ class PokerScreenScraper:
                 try:
                     roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
-                    # Resize for better OCR (scale up 2x)
+                    # ENHANCED: Resize for better OCR (scale up 3x for Betfair's smaller text)
+                    roi_gray_upscaled = cv2.resize(roi_gray, None, fx=3.0, fy=3.0, interpolation=cv2.INTER_CUBIC)
+
+                    # CRITICAL: Betfair uses WHITE text on DARK background - must use INVERTED threshold
+                    # This is the most important preprocessing for Betfair
+                    _, thresh_inverted = cv2.threshold(roi_gray_upscaled, 127, 255, cv2.THRESH_BINARY_INV)
+
+                    # Resize for better OCR (scale up 2x for fallback approaches)
                     roi_gray = cv2.resize(roi_gray, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
 
                     # Noise reduction
@@ -2377,8 +2384,8 @@ class PokerScreenScraper:
                         2,
                     )
 
-                    # Pass 2: OTSU threshold for better contrast
-                    _, thresh2 = cv2.threshold(roi_gray_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                    # Pass 2: OTSU threshold for better contrast (inverted for Betfair)
+                    _, thresh2 = cv2.threshold(roi_gray_filtered, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
                     # Pass 3: Enhanced contrast version with CLAHE
                     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
@@ -2392,8 +2399,8 @@ class PokerScreenScraper:
                         3,
                     )
 
-                    # Pass 4: Simple threshold for white text on dark background
-                    _, thresh4 = cv2.threshold(roi_gray, 127, 255, cv2.THRESH_BINARY)
+                    # Pass 4: Simple inverted threshold for white text on dark background (BEST for Betfair)
+                    _, thresh4 = cv2.threshold(roi_gray, 127, 255, cv2.THRESH_BINARY_INV)
 
                     # Try OCR with multiple configurations for robustness
                     texts = []
@@ -2404,7 +2411,8 @@ class PokerScreenScraper:
                         '--psm 3 --oem 1',  # Fully automatic, LSTM only
                     ]
 
-                    for thresh in [thresh1, thresh2, thresh3, thresh4]:
+                    # PRIORITIZE: Try upscaled inverted threshold first (best for Betfair)
+                    for thresh in [thresh_inverted, thresh4, thresh1, thresh2, thresh3]:
                         for config in configs:
                             try:
                                 text = pytesseract.image_to_string(thresh, config=config)  # type: ignore
@@ -2418,13 +2426,13 @@ class PokerScreenScraper:
 
                     # Parse numbers for stack - look for all numeric patterns
                     if all_text:
-                        # Find all numbers, including those with $ prefix, commas, and decimals
-                        nums = re.findall(r'\$?\s*([0-9][0-9,.]*\.?[0-9]*)', all_text)
+                        # Find all numbers, including those with $, £, € prefix, commas, and decimals
+                        nums = re.findall(r'[\$£€]?\s*([0-9][0-9,.]*\.?[0-9]*)', all_text)
                         if nums:
                             # Choose the number with the most digits as it's likely the stack
                             num_str = max(nums, key=lambda s: len(s.replace(',', '').replace('.', '')))
                             try:
-                                cleaned = num_str.replace(',', '').replace('$', '').strip()
+                                cleaned = num_str.replace(',', '').replace('$', '').replace('£', '').replace('€', '').strip()
                                 stack = float(cleaned)
 
                                 # Validate extracted stack
