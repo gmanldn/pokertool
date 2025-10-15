@@ -371,12 +371,19 @@ def create_scraper(site: str = 'BETFAIR') -> PokerScreenScraper:
     if BETFAIR_EDITION_AVAILABLE:
         # Create using Betfair Edition
         betfair_scraper = create_betfair_scraper(site)
-        
+
         # Wrap it for compatibility
         wrapper = PokerScreenScraper.__new__(PokerScreenScraper)
         wrapper._scraper = betfair_scraper
         wrapper._using_betfair_edition = True
-        
+
+        # CRITICAL: Initialize continuous capture attributes (bypassed by __new__)
+        wrapper._state_queue = Queue(maxsize=5)
+        wrapper._capture_thread = None
+        wrapper._stop_event = Event()
+        wrapper._latest_state = None
+        wrapper._last_state_hash = None
+
         return wrapper
     else:
         # Fallback to standard initialization
