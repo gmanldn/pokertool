@@ -149,6 +149,7 @@ python show_learning_stats.py
 ```
 
 Shows:
+
 - Environment profiles learned
 - OCR strategy rankings
 - Recent performance metrics
@@ -204,6 +205,7 @@ scraper.print_learning_report()
 ## ✨ **What Gets Learned**
 
 ### **1. Environment Profiles:**
+
 - Your screen resolution
 - Brightness levels
 - Color profiles
@@ -211,18 +213,21 @@ scraper.print_learning_report()
 - Best parameters per environment
 
 ### **2. OCR Strategies:**
+
 - Which text recognition methods work best
 - Success rates per strategy
 - Execution times
 - Priority ordering
 
 ### **3. Performance Patterns:**
+
 - Common pot sizes
 - Typical stack ranges
 - Player name formats
 - Frequently seen values
 
 ### **4. Caching Intelligence:**
+
 - Which screens change frequently
 - What results can be cached
 - Optimal cache duration
@@ -233,18 +238,21 @@ scraper.print_learning_report()
 ## 🎯 **Benefits You Get Automatically**
 
 ### **Speed:**
+
 - ✅ **3-8x faster** extraction after learning
 - ✅ **Cache hits** save 50-100ms each
 - ✅ **Best strategies first** (early exit)
 - ✅ **Smart preprocessing** (environment-tuned)
 
 ### **Accuracy:**
+
 - ✅ **Higher success rates** (78% → 97%)
 - ✅ **Better OCR** (learned optimal strategies)
 - ✅ **Fewer false positives** (8% → 1%)
 - ✅ **More confident** detections
 
 ### **Reliability:**
+
 - ✅ **Adapts to your setup** automatically
 - ✅ **Handles lighting changes** gracefully
 - ✅ **Works across resolutions** seamlessly
@@ -273,6 +281,7 @@ state = scraper.analyze_table()
 ```
 
 **With CDP:**
+
 - OCR accuracy jumps to **>95%** immediately
 - Learning accelerates **10x faster**
 - Every extraction provides perfect training data
@@ -341,6 +350,7 @@ scraper.record_user_feedback(
 ### **None Required!**
 
 The system is fully automatic:
+
 - ✅ Saves learning data every 20 operations
 - ✅ Loads optimizations on startup
 - ✅ Cleans up old cache entries
@@ -394,6 +404,7 @@ python -m pokertool.view_learning_stats --reset
 ## 🎯 **Best Practices**
 
 ### **DO:**
+
 - ✅ Just run `python start.py` and use normally
 - ✅ Check stats weekly to see improvement
 - ✅ Backup `~/.pokertool/learning/` occasionally
@@ -401,6 +412,7 @@ python -m pokertool.view_learning_stats --reset
 - ✅ Let it run for 100+ detections for best results
 
 ### **DON'T:**
+
 - ❌ Reset learning data frequently (wastes optimizations)
 - ❌ Manually edit learning files (will corrupt data)
 - ❌ Disable learning (loses all benefits)
@@ -424,6 +436,7 @@ python -m pokertool.view_learning_stats --reset
 ## 🎉 **That's It!**
 
 ### **Your scraper now:**
+
 - 🧠 **Learns** which strategies work best
 - ⚡ **Caches** results for instant retrieval
 - 🎯 **Adapts** to your specific environment
@@ -431,6 +444,7 @@ python -m pokertool.view_learning_stats --reset
 - 💾 **Remembers** all optimizations forever
 
 ### **All you do:**
+
 1. Run `python start.py`
 2. Use the scraper normally
 3. Watch it get faster and more accurate!

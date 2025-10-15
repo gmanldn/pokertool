@@ -157,7 +157,10 @@ AFTER:
 │ 150 lines│ 3 files  │ 2 files  │ 5 files  │
 │          │ ~800 ln  │ ~200 ln  │ ~500 ln  │
 └──────────┴──────────┴──────────┴──────────┘
+
      +          +          +          +
+
+┌──────────┬──────────┐
 ┌──────────┬──────────┐
 │  utils/  │components│
 │ 2 files  │ existing │
@@ -190,4 +193,6 @@ KEY PRINCIPLES
    - Logical file names
    - Organized directory structure
    - Easy to find code
+
+```
 ```

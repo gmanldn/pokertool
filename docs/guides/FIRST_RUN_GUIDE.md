@@ -62,6 +62,7 @@ The first-run scripts perform a complete bootstrap:
 **Recommended:** macOS 12.0 (Monterey) or later
 
 **What will be installed:**
+
 - Xcode Command Line Tools (if not present)
 - Homebrew (if not present)
 - Python 3.11 via Homebrew
@@ -88,12 +89,14 @@ python3 start.py
 ### Linux Requirements
 
 **Supported Distributions:**
+
 - Ubuntu 20.04+ / Debian 10+
 - Fedora 35+ / RHEL 8+ / CentOS 8+
 - Arch Linux / Manjaro
 - openSUSE Leap 15.3+
 
 **What will be installed:**
+
 - Python 3.8+ and pip
 - Build essentials (gcc, make, etc.)
 - Python development headers
@@ -137,10 +140,12 @@ python3 start.py
 **Recommended:** Windows 11
 
 **What will be installed:**
+
 - Python 3.11 (via winget or direct installer)
 - pip (Python package manager)
 
 **Optional (recommended for full functionality):**
+
 - Visual C++ Build Tools
 - Tesseract OCR
 - Node.js
@@ -160,6 +165,8 @@ python3 start.py
    - Or use: `winget install UB-Mannheim.TesseractOCR`
 
 4. **Run PokerTool:**
+
+   ```powershell
    ```powershell
    python start.py
    ```
@@ -235,6 +242,7 @@ python3 start.py
 ```
 
 **Windows:**
+
 - Install Python from: https://www.python.org
 - Install Tesseract from: https://github.com/UB-Mannheim/tesseract/wiki
 - Run: `python start.py`
@@ -263,7 +271,10 @@ sudo pacman -S base-devel
 ```
 
 **Windows:**
+
 - Install Visual C++ Build Tools from:
+
+  https://visualstudio.microsoft.com/visual-cpp-build-tools/
   https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
 ---
@@ -342,6 +353,7 @@ python3 start.py --validate
 
 ### Issue: "Command not found: python3"
 **Solution:** Python is not in your PATH. Try:
+
 - macOS/Linux: Use absolute path `/usr/local/bin/python3`
 - Windows: Reinstall Python and check "Add to PATH"
 - Or restart your terminal/computer
@@ -398,6 +410,7 @@ sudo dnf groupinstall "Development Tools"          # Fedora/RHEL
 ```
 
 **Windows:**
+
 - Install Visual C++ Build Tools
 - Or use pre-built wheels: `pip install opencv-python-headless`
 
@@ -456,6 +469,8 @@ npm config set https-proxy http://proxy.company.com:8080
 If you need to install without internet access:
 
 1. **Download dependencies on a machine with internet:**
+
+   ```bash
    ```bash
    pip download -r requirements.txt -d packages/
    ```
@@ -463,6 +478,8 @@ If you need to install without internet access:
 2. **Transfer the `packages/` folder to the offline machine**
 
 3. **Install from local packages:**
+
+   ```bash
    ```bash
    pip install --no-index --find-links=packages/ -r requirements.txt
    ```
@@ -474,23 +491,31 @@ If you need to install without internet access:
 If you encounter issues not covered here:
 
 1. **Check the logs:**
+
+   ```bash
    ```bash
    cat logs/master_log.txt  # macOS/Linux
    type logs\master_log.txt  # Windows
    ```
 
 2. **Run with verbose output:**
+
+   ```bash
    ```bash
    python3 start.py --validate
    ```
 
 3. **Check Python version:**
+
+   ```bash
    ```bash
    python3 --version
    # Must be 3.8 or higher
    ```
 
 4. **Verify dependencies:**
+
+   ```bash
    ```bash
    python3 -c "import numpy, cv2, PIL; print('Dependencies OK')"
    ```

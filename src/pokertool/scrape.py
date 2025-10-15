@@ -117,7 +117,8 @@ except ImportError as e:
 from .storage import get_secure_db
 from .error_handling import retry_on_failure
 from .core import analyse_hand, parse_card
-from .threading import get_thread_pool, TaskPriority
+from .concurrency import get_thread_pool
+from .threading import TaskPriority
 
 logger = logging.getLogger(__name__)
 

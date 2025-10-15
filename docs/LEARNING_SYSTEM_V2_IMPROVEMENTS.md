@@ -15,6 +15,7 @@ Following the initial comprehensive learning system implementation, significant 
 **Solution:** Complete integration of learned strategy rankings into extraction methods.
 
 **Implementation:**
+
 - Pot size extraction now queries learning system for best strategies
 - Strategies tried in learned priority order (best first)
 - Early exit on success (stops immediately when good result found)
@@ -22,12 +23,14 @@ Following the initial comprehensive learning system implementation, significant 
 - Named strategy system for easy tracking and ranking
 
 **Named Strategies:**
+
 - `bilateral_otsu` - Bilateral filter + OTSU threshold
 - `clahe_otsu` - CLAHE enhancement + OTSU threshold
 - `adaptive` - Adaptive Gaussian threshold
 - `simple` - Simple binary threshold
 
 **Performance Impact:**
+
 - **Before:** All strategies tried every time (slow)
 - **After:** Best strategy succeeds first (fast)
 - **Speedup:** 2-3x faster on average (best strategy hits 70%+ of the time after learning)
@@ -57,6 +60,7 @@ for strategy_id in learned_strategies:
 **Solution:** Intelligent image-based caching with TTL.
 
 **Implementation:**
+
 - Fast image hashing (32x32 downsample, MD5 hash)
 - Hash computation: ~1ms (negligible overhead)
 - 500ms TTL (configurable) - balances freshness vs performance
@@ -80,6 +84,7 @@ return result
 ```
 
 **Performance Impact:**
+
 - **Cache Miss:** Same speed as before
 - **Cache Hit:** ~50-100ms saved (nearly instant return)
 - **Typical Hit Rate:** 30-60% (depends on how fast table changes)
@@ -102,6 +107,7 @@ Estimated Speedup: 2.5x
 **Solution:** Complete PyQt6 widget for real-time stats display.
 
 **Features:**
+
 - **Health Score Display:** 0-100 score with color-coded progress bar
   - Red (0-40): Needs more data
   - Orange (40-70): Learning in progress
@@ -193,6 +199,7 @@ layout.addWidget(stats_widget)
 ```
 
 **Enhanced Health Score:**
+
 - Caching contributes 10 points to overall score
 - Rewards good cache hit rates (>20%)
 - Proportional to hit rate (60% hit = 6 points)
@@ -237,30 +244,38 @@ Better Strategies → Faster Results → More Learning Cycles → Even Better St
 ### **Before V2:**
 ```
 Pot Size Extraction:
+
 - Average time: 87ms
 - Strategy selection: Random
 - No caching
 - Success rate: 78%
+
+```
 ```
 
 ### **After V2 (After Learning):**
 ```
 Pot Size Extraction:
+
 - Average time: 23ms (3.8x faster!)
 - Strategy selection: Learned optimal
 - Cache hit rate: 58%
 - Success rate: 94% (improved through learning)
 
 Breakdown:
+
 - Cache hits (58%): ~1ms
 - Cache miss, best strategy (35%): 42ms
 - Cache miss, fallback (7%): 95ms
 - Weighted average: 23ms
+
+```
 ```
 
 ### **Real-World Performance:**
 
 After 1 week of usage:
+
 - Detection success rate: 92% → 97%
 - Average extraction time: 87ms → 24ms
 - False positives: 8% → 1%
@@ -287,6 +302,7 @@ def _compute_image_hash(self, image: np.ndarray) -> str:
 ```
 
 **Why This Works:**
+
 - 32x32 captures overall image structure
 - Small changes → different hash (good!)
 - Identical frames → same hash (cache hit!)
@@ -312,6 +328,7 @@ for strategy in strategies:
 ```
 
 **Learning Feedback:**
+
 - Every success → strategy score increases
 - Every failure → strategy score decreases
 - Scores used to reorder strategies
@@ -321,19 +338,24 @@ for strategy in strategies:
 
 ```
 TTL Too Short (100ms):
+
 - High cache miss rate
 - Doesn't save much time
 - Overhead not worth it
 
 TTL Too Long (5000ms):
+
 - High cache hit rate
 - But stale data!
 - Returns old pot size when it changed
 
 Sweet Spot (500ms):
+
 - Good hit rate (30-60%)
 - Fresh enough for real-time use
 - Screen typically stable for ~500ms
+
+```
 ```
 
 ---
@@ -395,24 +417,28 @@ assert widget.update_timer.isActive()
 ## 📊 **Impact Summary**
 
 ### **Performance:**
+
 - ✅ **3.8x faster** average extraction time
 - ✅ **Cache hits save 50-100ms** each
 - ✅ **Best strategies tried first** (early exit)
 - ✅ **Compound speedup** from learning + caching
 
 ### **Accuracy:**
+
 - ✅ **16% improvement** in success rate (78% → 94%)
 - ✅ **87% reduction** in false positives (8% → 1%)
 - ✅ **Higher confidence** scores overall
 - ✅ **Better strategy selection** through learning
 
 ### **User Experience:**
+
 - ✅ **Real-time stats** visible in GUI
 - ✅ **Health score** shows learning progress
 - ✅ **Automatic optimization** (zero config)
 - ✅ **Performance gains visible** to user
 
 ### **Developer Experience:**
+
 - ✅ **Named strategies** easy to track
 - ✅ **Cache stats** for debugging
 - ✅ **Learning report** shows what's working
@@ -559,6 +585,7 @@ The V2 improvements transform the learning system from **passive tracking** to *
 **V2:** "I use the best strategies and cache results for maximum speed" 🚀
 
 **Real-World Impact:**
+
 - 3.8x faster extraction
 - 94% vs 78% success rate
 - Real-time visibility (GUI)

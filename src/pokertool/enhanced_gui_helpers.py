@@ -58,8 +58,16 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
                 return _last_table_data
             return None
 
-        # Try to get cached state from the enhanced scraper manager first
-        # This is much faster than calling analyze_table()
+        # Try to get cached state from the scraper directly first (much faster!)
+        # Priority 1: Check if scraper has get_cached_state method (from continuous capture)
+        cached_state = None
+        if hasattr(screen_scraper, 'get_cached_state'):
+            cached_state = screen_scraper.get_cached_state()
+            print(f"[get_live_table_data] Got cached state from scraper: {cached_state is not None}")
+            if cached_state:
+                return _convert_game_state_to_table_data(cached_state)
+
+        # Priority 2: Try enhanced scraper manager
         table_state = None
         print(f"[get_live_table_data] ENHANCED_SCRAPER_AVAILABLE={ENHANCED_SCRAPER_AVAILABLE}, _scraper_manager={_scraper_manager is not None}")
         if ENHANCED_SCRAPER_AVAILABLE and _scraper_manager:
@@ -67,9 +75,6 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
             print(f"[get_live_table_data] cached_state type: {type(cached_state)}, is_none: {cached_state is None}")
             if cached_state:
                 print(f"[get_live_table_data] Got cached state from enhanced scraper manager")
-                # The enhanced scraper returns a game_state dict, not a TableState object
-                # We need to convert it to the expected format
-                # For now, let's just try to use it directly and see what happens
                 return _convert_game_state_to_table_data(cached_state)
             else:
                 print(f"[get_live_table_data] No cached state available from enhanced scraper")
@@ -385,29 +390,137 @@ def _convert_game_state_to_table_data(game_state: Dict[str, Any]) -> Dict[str, A
     """
     print(f"[_convert_game_state] Converting game_state with keys: {list(game_state.keys())[:10]}")
 
+    # Extract board cards - handle both 'board' and 'board_cards' keys
+    board_cards = game_state.get('board_cards', game_state.get('board', []))
+
     data = {
         'status': 'Active',
         'confidence': game_state.get('detection_confidence', 0.8) * 100,  # Convert to percentage
-        'board_cards': game_state.get('board', []),
+        'board_cards': board_cards,
         'small_blind': game_state.get('small_blind', 0.05),
         'big_blind': game_state.get('big_blind', 0.10),
         'ante': game_state.get('ante', 0),
-        'pot': game_state.get('pot', 0),
+        'pot': game_state.get('pot_size', game_state.get('pot', 0)),
         'dealer_seat': game_state.get('dealer_seat', 0),
         'stage': game_state.get('stage', 'unknown'),
-        'active_players': game_state.get('num_players', 0),
+        'active_players': game_state.get('active_players', game_state.get('num_players', 0)),
         'players': {},
-        'my_hole_cards': game_state.get('hole_cards', []),
+        'my_hole_cards': game_state.get('hero_cards', game_state.get('hole_cards', [])),
         'recommended_action': 'Waiting for game state...',
         'validation_complete': True,
         'warnings': [],
         'data_source': 'live_cached',
         'data_age_seconds': 0.0,
-        'last_update_timestamp': time.time()
+        'last_update_timestamp': time.time(),
+        'extraction_method': game_state.get('extraction_method', 'unknown'),
+        'extraction_time_ms': game_state.get('extraction_time_ms', 0.0),
+        'tournament_name': game_state.get('tournament_name'),
+        'table_name': game_state.get('table_name'),
     }
 
-    # TODO: Extract player data from game_state if available
-    # For now, return minimal data
-    print(f"[_convert_game_state] Converted to table_data with {len(data['players'])} players")
+    # PHASE 1: Extract ALL player data from seats list (Tasks 1-8)
+    seats = game_state.get('seats', [])
+    if seats:
+        print(f"[_convert_game_state] Processing {len(seats)} seats from game_state")
+
+        for seat_info in seats:
+            # Handle both dataclass and dict formats
+            if hasattr(seat_info, 'seat_number'):
+                # Dataclass format
+                seat_num = seat_info.seat_number
+                is_active = seat_info.is_active
+                player_name = seat_info.player_name
+                stack = seat_info.stack_size
+                is_hero = seat_info.is_hero
+                is_dealer = seat_info.is_dealer
+                is_sb = seat_info.is_small_blind
+                is_bb = seat_info.is_big_blind
+                position = seat_info.position
+                vpip = seat_info.vpip
+                af = seat_info.af
+                time_bank = seat_info.time_bank
+                is_active_turn = seat_info.is_active_turn
+                current_bet = seat_info.current_bet
+                status_text = seat_info.status_text
+            else:
+                # Dict format
+                seat_num = seat_info.get('seat_number', 0)
+                is_active = seat_info.get('is_active', False)
+                player_name = seat_info.get('player_name', '')
+                stack = seat_info.get('stack_size', 0.0)
+                is_hero = seat_info.get('is_hero', False)
+                is_dealer = seat_info.get('is_dealer', False)
+                is_sb = seat_info.get('is_small_blind', False)
+                is_bb = seat_info.get('is_big_blind', False)
+                position = seat_info.get('position', '')
+                vpip = seat_info.get('vpip')
+                af = seat_info.get('af')
+                time_bank = seat_info.get('time_bank')
+                is_active_turn = seat_info.get('is_active_turn', False)
+                current_bet = seat_info.get('current_bet', 0.0)
+                status_text = seat_info.get('status_text', '')
+
+            # Skip empty seats (no name or name is empty string)
+            if not player_name or player_name.strip() == '':
+                continue
+
+            # Build position indicator string
+            position_indicators = []
+            if is_dealer:
+                position_indicators.append('BTN')
+            if is_sb:
+                position_indicators.append('SB')
+            if is_bb:
+                position_indicators.append('BB')
+            if position and position not in position_indicators:
+                position_indicators.append(position)
+
+            position_str = '/'.join(position_indicators) if position_indicators else ''
+
+            # Determine player status
+            if not status_text:
+                if is_active:
+                    status_text = 'Active'
+                else:
+                    status_text = 'Sitting Out'
+
+            # Build player dict
+            player_dict = {
+                'name': player_name,
+                'stack': stack,
+                'active': is_active,
+                'status': status_text,
+                'position': position_str,
+                'is_dealer': is_dealer,
+                'is_small_blind': is_sb,
+                'is_big_blind': is_bb,
+                'is_hero': is_hero,
+                'is_active_turn': is_active_turn,
+                'bet': current_bet,
+                'vpip': vpip,
+                'af': af,
+                'time_bank': time_bank,
+                'hole_cards': ['', ''],  # Hole cards only shown for hero
+            }
+
+            # Add hero's hole cards if this is the hero
+            if is_hero:
+                hero_cards = game_state.get('hero_cards', game_state.get('hole_cards', []))
+                if hero_cards and len(hero_cards) >= 2:
+                    player_dict['hole_cards'] = hero_cards[:2]
+                    # Also update the top-level my_hole_cards
+                    data['my_hole_cards'] = hero_cards[:2]
+
+            data['players'][seat_num] = player_dict
+
+        print(f"[_convert_game_state] Converted to table_data with {len(data['players'])} players")
+
+        # Update active_players count based on actual active players
+        active_count = sum(1 for p in data['players'].values() if p.get('active', False))
+        if active_count > 0:
+            data['active_players'] = active_count
+    else:
+        print(f"[_convert_game_state] No seats data found in game_state")
+        print(f"[_convert_game_state] Available keys: {list(game_state.keys())}")
 
     return data

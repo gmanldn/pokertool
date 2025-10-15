@@ -78,6 +78,7 @@ cd evals && npm run diff-eval -- --replay-run-id 9902189e-63a8-4210-a4fc-fe59e2e
 ```
 
 In this command:
+
 -   `--replay-run-id` specifies the original run we want to use as our ground truth.
 -   `--diff-apply-file` tells the script to use the new diffing logic from the `diff-06-23-25.ts` file.
 

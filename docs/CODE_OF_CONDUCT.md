@@ -6,7 +6,10 @@ file: CODE_OF_CONDUCT.md
 version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
+
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
         ---
         POKERTOOL-HEADER-END -->
@@ -35,12 +38,20 @@ include:
 Examples of unacceptable behavior by participants include:
 
 -   The use of sexualized language or imagery and unwelcome sexual attention or
+
     advances
+    advances
+
 -   Trolling, insulting/derogatory comments, and personal or political attacks
 -   Public or private harassment
 -   Publishing others' private information, such as a physical or electronic
+
     address, without explicit permission
+    address, without explicit permission
+
 -   Other conduct which could reasonably be considered inappropriate in a
+
+    professional setting
     professional setting
 
 ## Our Responsibilities

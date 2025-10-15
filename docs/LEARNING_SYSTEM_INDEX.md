@@ -12,6 +12,7 @@ Complete documentation for the Pokertool Adaptive Learning System.
 The complete user guide and reference for the learning system.
 
 **Contents:**
+
 - Overview and key features
 - How it works (detailed explanation)
 - Usage examples and code samples
@@ -30,6 +31,7 @@ The complete user guide and reference for the learning system.
 Quick start guide focused on the automatic learning features.
 
 **Contents:**
+
 - What is automatic learning
 - How it works automatically
 - Zero-configuration usage
@@ -46,6 +48,7 @@ Quick start guide focused on the automatic learning features.
 Complete technical implementation summary of the initial learning system.
 
 **Contents:**
+
 - What was implemented (V1)
 - Technical architecture
 - Code structure and files
@@ -65,6 +68,7 @@ Complete technical implementation summary of the initial learning system.
 Detailed documentation of the V2 improvements and performance enhancements.
 
 **Contents:**
+
 - Active OCR strategy application
 - Smart result caching system
 - GUI integration
@@ -179,22 +183,27 @@ python -m pokertool.view_learning_stats
 ## 🔍 **Key Topics Coverage**
 
 ### **Environment Profiling**
+
 - [LEARNING_SYSTEM.md](LEARNING_SYSTEM.md#environment-profiling) - Detailed explanation
 - [LEARNING_SYSTEM_IMPLEMENTATION.md](LEARNING_SYSTEM_IMPLEMENTATION.md#environment-profiling) - Implementation details
 
 ### **OCR Strategy Learning**
+
 - [LEARNING_SYSTEM.md](LEARNING_SYSTEM.md#ocr-optimization) - How it works
 - [LEARNING_SYSTEM_V2_IMPROVEMENTS.md](LEARNING_SYSTEM_V2_IMPROVEMENTS.md#active-ocr-strategy-application) - V2 enhancements
 
 ### **Smart Caching**
+
 - [LEARNING_SYSTEM_V2_IMPROVEMENTS.md](LEARNING_SYSTEM_V2_IMPROVEMENTS.md#smart-result-caching) - Complete guide
 - [LEARNING_SYSTEM.md](LEARNING_SYSTEM.md#performance-impact) - Performance benefits
 
 ### **CDP Learning**
+
 - [LEARNING_SYSTEM.md](LEARNING_SYSTEM.md#cdp-ground-truth-learning) - Usage guide
 - [LEARNING_SYSTEM_IMPLEMENTATION.md](LEARNING_SYSTEM_IMPLEMENTATION.md#cdp-based-learning) - Architecture
 
 ### **GUI Integration**
+
 - [LEARNING_SYSTEM_V2_IMPROVEMENTS.md](LEARNING_SYSTEM_V2_IMPROVEMENTS.md#gui-integration) - Widget documentation
 - [LEARNING_SYSTEM.md](LEARNING_SYSTEM.md#usage) - Integration examples
 
@@ -203,14 +212,17 @@ python -m pokertool.view_learning_stats
 ## 🛠️ **Related Code Files**
 
 ### **Core Implementation:**
+
 - `src/pokertool/modules/scraper_learning_system.py` - Main learning engine (900 lines)
 - `src/pokertool/modules/poker_screen_scraper_betfair.py` - Scraper integration
 
 ### **Tools & Utilities:**
+
 - `src/pokertool/view_learning_stats.py` - CLI statistics viewer (360 lines)
 - `src/pokertool/learning_stats_widget.py` - GUI widget (420 lines)
 
 ### **Documentation:**
+
 - All docs now in `docs/` folder
 
 ---
@@ -240,13 +252,16 @@ python -m pokertool.view_learning_stats --reset
 ## 🎓 **Learning Resources**
 
 ### **Videos & Tutorials**
+
 - Coming soon!
 
 ### **Examples**
+
 - See individual documentation files for code examples
 - All docs include usage examples
 
 ### **API Reference**
+
 - [LEARNING_SYSTEM.md - API Reference](LEARNING_SYSTEM.md#api-reference)
 
 ---
@@ -254,16 +269,19 @@ python -m pokertool.view_learning_stats --reset
 ## 📝 **Document Change Log**
 
 ### **2025-10-14**
+
 - ✅ Created documentation index
 - ✅ Organized all docs into `docs/` folder
 - ✅ Added navigation guide
 
 ### **2025-10-14 (V2)**
+
 - ✅ Added LEARNING_SYSTEM_V2_IMPROVEMENTS.md
 - ✅ Updated with V2 performance benchmarks
 - ✅ Added GUI widget documentation
 
 ### **2025-10-14 (V1)**
+
 - ✅ Created LEARNING_SYSTEM.md
 - ✅ Created LEARNING_SYSTEM_IMPLEMENTATION.md
 - ✅ Created AUTOMATIC_LEARNING_GUIDE.md
@@ -297,6 +315,7 @@ python -m pokertool.view_learning_stats --reset
 ### **Real-World Usage**
 
 The learning system has been tested with:
+
 - ✅ 50+ environment profiles
 - ✅ 100+ strategy evaluations
 - ✅ Multiple resolution configurations

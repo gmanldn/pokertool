@@ -115,18 +115,21 @@ The `.gitignore` file has been configured to exclude all state data, runtime fil
 ## What is NOT Ignored (Kept in Git)
 
 ### ✅ Source Code
+
 - All `.py` files in `src/`
 - All `.ts`, `.tsx`, `.js`, `.jsx` files for frontend
 - All `.sh` bash scripts
 - Configuration templates
 
 ### ✅ Documentation
+
 - All `.md` markdown files
 - Documentation in `docs/`
 - README files
 - API documentation
 
 ### ✅ Configuration Templates
+
 - `pyproject.toml`
 - `requirements.txt`
 - `package.json`
@@ -134,11 +137,13 @@ The `.gitignore` file has been configured to exclude all state data, runtime fil
 - Template/example config files
 
 ### ✅ Tests
+
 - All test files (`test_*.py`)
 - Test fixtures in `tests/fixtures/`
 - Test configuration
 
 ### ✅ Assets
+
 - Static images in `assets/`
 - Icons and logos
 - UI resources

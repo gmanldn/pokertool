@@ -1250,9 +1250,17 @@ class LiveTableSection:
                     card = board_cards[i]
                     # Determine card color based on suit
                     card_color = "#000000"  # Default black
-                    if '♥' in card or '♦' in card or 'h' in card.lower() or 'd' in card.lower():
-                        card_color = "#dc2626"  # Red for hearts/diamonds
-                    card_label.config(text=card, fg=card_color, bg="#ffffff")
+                    # Handle both Card objects and strings
+                    card_str = str(card)
+                    if hasattr(card, 'suit'):
+                        # Card object - check suit attribute
+                        if card.suit in ['h', 'd']:
+                            card_color = "#dc2626"  # Red for hearts/diamonds
+                    else:
+                        # String - check for suit symbols/letters
+                        if '♥' in card_str or '♦' in card_str or 'h' in card_str.lower() or 'd' in card_str.lower():
+                            card_color = "#dc2626"  # Red for hearts/diamonds
+                    card_label.config(text=card_str, fg=card_color, bg="#ffffff")
                 else:
                     card_label.config(text="[ ]", fg="#666666", bg="#cccccc")
 
@@ -1419,12 +1427,12 @@ class LiveTableSection:
                     while len(hole_cards) < 2:
                         hole_cards.append('')
 
-                    self.player_labels[seat]["card1"].config(
-                        text=hole_cards[0] if hole_cards[0] else "[]"
-                    )
-                    self.player_labels[seat]["card2"].config(
-                        text=hole_cards[1] if hole_cards[1] else "[]"
-                    )
+                    # Convert Card objects to strings
+                    card1_str = str(hole_cards[0]) if hole_cards[0] else "[]"
+                    card2_str = str(hole_cards[1]) if hole_cards[1] else "[]"
+
+                    self.player_labels[seat]["card1"].config(text=card1_str)
+                    self.player_labels[seat]["card2"].config(text=card2_str)
 
                     # Update status
                     status = player_info.get('status', '')
@@ -1440,7 +1448,9 @@ class LiveTableSection:
 
             for i, card_label in enumerate(self.my_cards_labels):
                 if i < len(my_cards) and my_cards[i]:
-                    card_label.config(text=my_cards[i], fg=COLORS["accent_success"])
+                    # Convert Card objects to strings
+                    card_str = str(my_cards[i])
+                    card_label.config(text=card_str, fg=COLORS["accent_success"])
                 else:
                     card_label.config(text="[ ]", fg=COLORS["text_secondary"])
 

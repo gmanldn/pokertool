@@ -6,7 +6,10 @@ file: src/core/prompts/system-prompt/README.md
 version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
+
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
         ---
         POKERTOOL-HEADER-END -->
@@ -103,7 +106,10 @@ class PromptRegistry {
   }
 
 	/**
+
 	 * Get prompt by model ID with fallback to generic
+
+	 */
 	 */
 	async get(context: SystemPromptContext): Promise<string> {
 		await this.load()
@@ -1013,29 +1019,34 @@ const dependentTool: ClineToolSpec = {
 ### Best Practices
 
 #### 1. Tool Naming Conventions
+
 - Use snake_case for tool IDs and file names
 - Use descriptive names that clearly indicate the tool's purpose
 - Prefix with action verb when appropriate (e.g., `create_file`, `search_code`)
 
 #### 2. Parameter Design
+
 - Always provide clear, actionable instructions
 - Include usage examples that show expected format
 - Mark parameters as required/optional appropriately
 - Use dependencies to avoid cluttering the prompt with irrelevant parameters
 
 #### 3. Description Guidelines
+
 - Be specific about when and why to use the tool
 - Include limitations and constraints
 - Mention any prerequisites or setup requirements
 - Provide context about expected outcomes
 
 #### 4. Model Variant Strategy
+
 - Start with a GENERIC variant that works across all models
 - Create specific variants only when models need different instructions
 - Keep variant differences minimal and focused on instruction style
 - Test across different model families to ensure compatibility
 
 #### 5. Error Handling
+
 - Design tools to fail gracefully
 - Provide meaningful error messages
 - Consider edge cases in parameter validation
@@ -1070,6 +1081,7 @@ Add your tool to the integration test suite:
 ```
 
 #### 3. Manual Testing
+
 1. Run the unit tests: `npm run test:unit`
 2. Start the application and verify your tool appears in the system prompt
 3. Test tool execution with various parameter combinations

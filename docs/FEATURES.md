@@ -6,7 +6,10 @@ file: FEATURES.md
 version: v1.0.0
 last_commit: '2025-10-01T12:00:00+01:00'
 fixes:
+
 - date: '2025-10-01'
+
+  summary: Initial comprehensive feature documentation
   summary: Initial comprehensive feature documentation
 ---
 POKERTOOL-HEADER-END -->
@@ -22,6 +25,7 @@ POKERTOOL-HEADER-END -->
 ## 🎉 Version 29.0.0 - Major Release Highlights
 
 ### **🔧 Comprehensive Dependency Management System**
+
 - **19 dependencies validated** automatically on startup
 - **Auto-installation** of missing packages (websocket-client, scikit-learn, scikit-image)
 - **Platform-specific validation** (macOS Quartz, tkinter, tesseract OCR)
@@ -30,6 +34,7 @@ POKERTOOL-HEADER-END -->
 - **JSON export** for debugging (dependency_report.json)
 
 ### **🎮 Robust GUI System & Multi-Tab Interface**
+
 - **Error-resilient interface** that continues working even if modules fail
 - **8 tabs total**: 4 core tabs + 4 conditional tabs based on available systems
 - **Fallback content system** with retry and diagnostic options
@@ -37,6 +42,7 @@ POKERTOOL-HEADER-END -->
 - **Professional visual design** with consistent styling
 
 ### **🚀 Enhanced Launch System**
+
 - **Multiple launch methods** with conflict resolution
 - **Direct GUI launcher** (`launch_gui.py`) bypasses CLI conflicts
 - **Comprehensive setup script** (`start.py`) with full validation
@@ -44,12 +50,14 @@ POKERTOOL-HEADER-END -->
 - **Fixed PYTHONPATH ordering** to resolve import conflicts
 
 ### **🧵 Professional Threading & Concurrency**
+
 - **20-thread pool system** for parallel processing
 - **Fixed threading module conflicts** (renamed to thread_manager.py)
 - **Proper resource management** and cleanup
 - **Thread statistics tracking** and monitoring
 
 ### **💾 Smart State Management**
+
 - **Enhanced .gitignore** with comprehensive state data exclusions
 - **Clean separation** of code and runtime data
 - **Database, cache, and log file exclusion** from version control
@@ -84,6 +92,7 @@ POKERTOOL-HEADER-END -->
 ## Core Poker Engine
 
 ### Card & Hand Representation
+
 - **Complete Card Model**: Full 52-card deck with `Rank` and `Suit` enumerations
 - **Card Parsing**: Parse string representations (e.g., "As", "Td", "9c") into Card objects
 - **Position System**: 10 position types including UTG, UTG+1, UTG+2, MP, MP+1, MP+2, CO, BTN, SB, BB
@@ -92,6 +101,7 @@ POKERTOOL-HEADER-END -->
 - **Hand Type Detection**: Identifies High Card, One Pair, Two Pair, Trips, Straight, Flush, Full House, Quads, Straight Flush
 
 ### Hand Analysis Engine
+
 - **Analyze Hand Function**: Core `analyse_hand()` providing strategic advice
 - **Position-Aware Analysis**: Adjusts recommendations based on table position
 - **Pot Odds Calculator**: Real-time pot odds computation for decision making
@@ -100,6 +110,7 @@ POKERTOOL-HEADER-END -->
 - **Risk Profile Assessment**: Evaluates variance and bankroll risk for each decision
 
 ### Game State Management
+
 - **Street Tracking**: Preflop, Flop, Turn, River state management
 - **Action History**: Complete tracking of all actions taken during a hand
 - **Pot Calculation**: Dynamic pot size tracking including side pots
@@ -111,6 +122,7 @@ POKERTOOL-HEADER-END -->
 ## GTO (Game Theory Optimal) Features
 
 ### Advanced GTO Solver
+
 - **CFR Algorithm**: Counterfactual Regret Minimization for strategy computation
 - **CFR+ Implementation**: Enhanced CFR++ algorithm with improved convergence
 - **Multi-Way Pots**: Full support for 2-9 player scenarios
@@ -123,6 +135,7 @@ POKERTOOL-HEADER-END -->
 - **Exploitability Metrics**: Quantification of strategy exploitability
 
 ### GTO Training System
+
 - **Interactive Training Spots**: Generate unlimited practice scenarios
 - **Decision Evaluation**: Real-time feedback on GTO vs player decisions
 - **Weak Spot Tracking**: Identifies and saves problematic situations
@@ -132,6 +145,7 @@ POKERTOOL-HEADER-END -->
 - **Training Sessions**: Structured practice with 10-50 spot sessions
 
 ### Range Management
+
 - **Range Object Model**: Complete range representation with frequencies
 - **Range Builder**: Visual range construction interface
 - **Range Comparison**: Multi-range equity analysis
@@ -142,6 +156,7 @@ POKERTOOL-HEADER-END -->
 - **Blocker Analysis**: Advanced removal effects calculator
 
 ### Equity Calculator
+
 - **Fast Monte Carlo**: Optimized equity simulation (10k-100k iterations)
 - **Range vs Range**: Full range equity calculations
 - **Board Texture Analysis**: Automatic board classification
@@ -149,6 +164,7 @@ POKERTOOL-HEADER-END -->
 - **Multi-Hand Support**: Calculate equity for 2-9 simultaneous hands
 
 ### Deviation Explorer
+
 - **EV Analysis**: Calculate EV impact of GTO deviations
 - **Exploitability Analysis**: Measure exploitability increases
 - **Counter-Exploit Suggestions**: AI-generated exploitation strategies
@@ -159,6 +175,7 @@ POKERTOOL-HEADER-END -->
 ## Machine Learning & AI
 
 ### Neural Network Hand Evaluator
+
 - **Deep CNN Architecture**: 3 convolutional layers + 3 dense layers
 - **TensorFlow/PyTorch Support**: Dual framework compatibility
 - **10M+ Hand Training**: Infrastructure for massive dataset training
@@ -171,6 +188,7 @@ POKERTOOL-HEADER-END -->
 - **Progress Tracking**: Real-time training metrics
 
 ### Opponent Modeling
+
 - **Random Forest Models**: Statistical player profiling
 - **Neural Network Models**: Deep learning opponent prediction
 - **Player Profiling**: Automatic categorization (TAG, LAG, Fish, Rock, Maniac)
@@ -182,6 +200,7 @@ POKERTOOL-HEADER-END -->
 - **Confidence Intervals**: Statistical significance validation
 
 ### Bluff Detection System
+
 - **Timing Analysis**: Microsecond-precision action timing patterns
 - **Betting Pattern Recognition**: Multi-street betting sequence analysis
 - **Historical Bluff Frequency**: Per-player bluff rate tracking
@@ -190,6 +209,7 @@ POKERTOOL-HEADER-END -->
 - **Action Sequence Analysis**: Pattern detection across betting rounds
 
 ### Bayesian Opponent Profiler
+
 - **Prior Distribution Models**: Statistical priors for player types
 - **Online Belief Updating**: Real-time Bayesian inference
 - **Uncertainty Quantification**: Confidence bounds on predictions
@@ -197,6 +217,7 @@ POKERTOOL-HEADER-END -->
 - **Convergence Guarantees**: Mathematical proof of convergence
 
 ### Reinforcement Learning Agent
+
 - **PPO Algorithm**: Proximal Policy Optimization implementation
 - **Reward Shaping**: Sophisticated reward structure design
 - **Experience Replay**: Efficient memory buffer system
@@ -209,6 +230,7 @@ POKERTOOL-HEADER-END -->
 ## Hand Analysis & Replay
 
 ### Hand Replay System
+
 - **Frame-by-Frame Replay**: Complete hand history visualization
 - **Animation System**: Smooth card dealing and action animations
 - **Analysis Overlay**: Real-time equity and pot odds display
@@ -219,6 +241,7 @@ POKERTOOL-HEADER-END -->
 - **Jump to Key Actions**: Quick navigation to critical decisions
 
 ### Hand Converter
+
 - **Multi-Site Support**: PokerStars, PartyPoker, GGPoker, Winamax, 888, ACR
 - **Format Detection**: Automatic site format recognition
 - **Batch Conversion**: Process multiple hand histories simultaneously
@@ -228,6 +251,7 @@ POKERTOOL-HEADER-END -->
 - **File Management**: Organized storage and retrieval system
 
 ### Hand Range Analyzer
+
 - **Range Parsing**: Support for PokerStove/Flopzilla notation
 - **Equity Calculation**: Range vs range equity simulation
 - **Heat Maps**: Visual representation of hand strength distributions
@@ -241,6 +265,7 @@ POKERTOOL-HEADER-END -->
 ## Range Construction & Analysis
 
 ### Visual Range Builder
+
 - **13x13 Grid Interface**: Interactive hand matrix
 - **Drag-and-Drop**: Intuitive hand selection
 - **Frequency Adjustment**: Set custom frequencies per hand
@@ -250,6 +275,7 @@ POKERTOOL-HEADER-END -->
 - **Range Algebra**: Union, intersection, and difference operations
 
 ### Range Import/Export
+
 - **JSON Format**: Machine-readable range storage
 - **Text Format**: Human-readable range notation
 - **Flopzilla Compatibility**: Import/export Flopzilla ranges
@@ -257,6 +283,7 @@ POKERTOOL-HEADER-END -->
 - **Custom Formats**: Extensible format support
 
 ### Range Comparison Tools
+
 - **Side-by-Side View**: Compare multiple ranges simultaneously
 - **Equity Breakdown**: See equity distribution across ranges
 - **Overlap Analysis**: Identify common hands between ranges
@@ -267,6 +294,7 @@ POKERTOOL-HEADER-END -->
 ## Tournament Features
 
 ### ICM Calculator
+
 - **Malmuth-Harville Algorithm**: Industry-standard ICM computation
 - **Future Game Simulation**: Multi-round tournament simulation
 - **Bubble Factor**: Automatic bubble pressure calculation
@@ -275,6 +303,7 @@ POKERTOOL-HEADER-END -->
 - **Real-Time ICM**: Live tournament equity updates
 
 ### Tournament Tracker
+
 - **Tournament Schedule**: Calendar view of upcoming tournaments
 - **Late Registration Advisor**: Optimal late registration timing
 - **Satellite Tracking**: Multi-step qualifier management
@@ -283,6 +312,7 @@ POKERTOOL-HEADER-END -->
 - **Multi-Tournament Support**: Track multiple simultaneous tournaments
 
 ### Tournament Strategy
+
 - **Push/Fold Charts**: ICM-adjusted all-in ranges
 - **Chip EV vs $EV**: Tournament vs cash game strategy differences
 - **Stack Size Adjustments**: Dynamic strategy based on stack depth
@@ -294,6 +324,7 @@ POKERTOOL-HEADER-END -->
 ## Bankroll Management
 
 ### Core Bankroll Features
+
 - **Multi-Currency Support**: Track bankrolls in any currency
 - **Stake Tracking**: Monitor performance across different stake levels
 - **Win Rate Analysis**: BB/100 and hourly win rate calculations
@@ -302,6 +333,7 @@ POKERTOOL-HEADER-END -->
 - **Goal Setting**: Set and track bankroll targets
 
 ### Session Management
+
 - **Session Goals**: Set profit/loss targets per session
 - **Break Reminders**: Automatic break scheduling
 - **Tilt Detection**: AI-powered tilt recognition
@@ -310,6 +342,7 @@ POKERTOOL-HEADER-END -->
 - **Historical Comparison**: Track trends over time
 
 ### Game Selection
+
 - **Table Profitability**: Identify most profitable tables
 - **Player Database**: Track opponents across sessions
 - **Fish Finder**: Identify weak players automatically
@@ -321,6 +354,7 @@ POKERTOOL-HEADER-END -->
 ## HUD (Heads-Up Display)
 
 ### HUD Designer
+
 - **Customizable Layout**: Drag-and-drop HUD design
 - **Stat Selection**: Choose from 100+ available statistics
 - **Color Conditions**: Dynamic coloring based on stat values
@@ -329,6 +363,7 @@ POKERTOOL-HEADER-END -->
 - **Position-Based Display**: Different HUDs per position
 
 ### Core HUD Stats
+
 - **VPIP**: Voluntarily put money in pot
 - **PFR**: Pre-flop raise percentage
 - **3-Bet**: 3-bet frequency
@@ -339,6 +374,7 @@ POKERTOOL-HEADER-END -->
 - **Hands Played**: Sample size indicator
 
 ### Advanced HUD Stats
+
 - **Street-Specific AF**: Aggression per street
 - **Positional Stats**: Performance by position
 - **Stack Size Filtering**: Stats by effective stack
@@ -348,6 +384,7 @@ POKERTOOL-HEADER-END -->
 - **Squeeze**: Squeeze play frequency
 
 ### HUD Overlay System
+
 - **Real-Time Updates**: Live stat calculation
 - **Multi-Table Support**: Track up to 24 tables
 - **Transparent Display**: Customizable opacity
@@ -360,6 +397,7 @@ POKERTOOL-HEADER-END -->
 ## Study & Training
 
 ### Study Mode
+
 - **Flashcard System**: Spaced repetition learning
 - **Quiz Engine**: Situation-based testing
 - **Lesson Management**: Structured learning paths
@@ -368,6 +406,7 @@ POKERTOOL-HEADER-END -->
 - **Streak Tracking**: Maintain learning consistency
 
 ### Coaching Integration
+
 - **Mistake Detection**: AI-powered error identification
 - **Real-Time Advice**: Live decision support
 - **Training Scenarios**: Curated practice situations
@@ -376,6 +415,7 @@ POKERTOOL-HEADER-END -->
 - **Coaching Reports**: Detailed performance analysis
 
 ### GTO Trainer
+
 - **Spot Generation**: Unlimited training scenarios
 - **Decision Evaluation**: Compare to GTO optimal
 - **Weak Spot Identification**: Focus on problem areas
@@ -388,6 +428,7 @@ POKERTOOL-HEADER-END -->
 ## Database & Persistence
 
 ### Database System
+
 - **SQLite Development**: Lightweight local storage
 - **PostgreSQL Production**: Scalable production database
 - **Connection Pooling**: Efficient connection management
@@ -396,6 +437,7 @@ POKERTOOL-HEADER-END -->
 - **Index Management**: Automatic index creation
 
 ### Database Optimization
+
 - **Query Caching**: LRU cache with configurable TTL
 - **Slow Query Monitoring**: Performance tracking
 - **Index Advisor**: Automatic indexing suggestions
@@ -403,6 +445,7 @@ POKERTOOL-HEADER-END -->
 - **Optimization Reports**: Database health monitoring
 
 ### Data Management
+
 - **Backup System**: Automatic and manual backups
 - **Cloud Sync**: Optional cloud synchronization
 - **Data Export**: CSV, JSON, and custom formats
@@ -415,6 +458,7 @@ POKERTOOL-HEADER-END -->
 ## User Interface
 
 ### Enhanced GUI
+
 - **Modern Material-UI**: React-based responsive interface
 - **Multi-Tab Layout**: Organized feature access
 - **Dashboard View**: At-a-glance performance metrics
@@ -423,6 +467,7 @@ POKERTOOL-HEADER-END -->
 - **Responsive Design**: Mobile and desktop support
 
 ### Theme System
+
 - **Theme Engine**: Comprehensive theming infrastructure
 - **Theme Editor**: Visual theme customization
 - **Theme Marketplace**: Share and download themes
@@ -431,6 +476,7 @@ POKERTOOL-HEADER-END -->
 - **Color Schemes**: Unlimited color customization
 
 ### Internationalization
+
 - **Multi-Language Support**: English, Spanish, German, Chinese
 - **Dynamic Translation**: Runtime language switching
 - **Locale-Specific Formatting**: Currency, dates, numbers
@@ -438,6 +484,7 @@ POKERTOOL-HEADER-END -->
 - **Right-to-Left Support**: RTL language compatibility
 
 ### Accessibility
+
 - **Keyboard Navigation**: Full keyboard support
 - **Screen Reader Compatible**: ARIA labels throughout
 - **High Contrast Modes**: Enhanced visibility options
@@ -449,6 +496,7 @@ POKERTOOL-HEADER-END -->
 ## Import/Export & Integration
 
 ### Hand History Import
+
 - **Multi-Format Support**: All major poker sites
 - **Automatic Detection**: Format recognition
 - **Bulk Import**: Process thousands of hands
@@ -457,6 +505,7 @@ POKERTOOL-HEADER-END -->
 - **Deduplication**: Automatic duplicate detection
 
 ### Data Export
+
 - **CSV Export**: Spreadsheet-compatible format
 - **JSON Export**: Machine-readable data
 - **PDF Reports**: Professional formatted reports
@@ -464,6 +513,7 @@ POKERTOOL-HEADER-END -->
 - **Custom Templates**: User-defined export formats
 
 ### API Integration
+
 - **REST API**: Complete programmatic access
 - **WebSocket Support**: Real-time data streaming
 - **Authentication**: Secure API access
@@ -471,6 +521,7 @@ POKERTOOL-HEADER-END -->
 - **API Documentation**: Comprehensive endpoint docs
 
 ### Third-Party Integration
+
 - **HEM Integration**: Hold'em Manager compatibility
 - **PT4 Integration**: PokerTracker 4 support
 - **Custom Integrations**: Plugin architecture
@@ -481,6 +532,7 @@ POKERTOOL-HEADER-END -->
 ## Advanced Analytics
 
 ### Performance Analytics
+
 - **Win Rate Tracking**: BB/100, $/hour metrics
 - **Variance Analysis**: Standard deviation tracking
 - **ROI Calculation**: Return on investment
@@ -489,6 +541,7 @@ POKERTOOL-HEADER-END -->
 - **Statistical Significance**: Confidence intervals
 
 ### Advanced Reporting
+
 - **Custom Report Builder**: Drag-and-drop reporting
 - **PDF Export**: Professional document generation
 - **Email Reports**: Scheduled report delivery
@@ -497,6 +550,7 @@ POKERTOOL-HEADER-END -->
 - **Series Analysis**: Multi-dimensional analytics
 
 ### Network Analysis
+
 - **Player Relationship Mapping**: Social graph construction
 - **Collusion Detection**: Suspicious behavior identification
 - **Network Visualization**: Interactive graph display
@@ -504,6 +558,7 @@ POKERTOOL-HEADER-END -->
 - **Network Metrics**: Centrality and density calculations
 
 ### Meta-Game Analysis
+
 - **Population Tendencies**: Aggregate player behavior
 - **Trend Detection**: Evolving strategy identification
 - **Table Dynamics**: Multi-player interaction analysis
@@ -514,6 +569,7 @@ POKERTOOL-HEADER-END -->
 ## Security & Compliance
 
 ### Security Features
+
 - **Input Sanitization**: SQL injection prevention
 - **XSS Protection**: Cross-site scripting prevention
 - **CSRF Protection**: Cross-site request forgery prevention
@@ -522,6 +578,7 @@ POKERTOOL-HEADER-END -->
 - **Encryption**: Data encryption at rest and in transit
 
 ### Compliance
+
 - **GDPR Compliance**: EU data protection compliance
 - **CCPA Compliance**: California privacy law compliance
 - **Data Privacy**: User data protection measures
@@ -530,6 +587,7 @@ POKERTOOL-HEADER-END -->
 - **Right to Deletion**: User data removal
 
 ### Monitoring
+
 - **Performance Monitoring**: Application health tracking
 - **Error Tracking**: Automatic error reporting
 - **Usage Analytics**: Privacy-respecting analytics
@@ -541,6 +599,7 @@ POKERTOOL-HEADER-END -->
 ## Community & Social
 
 ### Community Features
+
 - **User Forums**: Discussion boards
 - **Community Challenges**: Collaborative competitions
 - **Mentorship Program**: Peer learning system
@@ -549,6 +608,7 @@ POKERTOOL-HEADER-END -->
 - **Player Profiles**: Public player pages
 
 ### Gamification
+
 - **Achievement System**: Unlockable achievements
 - **Badge System**: Skill and milestone badges
 - **Experience Points**: Leveling system
@@ -557,6 +617,7 @@ POKERTOOL-HEADER-END -->
 - **Streak Tracking**: Consistency rewards
 
 ### Social Integration
+
 - **Friend System**: Add and track friends
 - **Activity Feed**: Friend activity updates
 - **Private Messages**: User-to-user messaging
@@ -568,6 +629,7 @@ POKERTOOL-HEADER-END -->
 ## Performance & Optimization
 
 ### Performance Features
+
 - **Multi-Threading**: Parallel computation support
 - **CPU Optimization**: Efficient CPU utilization
 - **Memory Management**: Intelligent memory usage
@@ -576,6 +638,7 @@ POKERTOOL-HEADER-END -->
 - **Asset Optimization**: Compressed assets
 
 ### Caching System
+
 - **Query Caching**: Database query caching
 - **Result Caching**: Computation result caching
 - **File Caching**: Static file caching
@@ -583,6 +646,7 @@ POKERTOOL-HEADER-END -->
 - **Cache Statistics**: Cache hit/miss tracking
 
 ### Performance Monitoring
+
 - **CPU Profiling**: CPU usage tracking
 - **Memory Profiling**: Memory leak detection
 - **Bottleneck Detection**: Performance issue identification
@@ -594,6 +658,7 @@ POKERTOOL-HEADER-END -->
 ## Developer Features
 
 ### Code Quality
+
 - **Type Hints**: Complete type annotations
 - **Docstrings**: Comprehensive documentation
 - **Unit Tests**: Extensive test coverage (90%+)
@@ -602,6 +667,7 @@ POKERTOOL-HEADER-END -->
 - **Code Formatting**: Consistent code style
 
 ### Documentation
+
 - **API Documentation**: Complete API reference
 - **Developer Guide**: Comprehensive dev docs
 - **Architecture Docs**: System design documentation
@@ -609,6 +675,7 @@ POKERTOOL-HEADER-END -->
 - **Code Examples**: Usage examples throughout
 
 ### Development Tools
+
 - **Debug Mode**: Enhanced debugging features
 - **Logging System**: Comprehensive logging
 - **Error Reporting**: Detailed error information
@@ -616,6 +683,7 @@ POKERTOOL-HEADER-END -->
 - **Testing Utilities**: Test helpers and fixtures
 
 ### Extensibility
+
 - **Plugin System**: Extensible architecture
 - **Custom Modules**: Add custom functionality
 - **Hook System**: Event-driven extensions
@@ -627,6 +695,7 @@ POKERTOOL-HEADER-END -->
 ## Technical Specifications
 
 ### System Requirements
+
 - **Python**: 3.10+ required
 - **Operating Systems**: Windows, macOS, Linux
 - **Memory**: Minimum 4GB RAM (8GB+ recommended)
@@ -634,6 +703,7 @@ POKERTOOL-HEADER-END -->
 - **GPU**: Optional (CUDA 12.0+ for ML features)
 
 ### Dependencies
+
 - **Core**: Python standard library
 - **Web Framework**: FastAPI (optional)
 - **Database**: SQLite, PostgreSQL
@@ -642,6 +712,7 @@ POKERTOOL-HEADER-END -->
 - **Frontend**: React 18, Material-UI
 
 ### Performance Metrics
+
 - **Hand Analysis**: <10ms average
 - **Equity Calculation**: <100ms (10k iterations)
 - **GTO Solve**: <30s (typical spot)
@@ -654,6 +725,7 @@ POKERTOOL-HEADER-END -->
 ## Feature Roadmap
 
 ### Completed (v1.0)
+
 - ✅ Core poker engine
 - ✅ GTO solver with CFR+
 - ✅ Neural network evaluator
@@ -668,6 +740,7 @@ POKERTOOL-HEADER-END -->
 - ✅ Community features
 
 ### In Development (v1.1)
+
 - 🔄 Monte Carlo Tree Search optimizer
 - 🔄 Real-time ICM calculator (enhanced)
 - 🔄 Quantum-inspired optimization
@@ -675,6 +748,7 @@ POKERTOOL-HEADER-END -->
 - 🔄 Meta-game optimizer
 
 ### Future Enhancements (v2.0)
+
 - 📋 Live table scraping (platform-specific)
 - 📋 Video replay generation
 - 📋 Voice commands
@@ -687,6 +761,7 @@ POKERTOOL-HEADER-END -->
 ## Feature Matrix by User Type
 
 ### Recreational Player
+
 - ✓ Basic hand analysis
 - ✓ Pre-flop charts
 - ✓ Simple HUD
@@ -694,6 +769,7 @@ POKERTOOL-HEADER-END -->
 - ✓ Basic bankroll management
 
 ### Serious Player
+
 - ✓ GTO solver access
 - ✓ Advanced HUD customization
 - ✓ Opponent tracking
@@ -702,6 +778,7 @@ POKERTOOL-HEADER-END -->
 - ✓ Tournament ICM
 
 ### Professional Player
+
 - ✓ Complete GTO solving
 - ✓ Neural network evaluation
 - ✓ Advanced opponent modeling
@@ -711,6 +788,7 @@ POKERTOOL-HEADER-END -->
 - ✓ API access
 
 ### Coach/Instructor
+
 - ✓ Training mode
 - ✓ Coaching system
 - ✓ Hand sharing
