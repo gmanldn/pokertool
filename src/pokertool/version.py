@@ -43,13 +43,31 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-15',
-    'release_name': 'GUI Performance Revolution',
+    'release_name': 'Live Table Revolution',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '72.0.0',
+        'date': '2025-10-15',
+        'name': 'Live Table Revolution',
+        'description': 'Complete live table view rework - real-time poker table mirroring',
+        'highlights': [
+            'LIVE DATA DISPLAY: Fixed critical data pipeline bug preventing player display',
+            'Player extraction: Implemented full SeatInfo → player dict conversion',
+            'Real-time updates: Players, stacks, positions, bets, cards all shown live',
+            'Position indicators: BTN/SB/BB/hero markers displayed correctly',
+            'Stack display: All player stacks shown with proper formatting',
+            'Player stats: VPIP, AF stats displayed when available',
+            'Time bank: Shows remaining time for decision',
+            'Active turn: Highlights whose turn it is to act',
+            'Data completeness: 100% of detected data now shown in GUI',
+            'Impact: Table view now fully mirrors real poker table state',
+        ],
+    },
     {
         'version': '71.0.0',
         'date': '2025-10-15',

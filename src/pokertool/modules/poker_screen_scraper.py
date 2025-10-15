@@ -117,26 +117,53 @@ class ScreenScraperBridge:
     def convert_to_game_state(table_state: Any) -> Dict[str, Any]:
         """
         Convert a TableState to a game state dictionary.
-        
+
         Args:
             table_state: TableState object or dict
-        
+
         Returns:
             Dictionary representation of the game state
         """
         if isinstance(table_state, dict):
             return dict(table_state)
-        
+
         if hasattr(table_state, '__dict__'):
-            return vars(table_state)
-        
+            # For dataclass objects, use vars() but ensure all fields are present
+            state_dict = vars(table_state).copy()
+
+            # Ensure seats are converted to dicts if they're dataclass instances
+            if 'seats' in state_dict and state_dict['seats']:
+                seats_list = []
+                for seat in state_dict['seats']:
+                    if hasattr(seat, '__dict__'):
+                        seats_list.append(vars(seat))
+                    else:
+                        seats_list.append(seat)
+                state_dict['seats'] = seats_list
+
+            return state_dict
+
         # Try to extract common attributes
         state_dict = {}
-        for attr in ['pot_size', 'hero_cards', 'board_cards', 'seats', 
-                     'active_players', 'stage', 'detection_confidence']:
+        for attr in ['pot_size', 'hero_cards', 'board_cards', 'seats',
+                     'active_players', 'stage', 'detection_confidence',
+                     'dealer_seat', 'small_blind', 'big_blind', 'ante',
+                     'extraction_method', 'tournament_name', 'table_name',
+                     'hero_seat', 'detection_strategies', 'site_detected']:
             if hasattr(table_state, attr):
-                state_dict[attr] = getattr(table_state, attr)
-        
+                value = getattr(table_state, attr)
+                # Convert seat objects to dicts
+                if attr == 'seats' and value:
+                    seats_list = []
+                    for seat in value:
+                        if hasattr(seat, '__dict__'):
+                            seats_list.append(vars(seat))
+                        else:
+                            seats_list.append(seat)
+                    state_dict[attr] = seats_list
+                else:
+                    state_dict[attr] = value
+
         return state_dict if state_dict else {'raw_state': str(table_state)}
 
 
