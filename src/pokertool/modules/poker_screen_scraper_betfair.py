@@ -2493,8 +2493,17 @@ class PokerScreenScraper:
                 if configured_handle and name:
                     # Match player name to configured handle (case-insensitive, partial match)
                     # This handles OCR errors and username display variations
-                    is_hero = (configured_handle.lower() in name.lower() or
-                              name.lower() in configured_handle.lower())
+                    # Require minimum 4 characters match to avoid false positives (e.g., 'An' matching 'GManLDN')
+                    name_lower = name.lower()
+                    handle_lower = configured_handle.lower()
+
+                    # Only match if the name is at least 4 chars OR matches at least 60% of the handle
+                    if len(name) >= 4:
+                        is_hero = (handle_lower in name_lower or name_lower in handle_lower)
+                    elif len(name) >= 3 and len(name) / len(configured_handle) >= 0.4:
+                        # For shorter names, check if name is substantial portion of handle
+                        is_hero = name_lower in handle_lower
+
                     if is_hero:
                         logger.info(f"✓ Hero detected at seat {seat_num}: '{name}' matches handle '{configured_handle}'")
                 else:

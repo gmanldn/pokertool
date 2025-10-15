@@ -370,48 +370,53 @@ def main() -> int:
     parser.add_argument('--self-test', action='store_true', help='Run comprehensive tests')
     parser.add_argument('--gui', action='store_true', help='Launch enhanced GUI only')
     parser.add_argument('--setup-only', action='store_true', help='Setup without launching')
-    
+
     args = parser.parse_args()
-    
+
     # Default to --all if no args
     if not any([args.all, args.self_test, args.gui, args.setup_only]):
         args.all = True
-    
+
     show_banner()
-    
+
     try:
         # Always ensure venv exists
         if not VENV_DIR.exists() or not Path(get_venv_python()).exists():
             create_venv()
             install_dependencies()
-        
+
         # Setup
         if args.all or args.setup_only:
             log("Verifying dependencies...")
             install_dependencies()
             log("✓ Setup complete")
-        
+
         # Self-test
         if args.self_test or args.all:
             run_tests()
-        
+
         # Launch GUI
         if args.all or args.gui:
             if not args.setup_only:
                 return launch_enhanced_gui()
-        
+
         if args.setup_only:
             log("✓ Setup completed. Run 'python start.py --gui' to launch.")
-        
+
         return 0
-        
+
     except KeyboardInterrupt:
         log("Interrupted by user")
+        log("Cleaning up processes...")
+        cleanup_old_processes()
         return 130
     except Exception as e:
         log(f"ERROR: {e}")
         import traceback
         traceback.print_exc()
+        log("")
+        log("Cleaning up processes due to error...")
+        cleanup_old_processes()
         return 1
 
 if __name__ == '__main__':
