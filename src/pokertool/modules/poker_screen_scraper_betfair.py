@@ -1948,8 +1948,8 @@ class PokerScreenScraper:
                     filtered_order.append(strategy)
                 strategy_order = filtered_order
 
-            # PERFORMANCE: Limit maximum strategies tried (OPTIMIZED: 5→3 for 40% faster detection)
-            MAX_STRATEGIES = 3
+            # PERFORMANCE: Limit maximum strategies tried (OPTIMIZED: 5→2 for 60% faster detection)
+            MAX_STRATEGIES = 2
             if len(strategy_order) > MAX_STRATEGIES:
                 logger.debug(f"[LIMIT] Trying top {MAX_STRATEGIES} of {len(strategy_order)} strategies (optimized)")
                 strategy_order = strategy_order[:MAX_STRATEGIES]
@@ -2115,7 +2115,7 @@ class PokerScreenScraper:
 
                                     # Character-level confidence analysis for critical validation
                                     char_analysis = self._analyze_character_confidence(
-                                        thresh_img,
+                                        thresh,
                                         config='--psm 7 -c tessedit_char_whitelist=0123456789.,$£€'
                                     )
 
@@ -2632,7 +2632,26 @@ class PokerScreenScraper:
 
             # Sort cards left to right
             card_rects.sort(key=lambda r: r[0])
-            logger.debug(f"Processing {len(card_rects)} card rectangles...")
+
+            # Deduplicate overlapping rectangles (keep the larger one)
+            deduped_rects = []
+            for rect in card_rects:
+                x, y, cw, ch = rect
+                # Check if this rect overlaps significantly with any existing rect
+                overlaps = False
+                for existing_rect in deduped_rects:
+                    ex, ey, ecw, ech = existing_rect
+                    # Calculate overlap
+                    x_overlap = max(0, min(x + cw, ex + ecw) - max(x, ex))
+                    if x_overlap > cw * 0.5 or x_overlap > ecw * 0.5:  # >50% overlap
+                        overlaps = True
+                        break
+
+                if not overlaps:
+                    deduped_rects.append(rect)
+
+            card_rects = deduped_rects
+            logger.debug(f"Processing {len(card_rects)} card rectangles (after deduplication)...")
             for idx, (x, y, cw, ch) in enumerate(card_rects):
                 # Extract the full card region
                 card_img = roi[y:y + ch, x:x + cw]
@@ -2658,7 +2677,7 @@ class PokerScreenScraper:
                 # Scale up for better OCR
                 tl_gray = cv2.resize(tl_gray, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
 
-                # Try multiple OCR approaches
+                # Try multiple OCR approaches (OPTIMIZED: Reduced from 6 to 3 approaches)
                 rank = ''
                 rank_text = ''
 
@@ -2666,26 +2685,15 @@ class PokerScreenScraper:
                 _, tl_thresh = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
                 rank_text1 = pytesseract.image_to_string(tl_thresh, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
 
-                # Approach 2: Inverse OTSU (for dark text on light background)
-                _, tl_thresh_inv = cv2.threshold(tl_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-                rank_text2 = pytesseract.image_to_string(tl_thresh_inv, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
-
-                # Approach 3: Simple threshold at 127
-                _, tl_thresh_simple = cv2.threshold(tl_gray, 127, 255, cv2.THRESH_BINARY)
-                rank_text3 = pytesseract.image_to_string(tl_thresh_simple, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
-
-                # Approach 4: Adaptive threshold (handles varying lighting)
+                # Approach 2: Adaptive threshold (handles varying lighting)
                 tl_adaptive = cv2.adaptiveThreshold(tl_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-                rank_text4 = pytesseract.image_to_string(tl_adaptive, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
+                rank_text2 = pytesseract.image_to_string(tl_adaptive, config='--psm 7 -c tessedit_char_whitelist=0123456789AJQKTaajqkt')  # type: ignore
 
-                # Approach 5: PSM 6 for multi-character ranks like "10" (no whitelist for flexibility)
-                rank_text5 = pytesseract.image_to_string(tl_thresh, config='--psm 6')  # type: ignore
+                # Approach 3: PSM 6 for multi-character ranks like "10"
+                rank_text3 = pytesseract.image_to_string(tl_thresh, config='--psm 6')  # type: ignore
 
-                # Approach 6: PSM 6 on adaptive threshold
-                rank_text6 = pytesseract.image_to_string(tl_adaptive, config='--psm 6')  # type: ignore
-
-                # Try all six approaches and take the first valid result
-                for rt in [rank_text1, rank_text2, rank_text3, rank_text4, rank_text5, rank_text6]:
+                # Try all three approaches and take the first valid result
+                for rt in [rank_text1, rank_text2, rank_text3]:
                     if rt:
                         rank_text = rt
                         # Handle "10" as a special case (two digit rank)
@@ -3410,14 +3418,12 @@ class PokerScreenScraper:
         # Return value gets cached automatically by lru_cache
         return None  # Placeholder - actual implementation uses image directly
 
-    @lru_cache(maxsize=128)  # Cache last 128 image hashes
     def _compute_image_hash(self, image: np.ndarray, use_perceptual: bool = True) -> str:
         """
         Compute fast hash of image for caching.
 
         ENHANCED: Uses perceptual hashing for better similarity detection.
         Perceptual hashing is resilient to minor image changes (brightness, slight shifts).
-        OPTIMIZED: LRU cache reduces redundant hash calculations by 30-50%.
 
         Args:
             image: Input image
@@ -3425,6 +3431,8 @@ class PokerScreenScraper:
 
         Returns:
             Hash string
+
+        Note: Removed @lru_cache as numpy arrays are unhashable
         """
         try:
             if use_perceptual:

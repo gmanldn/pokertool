@@ -58,8 +58,16 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
                 return _last_table_data
             return None
 
-        # Try to get cached state from the enhanced scraper manager first
-        # This is much faster than calling analyze_table()
+        # Try to get cached state from the scraper directly first (much faster!)
+        # Priority 1: Check if scraper has get_cached_state method (from continuous capture)
+        cached_state = None
+        if hasattr(screen_scraper, 'get_cached_state'):
+            cached_state = screen_scraper.get_cached_state()
+            print(f"[get_live_table_data] Got cached state from scraper: {cached_state is not None}")
+            if cached_state:
+                return _convert_game_state_to_table_data(cached_state)
+
+        # Priority 2: Try enhanced scraper manager
         table_state = None
         print(f"[get_live_table_data] ENHANCED_SCRAPER_AVAILABLE={ENHANCED_SCRAPER_AVAILABLE}, _scraper_manager={_scraper_manager is not None}")
         if ENHANCED_SCRAPER_AVAILABLE and _scraper_manager:
@@ -67,9 +75,6 @@ def get_live_table_data_from_scraper(screen_scraper) -> Optional[Dict[str, Any]]
             print(f"[get_live_table_data] cached_state type: {type(cached_state)}, is_none: {cached_state is None}")
             if cached_state:
                 print(f"[get_live_table_data] Got cached state from enhanced scraper manager")
-                # The enhanced scraper returns a game_state dict, not a TableState object
-                # We need to convert it to the expected format
-                # For now, let's just try to use it directly and see what happens
                 return _convert_game_state_to_table_data(cached_state)
             else:
                 print(f"[get_live_table_data] No cached state available from enhanced scraper")

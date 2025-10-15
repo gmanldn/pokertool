@@ -228,8 +228,17 @@ class PokerScreenScraper:
         def capture_loop():
             """Background thread that continuously captures table state."""
             logger.info(f"Starting continuous capture with interval={interval}s")
+            frame_count = 0
             while not self._stop_event.is_set():
                 try:
+                    frame_count += 1
+
+                    # PERFORMANCE: Skip frames to reduce OCR load
+                    # Process every 2nd frame (50% reduction in OCR calls)
+                    if frame_count % 2 != 0:
+                        self._stop_event.wait(interval)
+                        continue
+
                     # Capture and analyze the current table
                     table_state = self.analyze_table()
 
@@ -294,6 +303,15 @@ class PokerScreenScraper:
         except Empty:
             # If queue is empty, return the cached latest state
             return self._latest_state
+
+    def get_cached_state(self) -> Optional[Dict[str, Any]]:
+        """
+        Get the most recently cached table state without blocking.
+
+        Returns:
+            Latest cached table state dict or None if no state available
+        """
+        return self._latest_state
     
     # Legacy methods for backward compatibility
     def extract_pot_size(self, image: np.ndarray) -> float:
