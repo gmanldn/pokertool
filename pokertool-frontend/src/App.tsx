@@ -13,7 +13,8 @@ POKERTOOL-HEADER-END */
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, useMediaQuery } from '@mui/material';
+import { Provider } from 'react-redux';
 import { Dashboard } from './components/Dashboard';
 import { Navigation } from './components/Navigation';
 import { TableView } from './components/TableView';
@@ -26,13 +27,31 @@ import { GTOTrainer } from './components/GTOTrainer';
 import { HandHistory } from './components/HandHistory';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ThemeContext } from './contexts/ThemeContext';
+import { store, useAppSelector, RootState } from './store';
+import { setMobileLayout, SettingsState } from './store/slices/settingsSlice';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import './styles/App.css';
+import './styles/mobile.css';
 
-function App() {
+// Separate component to use Redux hooks
+function AppContent() {
+  const isMobile = useMediaQuery('(max-width:768px)');
+  const isTablet = useMediaQuery('(max-width:1024px)');
+  const settings = useAppSelector((state: RootState) => state.settings) as SettingsState;
+  const mobileLayout = settings.mobileLayout;
+  
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     const savedMode = localStorage.getItem('darkMode');
     return savedMode ? JSON.parse(savedMode) : true;
   });
+
+  // Detect mobile and update Redux state
+  useEffect(() => {
+    const shouldUseMobileLayout = isMobile || isTablet;
+    if (shouldUseMobileLayout !== mobileLayout) {
+      store.dispatch(setMobileLayout(shouldUseMobileLayout));
+    }
+  }, [isMobile, isTablet, mobileLayout]);
 
   const theme = useMemo(
     () =>
@@ -91,7 +110,7 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
-          <div className="app">
+          <div className={`app ${mobileLayout ? 'mobile-layout' : ''}`}>
             <Navigation connected={connected} />
             <main className="app-main">
               <Routes>
@@ -107,10 +126,20 @@ function App() {
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </main>
+            <MobileBottomNav />
           </div>
         </Router>
       </ThemeProvider>
     </ThemeContext.Provider>
+  );
+}
+
+// Main App component with Redux Provider
+function App() {
+  return (
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
   );
 }
 

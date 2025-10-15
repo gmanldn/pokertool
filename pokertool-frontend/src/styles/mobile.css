@@ -1,0 +1,420 @@
+/* Mobile-First Responsive Styles for PokerTool */
+
+/* ============================================
+   MOBILE BREAKPOINTS
+   ============================================ */
+:root {
+  --breakpoint-xs: 0px;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  
+  --touch-target-min: 44px;
+  --mobile-spacing: 12px;
+  --tablet-spacing: 16px;
+  --desktop-spacing: 24px;
+}
+
+/* ============================================
+   MOBILE LAYOUT BASE
+   ============================================ */
+.app.mobile-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app.mobile-layout .app-main {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--mobile-spacing);
+}
+
+/* ============================================
+   TOUCH TARGETS - Minimum 44x44px
+   ============================================ */
+.mobile-layout button,
+.mobile-layout .MuiButton-root,
+.mobile-layout .MuiIconButton-root,
+.mobile-layout a[role="button"],
+.mobile-layout .touchable {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  padding: 12px;
+}
+
+.mobile-layout .MuiIconButton-root {
+  padding: 10px;
+}
+
+/* ============================================
+   SWIPE GESTURE INDICATORS
+   ============================================ */
+.swipe-indicator {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.swipe-indicator.left {
+  left: 0;
+}
+
+.swipe-indicator.right {
+  right: 0;
+}
+
+.swipe-indicator.active {
+  opacity: 1;
+}
+
+/* ============================================
+   BOTTOM NAVIGATION (Mobile Only)
+   ============================================ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: #1e1e1e;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1100;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  font-size: 10px;
+  gap: 2px;
+  min-width: var(--touch-target-min);
+  cursor: pointer;
+}
+
+.bottom-nav-item:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bottom-nav-item.active {
+  color: #4caf50;
+}
+
+.bottom-nav-item svg {
+  font-size: 24px;
+}
+
+/* Add padding to main content to avoid overlap with bottom nav */
+.mobile-layout .app-main {
+  padding-bottom: calc(56px + var(--mobile-spacing));
+}
+
+/* ============================================
+   COLLAPSIBLE SECTIONS
+   ============================================ */
+.collapsible-section {
+  margin-bottom: var(--mobile-spacing);
+}
+
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: var(--touch-target-min);
+  transition: background 0.2s ease;
+}
+
+.collapsible-header:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.collapsible-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  padding: 0 16px;
+}
+
+.collapsible-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+}
+
+.collapsible-content.expanded {
+  max-height: 1000px;
+  opacity: 1;
+  padding: 12px 16px;
+}
+
+/* ============================================
+   PULL TO REFRESH
+   ============================================ */
+.pull-to-refresh {
+  position: absolute;
+  top: -60px;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: top 0.3s ease;
+}
+
+.pull-to-refresh.pulling {
+  top: 0;
+}
+
+.pull-to-refresh-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Extra Small Devices (Phones, < 576px) */
+@media (max-width: 575px) {
+  .hide-xs {
+    display: none !important;
+  }
+  
+  .mobile-layout .MuiPaper-root {
+    border-radius: 8px;
+  }
+  
+  .mobile-layout .app-main {
+    padding: 8px;
+  }
+  
+  /* Stack all cards vertically */
+  .mobile-layout .MuiGrid-container {
+    flex-direction: column;
+  }
+  
+  .mobile-layout .MuiGrid-item {
+    max-width: 100%;
+  }
+  
+  /* Reduce padding in cards */
+  .mobile-layout .MuiCard-root {
+    padding: 12px;
+  }
+  
+  /* Font size adjustments */
+  .mobile-layout h1 { font-size: 1.5rem; }
+  .mobile-layout h2 { font-size: 1.3rem; }
+  .mobile-layout h3 { font-size: 1.1rem; }
+  .mobile-layout h4 { font-size: 1rem; }
+  .mobile-layout h5 { font-size: 0.9rem; }
+  .mobile-layout h6 { font-size: 0.85rem; }
+}
+
+/* Small Devices (Landscape Phones, 576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .hide-sm {
+    display: none !important;
+  }
+  
+  .mobile-layout .app-main {
+    padding: 12px;
+  }
+}
+
+/* Medium Devices (Tablets, 768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hide-md {
+    display: none !important;
+  }
+  
+  .mobile-layout .app-main {
+    padding: var(--tablet-spacing);
+  }
+  
+  /* Show 2 columns on tablets */
+  .mobile-layout .MuiGrid-item {
+    max-width: 50%;
+  }
+}
+
+/* Large Devices (Desktops, 1024px - 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .hide-lg {
+    display: none !important;
+  }
+}
+
+/* Extra Large Devices (Large Desktops, >= 1280px) */
+@media (min-width: 1280px) {
+  .hide-xl {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   PORTRAIT / LANDSCAPE ORIENTATION
+   ============================================ */
+@media (orientation: portrait) {
+  .hide-portrait {
+    display: none !important;
+  }
+  
+  /* Advice panel takes full width in portrait */
+  .mobile-layout .advice-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Stack table and advice vertically */
+  .mobile-layout .table-advice-container {
+    flex-direction: column;
+  }
+}
+
+@media (orientation: landscape) {
+  .hide-landscape {
+    display: none !important;
+  }
+  
+  /* Side-by-side layout in landscape */
+  .mobile-layout .table-advice-container {
+    flex-direction: row;
+  }
+  
+  .mobile-layout .advice-panel {
+    max-width: 400px;
+  }
+}
+
+/* ============================================
+   MOBILE-SPECIFIC COMPONENTS
+   ============================================ */
+
+/* Compact Advice Panel for Mobile */
+.mobile-layout .advice-panel.compact {
+  padding: 12px;
+}
+
+.mobile-layout .advice-panel.compact .action-text {
+  font-size: 1.8rem;
+}
+
+.mobile-layout .advice-panel.compact .metrics-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mobile-layout .advice-panel.compact .reasoning-text {
+  font-size: 0.85rem;
+  max-height: 60px;
+  overflow-y: auto;
+}
+
+/* Swipeable Tabs for Mobile */
+.mobile-tabs {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+.mobile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-tab {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+  min-width: var(--touch-target-min);
+  text-align: center;
+}
+
+.mobile-tab.active {
+  background: #4caf50;
+  color: white;
+}
+
+.mobile-tab:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Improve tap highlighting */
+.mobile-layout * {
+  -webkit-tap-highlight-color: rgba(76, 175, 80, 0.2);
+}
+
+/* Prevent text selection on interactive elements */
+.mobile-layout button,
+.mobile-layout .touchable,
+.mobile-layout .bottom-nav-item {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+
+/* Enable hardware acceleration for smooth scrolling */
+.mobile-layout .app-main,
+.mobile-layout .scrollable {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Optimize animations for mobile */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-layout * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
