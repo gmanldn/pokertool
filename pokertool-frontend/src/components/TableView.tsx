@@ -90,6 +90,88 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
       // Handle different message types from backend
       if (latestMessage.type === 'table_update' && latestMessage.data) {
         setTables([latestMessage.data]);
+      } else {
+        // Handle incremental detection events to update current table
+        setTables(prevTables => {
+          const currentTable = prevTables[0] || {
+            tableId: 'table-1',
+            tableName: 'Live Table',
+            players: [],
+            pot: 0,
+            communityCards: [],
+            currentAction: '',
+            isActive: true,
+          };
+
+          let updated = { ...currentTable };
+
+          // Card detection events
+          if (latestMessage.type === 'card_detected' || latestMessage.type === 'cards_detected') {
+            const cardData = latestMessage.data || latestMessage;
+            if (cardData.cards && Array.isArray(cardData.cards)) {
+              // Community cards
+              if (cardData.type === 'community' || cardData.cardType === 'board') {
+                updated.communityCards = cardData.cards;
+                updated.currentAction = `${cardData.cards.length} community cards detected`;
+              }
+              // Hole cards for a specific player
+              else if (cardData.seat !== undefined || cardData.playerId !== undefined) {
+                const seatNum = cardData.seat || cardData.playerId;
+                updated.players = [...updated.players];
+                const playerIndex = updated.players.findIndex(p => p.seat === seatNum);
+                if (playerIndex >= 0) {
+                  updated.players[playerIndex] = { ...updated.players[playerIndex], cards: cardData.cards };
+                }
+              }
+            }
+          }
+
+          // Player detection events
+          if (latestMessage.type === 'player_detected' || latestMessage.type === 'player_update') {
+            const playerData = latestMessage.data || latestMessage;
+            if (playerData.seat !== undefined) {
+              updated.players = [...updated.players];
+              const existingIndex = updated.players.findIndex(p => p.seat === playerData.seat);
+
+              const player: Player = {
+                seat: playerData.seat,
+                name: playerData.name || `Player ${playerData.seat}`,
+                chips: playerData.chips || playerData.stack || 0,
+                cards: playerData.cards,
+                isActive: playerData.isActive !== undefined ? playerData.isActive : true,
+                isFolded: playerData.isFolded || playerData.folded || false,
+              };
+
+              if (existingIndex >= 0) {
+                updated.players[existingIndex] = player;
+              } else {
+                updated.players.push(player);
+              }
+              updated.currentAction = `${player.name} detected`;
+            }
+          }
+
+          // Pot detection events
+          if (latestMessage.type === 'pot_update' || latestMessage.type === 'pot_detected') {
+            const potData = latestMessage.data || latestMessage;
+            if (potData.pot !== undefined || potData.amount !== undefined) {
+              updated.pot = potData.pot || potData.amount;
+              updated.currentAction = `Pot: ${updated.pot}`;
+            }
+          }
+
+          // Action detection events
+          if (latestMessage.type === 'action_detected' || latestMessage.type === 'player_action') {
+            const actionData = latestMessage.data || latestMessage;
+            if (actionData.action) {
+              updated.currentAction = actionData.player
+                ? `${actionData.player} ${actionData.action}`
+                : actionData.action;
+            }
+          }
+
+          return [updated];
+        });
       }
     }
   }, [messages]);
@@ -238,8 +320,8 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
               }}
             >
               <CardContent sx={{ p: 1.5 }}>
-                <Typography 
-                  variant="caption" 
+                <Typography
+                  variant="caption"
                   sx={{
                     fontWeight: 700,
                     color: '#ffffff',
@@ -250,15 +332,42 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
                 >
                   {player.name}
                 </Typography>
-                <Typography 
+                <Typography
                   variant="body2"
                   sx={{
                     color: player.isActive ? theme.palette.primary.light : '#b0b0b0',
                     fontWeight: 600,
+                    mb: player.cards && player.cards.length > 0 ? 0.5 : 0,
                   }}
                 >
                   ${player.chips}
                 </Typography>
+                {/* Hole Cards */}
+                {player.cards && player.cards.length > 0 && (
+                  <Box sx={{ display: 'flex', gap: 0.3, mt: 0.5, justifyContent: 'center' }}>
+                    {player.cards.map((card, cardIdx) => (
+                      <Paper
+                        key={cardIdx}
+                        sx={{
+                          width: 22,
+                          height: 32,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          fontSize: '0.65rem',
+                          background: '#ffffff',
+                          borderRadius: 0.5,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                          border: '1px solid #e0e0e0',
+                          color: card.includes('h') || card.includes('d') ? '#d32f2f' : '#000',
+                        }}
+                      >
+                        {card}
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Box>
