@@ -3,7 +3,7 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 81.0.0
+version = 82.0.0
 release_date = 2025-10-15
 
 [components]

@@ -99,7 +99,7 @@ class GroundTruth:
 
 
 @dataclass
-class QaQaTestCase:
+class QaTestCase:
     """A single QA test case."""
     id: str
     name: str
@@ -132,7 +132,7 @@ class FieldDiff:
 
 
 @dataclass
-class QaQaTestResult:
+class QaTestResult:
     """Result of running a test case."""
     test_case_id: str
     success: bool
