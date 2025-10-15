@@ -56,6 +56,21 @@ poker_decisions.db
 # STATE DATA - All Runtime and User Data Files
 # ==============================================================================
 
+# Video processing temporary files
+video_frames/
+frame_*.png
+
+# Debug artifacts
+debug_screenshots/
+structure_backup/
+
+# PokerHeader metadata files
+*.pokerheader.yml
+.pokerheader.yml
+
+# User configuration files (use templates instead)
+poker_config.json
+
 # Database files - All SQLite databases
 *.db
 *.db-journal
@@ -211,6 +226,7 @@ app_state/
 test_results/
 test_outputs/
 test_data/generated/
+test_logs/
 
 # Performance profiling
 *.prof
@@ -271,5 +287,6 @@ core.*
 
 # Keep static assets
 !assets/**/*
-test_logs/*.log
-test_logs/*.json
+
+# Keep example/template configuration files
+!poker_config.example.json
