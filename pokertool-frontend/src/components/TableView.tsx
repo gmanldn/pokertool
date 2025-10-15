@@ -34,6 +34,10 @@ import {
   Casino,
 } from '@mui/icons-material';
 import { AdvicePanel } from './AdvicePanel';
+import { DecisionTimer } from './DecisionTimer';
+import { HandStrengthMeter } from './HandStrengthMeter';
+import { EquityCalculator } from './EquityCalculator';
+import { BetSizingRecommendations } from './BetSizingRecommendations';
 import { useWebSocket } from '../hooks/useWebSocket';
 
 interface TableViewProps {
@@ -330,9 +334,26 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
           </Paper>
         </Grid>
 
-        {/* Smart Advice Panel */}
+        {/* Smart Advice Panel with new components */}
         <Grid item xs={12} md={4}>
-          <AdvicePanel messages={messages} compact={isMobile} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <DecisionTimer timeLimit={30} compact={isMobile} />
+            <AdvicePanel messages={messages} compact={isMobile} />
+            <HandStrengthMeter strength={75} compact={isMobile} />
+            <EquityCalculator
+              winEquity={62.5}
+              tieEquity={3.5}
+              ev={12.5}
+              potOdds={33}
+              requiredEquity={30}
+              compact={isMobile}
+            />
+          </Box>
+        </Grid>
+
+        {/* Bet Sizing */}
+        <Grid item xs={12} md={4}>
+          <BetSizingRecommendations potSize={250} compact={isMobile} />
         </Grid>
 
         {/* Table Info */}

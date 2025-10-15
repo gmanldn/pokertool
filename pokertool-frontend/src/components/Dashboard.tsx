@@ -46,6 +46,7 @@ import {
   ArcElement,
 } from 'chart.js';
 import { WebSocketMessage } from '../hooks/useWebSocket';
+import { SessionGoalsTracker } from './SessionGoalsTracker';
 
 ChartJS.register(
   CategoryScale,
@@ -214,6 +215,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
       </Box>
 
       <Grid container spacing={3}>
+        {/* Session Goals Tracker */}
+        <Grid item xs={12}>
+          <SessionGoalsTracker compact={isMobile} />
+        </Grid>
+
         {/* Stat Cards */}
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
