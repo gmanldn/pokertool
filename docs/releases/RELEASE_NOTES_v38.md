@@ -25,6 +25,7 @@ A complete system for recording, storing, and analyzing every hand played:
 ## 📊 What Gets Tracked
 
 ### Per Hand:
+
 - **Unique Hand ID** - Timestamp-based identifier
 - **Table & Site** - Table name and poker site
 - **Blinds** - Small blind / big blind amounts
@@ -38,6 +39,7 @@ A complete system for recording, storing, and analyzing every hand played:
 - **Duration** - How long the hand took
 
 ### Statistics:
+
 - Total hands played
 - Hands won / lost
 - Win rate percentage
@@ -51,6 +53,7 @@ A complete system for recording, storing, and analyzing every hand played:
 
 ### Statistics Dashboard
 6 key metrics displayed prominently:
+
 - Total Hands
 - Hands Won
 - Hands Lost
@@ -59,6 +62,7 @@ A complete system for recording, storing, and analyzing every hand played:
 - Average Pot Size ($)
 
 ### Filter & Sort
+
 - Filter by hero name
 - Filter by table name
 - Filter by result (Won/Lost/Pushed)
@@ -66,6 +70,7 @@ A complete system for recording, storing, and analyzing every hand played:
 
 ### Hand Table View
 9-column table showing:
+
 - Time (timestamp)
 - Table name
 - Hero name
@@ -77,12 +82,14 @@ A complete system for recording, storing, and analyzing every hand played:
 - Number of players
 
 Color-coded rows:
+
 - 🟢 Green background = Win
 - 🔴 Red background = Loss
 - ⚪ White background = Push
 
 ### Detail Pane
 Click any hand to see complete details:
+
 - Hand ID and metadata
 - All players with seats and positions
 - Hero cards (highlighted)
@@ -91,6 +98,7 @@ Click any hand to see complete details:
 - Winners and results
 
 ### Actions
+
 - 🔄 **Refresh** - Reload from database
 - 💾 **Export** - Save to JSON file
 - 🗑️ **Clear All** - Delete all history (with confirmation)
@@ -145,6 +153,7 @@ timestamp: str
 ### Database Schema
 
 **Table: hands**
+
 - hand_id (PRIMARY KEY)
 - timestamp (INDEXED)
 - table_name (INDEXED)
@@ -162,6 +171,7 @@ timestamp: str
 ### Files Added
 
 **src/pokertool/hand_history_db.py** (550 lines)
+
 - `HandHistory`, `PlayerInfo`, `PlayerAction` dataclasses
 - `HandHistoryDatabase` class with full CRUD
 - Statistics aggregation methods
@@ -169,12 +179,14 @@ timestamp: str
 - Global singleton: `get_hand_history_db()`
 
 **src/pokertool/enhanced_gui_components/tabs/hand_history_tab.py** (610 lines)
+
 - `HandHistoryTabMixin` for GUI integration
 - Complete tab builder with all UI components
 - Event handlers for filtering, sorting, selection
 - Export and clear functionality
 
 **Modified Files:**
+
 - **src/pokertool/enhanced_gui.py** - Added HandHistoryTabMixin inheritance
 - **src/pokertool/enhanced_gui_components/tabs/__init__.py** - Added HandHistoryTabMixin export
 
@@ -183,24 +195,28 @@ timestamp: str
 ## 📈 Accuracy Focus
 
 ### Position Tracking
+
 - Accurate seat-to-position mapping
 - Dealer button tracking
 - Automatic SB/BB assignment based on button
 - Position labels: BTN, SB, BB, UTG, MP, CO, etc.
 
 ### Stack & Pot Calculations
+
 - Precise starting/ending stack amounts
 - Accurate pot size calculation
 - Net win/loss per player
 - Hero-specific P&L tracking
 
 ### Action Sequencing
+
 - Complete betting history by street
 - Timestamp for each action
 - Amount tracking for all bets/raises
 - Proper action type classification
 
 ### Card Recording
+
 - Hero hole cards preserved
 - Board cards by street
 - Showdown hands (when available)
@@ -210,24 +226,28 @@ timestamp: str
 ## 🎯 Use Cases
 
 ### Session Analysis
+
 - Review all hands from a session
 - Calculate session P&L
 - Identify profitable/losing patterns
 - Track performance over time
 
 ### Hand Review
+
 - Study specific hands in detail
 - Analyze betting sequences
 - Review decision points
 - Learn from mistakes
 
 ### Statistics Tracking
+
 - Win rate by position
 - Average pot size by stakes
 - Net profit over time
 - Hands played per session
 
 ### Export & Share
+
 - Export hands to JSON
 - Share interesting hands
 - Import to analysis tools
@@ -238,6 +258,7 @@ timestamp: str
 ## 🔜 Future Enhancements
 
 Ready for:
+
 - **Hand Replayer** - Visual playback of hands
 - **Advanced Stats** - VPIP, PFR, 3-bet%, aggression factor
 - **Tournament Tracking** - Separate tournament vs cash game stats
@@ -295,6 +316,7 @@ None reported at release time.
 ## 📞 Support
 
 Having issues? Check:
+
 1. Is `hand_history.db` being created in the project root?
 2. Do you have write permissions in the project directory?
 3. Are you seeing the "📚 History" tab in the GUI?

@@ -37,6 +37,9 @@ This wrapper ensures existing code continues to work without modification.
 import logging
 from typing import Dict, List, Optional, Any, Callable, Tuple
 from dataclasses import dataclass
+from queue import Queue, Empty
+from threading import Thread, Event
+import time
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -114,26 +117,53 @@ class ScreenScraperBridge:
     def convert_to_game_state(table_state: Any) -> Dict[str, Any]:
         """
         Convert a TableState to a game state dictionary.
-        
+
         Args:
             table_state: TableState object or dict
-        
+
         Returns:
             Dictionary representation of the game state
         """
         if isinstance(table_state, dict):
             return dict(table_state)
-        
+
         if hasattr(table_state, '__dict__'):
-            return vars(table_state)
-        
+            # For dataclass objects, use vars() but ensure all fields are present
+            state_dict = vars(table_state).copy()
+
+            # Ensure seats are converted to dicts if they're dataclass instances
+            if 'seats' in state_dict and state_dict['seats']:
+                seats_list = []
+                for seat in state_dict['seats']:
+                    if hasattr(seat, '__dict__'):
+                        seats_list.append(vars(seat))
+                    else:
+                        seats_list.append(seat)
+                state_dict['seats'] = seats_list
+
+            return state_dict
+
         # Try to extract common attributes
         state_dict = {}
-        for attr in ['pot_size', 'hero_cards', 'board_cards', 'seats', 
-                     'active_players', 'stage', 'detection_confidence']:
+        for attr in ['pot_size', 'hero_cards', 'board_cards', 'seats',
+                     'active_players', 'stage', 'detection_confidence',
+                     'dealer_seat', 'small_blind', 'big_blind', 'ante',
+                     'extraction_method', 'tournament_name', 'table_name',
+                     'hero_seat', 'detection_strategies', 'site_detected']:
             if hasattr(table_state, attr):
-                state_dict[attr] = getattr(table_state, attr)
-        
+                value = getattr(table_state, attr)
+                # Convert seat objects to dicts
+                if attr == 'seats' and value:
+                    seats_list = []
+                    for seat in value:
+                        if hasattr(seat, '__dict__'):
+                            seats_list.append(vars(seat))
+                        else:
+                            seats_list.append(seat)
+                    state_dict[attr] = seats_list
+                else:
+                    state_dict[attr] = value
+
         return state_dict if state_dict else {'raw_state': str(table_state)}
 
 
@@ -166,6 +196,13 @@ class PokerScreenScraper:
             # Fallback to legacy (would need the full legacy implementation)
             logger.error("Betfair Edition not available and no legacy fallback implemented")
             raise ImportError("poker_screen_scraper_betfair module is required")
+
+        # Initialize continuous capture state
+        self._state_queue: Queue = Queue(maxsize=5)  # Keep last 5 states (optimized)
+        self._capture_thread: Optional[Thread] = None
+        self._stop_event: Event = Event()
+        self._latest_state: Optional[Dict[str, Any]] = None
+        self._last_state_hash: Optional[int] = None  # For deduplication
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
         """
@@ -209,19 +246,99 @@ class PokerScreenScraper:
     # Additional methods needed by enhanced_gui
     def start_continuous_capture(self, interval: float = 1.0) -> bool:
         """Start continuous table capture."""
-        # This is handled by the scrape.py enhanced scraper manager
-        # but we provide a stub for compatibility
-        logger.debug(f"start_continuous_capture called with interval={interval}")
+        if self._capture_thread and self._capture_thread.is_alive():
+            logger.warning("Continuous capture already running")
+            return True
+
+        self._stop_event.clear()
+
+        def capture_loop():
+            """Background thread that continuously captures table state."""
+            logger.info(f"Starting continuous capture with interval={interval}s")
+            frame_count = 0
+            while not self._stop_event.is_set():
+                try:
+                    frame_count += 1
+
+                    # PERFORMANCE: Skip frames to reduce OCR load
+                    # Process every 2nd frame (50% reduction in OCR calls)
+                    if frame_count % 2 != 0:
+                        self._stop_event.wait(interval)
+                        continue
+
+                    # Capture and analyze the current table
+                    table_state = self.analyze_table()
+
+                    if table_state:
+                        # Convert to dict for queue storage
+                        state_dict = ScreenScraperBridge.convert_to_game_state(table_state)
+
+                        # Deduplicate states to reduce processing
+                        state_hash = hash(str(sorted(state_dict.items())))
+                        if state_hash == self._last_state_hash:
+                            continue  # Skip duplicate state
+                        self._last_state_hash = state_hash
+
+                        # Update latest state cache
+                        self._latest_state = state_dict
+
+                        # Add to queue (non-blocking, drop oldest if full)
+                        try:
+                            if self._state_queue.full():
+                                try:
+                                    self._state_queue.get_nowait()  # Remove oldest
+                                except Empty:
+                                    pass
+                            self._state_queue.put_nowait(state_dict)
+                        except Exception as e:
+                            logger.debug(f"Queue error: {e}")
+
+                except Exception as e:
+                    logger.error(f"Capture error: {e}")
+
+                # Wait for next capture interval
+                self._stop_event.wait(interval)
+
+            logger.info("Continuous capture stopped")
+
+        self._capture_thread = Thread(target=capture_loop, daemon=True, name="PokerScraper-Capture")
+        self._capture_thread.start()
         return True
-    
+
     def stop_continuous_capture(self):
         """Stop continuous capture."""
-        logger.debug("stop_continuous_capture called")
-    
+        logger.debug("Stopping continuous capture")
+        self._stop_event.set()
+        if self._capture_thread and self._capture_thread.is_alive():
+            self._capture_thread.join(timeout=2.0)
+        self._capture_thread = None
+
     def get_state_updates(self, timeout: float = 0.5) -> Optional[Dict[str, Any]]:
-        """Get state updates (stub for compatibility)."""
-        # In practice, this is handled by the EnhancedScraperManager
-        return None
+        """
+        Get state updates from continuous capture.
+
+        Args:
+            timeout: Maximum time to wait for an update (in seconds)
+
+        Returns:
+            Latest table state dict or None if no updates available
+        """
+        # Try to get from queue first (most recent updates)
+        try:
+            state = self._state_queue.get(timeout=timeout)
+            return state
+        except Empty:
+            # If queue is empty, return the cached latest state
+            return self._latest_state
+
+    def get_cached_state(self) -> Optional[Dict[str, Any]]:
+        """
+        Get the most recently cached table state without blocking.
+
+        Returns:
+            Latest cached table state dict or None if no state available
+        """
+        return self._latest_state
     
     # Legacy methods for backward compatibility
     def extract_pot_size(self, image: np.ndarray) -> float:
@@ -281,12 +398,19 @@ def create_scraper(site: str = 'BETFAIR') -> PokerScreenScraper:
     if BETFAIR_EDITION_AVAILABLE:
         # Create using Betfair Edition
         betfair_scraper = create_betfair_scraper(site)
-        
+
         # Wrap it for compatibility
         wrapper = PokerScreenScraper.__new__(PokerScreenScraper)
         wrapper._scraper = betfair_scraper
         wrapper._using_betfair_edition = True
-        
+
+        # CRITICAL: Initialize continuous capture attributes (bypassed by __new__)
+        wrapper._state_queue = Queue(maxsize=5)
+        wrapper._capture_thread = None
+        wrapper._stop_event = Event()
+        wrapper._latest_state = None
+        wrapper._last_state_hash = None
+
         return wrapper
     else:
         # Fallback to standard initialization

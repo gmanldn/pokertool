@@ -33,6 +33,7 @@ This release implements **35 comprehensive optimizations** to the screen scrapin
 Tracks which screen regions change between frames and only processes those regions.
 
 **Implementation:**
+
 - Standard ROI grid definition (pot, board, 9 seats, buttons)
 - Fast perceptual hashing per ROI
 - Change detection with configurable sensitivity
@@ -48,6 +49,7 @@ Tracks which screen regions change between frames and only processes those regio
 Skips entire frame processing if screen unchanged (<5% pixel difference).
 
 **Implementation:**
+
 - Structural similarity (SSIM) computation
 - Configurable skip threshold (default 95% similarity)
 - Frame skip metrics and logging
@@ -63,6 +65,7 @@ Skips entire frame processing if screen unchanged (<5% pixel difference).
 Caches OCR results with intelligent invalidation.
 
 **Implementation:**
+
 - LRU cache (max 1000 entries)
 - Fast region hashing (MD5, 16 chars)
 - Cache hit/miss metrics
@@ -78,6 +81,7 @@ Caches OCR results with intelligent invalidation.
 Extracts pot, cards, and all seat information concurrently.
 
 **Implementation:**
+
 - ThreadPoolExecutor with 4-8 workers
 - Timeout handling for slow extractions
 - Result aggregation logic
@@ -93,6 +97,7 @@ Extracts pot, cards, and all seat information concurrently.
 Zero-copy screen capture using platform-specific APIs.
 
 **Implementation:**
+
 - Platform-specific capture (macOS: CoreGraphics, Windows: D3DShot, Linux: mss)
 - Memory-mapped buffer manager
 - Fallback to standard capture if unavailable
@@ -122,6 +127,7 @@ Zero-copy screen capture using platform-specific APIs.
 Smooths pot, stack, and bet values over 3-5 frames to eliminate OCR noise.
 
 **Implementation:**
+
 - Sliding window buffer (5 frames)
 - Median/mode consensus calculator
 - Confidence weighting
@@ -137,6 +143,7 @@ Smooths pot, stack, and bet values over 3-5 frames to eliminate OCR noise.
 Validates pot size using game state continuity.
 
 **Implementation:**
+
 - Pot continuity tracker (pot_new = pot_old + sum(bets))
 - Bet aggregation logic
 - Pot correction when validation fails (>10% diff)
@@ -152,6 +159,7 @@ Validates pot size using game state continuity.
 CNN-based card detection (framework ready for model training).
 
 **Implementation:**
+
 - Model loader (PyTorch/TorchVision)
 - Inference pipeline
 - Confidence scoring
@@ -167,6 +175,7 @@ CNN-based card detection (framework ready for model training).
 Validates geometric consistency of extracted elements.
 
 **Implementation:**
+
 - Expected spatial layout model (pot at center, board below pot, buttons at bottom)
 - Position validator with tolerance ranges
 - Layout learning from valid frames
@@ -198,6 +207,7 @@ Validates geometric consistency of extracted elements.
 Detects extraction failures and automatically recovers.
 
 **Implementation:**
+
 - Failure/success rate tracking
 - Escalating recovery strategies:
   1. Recalibrate detection parameters
@@ -216,6 +226,7 @@ Detects extraction failures and automatically recovers.
 CDP primary, OCR backup, Vision tertiary fallback.
 
 **Implementation:**
+
 - Fallback chain (CDP → OCR → Vision)
 - Method tracking statistics
 - Seamless failover
@@ -231,6 +242,7 @@ CDP primary, OCR backup, Vision tertiary fallback.
 Tracks extraction success rates per field, alerts on degradation.
 
 **Implementation:**
+
 - Per-field health metrics (total, successful, failed, avg confidence, avg time)
 - Real-time monitoring
 - Alert generation when success rate <90%
@@ -296,12 +308,14 @@ cached_result = suite.ocr_cache.get(region, 'pot')
 ### Test Suite: `test_scraper_optimization_suite.py`
 
 **Coverage:**
+
 - 45+ comprehensive tests
 - Unit tests for all major components
 - Integration tests for suite coordination
 - Performance benchmarks
 
 **Test Categories:**
+
 1. Speed Optimization Tests (12 tests)
    - ROI tracking functionality
    - Frame differencing logic
@@ -338,12 +352,14 @@ cached_result = suite.ocr_cache.get(region, 'pot')
 ## 📊 Expected Performance Improvements
 
 ### Baseline (v48.0.0)
+
 - **Detection Time:** 40-80ms per frame
 - **Extraction Accuracy:** 85-90%
 - **Uptime:** 95-97%
 - **False Positives:** 5-10%
 
 ### Target (v49.0.0)
+
 - **Detection Time:** 10-30ms per frame (2-5x faster)
 - **Extraction Accuracy:** 95-98%
 - **Uptime:** 99.9%
@@ -352,16 +368,19 @@ cached_result = suite.ocr_cache.get(region, 'pot')
 ### Realistic Scenarios
 
 **Scenario 1: Stable Table (70% of time)**
+
 - ROI Tracking: 3-4 changed regions vs 12 = 3-4x speedup
 - Frame Diff: 90% frames skipped = 10x speedup
 - **Combined:** 5-10x faster
 
 **Scenario 2: Active Betting (20% of time)**
+
 - Parallel Extraction: 2-3x speedup
 - OCR Cache: 40% hit rate = 1.4x speedup
 - **Combined:** 2-4x faster
 
 **Scenario 3: New Hand (10% of time)**
+
 - Temporal Consensus: 90%+ accuracy
 - Context Validation: 95%+ accuracy
 - **Combined:** 15-20% accuracy improvement
@@ -596,12 +615,15 @@ When frame changes:
 ## 📝 Migration Notes
 
 ### Breaking Changes
+
 - None! All optimizations are backward-compatible.
 
 ### Deprecations
+
 - None.
 
 ### Recommendations
+
 1. Review cache size settings based on available memory
 2. Adjust recovery cooldown based on table dynamics
 3. Monitor health dashboard during first week

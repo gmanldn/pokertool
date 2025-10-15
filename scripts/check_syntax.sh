@@ -98,8 +98,8 @@ echo "📦 Checking root level files..."
 echo "─────────────────────────────────────────────────────────"
 
 ROOT_FILES=(
-    "start.py"
-    "run_tests.py"
+    "scripts/start.py"
+    "scripts/run_tests.py"
 )
 
 for file in "${ROOT_FILES[@]}"; do

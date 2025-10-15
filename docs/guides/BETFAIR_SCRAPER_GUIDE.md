@@ -338,6 +338,7 @@ scraper = create_scraper('BETFAIR')
 ### Strategy 1: Felt Color Analysis
 
 **How it works**:
+
 1. Convert image from BGR to HSV color space
 2. Create masks for each calibrated color range
 3. Count pixels matching each range
@@ -351,6 +352,7 @@ scraper = create_scraper('BETFAIR')
 ### Strategy 2: Button Text OCR
 
 **How it works**:
+
 1. Extract bottom 25% of screen (button area)
 2. Convert to grayscale
 3. Apply histogram equalization (boost contrast)
@@ -366,6 +368,7 @@ scraper = create_scraper('BETFAIR')
 ### Strategy 3: Card Shape Detection
 
 **How it works**:
+
 1. Convert to grayscale
 2. Apply Gaussian blur (reduce noise)
 3. Multi-scale Canny edge detection
@@ -382,6 +385,7 @@ scraper = create_scraper('BETFAIR')
 ### Strategy 4: UI Element Detection
 
 **How it works**:
+
 1. Convert to grayscale
 2. Apply bilateral filter (preserve edges)
 3. Hough Circle Transform
@@ -421,6 +425,8 @@ Before deploying to production:
 If you find cases where detection fails:
 
 1. **Save debug image**:
+
+   ```python
    ```python
    scraper.save_debug_image(img, 'detection_failure.png')
    ```
@@ -461,6 +467,7 @@ To add support for a new poker site:
 
 **Issue**: Detection very slow (>200ms)
 **Solution**: 
+
 - Check CPU usage
 - Reduce screen resolution
 - Close other applications
@@ -468,12 +475,14 @@ To add support for a new poker site:
 
 **Issue**: Frequent false positives
 **Solution**:
+
 - Increase detection threshold (0.55 → 0.65)
 - Check what's being detected (save debug images)
 - Adjust strategy weights
 
 **Issue**: Frequent false negatives on Betfair
 **Solution**:
+
 - Run calibration: `scraper.calibrate()`
 - Check Betfair window is maximized
 - Verify felt is visible
@@ -527,16 +536,19 @@ stats.print_stats(20)  # Top 20 slowest functions
 ### Performance Improvements
 
 **Before Betfair Edition**:
+
 - Detection time: 150-300ms
 - False positive rate: 5-8%
 - Betfair detection: 85-90%
 
 **After Betfair Edition**:
+
 - Detection time: 40-80ms (63% faster)
 - False positive rate: 0.8% (93% reduction)
 - Betfair detection: 99.2% (10% improvement)
 
 **Impact**:
+
 - Autopilot responds 200ms faster
 - 6x fewer false alerts
 - Smoother user experience

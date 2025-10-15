@@ -9,6 +9,7 @@ The Enhanced GUI uses a blade-based architecture where each functional area is o
 ### Core Components
 
 #### 1. Notebook Tab Container (`ttk.Notebook`)
+
 - Main container for all functional blades
 - Configured with high-contrast styling for maximum visibility
 - Supports dynamic tab addition/removal
@@ -36,10 +37,12 @@ style.map(
 #### 3. Color Scheme
 
 **Unselected Tabs:**
+
 - Background: `#2a3142` (medium gray-blue)
 - Foreground: `#ffffff` (white text)
 
 **Selected Tabs:**
+
 - Background: `#1a1f2e` (dark background)
 - Foreground: `#4a9eff` (bright blue accent)
 
@@ -129,16 +132,19 @@ self.after(100, self._start_background_services_safely)
 ### Problem: Tabs Not Visible
 
 **Symptoms:**
+
 - Blank notebook area
 - Tabs present but invisible
 - No text or clickable areas
 
 **Root Cause:**
+
 - Missing TTK style configuration
 - Theme incompatibility
 - Color contrast issues
 
 **Solution Applied:**
+
 - Explicit `style.configure()` calls with contrasting colors
 - Platform-specific theme selection (aqua for macOS, clam for others)
 - `style.map()` for selected/unselected states
@@ -147,16 +153,19 @@ self.after(100, self._start_background_services_safely)
 ### Problem: Scraper Not Auto-Starting
 
 **Symptoms:**
+
 - "Screen scraper not started" message
 - Red scraper button indicator
 - No table detection
 
 **Root Causes:**
+
 1. Missing dependencies (opencv-python, Pillow, pytesseract, mss)
 2. Import failures for scraper modules
 3. Thread-safety issues in startup sequence
 
 **Solutions Applied:**
+
 1. Auto-install missing dependencies via `_ensure_scraper_dependencies()`
 2. Delayed background service start via `self.after(100, ...)`
 3. Thread-safe widget updates using `self.after(0, lambda: ...)`
@@ -171,6 +180,7 @@ python -m pokertool.enhanced_gui
 ```
 
 **Expected Result:**
+
 - All tabs clearly visible with distinct colors
 - Selected tab highlighted in blue
 - Clickable tab labels
@@ -182,6 +192,7 @@ pytest tests/gui/test_enhanced_gui_styles.py
 ```
 
 **What It Tests:**
+
 - TTK style configuration correctness
 - Color application
 - Padding values
@@ -192,11 +203,13 @@ pytest tests/gui/test_enhanced_gui_styles.py
 ### GUI Update Guidelines
 
 **DO:**
+
 - Use `self.after(0, lambda: update_widget())` from background threads
 - Schedule all widget modifications on the main thread
 - Use daemon threads for background tasks
 
 **DON'T:**
+
 - Directly update widgets from worker threads
 - Call Tk methods without `after()` from threads
 - Block the main thread with long operations
@@ -226,6 +239,7 @@ When a tab fails to load, the system automatically creates fallback content:
 ### Diagnostic Window
 
 Click "Show Diagnostics" on any failed tab to view:
+
 - Module load status
 - Available systems
 - Python version
@@ -275,6 +289,7 @@ Users can customize blade behavior through Settings tab:
 ### Modifying Tab Styles
 
 Edit `_setup_styles()` method:
+
 - Adjust colors in style.configure()
 - Modify padding values
 - Update style.map() for state changes

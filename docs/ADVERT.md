@@ -15,6 +15,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 ## 🚀 Core Features
 
 ### 🤖 **Always-On Autopilot Mode**
+
 - **Real-time table detection** - Automatically finds and tracks poker tables on your screen
 - **Auto-integrated GTO analysis** - Instant strategy recommendations as you play
 - **Multi-table support** - Monitor up to 12 tables simultaneously
@@ -23,6 +24,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Generic site support** - Works with most online poker platforms
 
 ### 🃏 **Professional Table View**
+
 - **Live table state visualization** - See all players, positions, and stack sizes
 - **Hero detection** - Automatically identifies your seat using OCR name matching
 - **Board and hole card recognition** - Advanced computer vision for 99%+ accuracy
@@ -31,6 +33,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Dealer button tracking** - Knows who's in position
 
 ### 📊 **Advanced Analysis Engine**
+
 - **GTO solver integration** - Get optimal plays for any situation
 - **Expected value calculations** - See the math behind every decision
 - **Hand equity analysis** - Know your winning chances in real-time
@@ -39,6 +42,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Pot odds calculator** - Instant mathematical guidance
 
 ### 🎯 **AI-Powered Coaching System**
+
 - **Real-time coaching feedback** - Learn as you play
 - **Mistake identification** - Spot leaks in your game immediately
 - **Strategy suggestions** - Adaptive recommendations based on your style
@@ -46,6 +50,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Opponent modeling** - Track and exploit player tendencies
 
 ### 📚 **Comprehensive Hand History System**
+
 - **Automatic hand recording** - Every hand saved to SQLite database
 - **Detailed hand viewer** - Review complete action sequences
 - **Advanced statistics dashboard** - 15+ metrics including:
@@ -60,6 +65,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Session analysis** - Track performance over time
 
 ### ⚙️ **Customizable Settings**
+
 - **Poker handle configuration** - Set your username for accurate hero detection
 - **Site selection** - Betfair, Generic, or custom configurations
 - **Recording preferences** - Control what hands get saved
@@ -68,6 +74,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Language support** - Multiple language translations
 
 ### 📈 **Real-Time Analytics Dashboard**
+
 - **Performance tracking** - Hands played, win rate, ROI
 - **Session statistics** - Track your current session metrics
 - **Trend analysis** - See how you're improving over time
@@ -75,6 +82,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Leak detection** - Identify costly patterns
 
 ### 🏆 **Gamification & XP System**
+
 - **Achievement tracking** - Unlock badges and milestones
 - **XP progression** - Level up as you play
 - **Challenge system** - Daily and weekly goals
@@ -82,12 +90,14 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Streak tracking** - Maintain winning momentum
 
 ### 👥 **Community Features**
+
 - **Hand sharing** - Discuss interesting hands with others
 - **Strategy forum integration** - Connect with the community
 - **Tournament tracking** - Follow major events
 - **Player profiles** - Build your poker resume
 
 ### 📋 **Advanced Logging System**
+
 - **Comprehensive debug logs** - Every action tracked
 - **Performance monitoring** - See system resource usage
 - **Error tracking** - Automatic issue detection
@@ -98,6 +108,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 ## 💻 Technical Excellence
 
 ### 🔬 **Computer Vision & OCR**
+
 - **Hybrid OCR engine** - EasyOCR + Tesseract for maximum accuracy
 - **Template matching** - Card recognition with 99%+ success rate
 - **Purple table detection** - Specialized Betfair table recognition
@@ -105,24 +116,28 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 - **Adaptive calibration** - Adjusts to different screen resolutions
 
 ### 🧠 **Machine Learning**
+
 - **PyTorch integration** - Neural network powered analysis
 - **Opponent modeling** - Learn player patterns over time
 - **Hand prediction** - Estimate opponent ranges
 - **Adaptive learning** - Gets smarter as you play
 
 ### 🗄️ **Database & Storage**
+
 - **SQLite backend** - Fast, reliable local storage
 - **6 optimized indexes** - Lightning-fast queries
 - **Automatic backups** - Never lose your data
 - **Privacy focused** - All data stored locally only
 
 ### ⚡ **Performance**
+
 - **Multi-threaded architecture** - 20 worker threads for responsiveness
 - **Thread pool optimization** - Efficient resource usage
 - **Background processing** - UI never freezes
 - **Minimal CPU usage** - Runs smoothly alongside poker client
 
 ### 🎨 **Modern UI/UX**
+
 - **Dark theme** - Easy on the eyes during long sessions
 - **Compact design** - No scrollbars, everything fits
 - **10 specialized tabs** - Organized workflow
@@ -135,6 +150,7 @@ Whether you're a casual player looking to improve or a serious grinder optimizin
 
 ### 1. 🤖 **Autopilot Tab**
 Your command center for real-time gameplay.
+
 - Start/stop automation
 - View live table status
 - See current statistics
@@ -143,6 +159,7 @@ Your command center for real-time gameplay.
 
 ### 2. 🃏 **Table View Tab**
 Live visualization of the poker table.
+
 - Real-time table rendering
 - Player positions and stacks
 - Board cards display
@@ -151,6 +168,7 @@ Live visualization of the poker table.
 
 ### 3. 📊 **Analysis Tab**
 Deep dive into any hand or situation.
+
 - Hand equity calculator
 - Range vs range analysis
 - GTO solver recommendations
@@ -159,6 +177,7 @@ Deep dive into any hand or situation.
 
 ### 4. 🎯 **Coaching Tab**
 Personal poker coach guiding you.
+
 - Real-time feedback
 - Common mistake warnings
 - Strategy tips
@@ -167,6 +186,7 @@ Personal poker coach guiding you.
 
 ### 5. ⚙️ **Settings Tab**
 Customize everything to your preferences.
+
 - Poker handle setup
 - Site configuration
 - Recording options
@@ -176,6 +196,7 @@ Customize everything to your preferences.
 
 ### 6. 📈 **Stats Tab**
 Comprehensive analytics dashboard.
+
 - Win rate tracking
 - Position analysis
 - Session performance
@@ -184,6 +205,7 @@ Comprehensive analytics dashboard.
 
 ### 7. 🏆 **XP Tab**
 Gamification and achievement system.
+
 - Level progression
 - Unlocked achievements
 - Current challenges
@@ -192,6 +214,7 @@ Gamification and achievement system.
 
 ### 8. 👥 **Social Tab**
 Connect with the poker community.
+
 - Share hands
 - Discussion forums
 - Tournament tracking
@@ -200,6 +223,7 @@ Connect with the poker community.
 
 ### 9. 📋 **Logs Tab**
 Technical monitoring and debugging.
+
 - Real-time log viewer
 - Error tracking
 - Performance metrics
@@ -208,6 +232,7 @@ Technical monitoring and debugging.
 
 ### 10. 📚 **History Tab**
 Complete hand history management.
+
 - All hands played
 - Detailed hand viewer
 - Advanced filtering
@@ -220,18 +245,21 @@ Complete hand history management.
 ## 🎯 Accuracy & Reliability
 
 ### ✅ **99%+ Detection Accuracy**
+
 - Proven card recognition rates
 - Reliable pot size detection
 - Accurate player position identification
 - Consistent hero detection
 
 ### 🔒 **Privacy & Security**
+
 - **All data stored locally** - Nothing sent to external servers
 - **No account required** - Complete privacy
 - **Gitignored database** - Hand history never tracked in git
 - **Secure processing** - Your data stays on your machine
 
 ### 🛡️ **Robust Error Handling**
+
 - Comprehensive startup validation
 - Dependency checks before launch
 - Graceful degradation on failures
@@ -243,6 +271,7 @@ Complete hand history management.
 ## 🚀 Getting Started
 
 ### System Requirements
+
 - **OS**: macOS, Windows, or Linux
 - **Python**: 3.12+
 - **RAM**: 4GB minimum (8GB recommended)
@@ -250,6 +279,7 @@ Complete hand history management.
 - **Storage**: 500MB for application + database
 
 ### Core Dependencies
+
 - ✅ NumPy - Mathematical operations
 - ✅ OpenCV - Computer vision (headless version for compatibility)
 - ✅ Pillow - Image processing
@@ -272,6 +302,7 @@ python3 start.py --gui
 ```
 
 ### First Run Setup
+
 1. **Dependency validation** - Automatic check of all requirements
 2. **Poker handle setup** - Enter your poker username for hero detection
 3. **Site selection** - Choose Betfair or Generic mode
@@ -282,12 +313,14 @@ python3 start.py --gui
 ## 📊 Supported Features by Version
 
 ### v40.0.0 (Current) - **Auto-Integrated GTO & Compact UI**
+
 - Auto-integrated GTO analysis (always enabled)
 - Compact UI design (20-30% smaller fonts)
 - Removed manual GTO controls
 - Streamlined interface
 
 ### v39.0.0 - **Enhanced Hand History with Auto-Recording**
+
 - Automatic hand recording system
 - Advanced statistics (15+ metrics)
 - Date range filtering
@@ -295,6 +328,7 @@ python3 start.py --gui
 - Enhanced configuration options
 
 ### v38.0.0 - **Complete Hand History System**
+
 - SQLite hand history database
 - Beautiful GUI hand history tab
 - Statistics dashboard
@@ -302,18 +336,21 @@ python3 start.py --gui
 - Advanced filtering
 
 ### v37.0.0 - **Poker Handle Configuration & OpenCV Fix**
+
 - User configuration system
 - Poker handle setup prompt
 - OCR-based hero detection
 - macOS OpenCV compatibility fix
 
 ### v36.0.0 - **Purple Table Detection**
+
 - Betfair purple table support
 - Enhanced ellipse detection
 - Multi-color felt detection
 - 100% Betfair detection confidence
 
 ### v35.0.0 - **Confidence-Aware Decision API**
+
 - Uncertainty quantification
 - Confidence scoring
 - Decision quality metrics
@@ -323,30 +360,35 @@ python3 start.py --gui
 ## 🎯 Use Cases
 
 ### 🏠 **Casual Players**
+
 - Learn proper strategy while playing
 - Track improvement over time
 - Review mistakes after sessions
 - Build bankroll management skills
 
 ### 💼 **Semi-Professional Grinders**
+
 - Multi-table with confidence
 - Maximize hourly win rate
 - Identify and fix leaks quickly
 - Track ROI across sessions
 
 ### 🎓 **Students & Learners**
+
 - Real-time GTO education
 - Hand review for study
 - Strategy reinforcement
 - Mistake identification
 
 ### 📊 **Analysts & Coaches**
+
 - Review student hands in detail
 - Export hands for analysis tools
 - Track student progress
 - Build training materials
 
 ### 🏆 **Tournament Players**
+
 - Session tracking and analysis
 - Position-specific statistics
 - Showdown rate monitoring
@@ -358,6 +400,7 @@ python3 start.py --gui
 
 ### ✅ **All-in-One Solution**
 No need for multiple tools. PokerTool does it all:
+
 - Screen scraping ✓
 - Hand tracking ✓
 - GTO analysis ✓
@@ -366,24 +409,28 @@ No need for multiple tools. PokerTool does it all:
 - Community ✓
 
 ### ✅ **Always Free & Open Source**
+
 - No subscriptions
 - No hidden costs
 - Full source code available
 - Community-driven development
 
 ### ✅ **Privacy First**
+
 - Local-only data storage
 - No external servers
 - No telemetry
 - Complete control
 
 ### ✅ **Professional Quality**
+
 - Enterprise-grade architecture
 - Comprehensive error handling
 - Optimized performance
 - Modern UI/UX
 
 ### ✅ **Continuous Improvement**
+
 - Regular updates
 - New features added constantly
 - Bug fixes and optimizations
@@ -406,6 +453,7 @@ No need for multiple tools. PokerTool does it all:
 ## 🔮 Roadmap & Future Features
 
 ### Coming Soon
+
 - **Hand replayer** - Visual playback of hands
 - **Advanced stats** - VPIP, PFR, 3-bet%, aggression factor
 - **Tournament tracking** - Separate tournament vs cash stats
@@ -422,6 +470,7 @@ No need for multiple tools. PokerTool does it all:
 ## 🙏 Credits & Acknowledgments
 
 ### Development
+
 - **Architecture & Implementation**: Claude Code
 - **Computer Vision**: OpenCV, EasyOCR, Tesseract
 - **Machine Learning**: PyTorch
@@ -429,6 +478,7 @@ No need for multiple tools. PokerTool does it all:
 - **GUI**: tkinter with custom styling
 
 ### Community
+
 - Thanks to all beta testers
 - Special thanks to the poker community for feedback
 - Betfair Poker for the purple tables that inspired v36
@@ -438,18 +488,21 @@ No need for multiple tools. PokerTool does it all:
 ## 📞 Support & Community
 
 ### Getting Help
+
 1. Check the logs tab for errors
 2. Verify all dependencies are installed
 3. Try restarting the application
 4. Check GitHub issues for known problems
 
 ### Contributing
+
 - Report bugs on GitHub
 - Suggest features
 - Submit pull requests
 - Share interesting hands
 
 ### Contact
+
 - **GitHub**: https://github.com/gmanldn/pokertool
 - **Issues**: https://github.com/gmanldn/pokertool/issues
 

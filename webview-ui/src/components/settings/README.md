@@ -65,7 +65,10 @@ import { ModelInfoView } from "../common/ModelInfoView"
 import { normalizeApiConfiguration } from "../utils/providerUtils"
 
 /**
+
  * Props for the MyNewProvider component
+
+ */
  */
 interface MyNewProviderProps {
   apiConfiguration: ApiConfiguration
@@ -75,7 +78,10 @@ interface MyNewProviderProps {
 }
 
 /**
+
  * The MyNewProvider configuration component
+
+ */
  */
 export const MyNewProvider = ({
   apiConfiguration,

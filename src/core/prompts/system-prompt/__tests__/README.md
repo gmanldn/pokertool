@@ -6,7 +6,10 @@ file: src/core/prompts/system-prompt/__tests__/README.md
 version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
+
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
         ---
         POKERTOOL-HEADER-END -->
@@ -17,6 +20,7 @@ This directory contains integration tests for the system prompt generation with 
 ## Overview
 
 The integration tests validate that system prompts remain consistent across different:
+
 - Model families (Generic, Next-Gen, XS)
 - Provider configurations (OpenAI, Anthropic, LMStudio, etc.)
 - Context variations (browser enabled/disabled, MCP servers, focus chain, etc.)
@@ -48,6 +52,7 @@ Use this when you've intentionally changed prompt generation and want to update 
 ### When Tests Fail
 
 When snapshot tests fail, you'll see a detailed error message showing:
+
 1. **Which snapshot failed** (e.g., `openai_gpt-3-basic.snap`)
 2. **Detailed differences** between expected and actual output
 3. **Clear instructions** on how to fix the issue
@@ -64,6 +69,7 @@ Line count difference: 245 vs 246
 
 First differences:
 Line 23:
+
   - Expected: You are Cline, an AI assistant created by Anthropic.
   + Actual:   You are Cline, an AI coding assistant created by Anthropic.
 
@@ -77,12 +83,16 @@ Line 23:
    - ❌ Unexpected changes (bugs, regressions)
 
 3. 🔄 If changes are correct, update snapshots:
+
+   npm test -- --update-snapshots
    npm test -- --update-snapshots
 
 4. 🐛 If changes are unintentional, investigate:
    - Check recent changes to prompt generation logic
    - Verify context/configuration hasn't changed unexpectedly
    - Look for dependency updates that might affect output
+
+```
 ```
 
 ### Workflow
@@ -96,6 +106,7 @@ Line 23:
 ### Snapshot Files
 
 Snapshots are stored with descriptive names:
+
 - `openai_gpt-3-basic.snap` - OpenAI GPT-3 with basic context
 - `anthropic_claude-sonnet-4-no-browser.snap` - Claude Sonnet 4 without browser support
 - `lmstudio_qwen3_coder-no-mcp.snap` - LMStudio Qwen3 Coder without MCP servers
@@ -113,11 +124,13 @@ Snapshots are stored with descriptive names:
 ## Test Structure
 
 ### Model Test Cases
+
 - **Generic Models**: Basic GPT-3 style models
 - **Next-Gen Models**: Advanced models like Claude Sonnet 4
 - **XS Models**: Compact models like Qwen3 Coder
 
 ### Context Variations
+
 - **Basic**: Full context with all features enabled
 - **No Browser**: Browser support disabled
 - **No MCP**: No MCP servers configured

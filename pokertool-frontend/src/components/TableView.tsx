@@ -110,12 +110,26 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
         position: 'relative',
         width: '100%',
         height: isMobile ? 300 : 400,
-        background: 'radial-gradient(ellipse at center, #2e7d32 0%, #1b5e20 100%)',
+        background: 'linear-gradient(135deg, #4a3a6a 0%, #6b5b8a 50%, #5a4a7a 100%)',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 0 60px rgba(0,0,0,0.3)',
+        border: '12px solid',
+        borderColor: '#3d2f1f',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: -6,
+          left: -6,
+          right: -6,
+          bottom: -6,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #5a4438 0%, #4a3428 50%, #3d2f1f 100%)',
+          zIndex: -1,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+        },
       }}
     >
       {/* Pot */}
@@ -128,20 +142,44 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
           textAlign: 'center',
         }}
       >
-        <Typography variant="h6" color="white" fontWeight="bold">
-          Pot: ${table.pot}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+        <Box
+          sx={{
+            background: 'rgba(20, 20, 35, 0.85)',
+            borderRadius: 2,
+            px: 3,
+            py: 1,
+            mb: 2,
+            border: '2px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          }}
+        >
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#ffffff',
+              fontWeight: 700,
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            }}
+          >
+            Pot: ${table.pot}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
           {table.communityCards.map((card, index) => (
             <Paper
               key={index}
               sx={{
-                width: 40,
-                height: 56,
+                width: 45,
+                height: 64,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 'bold',
+                fontSize: '1.1rem',
+                background: '#ffffff',
+                borderRadius: 1.5,
+                boxShadow: '0 4px 8px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)',
+                border: '1px solid #e0e0e0',
               }}
             >
               {card}
@@ -169,16 +207,45 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
           >
             <Card
               sx={{
-                minWidth: 100,
+                minWidth: 110,
+                background: player.isActive 
+                  ? 'linear-gradient(135deg, rgba(30, 30, 45, 0.95) 0%, rgba(20, 20, 35, 0.95) 100%)'
+                  : 'rgba(25, 25, 40, 0.9)',
                 opacity: player.isFolded ? 0.5 : 1,
-                border: player.isActive ? `2px solid ${theme.palette.primary.main}` : 'none',
+                border: player.isActive 
+                  ? `2px solid ${theme.palette.primary.main}` 
+                  : '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 2,
+                boxShadow: player.isActive 
+                  ? `0 0 12px ${theme.palette.primary.main}40, 0 4px 8px rgba(0,0,0,0.4)`
+                  : '0 4px 8px rgba(0,0,0,0.4)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.5)',
+                },
               }}
             >
-              <CardContent sx={{ p: 1 }}>
-                <Typography variant="caption" fontWeight="bold">
+              <CardContent sx={{ p: 1.5 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                    display: 'block',
+                    mb: 0.5,
+                  }}
+                >
                   {player.name}
                 </Typography>
-                <Typography variant="body2">
+                <Typography 
+                  variant="body2"
+                  sx={{
+                    color: player.isActive ? theme.palette.primary.light : '#b0b0b0',
+                    fontWeight: 600,
+                  }}
+                >
                   ${player.chips}
                 </Typography>
               </CardContent>

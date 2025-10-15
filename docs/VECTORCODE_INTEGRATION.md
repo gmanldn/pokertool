@@ -6,7 +6,10 @@ file: docs/VECTORCODE_INTEGRATION.md
 version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
+
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
         ---
         POKERTOOL-HEADER-END -->
@@ -36,6 +39,7 @@ VectorCode is a code repository indexing tool that uses vector embeddings to pro
 The integration is **functional with fallback capabilities**. While there are some compatibility issues with the embedding models on this system, the integration provides a robust fallback text search that works well for finding relevant code.
 
 ### Embedding Status
+
 - **Primary**: VectorCode embedding functions have compatibility issues with the current system
 - **Fallback**: Text-based search is active and working well
 - **Files Indexed**: 35 key files from PokerTool codebase (optimized selection)
@@ -85,26 +89,31 @@ tests = search.find_test_cases("core")
 The integration indexes these key files:
 
 ### Python Core
+
 - `src/pokertool/*.py` - All main PokerTool modules
 - `tests/test_*.py` - Test files for validation
 - `tools/poker_main.py` - Main application entry
 - `tools/verify_build.py` - Build verification
 
 ### Documentation
+
 - `README.md` - Project overview
 - `docs/*.md` - All documentation files
 
 ### Configuration
+
 - `pyproject.toml` - Project configuration
 - `requirements.txt` - Dependencies
 - `poker_config.json` - Poker-specific settings
 
 ### Frontend (Selected)
+
 - `pokertool-frontend/src/App.tsx` - Main React app
 - `pokertool-frontend/src/components/*.tsx` - React components
 - `pokertool-frontend/package.json` - Frontend dependencies
 
 ### Integration
+
 - `vectorcode_integration.py` - This integration module
 
 ## Configuration
@@ -162,6 +171,7 @@ db_queries = search.find_database_operations("select")
 
 ### 4. Fallback Functionality
 When VectorCode embeddings fail, the system automatically falls back to:
+
 - **Text-based search** with relevance scoring
 - **Context extraction** around query matches
 - **Multi-file search** across the indexed file set
@@ -172,6 +182,8 @@ When VectorCode embeddings fail, the system automatically falls back to:
 If you encounter embedding function errors:
 
 1. **Try different embedding functions**:
+
+   ```json
    ```json
    {
      "embedding_function": "DefaultEmbeddingFunction"
@@ -181,6 +193,8 @@ If you encounter embedding function errors:
 2. **Use fallback mode** (automatically activated when embeddings fail)
 
 3. **Reinstall with different dependencies**:
+
+   ```bash
    ```bash
    uv tool install "vectorcode[legacy]<1.0.0" --reinstall
    ```
@@ -195,6 +209,7 @@ If vectorization is slow:
 ## Development Workflow
 
 ### Daily Usage
+
 1. **Search for examples**: Use the integration to find similar code patterns
 2. **Refactoring guidance**: Get context about code dependencies
 3. **Feature discovery**: Find existing implementations to build upon

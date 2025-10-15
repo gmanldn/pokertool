@@ -96,6 +96,7 @@ Documentation:           5 files  (guides & references)
 Source code:            22 files  (modular components)
 
 Breakdown:
+
   - Utilities:           2 files  (~220 lines)
   - Handlers:            3 files  (~730 lines)
   - Services:            2 files  (~190 lines)
@@ -103,6 +104,8 @@ Breakdown:
   - Components:          4 files  (existing, unchanged)
   - Main files:          3 files  (~290 lines)
   - __init__ files:      5 files  (~50 lines)
+
+  ────────────────────────────────────────────
   ────────────────────────────────────────────
   Total source:         24 files  (~2130 lines organized)
 ```
@@ -232,6 +235,7 @@ from pokertool.enhanced_gui_components.app import IntegratedPokerAssistant
 ## 🎓 Learning Resources
 
 **Want to understand a concept?**
+
 - Mixins → `ARCHITECTURE_DIAGRAM.md` (Mixin Composition Pattern)
 - File organization → `REFACTORING_GUIDE.md`
 - How to create tabs → `tabs/TEMPLATE_tab.py`

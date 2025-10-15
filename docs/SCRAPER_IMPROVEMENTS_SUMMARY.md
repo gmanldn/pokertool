@@ -15,6 +15,7 @@ This document summarizes the comprehensive improvements made to the poker screen
 **Solution:** Changed text color to black (#000000) for both normal and active states.
 
 **Files Modified:**
+
 - `src/pokertool/enhanced_gui_components/autopilot_panel.py`
 
 **Changes:**
@@ -33,14 +34,17 @@ activeforeground="#000000",  # Black text on active too
 #### New Validation System (`_validate_poker_table()`)
 
 **Check 1: Player Count**
+
 - Must have at least 2 active players
 - Prevents false positives from empty screens
 
 **Check 2: Pot Size Logic**
+
 - If post-flop (board cards present) but pot = 0, reject as false positive
 - Non-zero pot is a strong indicator of real game
 
 **Check 3: Visual Detection**
+
 - **Felt Detection (`_detect_poker_felt()`)**: Scans for green felt (HSV color analysis)
   - Poker tables typically have >10% green pixels
   - Uses OpenCV color range detection
@@ -50,14 +54,17 @@ activeforeground="#000000",  # Black text on active too
   - Requires 3+ circular objects to confirm poker table
 
 **Check 4: Card Presence**
+
 - Hero cards or board cards are strong evidence
 - Added to confidence scoring
 
 **Check 5: Multi-Factor Confirmation**
+
 - Requires at least 2 positive indicators to confirm table
 - Prevents single-factor false positives
 
 **Files Modified:**
+
 - `pokertool/modules/poker_screen_scraper.py`
 
 **New Methods:**
@@ -75,12 +82,14 @@ def _detect_poker_graphics(image) -> bool
 **Solution:** Added prominent "Table Active" indicator with status light.
 
 **Features:**
+
 - ● Table: Not Detected (grey) - No table found
 - ● Table: ACTIVE (green) - Valid table detected
 - Updates in real-time during autopilot
 - Shows detection confidence
 
 **Files Modified:**
+
 - `src/pokertool/enhanced_gui_components/autopilot_panel.py`
 
 **New UI Element:**
@@ -109,11 +118,14 @@ def update_table_indicator(active: bool, reason: str = "") -> None
 **Log Format:**
 ```
 [TABLE DETECTION] ✓ Valid table detected: 6 active players, Pot: $45.50, Felt detected
+
   - Active players: 6
   - Pot size: $45.50
   - Hero cards: 2
   - Board cards: 3
   - Stage: flop
+
+```
 ```
 
 **Or when no table:**
@@ -122,11 +134,13 @@ def update_table_indicator(active: bool, reason: str = "") -> None
 ```
 
 **Logging Levels:**
+
 - `logger.info()` for detection results
 - Detailed breakdown of why table was/wasn't detected
 - Visible in both GUI log window and console
 
 **Files Modified:**
+
 - `pokertool/modules/poker_screen_scraper.py` - Added logging to `analyze_table()`
 
 ---
@@ -137,12 +151,14 @@ def update_table_indicator(active: bool, reason: str = "") -> None
 **Solution:** Enhanced autopilot loop to properly pass table state to GUI.
 
 **Implementation:**
+
 - Autopilot loop now validates tables before processing
 - Only processes states with 2+ players
 - Passes `table_active` and `table_reason` to statistics
 - Manual section can be updated to show current scraper view
 
 **Files Modified:**
+
 - `src/pokertool/enhanced_gui.py` - Updated `_autopilot_loop()`
 
 **Key Changes:**
@@ -183,15 +199,24 @@ def _autopilot_loop(self):
 ### Table Validation Algorithm
 
 ```
+
 1. Capture Screenshot
+
    ↓
+   ↓
+
 2. Extract Game Elements
    - Pot size
    - Player seats
    - Cards
    - Stage
+
    ↓
+   ↓
+
 3. Validate Table
+
+   ├─ Check player count (≥2)
    ├─ Check player count (≥2)
    ├─ Validate pot logic
    ├─ Detect visual elements
@@ -200,19 +225,24 @@ def _autopilot_loop(self):
    ├─ Check card presence
    └─ Require 2+ positive indicators
    ↓
+
 4. Return Result
    - TableState if valid
    - Empty TableState if invalid
    - Log reason in both cases
+
+```
 ```
 
 ### Color Detection (Felt)
+
 - **Color Space:** HSV (better for color detection than RGB)
 - **Green Range:** H: 35-85, S: 40-255, V: 40-255
 - **Threshold:** >10% of pixels must be green
 - **Rationale:** Poker tables have distinctive green felt
 
 ### Shape Detection (Graphics)
+
 - **Algorithm:** Hough Circle Transform
 - **Parameters:**
   - minDist: 50 pixels between circles
@@ -229,6 +259,7 @@ def _autopilot_loop(self):
 ### Test Case 1: No Poker Game
 **Setup:** Desktop with no poker windows open  
 **Expected:** 
+
 - ● Table: Not Detected (grey light)
 - Log: "No active players detected" or "Insufficient evidence"
 - No false positives
@@ -236,6 +267,7 @@ def _autopilot_loop(self):
 ### Test Case 2: Real Poker Game
 **Setup:** Live poker table with 6+ players  
 **Expected:**
+
 - ● Table: ACTIVE (green light)  
 - Log: "✓ Valid table detected: 6 active players, Pot: $X, Felt detected"
 - Accurate player count and pot size
@@ -243,12 +275,14 @@ def _autopilot_loop(self):
 ### Test Case 3: Single Player Practice
 **Setup:** Poker table with only 1 player  
 **Expected:**
+
 - ● Table: Not Detected (grey light)
 - Log: "Only 1 active players (need 2+)"
 
 ### Test Case 4: Browser/App with Green Background
 **Setup:** Website or app with green color (not poker)  
 **Expected:**
+
 - ● Table: Not Detected (grey light)
 - Log: "Insufficient evidence" (fails other checks)
 
@@ -257,17 +291,20 @@ def _autopilot_loop(self):
 ## Performance Considerations
 
 ### Computational Cost
+
 - **Felt Detection:** Fast (~2-5ms) - simple color mask
 - **Graphics Detection:** Moderate (~10-20ms) - Hough transform
 - **Total Overhead:** ~15-25ms per frame
 - **Impact:** Minimal - scraper runs every 2 seconds
 
 ### Memory Usage
+
 - New validation adds minimal memory
 - No persistent image storage
 - Circle detection uses temporary arrays
 
 ### Accuracy Trade-offs
+
 - **Fewer False Positives:** ✅ Achieved
 - **Potential False Negatives:** Minimal risk
   - Non-standard table colors might not be detected
@@ -320,6 +357,7 @@ def _autopilot_loop(self):
 ## Version History
 
 ### v30.0.0 (2025-10-02)
+
 - ✅ Added comprehensive table validation
 - ✅ Implemented poker-specific visual detection
 - ✅ Added detailed detection logging
@@ -327,10 +365,12 @@ def _autopilot_loop(self):
 - ✅ Added table active indicator
 
 ### v29.0.0 (2025-10-02)
+
 - Fixed Chrome capture initialization
 - Added diagnostic tooling
 
 ### v28.0.0 (2025-09-29)
+
 - Enhanced documentation
 
 ---
@@ -346,6 +386,7 @@ All requested issues have been comprehensively addressed:
 5. ✅ **Manual Sync:** Autopilot state properly reflects scraper view
 
 The scraper is now **enterprise-grade** with:
+
 - Robust validation
 - Clear user feedback
 - Comprehensive logging

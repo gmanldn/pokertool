@@ -99,18 +99,22 @@ While working, keep these open:
 ## 🆘 Troubleshooting
 
 **Problem**: Import errors
+
 - **Solution**: Check all __init__.py files have correct imports
 - Make sure tab files export their mixin class in __all__
 
 **Problem**: Method not found
+
 - **Solution**: Check that app.py inherits from all mixin classes
 - Verify mixin class is in the inheritance list
 
 **Problem**: Autopilot doesn't work
+
 - **Solution**: Make sure autopilot_handlers.py is imported
 - Check AutopilotHandlersMixin is in class inheritance
 
 **Problem**: Tabs don't show content
+
 - **Solution**: Verify tab file has _build_*_tab() method
 - Check the method is called in app.py's _build_ui()
 
@@ -127,6 +131,7 @@ While working, keep these open:
 ## ✨ When You're Done
 
 You'll have:
+
 - ✅ Modular, maintainable code
 - ✅ Each feature in its own file
 - ✅ Easy to test components
@@ -136,6 +141,7 @@ You'll have:
 ## 🎉 Success Criteria
 
 Your refactoring is complete when:
+
 - [ ] Application launches without errors
 - [ ] All tabs display correctly
 - [ ] Autopilot can be toggled

@@ -5,19 +5,23 @@
 I've created the following modular components:
 
 ### Utilities (`utils/`)
+
 - ✅ `translation_helpers.py` - Translation system
 - ✅ `ui_helpers.py` - UI utilities
 
 ### Handlers (`handlers/`)
+
 - ✅ `action_handlers.py` - Quick actions (detect, screenshot, GTO, web, manual GUI)
 - ✅ `autopilot_handlers.py` - Autopilot lifecycle
 - ✅ `scraper_handlers.py` - Screen scraper control
 
 ### Services (`services/`)
+
 - ✅ `background_services.py` - Service initialization
 - ✅ `screen_update_loop.py` - Continuous updates
 
 ### Tabs (`tabs/`)
+
 - ✅ `analysis_tab.py` - Analysis tab
 - ✅ `TEMPLATE_tab.py` - Template for creating new tabs
 
@@ -69,6 +73,7 @@ __all__ = ["AnalyticsTabMixin"]
 ```
 
 Create similar files for:
+
 - `gamification_tab.py` (copy methods from lines ~630-730)
 - `community_tab.py` (copy methods from lines ~730-870)
 - `autopilot_tab.py` (copy `_build_autopilot_tab` from lines ~270-450)
@@ -234,10 +239,13 @@ Main entry point for the Enhanced GUI application.
 The actual implementation has been modularized into enhanced_gui_components/.
 
 See enhanced_gui_components/ for:
+
 - utils/ - Utilities and helpers
 - handlers/ - Event handlers
 - services/ - Background services
 - tabs/ - Tab builders
+
+"""
 """
 
 __version__ = '20.1.0'
@@ -285,6 +293,7 @@ Uncomment the tab imports in `enhanced_gui_components/__init__.py`
 ## 🚀 Quick Reference
 
 **To find code for:**
+
 - Quick actions → `handlers/action_handlers.py`
 - Autopilot logic → `handlers/autopilot_handlers.py`
 - Screen scraper → `handlers/scraper_handlers.py`
@@ -295,6 +304,7 @@ Uncomment the tab imports in `enhanced_gui_components/__init__.py`
 ## Need Help?
 
 If you get stuck:
+
 1. Look at `tabs/analysis_tab.py` as an example
 2. Use `tabs/TEMPLATE_tab.py` as a guide
 3. Each mixin should only contain methods for its specific area

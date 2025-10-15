@@ -7,36 +7,42 @@ The Pokertool scraper now includes an **Adaptive Learning System** that automati
 ## Key Features
 
 ### 1. **Environment Profiling**
+
 - Automatically detects your screen resolution, brightness, and color profile
 - Learns optimal detection parameters for each unique environment
 - Adapts thresholds based on success rates in each environment
 - Stores profiles persistently across sessions
 
 ### 2. **OCR Strategy Performance Tracking**
+
 - Monitors success rates of different OCR strategies (OTSU, adaptive, CLAHE, bilateral filters)
 - Automatically prioritizes best-performing strategies
 - Tracks execution time vs accuracy trade-offs
 - Adapts to different text rendering styles
 
 ### 3. **Adaptive Parameter Tuning**
+
 - Automatically adjusts detection thresholds based on recent performance
 - Tunes card detection parameters (area ranges, aspect ratios)
 - Optimizes OCR scaling factors
 - Balances speed vs accuracy based on your needs
 
 ### 4. **CDP-Based Ground Truth Learning**
+
 - When Chrome DevTools Protocol (CDP) is available, uses it as 100% accurate ground truth
 - Compares OCR extractions against CDP data
 - Learns from discrepancies to improve OCR accuracy
 - Tracks accuracy trends over time
 
 ### 5. **User Feedback Integration**
+
 - Records user corrections from validation workflows
 - Learns from manual fixes
 - Improves strategy selection based on correction patterns
 - Builds pattern library from validated data
 
 ### 6. **Pattern Learning**
+
 - Learns common player name patterns
 - Remembers typical stack sizes for different stake levels
 - Identifies common pot size ranges
@@ -69,6 +75,7 @@ The learning system operates transparently in the background:
 
 ### Persistent Learning
 All learned data is saved automatically:
+
 - **Location:** `~/.pokertool/learning/`
 - **Files:**
   - `environment_profiles.json` - Environment-specific settings
@@ -145,21 +152,25 @@ scraper = PokerScreenScraper(
 ## Learning Metrics
 
 ### Success Rate
+
 - Percentage of successful detections/extractions
 - Target: >90% for well-configured environments
 - Improves over time as system learns
 
 ### Confidence Score
+
 - Detection confidence (0.0 - 1.0)
 - Higher is better
 - Used for adaptive threshold tuning
 
 ### Execution Time
+
 - Time taken for detection/extraction (milliseconds)
 - System balances speed vs accuracy
 - Optimizes based on your hardware
 
 ### Accuracy (with CDP)
+
 - Percentage match between OCR and CDP ground truth
 - Target: >95% for critical fields (pot size, stacks)
 - Best metric for OCR quality
@@ -193,6 +204,7 @@ The system automatically creates profiles for each unique environment:
 **Environment Signature = (Resolution, Brightness, Color Profile)**
 
 Example environments:
+
 - `2560x1440_b128_c7f3a9b1` - Desktop monitor, normal brightness
 - `1920x1080_b180_c4a2e6f8` - Laptop, high brightness
 - `3840x2160_b95_c9e1d3c7` - 4K monitor, dim lighting
@@ -214,15 +226,18 @@ Best performers are automatically prioritized.
 ### Adaptive Tuning Examples
 
 **Detection Threshold:**
+
 - Starts at 0.40 (default)
 - Lowers to 0.35 if missing tables (high false negative rate)
 - Raises to 0.50 if very high success rate (optimize for speed)
 
 **Card Area Range:**
+
 - Adjusts min/max area based on actual card sizes detected
 - Adapts to high-resolution vs standard displays
 
 **OCR Scale Factor:**
+
 - Increases for small text (improves accuracy)
 - Decreases for large text (improves speed)
 
@@ -233,12 +248,16 @@ Best performers are automatically prioritized.
 Check these common issues:
 
 1. **Storage permissions:**
+
+   ```bash
    ```bash
    ls -la ~/.pokertool/learning/
    # Should show 4 JSON files
    ```
 
 2. **Import errors:**
+
+   ```python
    ```python
    from pokertool.modules.scraper_learning_system import LEARNING_SYSTEM_AVAILABLE
    print(LEARNING_SYSTEM_AVAILABLE)  # Should be True
@@ -300,21 +319,25 @@ The learning system is designed to be lightweight:
 ## Example Learning Timeline
 
 **Day 1-2 (0-50 detections):**
+
 - System explores different strategies
 - Environment profiles begin forming
 - Success rate: ~70-80%
 
 **Week 1 (50-200 detections):**
+
 - Best strategies identified
 - Parameters tuning to your environment
 - Success rate: ~85-90%
 
 **Week 2+ (200+ detections):**
+
 - Highly optimized for your setup
 - Rare false positives/negatives
 - Success rate: ~92-97%
 
 **With CDP (any time):**
+
 - OCR accuracy improves rapidly
 - Learns from every comparison
 - Reaches >95% accuracy quickly

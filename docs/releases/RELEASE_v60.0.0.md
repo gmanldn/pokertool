@@ -44,6 +44,7 @@ Single file contains the authoritative version number, read by all other systems
 **Purpose:** Programmatic access to version information
 
 **Features:**
+
 - Read version from `VERSION` file
 - Version metadata (major, minor, patch)
 - Release history (last 10 releases)
@@ -73,6 +74,7 @@ info = get_version_info()
 **Purpose:** Automated release management
 
 **Features:**
+
 - Update version across all files
 - Create release branches
 - Create release tags
@@ -103,6 +105,8 @@ python scripts/release.py --version 60.0.0 --tag --message "Stable release"
 ### Standard Release Process
 
 1. **Development on `develop` branch**
+
+   ```bash
    ```bash
    git checkout develop
    # ... make changes ...
@@ -112,12 +116,16 @@ python scripts/release.py --version 60.0.0 --tag --message "Stable release"
    ```
 
 2. **Create Release**
+
+   ```bash
    ```bash
    # Update version and create release branch
    python scripts/release.py --version 61.0.0 --name "Feature Name" --branch
    ```
 
 3. **Test Release Branch**
+
+   ```bash
    ```bash
    # Automated tests run
    pytest tests/
@@ -126,6 +134,8 @@ python scripts/release.py --version 60.0.0 --tag --message "Stable release"
    ```
 
 4. **Merge to Main**
+
+   ```bash
    ```bash
    git checkout main
    git merge release/v61.0.0
@@ -133,11 +143,15 @@ python scripts/release.py --version 60.0.0 --tag --message "Stable release"
    ```
 
 5. **Create Release Tag**
+
+   ```bash
    ```bash
    python scripts/release.py --version 61.0.0 --tag
    ```
 
 6. **Back-merge to Develop**
+
+   ```bash
    ```bash
    git checkout develop
    git merge main
@@ -174,6 +188,7 @@ main (production)
 ## 🚀 Screen Scraping Optimizations (from v49.0.0)
 
 ### Speed Improvements (12)
+
 - SCRAPE-015: ROI Tracking System (3-4x faster)
 - SCRAPE-016: Frame Differencing Engine (5-10x idle)
 - SCRAPE-017: Smart OCR Result Caching (2-3x stable)
@@ -184,6 +199,7 @@ main (production)
 **Overall:** 2-5x faster extraction
 
 ### Accuracy Improvements (13)
+
 - SCRAPE-027: Multi-Frame Temporal Consensus (90%+)
 - SCRAPE-028: Context-Aware Pot Validation (95%+)
 - SCRAPE-029: Card Recognition ML Model (99%+)
@@ -193,6 +209,7 @@ main (production)
 **Overall:** 95%+ reliable extraction
 
 ### Reliability Improvements (10)
+
 - SCRAPE-040: Automatic Recovery Manager (99.9%)
 - SCRAPE-041: Redundant Extraction Paths (99%+)
 - SCRAPE-042: Health Monitoring Dashboard
@@ -261,12 +278,14 @@ pytest tests/system/test_scraper_optimization_suite.py -v
 ## 📈 Performance Metrics
 
 ### Version Tracking Overhead
+
 - **Import Time:** <1ms
 - **File Read Time:** <0.1ms
 - **Memory Overhead:** <1KB
 - **Impact:** Negligible
 
 ### Scraping Performance (from v49.0.0)
+
 - **Speed:** 2-5x faster (10-30ms vs 40-80ms)
 - **Accuracy:** 95%+ (vs 85-90%)
 - **Reliability:** 99.9% uptime (vs 95-97%)
@@ -295,11 +314,13 @@ pytest tests/system/test_scraper_optimization_suite.py -v
 ## 📚 Documentation
 
 ### Version Tracking Documentation
+
 - `docs/releases/RELEASE_v60.0.0.md` (this file)
 - `src/pokertool/version.py` (inline documentation)
 - `scripts/release.py` (inline documentation)
 
 ### Scraping Optimization Documentation
+
 - `docs/SCRAPING_OPTIMIZATIONS_V49.md` (comprehensive guide)
 - `src/pokertool/modules/scraper_optimization_suite.py` (inline docs)
 - `tests/system/test_scraper_optimization_suite.py` (test examples)
@@ -309,6 +330,7 @@ pytest tests/system/test_scraper_optimization_suite.py -v
 ## ✅ Checklist
 
 ### Version Tracking System
+
 - [x] Canonical `VERSION` file created
 - [x] `version.py` module implemented
 - [x] `release.py` script created
@@ -317,6 +339,7 @@ pytest tests/system/test_scraper_optimization_suite.py -v
 - [x] Release branch workflow established
 
 ### Scraping Optimizations (from v49.0.0)
+
 - [x] 35 optimizations implemented
 - [x] 1,700+ lines of production code
 - [x] 45+ comprehensive tests
@@ -330,6 +353,7 @@ pytest tests/system/test_scraper_optimization_suite.py -v
 PokerTool v60.0.0 "Scraping Excellence" establishes a professional version tracking system and includes all performance optimizations from v49.0.0.
 
 **Key Achievements:**
+
 - ✅ Single source of truth for version information
 - ✅ Automated release management
 - ✅ Release branch workflow
@@ -345,11 +369,13 @@ PokerTool v60.0.0 "Scraping Excellence" establishes a professional version track
 ## 📞 Support
 
 ### Version Questions
+
 - Check current version: `python scripts/release.py --current`
 - View release history: `python scripts/release.py --history`
 - Read version.py documentation: `python -m pydoc pokertool.version`
 
 ### Scraping Optimization Questions
+
 - Read comprehensive guide: `docs/SCRAPING_OPTIMIZATIONS_V49.md`
 - Run tests: `pytest tests/system/test_scraper_optimization_suite.py -v`
 - View metrics: Use `get_optimization_suite().get_summary()`
