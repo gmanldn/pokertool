@@ -19,24 +19,100 @@ export interface WebSocketMessage {
   timestamp: number;
 }
 
+export enum ConnectionStatus {
+  CONNECTED = 'connected',
+  CONNECTING = 'connecting',
+  DISCONNECTED = 'disconnected',
+  RECONNECTING = 'reconnecting',
+}
+
 interface UseWebSocketReturn {
   connected: boolean;
+  connectionStatus: ConnectionStatus;
   messages: WebSocketMessage[];
   sendMessage: (message: any) => void;
   clearMessages: () => void;
+  reconnect: () => void;
+  reconnectCountdown: number;
+  cachedMessageCount: number;
 }
 
 export const useWebSocket = (url: string): UseWebSocketReturn => {
   const [connected, setConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
   const [messages, setMessages] = useState<WebSocketMessage[]>([]);
+  const [reconnectCountdown, setReconnectCountdown] = useState(0);
+  const [cachedMessageCount, setCachedMessageCount] = useState(0);
+  
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastHeartbeatRef = useRef<number>(Date.now());
+  const messageQueueRef = useRef<any[]>([]);
   const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
-  const reconnectDelay = 1000;
+  const maxReconnectAttempts = 10;
+  const baseReconnectDelay = 1000;
+  const heartbeatInterval = 30000; // 30 seconds
+  const heartbeatTimeout = 35000; // 35 seconds
+
+  // Calculate exponential backoff delay
+  const getReconnectDelay = useCallback((attempt: number): number => {
+    const delay = Math.min(baseReconnectDelay * Math.pow(2, attempt), 30000);
+    return delay;
+  }, []);
+
+  // Start heartbeat
+  const startHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+    }
+
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        // Send ping
+        socketRef.current.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+        
+        // Check if we received a pong recently
+        if (Date.now() - lastHeartbeatRef.current > heartbeatTimeout) {
+          console.warn('Heartbeat timeout - reconnecting');
+          socketRef.current.close();
+        }
+      }
+    }, heartbeatInterval);
+  }, []);
+
+  // Stop heartbeat
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
+
+  // Replay cached messages
+  const replayCachedMessages = useCallback(() => {
+    if (messageQueueRef.current.length > 0) {
+      console.log(`Replaying ${messageQueueRef.current.length} cached messages`);
+      messageQueueRef.current.forEach(msg => {
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+          socketRef.current.send(typeof msg === 'string' ? msg : JSON.stringify(msg));
+        }
+      });
+      messageQueueRef.current = [];
+      setCachedMessageCount(0);
+    }
+  }, []);
 
   const connect = useCallback(() => {
     try {
+      // Clear any existing countdown
+      if (reconnectCountdownIntervalRef.current) {
+        clearInterval(reconnectCountdownIntervalRef.current);
+      }
+
+      setConnectionStatus(reconnectAttempts.current > 0 ? ConnectionStatus.RECONNECTING : ConnectionStatus.CONNECTING);
+      
       // For demo purposes, use a mock user_id and token
       // In production, these would come from authentication context
       const userId = 'demo_user';
@@ -52,27 +128,53 @@ export const useWebSocket = (url: string): UseWebSocketReturn => {
       socketRef.current.onopen = () => {
         console.log('WebSocket connected');
         setConnected(true);
+        setConnectionStatus(ConnectionStatus.CONNECTED);
         reconnectAttempts.current = 0;
+        setReconnectCountdown(0);
+        
+        // Start heartbeat
+        startHeartbeat();
+        
+        // Replay any cached messages
+        replayCachedMessages();
       };
 
       socketRef.current.onclose = (event) => {
         console.log('WebSocket disconnected:', event.code, event.reason);
         setConnected(false);
+        setConnectionStatus(ConnectionStatus.DISCONNECTED);
+        stopHeartbeat();
         
         // Attempt to reconnect if not manually closed
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current += 1;
-          console.log(`Reconnect attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
+          const delay = getReconnectDelay(reconnectAttempts.current - 1);
+          console.log(`Reconnect attempt ${reconnectAttempts.current}/${maxReconnectAttempts} in ${delay}ms`);
+          
+          setConnectionStatus(ConnectionStatus.RECONNECTING);
+          setReconnectCountdown(Math.ceil(delay / 1000));
+          
+          // Start countdown
+          reconnectCountdownIntervalRef.current = setInterval(() => {
+            setReconnectCountdown(prev => Math.max(0, prev - 1));
+          }, 1000);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
-          }, reconnectDelay * reconnectAttempts.current);
+          }, delay);
         }
       };
 
       socketRef.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          
+          // Handle pong response
+          if (data.type === 'pong') {
+            lastHeartbeatRef.current = Date.now();
+            return;
+          }
+          
           const message: WebSocketMessage = {
             type: data.type || 'message',
             data: data.data || data,
@@ -97,8 +199,9 @@ export const useWebSocket = (url: string): UseWebSocketReturn => {
       };
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
+      setConnectionStatus(ConnectionStatus.DISCONNECTED);
     }
-  }, [url]);
+  }, [url, getReconnectDelay, startHeartbeat, stopHeartbeat, replayCachedMessages]);
 
   useEffect(() => {
     connect();
@@ -107,11 +210,15 @@ export const useWebSocket = (url: string): UseWebSocketReturn => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
+      if (reconnectCountdownIntervalRef.current) {
+        clearInterval(reconnectCountdownIntervalRef.current);
+      }
+      stopHeartbeat();
       if (socketRef.current) {
         socketRef.current.close(1000, 'Component unmounting');
       }
     };
-  }, [connect]);
+  }, [connect, stopHeartbeat]);
 
   const sendMessage = useCallback((message: any) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
@@ -123,7 +230,10 @@ export const useWebSocket = (url: string): UseWebSocketReturn => {
         console.error('Failed to send WebSocket message:', error);
       }
     } else {
-      console.warn('WebSocket is not connected');
+      // Cache message for later replay
+      console.warn('WebSocket is not connected - caching message');
+      messageQueueRef.current.push(message);
+      setCachedMessageCount(messageQueueRef.current.length);
     }
   }, []);
 
@@ -131,11 +241,34 @@ export const useWebSocket = (url: string): UseWebSocketReturn => {
     setMessages([]);
   }, []);
 
+  const reconnect = useCallback(() => {
+    // Manual reconnect - reset attempts and connect immediately
+    console.log('Manual reconnect requested');
+    reconnectAttempts.current = 0;
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    if (reconnectCountdownIntervalRef.current) {
+      clearInterval(reconnectCountdownIntervalRef.current);
+    }
+    
+    if (socketRef.current) {
+      socketRef.current.close();
+    }
+    
+    connect();
+  }, [connect]);
+
   return {
     connected,
+    connectionStatus,
     messages,
     sendMessage,
     clearMessages,
+    reconnect,
+    reconnectCountdown,
+    cachedMessageCount,
   };
 };
 

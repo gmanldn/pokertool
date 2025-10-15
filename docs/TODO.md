@@ -1737,6 +1737,404 @@ This project represents a comprehensive poker analysis and training platform wit
 
 ---
 
+---
+
+## Web Interface & Advice System Improvements (20 Tasks)
+
+### 🎯 ADVICE DISPLAY & INTEGRATION (8 tasks)
+
+#### 1. WEB-ADVICE-001: Real-Time Advice Panel Component
+
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 12
+- **Objective**: Create React component that displays live poker advice from Python backend
+- **How It Works**: WebSocket connection to Python advice engine, displays action (FOLD/CALL/RAISE), confidence bar, EV, pot odds, reasoning
+- **Expected Improvement**: Users get clear, actionable guidance in web interface
+- **Steps to Implement**:
+  - [ ] Create `AdvicePanel.tsx` component with Material-UI cards
+  - [ ] Display primary action with large, color-coded text
+  - [ ] Show confidence bar (5 levels: Very High to Very Low)
+  - [ ] Display supporting metrics grid (EV, pot odds, hand strength)
+  - [ ] Add reasoning text area (3-4 lines, scrollable)
+  - [ ] Implement WebSocket integration with useWebSocket hook
+  - [ ] Add smooth animations for advice updates (fade in/out)
+  - [ ] Implement update throttling (max 2 updates/second)
+  - [ ] Add compact and expanded view modes
+  - [ ] Write comprehensive tests
+
+#### 2. WEB-ADVICE-002: Alternative Actions Suggester
+
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 8
+- **Objective**: Display alternative actions with their EV and reasoning
+- **How It Works**: Show top 3 alternative actions in collapsible section, each with EV comparison, win probability, and brief explanation
+- **Expected Improvement**: Users understand decision tree and can make informed adjustments
+- **Steps to Implement**:
+  - [ ] Create `AlternativeActions.tsx` component
+  - [ ] Display alternatives in expandable cards
+  - [ ] Show EV difference from primary action (+/- format)
+  - [ ] Add win probability for each alternative
+  - [ ] Include brief reasoning (1-2 sentences)
+  - [ ] Color-code by viability (green: close, yellow: suboptimal, red: bad)
+  - [ ] Add click-to-see-details functionality
+  - [ ] Implement smooth expand/collapse animations
+
+#### 3. WEB-ADVICE-003: Contextual Tooltips System
+
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 10
+- **Objective**: Add helpful tooltips explaining poker terminology and metrics
+- **How It Works**: Hover over any metric to see definition, calculation method, and strategic implications
+- **Expected Improvement**: Educational tool for learning while playing
+- **Steps to Implement**:
+  - [ ] Create tooltip content database (JSON)
+  - [ ] Define tooltips for 20+ key terms (VPIP, PFR, 3-bet, SPR, EV, pot odds, etc.)
+  - [ ] Implement `useTooltip` hook with Material-UI Tooltip
+  - [ ] Add rich tooltip content (title, definition, example, formula)
+  - [ ] Include contextual links to documentation
+  - [ ] Add keyboard shortcuts (? for help)
+  - [ ] Implement tooltip delay customization
+  - [ ] Write comprehensive tooltip content library
+
+#### 4. WEB-ADVICE-004: Confidence Visualization Enhancement
+
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 6
+- **Objective**: Improve confidence display with better visual indicators
+- **How It Works**: Multi-level confidence system with colors, icons, and detailed breakdown
+- **Expected Improvement**: Users trust advice more when confidence is clearly communicated
+- **Steps to Implement**:
+  - [ ] Create 5-tier confidence system (90%+ to <60%)
+  - [ ] Design color gradient (green → yellow → orange → red)
+  - [ ] Add confidence icons (⭐⭐⭐⭐⭐ rating style)
+  - [ ] Show confidence breakdown by factor (hand strength, position, opponent model)
+  - [ ] Implement animated confidence bar with smooth transitions
+  - [ ] Add confidence history chart (last 10 decisions)
+  - [ ] Include confidence explanation tooltip
+  - [ ] Add low-confidence warnings
+
+#### 5. WEB-ADVICE-005: Bet Sizing Wizard
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 10
+- **Objective**: Interactive bet sizing suggestions with slider and presets
+- **How It Works**: Display recommended bet sizes (33% pot, 50% pot, 75% pot, pot, 2x pot) with EV for each, allow custom slider
+- **Expected Improvement**: Helps users choose optimal bet sizes
+- **Steps to Implement**:
+  - [ ] Create `BetSizingWizard.tsx` component
+  - [ ] Display 5 preset bet sizes with buttons
+  - [ ] Show EV for each preset size
+  - [ ] Add custom slider (0-500% of pot)
+  - [ ] Real-time EV calculation as slider moves
+  - [ ] Highlight optimal range (green zone)
+  - [ ] Show fold equity impact by bet size
+  - [ ] Add pot commitment warnings
+  - [ ] Include stack-to-pot ratio (SPR) indicator
+
+#### 6. WEB-ADVICE-006: Hand Strength Visualizer
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 8
+- **Objective**: Visual representation of hand strength vs opponent range
+- **How It Works**: Equity bar showing hero's hand vs opponent range, with percentile ranking
+- **Expected Improvement**: Users understand relative hand strength intuitively
+- **Steps to Implement**:
+  - [ ] Create `HandStrengthViz.tsx` component
+  - [ ] Display equity bar (0-100%)
+  - [ ] Show percentile ranking (e.g., "Top 15% of hands")
+  - [ ] Add comparison to average hand equity
+  - [ ] Include out cards visualization (outs count and %)
+  - [ ] Show improving cards on next street
+  - [ ] Add hand category label (Monster, Strong, Medium, Weak, Trash)
+  - [ ] Implement color-coded strength zones
+
+#### 7. WEB-ADVICE-007: Opponent Tendency Tracker
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 12
+- **Objective**: Display opponent stats and tendencies in real-time
+- **How It Works**: Track VPIP, PFR, aggression, fold-to-cbet, and other key stats per opponent, display in HUD
+- **Expected Improvement**: Users make better exploitative adjustments
+- **Steps to Implement**:
+  - [ ] Create `OpponentStats.tsx` component
+  - [ ] Display per-player stat cards
+  - [ ] Show VPIP, PFR, 3-bet %, aggression factor
+  - [ ] Add fold-to-cbet, fold-to-3bet stats
+  - [ ] Include sample size indicators
+  - [ ] Color-code stats (TAG, LAG, Nit, Fish classifications)
+  - [ ] Show recent hand history vs this opponent
+  - [ ] Add tendency-based recommendations ("Opponent folds to 3-bet 70% - consider 3-betting")
+
+#### 8. WEB-ADVICE-008: Decision Timer with Alerts
+
+- **Status**: TODO
+- **Priority**: LOW
+- **Estimated Hours**: 4
+- **Objective**: Show remaining decision time with visual/audio alerts
+- **How It Works**: Countdown timer with color changes (green → yellow → red), audio beep at 5s
+- **Expected Improvement**: Prevents timeouts, encourages timely decisions
+- **Steps to Implement**:
+  - [ ] Create `DecisionTimer.tsx` component
+  - [ ] Display countdown in large text
+  - [ ] Implement color transitions (green > 15s, yellow 5-15s, red < 5s)
+  - [ ] Add progress ring animation
+  - [ ] Include audio alerts (optional, user-configurable)
+  - [ ] Show "time bank" if available
+  - [ ] Add urgency indicators for quick decisions
+  - [ ] Implement smooth animations
+
+---
+
+### 🎨 USER EXPERIENCE IMPROVEMENTS (6 tasks)
+
+#### 9. WEB-UX-001: Responsive Mobile Layout
+
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 14
+- **Objective**: Optimize web interface for mobile devices (tablets, phones)
+- **How It Works**: Responsive breakpoints, collapsible sections, touch-friendly controls
+- **Expected Improvement**: Users can access advice on any device
+- **Steps to Implement**:
+  - [ ] Add mobile breakpoints (xs, sm, md, lg, xl)
+  - [ ] Redesign advice panel for portrait mode
+  - [ ] Implement swipe gestures for navigation
+  - [ ] Create bottom navigation bar for mobile
+  - [ ] Add pull-to-refresh functionality
+  - [ ] Optimize touch targets (min 44x44px)
+  - [ ] Implement collapsible sections for space saving
+  - [ ] Test on iOS and Android devices
+
+#### 10. WEB-UX-002: Dark Mode Optimization
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 6
+- **Objective**: Improve dark mode for long poker sessions
+- **How It Works**: Optimized color palette for eye strain reduction, customizable brightness
+- **Expected Improvement**: Reduced eye fatigue during long sessions
+- **Steps to Implement**:
+  - [ ] Review current dark theme colors
+  - [ ] Optimize contrast ratios (WCAG AAA compliance)
+  - [ ] Add brightness slider (80-120%)
+  - [ ] Implement blue light reduction mode
+  - [ ] Create custom color schemes (poker green, purple, blue)
+  - [ ] Add true black OLED mode
+  - [ ] Save theme preferences to localStorage
+  - [ ] Add theme preview before applying
+
+#### 11. WEB-UX-003: Keyboard Shortcuts
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 8
+- **Objective**: Add keyboard shortcuts for common actions
+- **How It Works**: Hotkeys for fold (F), call (C), raise (R), quick bet sizes (1-5), toggle advice (A)
+- **Expected Improvement**: Faster decision-making, power user efficiency
+- **Steps to Implement**:
+  - [ ] Create keyboard shortcut system
+  - [ ] Implement action shortcuts (F=fold, C=call, R=raise)
+  - [ ] Add bet size shortcuts (1=33%, 2=50%, 3=75%, 4=pot, 5=all-in)
+  - [ ] Include view toggles (A=advice, S=stats, H=history)
+  - [ ] Add help modal (? key)
+  - [ ] Show keyboard hints overlay
+  - [ ] Make shortcuts customizable
+  - [ ] Prevent conflicts with browser shortcuts
+
+#### 12. WEB-UX-004: Quick Settings Panel
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 6
+- **Objective**: Fast access to common settings without leaving main view
+- **How It Works**: Slide-out panel with most-used settings (advice detail level, update frequency, sound alerts)
+- **Expected Improvement**: Users customize experience without navigation
+- **Steps to Implement**:
+  - [ ] Create `QuickSettings.tsx` slide-out panel
+  - [ ] Add advice detail level (Minimal, Compact, Detailed, Expert)
+  - [ ] Include update frequency slider (1-5 updates/sec)
+  - [ ] Add sound alert toggles
+  - [ ] Include auto-hide inactive sections toggle
+  - [ ] Add quick theme switcher
+  - [ ] Implement instant apply (no save button needed)
+  - [ ] Save to localStorage automatically
+
+#### 13. WEB-UX-005: Session Performance Dashboard
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 10
+- **Objective**: Live session statistics and performance tracking
+- **How It Works**: Real-time dashboard showing win rate, ROI, hands played, advice followed %
+- **Expected Improvement**: Users track progress and adherence to advice
+- **Steps to Implement**:
+  - [ ] Create `SessionDashboard.tsx` component
+  - [ ] Track hands played, won, lost
+  - [ ] Calculate win rate, ROI, profit/loss
+  - [ ] Show advice adherence rate (% times followed recommendation)
+  - [ ] Display outcome when advice was followed vs ignored
+  - [ ] Add session time and hands/hour
+  - [ ] Include profit chart (line graph)
+  - [ ] Show best/worst hand of session
+
+#### 14. WEB-UX-006: Advice History & Replay
+
+- **Status**: TODO
+- **Priority**: LOW
+- **Estimated Hours**: 12
+- **Objective**: Review past advice and decisions for learning
+- **How It Works**: Scrollable history of last 50 decisions with advice given, action taken, outcome
+- **Expected Improvement**: Users learn from mistakes and successes
+- **Steps to Implement**:
+  - [ ] Create `AdviceHistory.tsx` component
+  - [ ] Store last 50 decisions in state
+  - [ ] Display in reverse chronological order
+  - [ ] Show advice given vs action taken (highlight differences)
+  - [ ] Include outcome (win/loss amount)
+  - [ ] Add filtering (mistakes only, big pots only)
+  - [ ] Implement click to replay hand detail
+  - [ ] Add export to CSV functionality
+
+---
+
+### 🔧 TECHNICAL IMPROVEMENTS (6 tasks)
+
+#### 15. WEB-TECH-001: WebSocket Reconnection Logic
+
+- **Status**: TODO
+- **Priority**: CRITICAL
+- **Estimated Hours**: 6
+- **Objective**: Robust WebSocket connection with automatic reconnection
+- **How It Works**: Detect disconnections, exponential backoff retry, connection status indicator
+- **Expected Improvement**: Reliable real-time updates even with network issues
+- **Steps to Implement**:
+  - [ ] Add WebSocket connection state management
+  - [ ] Implement exponential backoff (1s, 2s, 4s, 8s, max 30s)
+  - [ ] Add connection status indicator (green=connected, yellow=connecting, red=disconnected)
+  - [ ] Show reconnection countdown
+  - [ ] Cache messages during disconnection
+  - [ ] Replay missed messages on reconnect
+  - [ ] Add manual reconnect button
+  - [ ] Implement heartbeat/ping-pong
+
+#### 16. WEB-TECH-002: State Management with Redux
+
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 14
+- **Objective**: Centralized state management for complex application state
+- **How It Works**: Redux store for game state, advice state, session state, with Redux Toolkit
+- **Expected Improvement**: Better state consistency, easier debugging, improved performance
+- **Steps to Implement**:
+  - [ ] Set up Redux Toolkit
+  - [ ] Create slices for game, advice, session, settings
+  - [ ] Implement async thunks for API calls
+  - [ ] Add Redux DevTools integration
+  - [ ] Create selectors for derived state
+  - [ ] Implement optimistic updates
+  - [ ] Add state persistence to localStorage
+  - [ ] Write comprehensive tests
+
+#### 17. WEB-TECH-003: Advice Caching & Interpolation
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 8
+- **Objective**: Cache advice to reduce backend load and interpolate between updates
+- **How It Works**: LRU cache for similar game states, interpolate confidence/EV smoothly between updates
+- **Expected Improvement**: Smoother UI, reduced backend queries, lower latency
+- **Steps to Implement**:
+  - [ ] Implement LRU cache for advice (max 100 entries)
+  - [ ] Create game state similarity function (hash pot, cards, position)
+  - [ ] Add cache hit/miss tracking
+  - [ ] Implement smooth interpolation for numeric values
+  - [ ] Add cache invalidation rules
+  - [ ] Show cached vs fresh advice indicator
+  - [ ] Monitor cache hit rate
+  - [ ] Add cache configuration settings
+
+#### 18. WEB-TECH-004: Performance Monitoring Dashboard
+
+- **Status**: TODO
+- **Priority**: MEDIUM
+- **Estimated Hours**: 10
+- **Objective**: Track frontend performance metrics for optimization
+- **How It Works**: Monitor render times, API latency, WebSocket latency, memory usage
+- **Expected Improvement**: Identify and fix performance bottlenecks
+- **Steps to Implement**:
+  - [ ] Add React Profiler for component render tracking
+  - [ ] Implement custom performance marks
+  - [ ] Track API/WebSocket latency with percentiles
+  - [ ] Monitor memory usage trends
+  - [ ] Create performance dashboard component
+  - [ ] Add frame rate (FPS) monitoring
+  - [ ] Implement automated performance budgets
+  - [ ] Log slow renders and API calls
+
+#### 19. WEB-TECH-005: Error Boundary & Fallbacks
+
+- **Status**: TODO
+- **Priority**: HIGH
+- **Estimated Hours**: 6
+- **Objective**: Graceful error handling with fallback UI
+- **How It Works**: Error boundaries catch component errors, show helpful message, allow recovery
+- **Expected Improvement**: Better user experience when errors occur
+- **Steps to Implement**:
+  - [ ] Create error boundary components
+  - [ ] Add fallback UI for errors (friendly message, retry button)
+  - [ ] Implement error logging to backend
+  - [ ] Add error context (component stack, props, state)
+  - [ ] Create specific fallbacks for advice, table, stats
+  - [ ] Add automatic error recovery attempts
+  - [ ] Show degraded mode indicator
+  - [ ] Implement error reporting modal
+
+#### 20. WEB-TECH-006: Progressive Web App (PWA)
+
+- **Status**: TODO
+- **Priority**: LOW
+- **Estimated Hours**: 12
+- **Objective**: Make web interface installable and work offline
+- **How It Works**: Service worker for offline caching, manifest for installation, push notifications
+- **Expected Improvement**: Native app-like experience, works offline
+- **Steps to Implement**:
+  - [ ] Create service worker for offline caching
+  - [ ] Add web app manifest
+  - [ ] Implement offline fallback page
+  - [ ] Add install prompt
+  - [ ] Enable push notifications for critical alerts
+  - [ ] Cache static assets and API responses
+  - [ ] Add offline indicator and sync queue
+  - [ ] Test on iOS and Android
+
+---
+
+## Summary of Web Improvements
+
+**Total Tasks**: 20
+**Critical Priority**: 2 (WEB-ADVICE-001, WEB-TECH-001)
+**High Priority**: 5 (WEB-ADVICE-002, WEB-ADVICE-003, WEB-ADVICE-004, WEB-UX-001, WEB-TECH-005)
+**Medium Priority**: 11
+**Low Priority**: 2
+
+**Estimated Total Hours**: 182 hours (~4.5 weeks)
+
+**Expected Improvements**:
+- **Advice Quality**: +30-40% better decision confidence through clear visualization
+- **User Engagement**: +50-60% through mobile support and better UX
+- **System Reliability**: +25-30% through robust error handling and reconnection
+- **Learning Value**: +40-50% through tooltips, history, and explanations
+- **Performance**: +20-30% through caching and optimization
+
+---
+
 **Last Updated**: October 15, 2025
-**Version**: v75.0.0
-**Status**: All 89 Tasks Complete 🎉🎉🎉
+**Version**: v76.0.0 (Web Improvements Added)
+**Status**: 89 Tasks Complete + 20 Web Improvement Tasks Defined ✅
