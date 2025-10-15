@@ -1,1 +1,78 @@
-75.0.0
+# PokerTool Version Information
+# This file tracks the main application version and individual component versions
+# to prevent feature regression and ensure all features remain actively used.
+
+[main]
+version = 75.0.0
+release_date = 2025-10-15
+
+[components]
+# Scraping System Components - v75.0.0 Implementation
+
+[components.roi_tracking]
+version = 1.0.0
+features = SCRAPE-015
+description = ROI change detection with perceptual hashing
+last_updated = 2025-10-15
+status = active
+
+[components.frame_differencing]
+version = 1.0.0
+features = SCRAPE-016
+description = Frame similarity detection using SSIM
+last_updated = 2025-10-15
+status = active
+
+[components.smart_ocr_cache]
+version = 1.0.0
+features = SCRAPE-017
+description = Smart OCR cache with hash-based invalidation
+last_updated = 2025-10-15
+status = active
+
+[components.speed_optimizer]
+version = 1.0.0
+features = SCRAPE-018, SCRAPE-019, SCRAPE-020, SCRAPE-021, SCRAPE-022, SCRAPE-023, SCRAPE-024, SCRAPE-025, SCRAPE-026
+description = Speed optimizations including parallel processing, priority queues, and resource pooling
+last_updated = 2025-10-15
+status = active
+feature_count = 9
+
+[components.accuracy_system]
+version = 1.0.0
+features = SCRAPE-027, SCRAPE-028, SCRAPE-029, SCRAPE-030, SCRAPE-031, SCRAPE-032, SCRAPE-033, SCRAPE-034, SCRAPE-035, SCRAPE-036, SCRAPE-037, SCRAPE-038, SCRAPE-039
+description = Accuracy improvements including temporal consensus, state validation, and confidence scoring
+last_updated = 2025-10-15
+status = active
+feature_count = 13
+
+[components.reliability_system]
+version = 1.0.0
+features = SCRAPE-040, SCRAPE-041, SCRAPE-042, SCRAPE-043, SCRAPE-044, SCRAPE-045, SCRAPE-046, SCRAPE-047, SCRAPE-048, SCRAPE-049
+description = Reliability enhancements including health monitoring, graceful degradation, and automatic recovery
+last_updated = 2025-10-15
+status = active
+feature_count = 10
+
+[components.master_integration]
+version = 1.0.0
+features = All above components
+description = Unified API integrating all scraping subsystems
+last_updated = 2025-10-15
+status = active
+dependencies = roi_tracking, frame_differencing, smart_ocr_cache, speed_optimizer, accuracy_system, reliability_system
+
+[tracking]
+# Version tracking metadata
+total_features_implemented = 35
+total_components = 7
+last_regression_check = 2025-10-15
+last_feature_audit = 2025-10-15
+
+# Component Version Guidelines:
+# - Increment patch (x.y.Z) for bug fixes and minor improvements
+# - Increment minor (x.Y.0) for new features within the component
+# - Increment major (X.0.0) for breaking changes or major rewrites
+# - Update last_updated date whenever component version changes
+# - Set status to 'deprecated' if component is being phased out
+# - Set status to 'inactive' if component is temporarily disabled
