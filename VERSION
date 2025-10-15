@@ -3,7 +3,7 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 78.0.0
+version = 79.0.0
 release_date = 2025-10-15
 
 [components]
@@ -159,13 +159,29 @@ description = Touch swipe gesture detection hook
 last_updated = 2025-10-15
 status = active
 
+# Bet Sizing & Hand Analysis - v79.0.0 Implementation
+
+[components.bet_sizing_wizard]
+version = 1.0.0
+features = WEB-ADVICE-005
+description = Interactive bet sizing with presets, slider, and optimal zone visualization
+last_updated = 2025-10-15
+status = active
+
+[components.hand_strength_visualizer]
+version = 1.0.0
+features = WEB-ADVICE-006
+description = Hand strength visualizer with equity bars, outs tracking, and percentile ranking
+last_updated = 2025-10-15
+status = active
+
 [tracking]
 # Version tracking metadata
-total_features_implemented = 48
-total_components = 20
+total_features_implemented = 50
+total_components = 22
 last_regression_check = 2025-10-15
 last_feature_audit = 2025-10-15
-web_features_implemented = 9
+web_features_implemented = 11
 
 # Component Version Guidelines:
 # - Increment patch (x.y.Z) for bug fixes and minor improvements
