@@ -195,6 +195,11 @@ def cleanup_old_processes():
                 ['taskkill', '/F', '/FI', 'IMAGENAME eq python*', '/FI', f'PID ne {current_pid}'],
                 capture_output=True, timeout=5
             )
+            # Also kill React dev servers
+            subprocess.run(
+                ['taskkill', '/F', '/FI', 'IMAGENAME eq node.exe'],
+                capture_output=True, timeout=5
+            )
         else:
             # Unix: Kill ALL pokertool-related GUI processes
             # Patterns to search for
@@ -204,7 +209,9 @@ def cleanup_old_processes():
                 'python.*simple_gui',
                 'python.*launch.*gui',
                 'python.*run_gui',
-                'pokertool.*gui'
+                'pokertool.*gui',
+                'node.*react-scripts',
+                'react-scripts start'
             ]
 
             all_pids = set()

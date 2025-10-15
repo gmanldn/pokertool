@@ -3,7 +3,7 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 79.0.0
+version = 80.0.0
 release_date = 2025-10-15
 
 [components]
@@ -175,13 +175,29 @@ description = Hand strength visualizer with equity bars, outs tracking, and perc
 last_updated = 2025-10-15
 status = active
 
+# Smart Advice Integration - v80.0.0 Implementation
+
+[components.table_view_advice]
+version = 1.0.0
+features = WEB-ADVICE-007
+description = Integrated AdvicePanel into TableView with real-time WebSocket updates
+last_updated = 2025-10-15
+status = active
+
+[components.frontend_cleanup]
+version = 1.0.0
+features = STARTUP-003
+description = Enhanced startup script to cleanup React dev servers before launch
+last_updated = 2025-10-15
+status = active
+
 [tracking]
 # Version tracking metadata
-total_features_implemented = 50
-total_components = 22
+total_features_implemented = 52
+total_components = 24
 last_regression_check = 2025-10-15
 last_feature_audit = 2025-10-15
-web_features_implemented = 11
+web_features_implemented = 12
 
 # Component Version Guidelines:
 # - Increment patch (x.y.Z) for bug fixes and minor improvements

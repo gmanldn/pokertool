@@ -33,6 +33,8 @@ import {
   Fullscreen,
   Casino,
 } from '@mui/icons-material';
+import { AdvicePanel } from './AdvicePanel';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 interface TableViewProps {
   sendMessage: (message: any) => void;
@@ -60,6 +62,9 @@ interface Player {
 export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // WebSocket connection for real-time advice
+  const { messages } = useWebSocket('http://localhost:8000');
   
   const [tables] = useState<TableData[]>([
     {
@@ -323,6 +328,11 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
               ))}
             {isTracking && <LinearProgress sx={{ mt: 2 }} />}
           </Paper>
+        </Grid>
+
+        {/* Smart Advice Panel */}
+        <Grid item xs={12} md={4}>
+          <AdvicePanel messages={messages} compact={isMobile} />
         </Grid>
 
         {/* Table Info */}
