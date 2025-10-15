@@ -27,12 +27,17 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import {
-  PlayArrow,
-  Stop,
   Refresh,
   Fullscreen,
   Casino,
+  FiberManualRecord,
 } from '@mui/icons-material';
+import { AdvicePanel } from './AdvicePanel';
+import { DecisionTimer } from './DecisionTimer';
+import { HandStrengthMeter } from './HandStrengthMeter';
+import { EquityCalculator } from './EquityCalculator';
+import { BetSizingRecommendations } from './BetSizingRecommendations';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 interface TableViewProps {
   sendMessage: (message: any) => void;
@@ -61,41 +66,129 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  const [tables] = useState<TableData[]>([
+  // WebSocket connection for real-time advice
+  const { messages } = useWebSocket('http://localhost:8000');
+  
+  // State for tables - will be populated by backend detection
+  const [tables, setTables] = useState<TableData[]>([
     {
       tableId: 'table-1',
-      tableName: 'High Stakes 1',
-      players: [
-        { seat: 1, name: 'Player 1', chips: 10000, isActive: true, isFolded: false },
-        { seat: 2, name: 'Player 2', chips: 8500, isActive: false, isFolded: false },
-        { seat: 3, name: 'Player 3', chips: 12000, isActive: false, isFolded: true },
-        { seat: 4, name: 'Player 4', chips: 9500, isActive: false, isFolded: false },
-      ],
-      pot: 250,
-      communityCards: ['As', 'Kh', '10d'],
-      currentAction: 'Player 1 to act',
-      isActive: true,
+      tableName: 'Waiting for table detection...',
+      players: [],
+      pot: 0,
+      communityCards: [],
+      currentAction: 'No active table detected',
+      isActive: false,
     },
   ]);
 
-  const [selectedTable, setSelectedTable] = useState<string>('table-1');
-  const [isTracking, setIsTracking] = useState(false);
+  // Listen for table updates from WebSocket
+  React.useEffect(() => {
+    if (messages && messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
 
-  const handleStartTracking = () => {
-    setIsTracking(true);
+      // Handle different message types from backend
+      if (latestMessage.type === 'table_update' && latestMessage.data) {
+        setTables([latestMessage.data]);
+      } else {
+        // Handle incremental detection events to update current table
+        setTables(prevTables => {
+          const currentTable = prevTables[0] || {
+            tableId: 'table-1',
+            tableName: 'Live Table',
+            players: [],
+            pot: 0,
+            communityCards: [],
+            currentAction: '',
+            isActive: true,
+          };
+
+          let updated = { ...currentTable };
+
+          // Card detection events
+          if (latestMessage.type === 'card_detected' || latestMessage.type === 'cards_detected') {
+            const cardData = latestMessage.data || latestMessage;
+            if (cardData.cards && Array.isArray(cardData.cards)) {
+              // Community cards
+              if (cardData.type === 'community' || cardData.cardType === 'board') {
+                updated.communityCards = cardData.cards;
+                updated.currentAction = `${cardData.cards.length} community cards detected`;
+              }
+              // Hole cards for a specific player
+              else if (cardData.seat !== undefined || cardData.playerId !== undefined) {
+                const seatNum = cardData.seat || cardData.playerId;
+                updated.players = [...updated.players];
+                const playerIndex = updated.players.findIndex(p => p.seat === seatNum);
+                if (playerIndex >= 0) {
+                  updated.players[playerIndex] = { ...updated.players[playerIndex], cards: cardData.cards };
+                }
+              }
+            }
+          }
+
+          // Player detection events
+          if (latestMessage.type === 'player_detected' || latestMessage.type === 'player_update') {
+            const playerData = latestMessage.data || latestMessage;
+            if (playerData.seat !== undefined) {
+              updated.players = [...updated.players];
+              const existingIndex = updated.players.findIndex(p => p.seat === playerData.seat);
+
+              const player: Player = {
+                seat: playerData.seat,
+                name: playerData.name || `Player ${playerData.seat}`,
+                chips: playerData.chips || playerData.stack || 0,
+                cards: playerData.cards,
+                isActive: playerData.isActive !== undefined ? playerData.isActive : true,
+                isFolded: playerData.isFolded || playerData.folded || false,
+              };
+
+              if (existingIndex >= 0) {
+                updated.players[existingIndex] = player;
+              } else {
+                updated.players.push(player);
+              }
+              updated.currentAction = `${player.name} detected`;
+            }
+          }
+
+          // Pot detection events
+          if (latestMessage.type === 'pot_update' || latestMessage.type === 'pot_detected') {
+            const potData = latestMessage.data || latestMessage;
+            if (potData.pot !== undefined || potData.amount !== undefined) {
+              updated.pot = potData.pot || potData.amount;
+              updated.currentAction = `Pot: ${updated.pot}`;
+            }
+          }
+
+          // Action detection events
+          if (latestMessage.type === 'action_detected' || latestMessage.type === 'player_action') {
+            const actionData = latestMessage.data || latestMessage;
+            if (actionData.action) {
+              updated.currentAction = actionData.player
+                ? `${actionData.player} ${actionData.action}`
+                : actionData.action;
+            }
+          }
+
+          return [updated];
+        });
+      }
+    }
+  }, [messages]);
+
+  const [selectedTable, setSelectedTable] = useState<string>('table-1');
+  const [detectionActive, setDetectionActive] = useState(true);
+  const [playerDetection, setPlayerDetection] = useState(true);
+  const [cardDetection, setCardDetection] = useState(true);
+  const [potDetection, setPotDetection] = useState(true);
+
+  // Auto-start tracking on mount
+  React.useEffect(() => {
     sendMessage({
       type: 'start_tracking',
       tableId: selectedTable,
     });
-  };
-
-  const handleStopTracking = () => {
-    setIsTracking(false);
-    sendMessage({
-      type: 'stop_tracking',
-      tableId: selectedTable,
-    });
-  };
+  }, [selectedTable, sendMessage]);
 
   const handleRefreshTable = (tableId: string) => {
     sendMessage({
@@ -227,8 +320,8 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
               }}
             >
               <CardContent sx={{ p: 1.5 }}>
-                <Typography 
-                  variant="caption" 
+                <Typography
+                  variant="caption"
                   sx={{
                     fontWeight: 700,
                     color: '#ffffff',
@@ -239,15 +332,42 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
                 >
                   {player.name}
                 </Typography>
-                <Typography 
+                <Typography
                   variant="body2"
                   sx={{
                     color: player.isActive ? theme.palette.primary.light : '#b0b0b0',
                     fontWeight: 600,
+                    mb: player.cards && player.cards.length > 0 ? 0.5 : 0,
                   }}
                 >
                   ${player.chips}
                 </Typography>
+                {/* Hole Cards */}
+                {player.cards && player.cards.length > 0 && (
+                  <Box sx={{ display: 'flex', gap: 0.3, mt: 0.5, justifyContent: 'center' }}>
+                    {player.cards.map((card, cardIdx) => (
+                      <Paper
+                        key={cardIdx}
+                        sx={{
+                          width: 22,
+                          height: 32,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          fontSize: '0.65rem',
+                          background: '#ffffff',
+                          borderRadius: 0.5,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                          border: '1px solid #e0e0e0',
+                          color: card.includes('h') || card.includes('d') ? '#d32f2f' : '#000',
+                        }}
+                      >
+                        {card}
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Box>
@@ -262,26 +382,49 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
         <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold">
           Table View
         </Typography>
-        <Box display="flex" gap={1}>
-          {!isTracking ? (
-            <Button
-              variant="contained"
-              startIcon={<PlayArrow />}
-              onClick={handleStartTracking}
-              color="success"
-            >
-              Start Tracking
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              startIcon={<Stop />}
-              onClick={handleStopTracking}
-              color="error"
-            >
-              Stop Tracking
-            </Button>
-          )}
+        <Box display="flex" gap={2} alignItems="center">
+          {/* Detection Status Indicators */}
+          <Box display="flex" gap={1} alignItems="center" sx={{
+            background: 'rgba(0, 0, 0, 0.2)',
+            borderRadius: 2,
+            px: 2,
+            py: 1,
+          }}>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <FiberManualRecord
+                sx={{
+                  fontSize: 14,
+                  color: playerDetection ? '#4caf50' : '#666',
+                  animation: playerDetection ? 'pulse 2s infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1 },
+                    '50%': { opacity: 0.5 },
+                  },
+                }}
+              />
+              <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Players</Typography>
+            </Box>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <FiberManualRecord
+                sx={{
+                  fontSize: 14,
+                  color: cardDetection ? '#4caf50' : '#666',
+                  animation: cardDetection ? 'pulse 2s infinite' : 'none',
+                }}
+              />
+              <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Cards</Typography>
+            </Box>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <FiberManualRecord
+                sx={{
+                  fontSize: 14,
+                  color: potDetection ? '#4caf50' : '#666',
+                  animation: potDetection ? 'pulse 2s infinite' : 'none',
+                }}
+              />
+              <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Pot</Typography>
+            </Box>
+          </Box>
           <IconButton onClick={() => handleRefreshTable(selectedTable)}>
             <Refresh />
           </IconButton>
@@ -321,8 +464,30 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
               .map((table) => (
                 <PokerTable key={table.tableId} table={table} />
               ))}
-            {isTracking && <LinearProgress sx={{ mt: 2 }} />}
+            <LinearProgress sx={{ mt: 2 }} />
           </Paper>
+        </Grid>
+
+        {/* Smart Advice Panel with new components */}
+        <Grid item xs={12} md={4}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <DecisionTimer timeLimit={30} compact={isMobile} />
+            <AdvicePanel messages={messages} compact={isMobile} />
+            <HandStrengthMeter strength={75} compact={isMobile} />
+            <EquityCalculator
+              winEquity={62.5}
+              tieEquity={3.5}
+              ev={12.5}
+              potOdds={33}
+              requiredEquity={30}
+              compact={isMobile}
+            />
+          </Box>
+        </Grid>
+
+        {/* Bet Sizing */}
+        <Grid item xs={12} md={4}>
+          <BetSizingRecommendations potSize={250} compact={isMobile} />
         </Grid>
 
         {/* Table Info */}

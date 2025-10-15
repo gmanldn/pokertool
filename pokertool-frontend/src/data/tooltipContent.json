@@ -1,0 +1,202 @@
+{
+  "vpip": {
+    "term": "VPIP",
+    "title": "Voluntarily Put $ In Pot",
+    "definition": "Percentage of hands where a player voluntarily puts money into the pot (excludes big blind).",
+    "formula": "(Voluntary Pot Entries / Total Hands) × 100",
+    "example": "A player with 25% VPIP plays 1 in 4 hands.",
+    "strategicImplication": "Lower VPIP (15-22%) indicates tight play, higher VPIP (28%+) indicates loose play.",
+    "idealRange": "20-25% for TAG style",
+    "learnMoreUrl": "/docs/statistics/vpip"
+  },
+  "pfr": {
+    "term": "PFR",
+    "title": "Pre-Flop Raise",
+    "definition": "Percentage of hands where a player raises pre-flop.",
+    "formula": "(Pre-Flop Raises / Total Hands) × 100",
+    "example": "A player with 18% PFR raises pre-flop in 18% of hands.",
+    "strategicImplication": "PFR should be close to VPIP for aggressive play. Large gap indicates passive play.",
+    "idealRange": "15-20% for TAG style",
+    "learnMoreUrl": "/docs/statistics/pfr"
+  },
+  "3bet": {
+    "term": "3-Bet %",
+    "title": "3-Bet Percentage",
+    "definition": "Percentage of times a player re-raises after someone has already raised.",
+    "formula": "(3-Bets Made / Opportunities to 3-Bet) × 100",
+    "example": "A 3-bet % of 8% means they re-raise 8% of the time when facing a raise.",
+    "strategicImplication": "Higher 3-bet % (10%+) indicates aggressive play and can be used to exploit tight opponents.",
+    "idealRange": "6-9% from all positions",
+    "learnMoreUrl": "/docs/strategy/3betting"
+  },
+  "aggression": {
+    "term": "Aggression Factor",
+    "title": "Aggression Factor",
+    "definition": "Ratio of aggressive actions (bets and raises) to passive actions (calls).",
+    "formula": "(Bets + Raises) / Calls",
+    "example": "An aggression factor of 3.0 means 3 aggressive actions for every 1 call.",
+    "strategicImplication": "Higher aggression (3.0+) puts pressure on opponents and wins more pots without showdown.",
+    "idealRange": "2.5-4.0 for winning players",
+    "learnMoreUrl": "/docs/statistics/aggression"
+  },
+  "ev": {
+    "term": "EV",
+    "title": "Expected Value",
+    "definition": "The average amount you can expect to win or lose from a particular decision over many repetitions.",
+    "formula": "EV = (Win % × Win Amount) - (Lose % × Lose Amount)",
+    "example": "+$15 EV means this action will profit $15 on average in the long run.",
+    "strategicImplication": "Always choose the action with the highest positive EV. Small EV differences matter over thousands of hands.",
+    "idealRange": "Maximize positive EV in every decision",
+    "learnMoreUrl": "/docs/math/expected-value"
+  },
+  "potOdds": {
+    "term": "Pot Odds",
+    "title": "Pot Odds",
+    "definition": "The ratio of the current pot size to the cost of a contemplated call.",
+    "formula": "Pot Odds = Cost to Call / (Pot + Cost to Call)",
+    "example": "If pot is $100 and you need to call $20, pot odds are 20/(100+20) = 16.7%.",
+    "strategicImplication": "Call when your equity exceeds pot odds. Fold when pot odds exceed equity.",
+    "idealRange": "Compare to hand equity percentage",
+    "learnMoreUrl": "/docs/math/pot-odds"
+  },
+  "equity": {
+    "term": "Equity",
+    "title": "Pot Equity",
+    "definition": "Your percentage share of the pot based on your chances of winning the hand.",
+    "formula": "Equity % = (Your Wins + Ties/Players) / Total Outcomes × 100",
+    "example": "45% equity means you'll win this pot 45% of the time on average.",
+    "strategicImplication": "Need at least 35-40% equity to call most bets. Higher equity justifies raises.",
+    "idealRange": "Varies by situation; compare to pot odds",
+    "learnMoreUrl": "/docs/math/equity"
+  },
+  "spr": {
+    "term": "SPR",
+    "title": "Stack-to-Pot Ratio",
+    "definition": "The ratio of the effective stack size to the current pot size.",
+    "formula": "SPR = Effective Stack / Pot Size",
+    "example": "SPR of 5 means stacks are 5 times the pot. SPR of 1 means you're pot-committed.",
+    "strategicImplication": "Low SPR (≤3) favors going all-in. High SPR (10+) allows more complex play.",
+    "idealRange": "Adjust strategy based on SPR",
+    "learnMoreUrl": "/docs/concepts/spr"
+  },
+  "foldToCbet": {
+    "term": "Fold to C-Bet",
+    "title": "Fold to Continuation Bet",
+    "definition": "Percentage of times a player folds when facing a continuation bet.",
+    "formula": "(Folds to C-Bet / Times Faced C-Bet) × 100",
+    "example": "70% fold to c-bet means they fold to continuation bets 70% of the time.",
+    "strategicImplication": "High fold to c-bet (70%+) can be exploited with aggressive c-betting.",
+    "idealRange": "50-65% is typical",
+    "learnMoreUrl": "/docs/statistics/fold-to-cbet"
+  },
+  "cbet": {
+    "term": "C-Bet %",
+    "title": "Continuation Bet Percentage",
+    "definition": "Percentage of times a player makes a continuation bet after raising pre-flop.",
+    "formula": "(C-Bets Made / Opportunities) × 100",
+    "example": "75% c-bet means they continuation bet 3 out of 4 times.",
+    "strategicImplication": "High c-bet (75%+) indicates frequent bluffing. Can be exploited with check-raises.",
+    "idealRange": "60-75% is standard",
+    "learnMoreUrl": "/docs/strategy/continuation-betting"
+  },
+  "wtsd": {
+    "term": "WTSD",
+    "title": "Went to Showdown",
+    "definition": "Percentage of hands that went to showdown when player saw the flop.",
+    "formula": "(Showdowns / Flops Seen) × 100",
+    "example": "30% WTSD means they see showdown in 30% of hands where they saw the flop.",
+    "strategicImplication": "High WTSD (35%+) indicates calling station tendencies. Low WTSD (<25%) indicates fit-or-fold.",
+    "idealRange": "25-30% for balanced play",
+    "learnMoreUrl": "/docs/statistics/wtsd"
+  },
+  "wonAtShowdown": {
+    "term": "Won $ at Showdown",
+    "title": "Won Money at Showdown",
+    "definition": "Percentage of times a player won money when going to showdown.",
+    "formula": "(Showdowns Won / Total Showdowns) × 100",
+    "example": "55% won at showdown means they win more than half their showdowns.",
+    "strategicImplication": "Should be >50% for winning players. <45% indicates poor hand selection or bad luck.",
+    "idealRange": "52-58% for solid players",
+    "learnMoreUrl": "/docs/statistics/showdown-winnings"
+  },
+  "handStrength": {
+    "term": "Hand Strength",
+    "title": "Hand Strength Percentile",
+    "definition": "Your hand's relative strength compared to all possible hands in this situation.",
+    "formula": "Based on equity calculations against opponent range",
+    "example": "85% hand strength means your hand is stronger than 85% of possible holdings.",
+    "strategicImplication": "75%+ is very strong, 50-75% is medium, <50% is weak. Adjust aggression accordingly.",
+    "idealRange": "Aim for 60%+ to continue aggressively",
+    "learnMoreUrl": "/docs/concepts/hand-strength"
+  },
+  "confidence": {
+    "term": "Confidence",
+    "title": "Recommendation Confidence",
+    "definition": "How certain the AI is about the recommended action based on available information.",
+    "formula": "Based on model uncertainty, sample size, and situation complexity",
+    "example": "90% confidence means the AI is very certain this is the best play.",
+    "strategicImplication": "Low confidence (<60%) suggests a marginal spot - consider opponent tendencies more heavily.",
+    "idealRange": "Trust high confidence (80%+) more",
+    "learnMoreUrl": "/docs/ai/confidence"
+  },
+  "implied": {
+    "term": "Implied Odds",
+    "title": "Implied Odds",
+    "definition": "Expected additional money you can win on later streets if you hit your hand.",
+    "formula": "Considers future betting rounds and opponent's willingness to pay you off",
+    "example": "Good implied odds justify calling with drawing hands even with poor pot odds.",
+    "strategicImplication": "Drawing hands have better implied odds against calling stations with deep stacks.",
+    "idealRange": "Need 3:1+ implied odds for speculative hands",
+    "learnMoreUrl": "/docs/math/implied-odds"
+  },
+  "foldEquity": {
+    "term": "Fold Equity",
+    "title": "Fold Equity",
+    "definition": "The additional value from the chance your opponent will fold, giving you the pot immediately.",
+    "formula": "Fold Equity = Fold % × Current Pot Size",
+    "example": "If opponent folds 40% to your $100 bet in $200 pot, fold equity = $80.",
+    "strategicImplication": "Bluffs and semi-bluffs gain value from fold equity. More fold equity justifies larger bets.",
+    "idealRange": "Need 30%+ fold equity for profitable bluffs",
+    "learnMoreUrl": "/docs/concepts/fold-equity"
+  },
+  "gto": {
+    "term": "GTO",
+    "title": "Game Theory Optimal",
+    "definition": "A balanced strategy that cannot be exploited, playing optimally against perfect opponents.",
+    "formula": "Calculated using Nash equilibrium solvers",
+    "example": "GTO might suggest bluffing 33% and value betting 67% in certain spots.",
+    "strategicImplication": "GTO provides a baseline. Deviate to exploit opponent weaknesses when identified.",
+    "idealRange": "Use as default against unknown opponents",
+    "learnMoreUrl": "/docs/strategy/gto"
+  },
+  "exploitative": {
+    "term": "Exploitative",
+    "title": "Exploitative Strategy",
+    "definition": "Deviating from GTO to take advantage of specific opponent tendencies.",
+    "formula": "Adjust based on observed opponent statistics",
+    "example": "3-bet more vs tight players who fold too much. Call more vs aggressive c-bettors.",
+    "strategicImplication": "More profitable than GTO against weak opponents but can be counter-exploited.",
+    "idealRange": "Use when you have reliable reads",
+    "learnMoreUrl": "/docs/strategy/exploitative"
+  },
+  "roi": {
+    "term": "ROI",
+    "title": "Return on Investment",
+    "definition": "Your profit or loss as a percentage of the total amount invested.",
+    "formula": "ROI = (Net Profit / Total Buy-ins) × 100",
+    "example": "20% ROI means you profit $20 for every $100 in buy-ins.",
+    "strategicImplication": "Track ROI by stake level. Winning players have 5-20% ROI in tournaments.",
+    "idealRange": "10%+ ROI is excellent for tournaments",
+    "learnMoreUrl": "/docs/tracking/roi"
+  },
+  "bb100": {
+    "term": "BB/100",
+    "title": "Big Blinds per 100 Hands",
+    "definition": "Your win rate measured in big blinds won per 100 hands played.",
+    "formula": "BB/100 = (Total BB Won / Hands Played) × 100",
+    "example": "5 BB/100 means you win 5 big blinds per 100 hands on average.",
+    "strategicImplication": "Standard win rate metric for cash games. 3+ BB/100 is solid, 7+ is excellent.",
+    "idealRange": "5-10 BB/100 for winning players",
+    "learnMoreUrl": "/docs/tracking/winrate"
+  }
+}

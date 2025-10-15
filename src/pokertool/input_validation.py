@@ -198,10 +198,24 @@ class BetValidator:
 
         # Convert string to number
         if isinstance(amount, str):
-            # Remove currency symbols and commas
-            amount = re.sub(r'[£$€,]', '', amount.strip())
+            amount_str = amount.strip()
+
+            # Detect European format (comma as decimal separator)
+            # If comma is followed by exactly 2 digits at end, it's decimal
+            european_decimal_pattern = r',\d{2}(?:\D|$)'
+            is_european = bool(re.search(european_decimal_pattern, amount_str))
+
+            if is_european:
+                # European format: remove thousand separators (periods), convert comma to period
+                amount_str = re.sub(r'[£$€¢]', '', amount_str)
+                amount_str = amount_str.replace('.', '')  # Remove thousand separators
+                amount_str = amount_str.replace(',', '.')  # Convert decimal comma to period
+            else:
+                # US format: remove currency symbols and thousand separators (commas)
+                amount_str = re.sub(r'[£$€¢,]', '', amount_str)
+
             try:
-                amount = float(amount)
+                amount = float(amount_str)
             except ValueError:
                 return ValidationResult(
                     valid=False,

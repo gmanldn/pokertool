@@ -25,9 +25,16 @@ from datetime import datetime
 _VERSION_FILE = Path(__file__).parent.parent.parent / 'VERSION'
 
 def _read_version() -> str:
-    """Read version from VERSION file."""
+    """Read version from VERSION file (TOML format)."""
     if _VERSION_FILE.exists():
-        return _VERSION_FILE.read_text().strip()
+        content = _VERSION_FILE.read_text()
+        # Parse TOML-like format to extract version
+        for line in content.split('\n'):
+            line = line.strip()
+            if line.startswith('version ='):
+                # Extract version from line like "version = 81.0.0"
+                version = line.split('=')[1].strip()
+                return version
     return "0.0.0"
 
 # Canonical version string

@@ -234,9 +234,16 @@ class BlindsChecker:
     
     def __init__(self):
         self.blind_structures = [
-            (0.5, 1), (1, 2), (2, 4), (2.5, 5), (5, 10),
-            (10, 20), (25, 50), (50, 100), (100, 200),
-            (200, 400), (500, 1000), (1000, 2000)
+            # Micro stakes (euros/cents)
+            (0.01, 0.02), (0.02, 0.05), (0.05, 0.10),
+            # Small stakes
+            (0.10, 0.25), (0.25, 0.50), (0.5, 1), (1, 2),
+            # Mid stakes
+            (2, 4), (2.5, 5), (5, 10), (10, 20), (25, 50),
+            # High stakes
+            (50, 100), (100, 200), (200, 400), (500, 1000),
+            # Nosebleed stakes
+            (1000, 2000), (2500, 5000), (5000, 10000)
         ]
     
     def validate(self, sb: float, bb: float) -> Tuple[float, float, bool]:
