@@ -18,6 +18,7 @@ import { Provider } from 'react-redux';
 import { Dashboard } from './components/Dashboard';
 import { Navigation } from './components/Navigation';
 import { TableView } from './components/TableView';
+import { DetectionLog } from './components/DetectionLog';
 import { Statistics } from './components/Statistics';
 import { BankrollManager } from './components/BankrollManager';
 import { TournamentView } from './components/TournamentView';
@@ -117,6 +118,7 @@ function AppContent() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<Dashboard messages={messages} />} />
                 <Route path="/tables" element={<TableView sendMessage={sendMessage} />} />
+                <Route path="/detection-log" element={<DetectionLog messages={messages} />} />
                 <Route path="/statistics" element={<Statistics />} />
                 <Route path="/bankroll" element={<BankrollManager />} />
                 <Route path="/tournament" element={<TournamentView />} />

@@ -47,6 +47,7 @@ import {
   School,
   History,
   Circle,
+  Article,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
@@ -66,6 +67,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
+    { text: 'Detection Log', icon: <Article />, path: '/detection-log' },
     { text: 'Statistics', icon: <Assessment />, path: '/statistics' },
     { text: 'Bankroll', icon: <AccountBalance />, path: '/bankroll' },
     { text: 'Tournament', icon: <EmojiEvents />, path: '/tournament' },

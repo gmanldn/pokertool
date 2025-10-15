@@ -27,11 +27,10 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import {
-  PlayArrow,
-  Stop,
   Refresh,
   Fullscreen,
   Casino,
+  FiberManualRecord,
 } from '@mui/icons-material';
 import { AdvicePanel } from './AdvicePanel';
 import { DecisionTimer } from './DecisionTimer';
@@ -88,23 +87,18 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   ]);
 
   const [selectedTable, setSelectedTable] = useState<string>('table-1');
-  const [isTracking, setIsTracking] = useState(false);
+  const [detectionActive, setDetectionActive] = useState(true);
+  const [playerDetection, setPlayerDetection] = useState(true);
+  const [cardDetection, setCardDetection] = useState(true);
+  const [potDetection, setPotDetection] = useState(true);
 
-  const handleStartTracking = () => {
-    setIsTracking(true);
+  // Auto-start tracking on mount
+  React.useEffect(() => {
     sendMessage({
       type: 'start_tracking',
       tableId: selectedTable,
     });
-  };
-
-  const handleStopTracking = () => {
-    setIsTracking(false);
-    sendMessage({
-      type: 'stop_tracking',
-      tableId: selectedTable,
-    });
-  };
+  }, [selectedTable, sendMessage]);
 
   const handleRefreshTable = (tableId: string) => {
     sendMessage({
@@ -271,26 +265,49 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
         <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold">
           Table View
         </Typography>
-        <Box display="flex" gap={1}>
-          {!isTracking ? (
-            <Button
-              variant="contained"
-              startIcon={<PlayArrow />}
-              onClick={handleStartTracking}
-              color="success"
-            >
-              Start Tracking
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              startIcon={<Stop />}
-              onClick={handleStopTracking}
-              color="error"
-            >
-              Stop Tracking
-            </Button>
-          )}
+        <Box display="flex" gap={2} alignItems="center">
+          {/* Detection Status Indicators */}
+          <Box display="flex" gap={1} alignItems="center" sx={{
+            background: 'rgba(0, 0, 0, 0.2)',
+            borderRadius: 2,
+            px: 2,
+            py: 1,
+          }}>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <FiberManualRecord
+                sx={{
+                  fontSize: 14,
+                  color: playerDetection ? '#4caf50' : '#666',
+                  animation: playerDetection ? 'pulse 2s infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1 },
+                    '50%': { opacity: 0.5 },
+                  },
+                }}
+              />
+              <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Players</Typography>
+            </Box>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <FiberManualRecord
+                sx={{
+                  fontSize: 14,
+                  color: cardDetection ? '#4caf50' : '#666',
+                  animation: cardDetection ? 'pulse 2s infinite' : 'none',
+                }}
+              />
+              <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Cards</Typography>
+            </Box>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <FiberManualRecord
+                sx={{
+                  fontSize: 14,
+                  color: potDetection ? '#4caf50' : '#666',
+                  animation: potDetection ? 'pulse 2s infinite' : 'none',
+                }}
+              />
+              <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Pot</Typography>
+            </Box>
+          </Box>
           <IconButton onClick={() => handleRefreshTable(selectedTable)}>
             <Refresh />
           </IconButton>
@@ -330,7 +347,7 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
               .map((table) => (
                 <PokerTable key={table.tableId} table={table} />
               ))}
-            {isTracking && <LinearProgress sx={{ mt: 2 }} />}
+            <LinearProgress sx={{ mt: 2 }} />
           </Paper>
         </Grid>
 
