@@ -464,7 +464,8 @@ class PokerOCR:
                 processed = self.preprocess_image(roi, 'numbers')
                 
                 # OCR configuration for numbers and currency
-                config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789.,$'
+                # Include comma for European decimal format (0,01) and cent symbol
+                config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789.,€$£¢'
                 
                 if pytesseract:
                     text = pytesseract.image_to_string(processed, config=config)
@@ -481,22 +482,50 @@ class PokerOCR:
         return amounts
     
     def _parse_amount(self, text: str) -> float:
-        """Parse text to extract monetary amount."""
+        """Parse text to extract monetary amount.
+
+        Supports both US format (1,234.56) and European format (1.234,56).
+        Handles small stakes like 0.01, 0.02, 0,01, 0,02 etc.
+        """
         import re
-        
-        # Clean text
-        text = text.strip().replace(',', '').replace('$', '')
-        
-        # Find number patterns
+
+        # Clean text - remove currency symbols
+        text = text.strip().replace('$', '').replace('€', '').replace('£', '').replace('¢', '')
+
+        # Detect format: if comma is followed by 2 digits at end, it's European decimal
+        # Examples: "0,01" "12,50" "1.234,56"
+        european_decimal_pattern = r',\d{2}(?:\D|$)'
+        is_european = bool(re.search(european_decimal_pattern, text))
+
+        if is_european:
+            # European format: comma is decimal, period is thousands separator
+            # First remove thousands separators (periods)
+            text = text.replace('.', '')
+            # Then replace decimal comma with period for float conversion
+            text = text.replace(',', '.')
+        else:
+            # US format: comma is thousands separator, period is decimal
+            # Remove thousands separators (commas)
+            text = text.replace(',', '')
+
+        # Handle OCR confusion: O → 0, l → 1, S → 5
+        text = text.replace('O', '0').replace('o', '0').replace('l', '1').replace('S', '5')
+
+        # Find number patterns (now normalized to use . for decimal)
         number_pattern = r'(\d+\.?\d*)'
         matches = re.findall(number_pattern, text)
-        
+
         if matches:
             try:
-                return float(matches[0])
+                amount = float(matches[0])
+                # Sanity check: if amount is suspiciously large, might be OCR error
+                # Most poker pots are under $1,000,000
+                if amount > 1000000:
+                    logger.warning(f"Suspiciously large amount detected: {amount} from text '{text}'")
+                return amount
             except ValueError:
                 return 0.0
-        
+
         return 0.0
 
 # Global OCR instance
