@@ -69,22 +69,30 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   // WebSocket connection for real-time advice
   const { messages } = useWebSocket('http://localhost:8000');
   
-  const [tables] = useState<TableData[]>([
+  // State for tables - will be populated by backend detection
+  const [tables, setTables] = useState<TableData[]>([
     {
       tableId: 'table-1',
-      tableName: 'High Stakes 1',
-      players: [
-        { seat: 1, name: 'Player 1', chips: 10000, isActive: true, isFolded: false },
-        { seat: 2, name: 'Player 2', chips: 8500, isActive: false, isFolded: false },
-        { seat: 3, name: 'Player 3', chips: 12000, isActive: false, isFolded: true },
-        { seat: 4, name: 'Player 4', chips: 9500, isActive: false, isFolded: false },
-      ],
-      pot: 250,
-      communityCards: ['As', 'Kh', '10d'],
-      currentAction: 'Player 1 to act',
-      isActive: true,
+      tableName: 'Waiting for table detection...',
+      players: [],
+      pot: 0,
+      communityCards: [],
+      currentAction: 'No active table detected',
+      isActive: false,
     },
   ]);
+
+  // Listen for table updates from WebSocket
+  React.useEffect(() => {
+    if (messages && messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
+
+      // Handle different message types from backend
+      if (latestMessage.type === 'table_update' && latestMessage.data) {
+        setTables([latestMessage.data]);
+      }
+    }
+  }, [messages]);
 
   const [selectedTable, setSelectedTable] = useState<string>('table-1');
   const [detectionActive, setDetectionActive] = useState(true);
