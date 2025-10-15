@@ -9,7 +9,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-video_path = "/Users/georgeridout/Desktop/Screen Recording 2025-10-14 at 20.51.26.mov"
+video_path = "BF_MOVIE.mp4"
 output_dir = Path("video_frames")
 output_dir.mkdir(exist_ok=True)
 
