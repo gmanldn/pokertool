@@ -125,61 +125,6 @@ def test_scraper():
         logger.error(f"Fatal error: {e}", exc_info=True)
         raise
 
-def test_enhanced_gui():
-    """Test the enhanced GUI with fixed scraper."""
-    try:
-        logger.info("=" * 60)
-        logger.info("Starting Enhanced GUI Test")
-        logger.info("=" * 60)
-        
-        from src.pokertool.enhanced_gui import IntegratedPokerAssistant
-        logger.info("✓ Imported Enhanced GUI module")
-        
-        # Create app instance
-        app = IntegratedPokerAssistant()
-        logger.info("✓ Created GUI application instance")
-        
-        # Check if screen scraper is initialized
-        if app.screen_scraper:
-            logger.info("✓ Screen scraper is initialized in GUI")
-        else:
-            logger.warning("⚠ Screen scraper not initialized in GUI")
-        
-        # Test the get_live_table_data method
-        logger.info("Testing get_live_table_data() method...")
-        data = app.get_live_table_data()
-        if data:
-            logger.info("✓ get_live_table_data() returned data:")
-            logger.info(f"  • Status: {data.get('status')}")
-            logger.info(f"  • Players: {len(data.get('players', {}))}")
-            logger.info(f"  • Pot: ${data.get('pot', 0)}")
-            logger.info(f"  • Warnings: {data.get('warnings', [])}")
-        else:
-            logger.info("ℹ No live table data available (no table detected)")
-        
-        logger.info("=" * 60)
-        logger.info("GUI Test Complete - Starting mainloop...")
-        logger.info("The GUI window should now be visible")
-        logger.info("=" * 60)
-        
-        # Run the GUI
-        app.mainloop()
-        
-    except Exception as e:
-        logger.error(f"GUI test failed: {e}", exc_info=True)
-        raise
-
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Test Betfair screen scraping")
-    parser.add_argument('--gui', action='store_true', help='Test with full GUI')
-    parser.add_argument('--scraper-only', action='store_true', help='Test scraper without GUI')
-    
-    args = parser.parse_args()
-    
-    if args.gui:
-        test_enhanced_gui()
-    else:
-        # Default to scraper-only test
-        test_scraper()
+    # Run scraper test (GUI removed in web-only architecture)
+    test_scraper()
