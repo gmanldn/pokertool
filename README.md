@@ -1,23 +1,23 @@
-# PokerTool v29.0.0 — Advanced Poker Assistant
+# PokerTool v83.0.0 — Advanced Poker Assistant (Web Edition)
 
 <!-- POKERTOOL-HEADER-START
 ---
 schema: pokerheader.v1
 project: pokertool
 file: README.md
-version: v28.0.0
-last_commit: '2025-09-23T12:55:52+01:00'
+version: v83.0.0
+last_commit: '2025-10-15T22:40:00+00:00'
 fixes:
 
-- Merged duplicate root readmes into a single canonical README.md
-- date: '2025-09-25'
+- Complete removal of tkinter/GUI dependencies
+- Transitioned to web-only architecture
+- date: '2025-10-15'
 
-  summary: Enhanced enterprise documentation and comprehensive unit tests added
-  summary: Enhanced enterprise documentation and comprehensive unit tests added
+  summary: Web-only architecture with React frontend
 ---
 POKERTOOL-HEADER-END -->
 
-PokerTool is a comprehensive, professional-grade poker analysis and automation toolkit. It features a robust GUI, advanced dependency management, multi-table support, and intelligent screen scraping capabilities.
+PokerTool is a comprehensive, professional-grade poker analysis and automation toolkit. It features a modern web interface, advanced dependency management, multi-table support, and intelligent screen scraping capabilities.
 
 **📊 Project Statistics:**
 
@@ -27,10 +27,10 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 - **300+ features** across core engine, GUI, ML, and analytics
 - **19 dependencies** automatically validated and managed
 
-**Latest Version:** v29.0.0 - Complete Dependency Validation & Robust GUI System  
-**Release Date:** January 2025  
+**Latest Version:** v83.0.0 - Web-Only Architecture with React Frontend  
+**Release Date:** October 2025  
 **Status:** Production Ready ✅  
-**Architecture:** Modular, enterprise-grade, fully tested
+**Architecture:** Web-based, modular, enterprise-grade, fully tested
 
 ---
 
@@ -51,46 +51,51 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 
 ## 🚀 Quick Start
 
-### **🏆 Primary Method: Comprehensive Setup (Recommended)**
+### **🏆 Primary Method: Web Interface Launch (Recommended)**
 
 ```bash
-# The ONLY recommended way to launch PokerTool
-python scripts/start.py
+# Launch the web interface
+python -m pokertool web
 
-# This single command handles everything:
-# • Validates all 19 dependencies
-# • Installs missing packages automatically
-# • Sets up virtual environment if needed
-# • Resolves import conflicts
-# • Launches robust multi-tab GUI
+# Or use the CLI directly
+pokertool web
+
+# This command:
+# • Validates all dependencies
+# • Starts the Flask web server
+# • Opens the web interface in your browser
+# • Provides real-time WebSocket updates
 ```
 
-### **🔧 Advanced Setup Options**
+### **🔧 Advanced Launch Options**
 
 ```bash
-# Virtual environment only
-python scripts/start.py --venv
+# Test basic functionality
+python -m pokertool test
 
-# Dependencies only (no GUI)
-python scripts/start.py --python
+# Run screen scraper (headless)
+python -m pokertool scrape
 
-# Full system validation
-python scripts/start.py --self-test
-
-# Launch GUI only (after setup)
-python scripts/start.py --launch
-```
-
-### **⚡ Quick Validation**
-
-```bash
 # Check all dependencies
 python src/pokertool/dependency_manager.py
 
-# Alternative launchers (for development only)
-python scripts/launch_gui.py  # Direct GUI (bypasses validation)
-python tests/test_gui.py      # Minimal test interface
+# Full system validation
+python scripts/start.py --self-test
 ```
+
+### **⚡ Accessing the Web Interface**
+
+Once launched, the web interface is available at:
+
+- **Local:** http://localhost:5000
+- **Network:** http://your-ip:5000 (for remote access)
+
+The interface provides:
+
+- Real-time poker advice and analysis
+- Session tracking and statistics
+- Opponent modeling and insights
+- Settings and configuration management
 
 ---
 
