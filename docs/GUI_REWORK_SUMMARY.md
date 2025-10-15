@@ -17,6 +17,7 @@ Complete rework of the PokerTool GUI to create an enterprise-grade, reliable, an
 A comprehensive, enterprise-grade GUI application featuring:
 
 #### Core Features
+
 - ✅ **Desktop-Independent Screen Scraping** - Works across all virtual desktops/workspaces
 - ✅ **Real-Time Poker Table Detection** - Automatically finds and monitors poker windows
 - ✅ **Cross-Platform Compatibility** - Windows, macOS, and Linux support
@@ -26,6 +27,7 @@ A comprehensive, enterprise-grade GUI application featuring:
 - ✅ **Performance Monitoring** - Real-time metrics and diagnostics
 
 #### User Interface
+
 - ✅ **Professional Dark Theme** - Eye-friendly color scheme
 - ✅ **Tabbed Organization** - Scraper, Manual Entry, Analysis History, Settings
 - ✅ **Status Indicators** - Real-time visual feedback on system state
@@ -33,6 +35,7 @@ A comprehensive, enterprise-grade GUI application featuring:
 - ✅ **Comprehensive Tooltips** - Guidance for all features
 
 #### Technical Implementation
+
 - ✅ **Modular Architecture** - Separate components for maintainability
 - ✅ **Thread-Safe Operations** - Async scraping without UI blocking
 - ✅ **Performance Optimized** - Caching, adaptive intervals, efficient rendering
@@ -168,6 +171,7 @@ pokertool/
 ## Quality Assurance
 
 ### Code Quality
+
 - ✅ **Modular Design** - Clear separation of concerns
 - ✅ **Type Hints** - Full type annotations for maintainability
 - ✅ **Docstrings** - Comprehensive documentation strings
@@ -176,6 +180,7 @@ pokertool/
 - ✅ **Constants** - No magic numbers or strings
 
 ### Testing
+
 - ✅ **Unit Tests** - 95%+ code coverage
 - ✅ **Integration Tests** - Complete workflow testing
 - ✅ **Error Path Testing** - All error conditions tested
@@ -183,6 +188,7 @@ pokertool/
 - ✅ **Platform Testing** - Tested on Windows, macOS, Linux
 
 ### Documentation
+
 - ✅ **User Guide** - Step-by-step instructions
 - ✅ **API Documentation** - All public methods documented
 - ✅ **Troubleshooting** - Common issues and solutions
@@ -204,6 +210,7 @@ python launch_enhanced_gui_v2.py
 ```
 
 ### For Screen Scraping
+
 1. Launch GUI
 2. Go to "🔍 Screen Scraper" tab
 3. Click "Scan for Poker Windows"
@@ -211,6 +218,7 @@ python launch_enhanced_gui_v2.py
 5. Click "Start Monitoring" for continuous capture
 
 ### For Manual Analysis
+
 1. Launch GUI
 2. Go to "✏️ Manual Entry" tab
 3. Enter your cards (e.g., As, Kh)
@@ -243,11 +251,13 @@ python -m pytest tests/test_gui_enhanced_v2.py --cov=pokertool --cov-report=html
 ## Known Limitations & Future Enhancements
 
 ### Current Limitations
+
 1. **OCR Accuracy** - Text recognition depends on table clarity
 2. **Custom Sites** - May need pattern configuration for uncommon poker sites
 3. **Real-time HUD** - Not yet implemented (planned for v22.0.0)
 
 ### Planned Enhancements
+
 1. **HUD Overlay** - Display stats directly on poker tables
 2. **Hand History Import** - Load and analyze past hands
 3. **Range Visualization** - Graphical range charts
@@ -259,15 +269,18 @@ python -m pytest tests/test_gui_enhanced_v2.py --cov=pokertool --cov-report=html
 ## Performance Benchmarks
 
 ### Startup Time
+
 - Cold start: ~2.0 seconds
 - Warm start: ~0.5 seconds
 
 ### Screen Scraping
+
 - Window scan: 50-100ms per window
 - Capture + analysis: 100-300ms per window
 - Monitoring overhead: <5% CPU usage
 
 ### Memory Usage
+
 - Base GUI: ~50MB
 - With scraper active: ~100MB
 - With monitoring (1 table): ~150MB
@@ -294,16 +307,19 @@ Before deployment, verify:
 ## Success Metrics
 
 ### Reliability ✅
+
 - **Uptime**: 99.9%+ (no crashes in testing)
 - **Error Recovery**: 100% graceful degradation
 - **Cross-Platform**: Works on Windows, macOS, Linux
 
 ### Clarity ✅
+
 - **User Feedback**: Clear status indicators at all times
 - **Error Messages**: User-friendly with actionable solutions
 - **Documentation**: Comprehensive with examples
 
 ### Feature Exposure ✅
+
 - **Screen Scraper**: ✅ Fully integrated and accessible
 - **Manual Entry**: ✅ Easy-to-use interface
 - **Analysis**: ✅ Detailed results with explanations
@@ -314,16 +330,19 @@ Before deployment, verify:
 ## Maintenance & Support
 
 ### Regular Maintenance
+
 - Update dependencies monthly
 - Review error logs weekly
 - Performance profiling quarterly
 
 ### Support Channels
+
 - GitHub Issues for bug reports
 - GitHub Discussions for questions
 - In-app help documentation
 
 ### Update Schedule
+
 - Patch releases (v21.0.x): As needed for critical bugs
 - Minor releases (v21.x.0): Monthly with new features
 - Major releases (v22.0.0): Quarterly with significant enhancements

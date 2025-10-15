@@ -25,6 +25,7 @@
 Previously, the system always assumed seat #1 was the hero - completely inaccurate!
 
 Now:
+
 - **Prompts for your poker handle on first startup**
 - **Uses OCR to match your username** at each seat
 - **Accurately identifies your position** anywhere at the table
@@ -51,6 +52,7 @@ Enter your poker handle (or 'skip' to skip): JohnPoker123
 ```
 
 **Benefits:**
+
 - ✅ Works at ANY seat (not just seat #1)
 - ✅ Fuzzy matching handles OCR errors ("J0hnP0ker" matches "JohnPoker")
 - ✅ One-time setup, remembers your handle
@@ -89,6 +91,7 @@ Application is ready to start!
 ```
 
 **Validates:**
+
 - Python version (3.10+)
 - Core dependencies (NumPy, OpenCV, Pillow, pytesseract, MSS)
 - Optional features (PyTorch, GPU/CUDA)
@@ -188,6 +191,7 @@ brew install opencv
 ## 📞 Support
 
 Having issues? Check:
+
 1. Is your poker handle spelled exactly as it appears on the site?
 2. Is Tesseract OCR installed? (`brew install tesseract`)
 3. Is OpenCV working? (See Known Issues above)

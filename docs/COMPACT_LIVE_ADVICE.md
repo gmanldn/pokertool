@@ -259,34 +259,42 @@ CompactAdviceGUIIntegration(
 #### Methods
 
 **start()**
+
 - Start the integration (begin scraper polling)
 - Returns: None
 
 **stop()**
+
 - Stop the integration
 - Returns: None
 
 **show()**
+
 - Show the compact advice window
 - Returns: None
 
 **hide()**
+
 - Hide the compact advice window
 - Returns: None
 
 **toggle()**
+
 - Toggle window visibility
 - Returns: None
 
 **pause()**
+
 - Pause live updates
 - Returns: None
 
 **resume()**
+
 - Resume live updates
 - Returns: None
 
 **get_stats() → Dict**
+
 - Get performance statistics
 - Returns: Dict with stats
 
@@ -483,12 +491,14 @@ Measured on MacBook Pro (M1):
 ### Performance Tips
 
 **For Best Performance:**
+
 - Use default 10k iterations
 - Enable auto-fade (reduces redraws)
 - Keep update frequency at 2/sec
 - Let caching work (don't force updates)
 
 **For Maximum Accuracy:**
+
 - Increase to 25k iterations
 - Set update frequency to 1/sec
 - Disable caching (force recalculate)
@@ -670,6 +680,7 @@ A: Low confidence means high uncertainty. Be cautious.
 ## Version History
 
 ### v61.0.0 (October 14, 2025)
+
 - ✨ Initial release
 - ✅ Compact 300x180px window
 - ✅ Live win probability
@@ -692,6 +703,7 @@ Proprietary - PokerTool Enterprise Edition
 ## Support
 
 For issues, questions, or feature requests:
+
 - Check the [Troubleshooting](#troubleshooting) section
 - Review the [FAQ](#faq)
 - Contact PokerTool support

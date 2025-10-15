@@ -6,7 +6,10 @@ file: src/test/e2e/README.md
 version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
+
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
         ---
         POKERTOOL-HEADER-END -->
@@ -69,6 +72,7 @@ npm run e2e -- --debug
 ```
 
 In debug mode, Playwright will:
+
 - Open a browser window showing the VS Code instance
 - Pause execution at the beginning of each test
 - Allow you to step through test actions
@@ -176,6 +180,8 @@ await sidebar.getByTestId("tab-api-config").click()
 The `--debug` flag enables Playwright's interactive debugging features:
 
 1. **Start debugging session:**
+
+   ```bash
    ```bash
    npm run test:e2e -- --debug
    ```
@@ -219,6 +225,8 @@ The test environment includes:
 ### Best Practices
 
 1. **Use semantic selectors:**
+
+   ```typescript
    ```typescript
    // Good - uses test IDs
    sidebar.getByTestId("chat-input")
@@ -231,18 +239,24 @@ The test environment includes:
    ```
 
 2. **Wait for elements:**
+
+   ```typescript
    ```typescript
    await expect(sidebar.getByText("Loading...")).toBeVisible()
    await expect(sidebar.getByText("Complete")).toBeVisible()
    ```
 
 3. **Clean up state:**
+
+   ```typescript
    ```typescript
    // Use helper functions for common cleanup
    await cleanChatView(page)
    ```
 
 4. **Handle async operations:**
+
+   ```typescript
    ```typescript
    // Wait for API responses
    await expect(sidebar.getByText("API Request...")).toBeVisible()
@@ -250,6 +264,8 @@ The test environment includes:
    ```
 
 5. **Test both success and error cases:**
+
+   ```typescript
    ```typescript
    // Test successful flow
    await helper.signin(sidebar)

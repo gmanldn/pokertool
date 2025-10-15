@@ -9,6 +9,7 @@ python verify_enhanced_gui.py
 ```
 
 This will check:
+
 - ✅ Python version (3.7+)
 - ✅ Required files present
 - ✅ Dependencies installed
@@ -88,6 +89,7 @@ That's it! The GUI should now be running.
 ### Compatibility
 
 The new GUI is **fully compatible** with existing code:
+
 - ✅ Uses same `core` module for analysis
 - ✅ Uses same `desktop_independent_scraper`
 - ✅ Does not modify any existing files
@@ -187,6 +189,7 @@ Found 0 poker windows
 ```
 
 **Solutions**:
+
 1. Make sure a poker application is running
 2. Try different detection mode in Settings tab
 3. Add custom pattern for your poker site
@@ -198,6 +201,7 @@ PermissionError: Screen recording not allowed
 ```
 
 **Solution**: Grant screen recording permission
+
 1. System Preferences > Security & Privacy > Privacy
 2. Select "Screen Recording"
 3. Add Python/Terminal to allowed apps
@@ -328,6 +332,7 @@ Load in GUI:
 ### Keyboard Shortcuts
 
 Add to your system:
+
 - Ctrl+Shift+P: Launch PokerTool
 - Ctrl+Shift+S: Scan for windows
 - Ctrl+Shift+M: Toggle monitoring
@@ -353,6 +358,7 @@ Before using in production:
 ## Next Steps
 
 ### For Users
+
 1. Read `ENHANCED_GUI_V2_README.md` for complete guide
 2. Run `verify_enhanced_gui.py` to check setup
 3. Launch with `python launch_enhanced_gui_v2.py`
@@ -360,6 +366,7 @@ Before using in production:
 5. Move to Screen Scraper tab for automation
 
 ### For Developers
+
 1. Review `GUI_REWORK_SUMMARY.md` for architecture
 2. Check `tests/test_gui_enhanced_v2.py` for test patterns
 3. Run tests to verify environment
@@ -371,16 +378,19 @@ Before using in production:
 ## Support
 
 ### Documentation
+
 - `ENHANCED_GUI_V2_README.md`: Complete user guide
 - `GUI_REWORK_SUMMARY.md`: Technical overview
 - This file: Integration guide
 
 ### Testing
+
 - `verify_enhanced_gui.py`: Check installation
 - `tests/test_gui_enhanced_v2.py`: Run unit tests
 - In-app help: Available in Help menu
 
 ### Getting Help
+
 - GitHub Issues: Bug reports and feature requests
 - GitHub Discussions: Questions and community support
 - In-app documentation: Help > Documentation

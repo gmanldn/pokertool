@@ -6,6 +6,7 @@
 All tests that run as part of the automated test cycle are located in this folder. This is the **only** folder that should contain production test files.
 
 **Subfolders:**
+
 - `tests/gui/` - GUI and interface tests
 - `tests/system/` - System integration and core functionality tests
 - Additional test modules organized by feature
@@ -26,6 +27,7 @@ python3 -m pytest tests/ -v
 This folder contains **roll-forward scripts** and migration utilities, NOT production tests.
 
 These scripts are used for:
+
 - One-time migrations
 - Database schema updates
 - Development experiments
@@ -44,6 +46,7 @@ These scripts are used for:
 When running tests, **GUI popup dialogs are automatically suppressed**. Instead, all errors, warnings, and info messages are logged to the console and log files.
 
 **How it works:**
+
 - Tests set `POKERTOOL_TEST_MODE=1` environment variable
 - All messagebox dialogs check this variable and log instead of showing popups
 - Prevents tests from hanging on dialog boxes

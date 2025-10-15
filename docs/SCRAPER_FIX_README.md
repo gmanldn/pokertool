@@ -37,6 +37,8 @@ result = run_screen_scraper(site='GENERIC', continuous=False)
 If you need Chrome-specific capture:
 
 1. Start Chrome with remote debugging:
+
+   ```bash
    ```bash
    # macOS/Linux
    /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
@@ -46,6 +48,8 @@ If you need Chrome-specific capture:
    ```
 
 2. Set environment variables (optional):
+
+   ```bash
    ```bash
    export POKERTOOL_CHROME_HOST=127.0.0.1
    export POKERTOOL_CHROME_PORT=9222
@@ -53,6 +57,8 @@ If you need Chrome-specific capture:
    ```
 
 3. Use Chrome site:
+
+   ```python
    ```python
    scraper = create_scraper('CHROME')
    ```
@@ -85,11 +91,15 @@ python src/pokertool/scrape_fix.py
 ## Next Steps
 
 1. Run the test suite to verify fixes:
+
+   ```bash
    ```bash
    python test_desktop_scraper.py
    ```
 
 2. Update any calling code to use `GENERIC` instead of `CHROME`:
+
+   ```python
    ```python
    # OLD (may fail)
    run_screen_scraper(site='CHROME')
@@ -99,6 +109,8 @@ python src/pokertool/scrape_fix.py
    ```
 
 3. For poker window detection across desktops:
+
+   ```python
    ```python
    from pokertool.scrape import run_desktop_independent_scraper
    
@@ -111,6 +123,7 @@ python src/pokertool/scrape_fix.py
 ## Verification
 
 The diagnostic tool confirms:
+
 - ✅ MSS working - Can capture full screen
 - ✅ Desktop scraper functional - Can detect poker windows
 - ⚠️  Chrome capture - Requires manual setup
@@ -118,6 +131,7 @@ The diagnostic tool confirms:
 ## Support
 
 If issues persist:
+
 1. Check dependencies: `pip install mss opencv-python pillow numpy`
 2. Run diagnostic: `python src/pokertool/scrape_fix.py`
 3. Check logs in `logs/pokertool_errors.log`

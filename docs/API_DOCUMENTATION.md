@@ -6,7 +6,10 @@ file: docs/API_DOCUMENTATION.md
 version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
+
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
         ---
         POKERTOOL-HEADER-END -->
@@ -24,6 +27,7 @@ PokerTool is a comprehensive poker analysis toolkit with GUI, API, screen scrapi
 Core poker logic and data structures.
 
 **Classes:**
+
 - `Rank`: Enum for card ranks (2-14/Ace)
 - `Suit`: Enum for card suits (spades, hearts, diamonds, clubs)  
 - `Position`: Enum for table positions (EARLY, MIDDLE, LATE, BLINDS)
@@ -31,6 +35,7 @@ Core poker logic and data structures.
 - `HandAnalysisResult`: Analysis result with strength, advice, and details
 
 **Functions:**
+
 - `parse_card(s: str) -> Card`: Parse string like "As" into Card object
 - `analyse_hand(hole_cards, board_cards, position, pot, to_call) -> HandAnalysisResult`: Analyze poker hand
 
@@ -38,10 +43,12 @@ Core poker logic and data structures.
 Secure SQLite database for storing hand analysis history.
 
 **Classes:**
+
 - `SecureDatabase`: Thread-safe database with rate limiting and security features
   - Methods: `save_hand_analysis()`, `get_recent_hands()`, `create_session()`, `backup_database()`, `cleanup_old_data()`
 
 **Security Features:**
+
 - Rate limiting (100 operations/minute default)
 - Input validation for hand/board formats
 - Size limits (100MB default)
@@ -52,11 +59,13 @@ Secure SQLite database for storing hand analysis history.
 Production database module supporting PostgreSQL and SQLite.
 
 **Classes:**
+
 - `DatabaseType`: Enum for database types
 - `DatabaseConfig`: Configuration dataclass
 - `ProductionDatabase`: Main database interface with connection pooling
 
 **Features:**
+
 - Automatic fallback from PostgreSQL to SQLite
 - Connection pooling
 - Migration utilities
@@ -66,6 +75,7 @@ Production database module supporting PostgreSQL and SQLite.
 Advanced threading and async task management.
 
 **Classes:**
+
 - `TaskPriority`: Enum for task priorities (LOW, NORMAL, HIGH, CRITICAL)
 - `ThreadSafeCounter`: Thread-safe counter implementation
 - `ThreadSafeDict`: Thread-safe dictionary with type hints
@@ -74,6 +84,7 @@ Advanced threading and async task management.
 - `AsyncManager`: Async coroutine manager
 
 **Decorators:**
+
 - `@threaded`: Execute function in thread pool
 - `@async_threaded`: Execute async function
 - `@cpu_intensive`: Execute in process pool
@@ -82,21 +93,25 @@ Advanced threading and async task management.
 Comprehensive error handling and resilience patterns.
 
 **Functions:**
+
 - `sanitize_input()`: Input validation and sanitization
 - `retry_on_failure()`: Decorator for automatic retries with exponential backoff
 - `run_safely()`: Execute function with comprehensive error handling
 - `db_guard()`: Context manager for database operations
 
 **Classes:**
+
 - `CircuitBreaker`: Circuit breaker pattern implementation
 
 #### `pokertool.gui`
 Tkinter-based graphical user interface.
 
 **Classes:**
+
 - `SecureGUI`: Main GUI application with hand analysis interface
 
 **Features:**
+
 - Card input validation
 - Hand analysis display
 - History viewing
@@ -107,9 +122,11 @@ Tkinter-based graphical user interface.
 Screen scraping for online poker tables.
 
 **Classes:**
+
 - `ScraperManager`: Main scraper coordination
 
 **Functions:**
+
 - `run_screen_scraper()`: Start scraper
 - `stop_screen_scraper()`: Stop scraper
 - `get_scraper_status()`: Get current status
@@ -119,6 +136,7 @@ Screen scraping for online poker tables.
 RESTful API with FastAPI (optional dependencies).
 
 **Classes:**
+
 - `UserRole`: Enum for user roles (GUEST, USER, PREMIUM, ADMIN)
 - `APIUser`: User representation
 - `AuthenticationService`: JWT authentication
@@ -126,6 +144,7 @@ RESTful API with FastAPI (optional dependencies).
 - `PokerToolAPI`: Main API application
 
 **Endpoints:**
+
 - `GET /health`: Health check
 - `POST /auth/token`: Login
 - `POST /auth/register`: Register user
@@ -141,6 +160,7 @@ RESTful API with FastAPI (optional dependencies).
 Command-line interface entry point.
 
 **Function:**
+
 - `main(argv=None)`: CLI entry point
 
 ## Installation

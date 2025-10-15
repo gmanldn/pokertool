@@ -38,6 +38,7 @@ Temporarily disabled torch dependency in `requirements.txt`:
 ### 3. **Installation Script**
 
 Created `install_torch.sh` with multiple installation strategies:
+
 - **Method 1**: Try PyTorch nightly builds (Python 3.13 support)
 - **Method 2**: Fallback installation methods
 - **Method 3**: Provides clear guidance for users
@@ -45,6 +46,7 @@ Created `install_torch.sh` with multiple installation strategies:
 ### 4. **Alternative Methods**
 
 The segmenter now supports multiple backends:
+
 - **YOLO**: Uses ultralytics (when available)
 - **ONNX**: CPU-optimized inference
 - **SAM**: Segment Anything Model

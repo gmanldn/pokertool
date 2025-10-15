@@ -6,7 +6,10 @@ file: evals/README.md
 version: v28.0.0
 last_commit: '2025-09-23T08:41:38+01:00'
 fixes:
+
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
         ---
         POKERTOOL-HEADER-END -->
@@ -122,6 +125,7 @@ node dist/index.js run --model claude-3-opus-20240229 --benchmark exercism
 ```
 
 Options:
+
 - `--model`: The model to evaluate (default: claude-3-opus-20240229)
 - `--benchmark`: Specific benchmark to run (default: all)
 - `--count`: Number of tasks to run (default: all)
@@ -133,6 +137,7 @@ node dist/index.js report
 ```
 
 Options:
+
 - `--format`: Report format (json, markdown) (default: markdown)
 - `--output`: Output path for the report
 
@@ -147,6 +152,7 @@ node dist/index.js evals-env check   # Check if evals.env file exists in current
 ```
 
 Options:
+
 - `--directory`: Specify a directory other than the current one
 
 ## Benchmarks
@@ -348,6 +354,7 @@ cd diff-edits/dashboard && streamlit run app.py
 ### Legacy Results
 
 For backward compatibility, results are also saved as JSON files in the `diff-edits/results/` directory. The JSON results include:
+
 - Success/failure status
 - Extracted tool calls
 - Diff edit content

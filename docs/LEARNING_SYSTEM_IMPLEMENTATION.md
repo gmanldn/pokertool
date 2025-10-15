@@ -68,36 +68,42 @@ Complete user and developer documentation:
 ## 🚀 **Key Features**
 
 ### **Automatic Learning** ✨
+
 - **Zero Configuration** - Works out of the box
 - **Transparent Operation** - Runs silently in background
 - **Persistent Memory** - Remembers learned optimizations across sessions
 - **Multi-Source Learning** - Learns from detections, CDP data, and user feedback
 
 ### **Environment Adaptation** 🖥️
+
 - **Fingerprinting** - Creates unique signature for each environment (resolution + brightness + color profile)
 - **Profile Management** - Maintains separate optimal settings for each environment
 - **Threshold Tuning** - Auto-adjusts detection thresholds based on success rates
 - **Hardware Optimization** - Adapts to your specific monitor and lighting conditions
 
 ### **OCR Optimization** 📝
+
 - **Strategy Testing** - Tries multiple OCR approaches in parallel
 - **Performance Tracking** - Records success rate and execution time for each strategy
 - **Auto-Prioritization** - Best strategies run first for maximum efficiency
 - **Continuous Improvement** - Adapts as OCR accuracy improves
 
 ### **Ground Truth Comparison** 🎯
+
 - **CDP Integration** - Uses Chrome DevTools Protocol as 100% accurate reference
 - **Accuracy Metrics** - Calculates OCR accuracy vs ground truth
 - **Error Learning** - Identifies patterns in OCR mistakes
 - **Real-Time Feedback** - Improves immediately as differences are detected
 
 ### **User Feedback Loop** 👤
+
 - **Correction Recording** - Captures manual fixes from validation
 - **Strategy Adjustment** - Updates rankings based on correction frequency
 - **Pattern Building** - Learns from validated correct extractions
 - **Validation Confidence** - Improves validation accuracy over time
 
 ### **Smart Parameters** ⚙️
+
 - **Detection Threshold** - Range: 0.25-0.60 (auto-tuned)
 - **Card Area Ranges** - Adapts to high-res vs standard displays
 - **Aspect Ratios** - Learns typical card proportions
@@ -111,30 +117,35 @@ Complete user and developer documentation:
 The system tracks comprehensive metrics:
 
 ### **Detection Metrics**
+
 - Success rate (target: >90%)
 - Confidence scores (0.0-1.0)
 - Execution time (40-100ms typical)
 - False positive/negative rates
 
 ### **OCR Metrics**
+
 - Strategy success rates by extraction type
 - Execution time per strategy
 - Attempts vs successes
 - Best performer identification
 
 ### **Accuracy Metrics** (with CDP)
+
 - Pot size accuracy (target: >95%)
 - Player name match rate
 - Stack size accuracy
 - Overall OCR quality score
 
 ### **Environment Metrics**
+
 - Profiles created
 - Attempts per environment
 - Success rate per environment
 - Optimal thresholds per environment
 
 ### **Learning Health**
+
 - Overall score (0-100)
 - Data sufficiency
 - Improvement trends
@@ -147,6 +158,7 @@ The system tracks comprehensive metrics:
 All learned data persists in: `~/.pokertool/learning/`
 
 **Files:**
+
 - `environment_profiles.json` - Environment-specific optimized settings
 - `ocr_strategies.json` - OCR strategy performance statistics
 - `adaptive_params.json` - Current tuned parameters
@@ -184,6 +196,7 @@ python -m pokertool.view_learning_stats
 ```
 
 Output:
+
 - Environment profiles
 - OCR strategy rankings
 - Recent performance
@@ -223,24 +236,28 @@ state = scraper.analyze_table()
 ## 📈 **Expected Improvements**
 
 ### **Week 1** (50-200 detections)
+
 - Detection success rate: 70% → 85%
 - False positives: 10% → 3%
 - Average confidence: 0.65 → 0.80
 - Environment profiles: 1-3 created
 
 ### **Week 2** (200-500 detections)
+
 - Detection success rate: 85% → 92%
 - False positives: 3% → 1%
 - Average confidence: 0.80 → 0.88
 - Best OCR strategies identified
 
 ### **Week 3+** (500+ detections)
+
 - Detection success rate: 92% → 97%
 - False positives: 1% → 0.5%
 - Average confidence: 0.88 → 0.93
 - Fully optimized for your environment
 
 ### **With CDP** (any time)
+
 - OCR accuracy: immediate jump to >95%
 - Pot size accuracy: >98%
 - Player name accuracy: >90%
@@ -290,6 +307,7 @@ python3 src/pokertool/modules/scraper_learning_system.py
 ```
 
 Expected output:
+
 - Learning report with simulated data
 - 84% success rate in test
 - OCR strategies tracked
@@ -303,6 +321,7 @@ python -m pokertool.view_learning_stats
 ```
 
 Expected output:
+
 - Complete statistics dashboard
 - All sections render correctly
 - Storage info shows files
@@ -355,12 +374,14 @@ Potential improvements for future versions:
 ## 📝 **Files Created/Modified**
 
 ### **New Files:**
+
 1. `src/pokertool/modules/scraper_learning_system.py` (900 lines)
 2. `src/pokertool/view_learning_stats.py` (360 lines)
 3. `docs/LEARNING_SYSTEM.md` (500 lines)
 4. `LEARNING_SYSTEM_IMPLEMENTATION.md` (this file)
 
 ### **Modified Files:**
+
 1. `src/pokertool/modules/poker_screen_scraper_betfair.py` (+150 lines)
    - Added learning system imports
    - Integrated learning hooks
@@ -368,6 +389,7 @@ Potential improvements for future versions:
    - Added save on shutdown
 
 ### **Total Code:**
+
 - **New Code:** ~1,760 lines
 - **Modified Code:** ~150 lines
 - **Documentation:** ~500 lines
@@ -398,6 +420,7 @@ Potential improvements for future versions:
 ## 🎓 **Key Learnings**
 
 ### **What Works Well:**
+
 - **Environment fingerprinting** - Resolution + brightness + color hash is unique enough
 - **Multi-strategy OCR** - Running multiple strategies in parallel finds best approach
 - **CDP comparison** - Direct DOM access provides perfect ground truth
@@ -405,6 +428,7 @@ Potential improvements for future versions:
 - **Adaptive thresholds** - Auto-tuning based on recent performance is effective
 
 ### **Design Decisions:**
+
 - **JSON storage** - Human-readable, debuggable, portable
 - **Sliding windows** - Recent data (last 50-100) more relevant than all-time
 - **Lazy learning** - Learn as you go, not upfront training
@@ -412,6 +436,7 @@ Potential improvements for future versions:
 - **Transparent** - Learning happens automatically without user intervention
 
 ### **Performance:**
+
 - **Overhead** - <1ms per detection (negligible)
 - **Storage** - <1 MB (tiny)
 - **Memory** - ~5-10 MB (acceptable)

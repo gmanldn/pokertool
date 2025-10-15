@@ -7,6 +7,7 @@
 ## Changes Included
 
 ### Enhanced GUI v21.0.0
+
 - ✅ Complete GUI rework with integrated screen scraping
 - ✅ Desktop-independent poker window detection  
 - ✅ Real-time monitoring and table analysis
@@ -16,6 +17,7 @@
 - ✅ Cross-platform support (Windows, macOS, Linux)
 
 ### New Files
+
 - `src/pokertool/gui_enhanced_v2.py` - Enhanced GUI application
 - `tests/test_gui_enhanced_v2.py` - Comprehensive unit tests
 - `launch_enhanced_gui_v2.py` - GUI launcher script
@@ -25,6 +27,7 @@
 - `INTEGRATION_GUIDE.md` - Integration instructions
 
 ### Updated Files
+
 - `start.py` - Updated to v21.0.0 with one-click setup
 - Version headers updated across all key files
 

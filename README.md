@@ -8,8 +8,11 @@ file: README.md
 version: v28.0.0
 last_commit: '2025-09-23T12:55:52+01:00'
 fixes:
+
 - Merged duplicate root readmes into a single canonical README.md
 - date: '2025-09-25'
+
+  summary: Enhanced enterprise documentation and comprehensive unit tests added
   summary: Enhanced enterprise documentation and comprehensive unit tests added
 ---
 POKERTOOL-HEADER-END -->
@@ -52,11 +55,11 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 
 ```bash
 # The ONLY recommended way to launch PokerTool
-python start.py
+python scripts/start.py
 
 # This single command handles everything:
 # • Validates all 19 dependencies
-# • Installs missing packages automatically  
+# • Installs missing packages automatically
 # • Sets up virtual environment if needed
 # • Resolves import conflicts
 # • Launches robust multi-tab GUI
@@ -66,16 +69,16 @@ python start.py
 
 ```bash
 # Virtual environment only
-python start.py --venv
+python scripts/start.py --venv
 
 # Dependencies only (no GUI)
-python start.py --python
+python scripts/start.py --python
 
 # Full system validation
-python start.py --self-test
+python scripts/start.py --self-test
 
 # Launch GUI only (after setup)
-python start.py --launch
+python scripts/start.py --launch
 ```
 
 ### **⚡ Quick Validation**
@@ -85,8 +88,8 @@ python start.py --launch
 python src/pokertool/dependency_manager.py
 
 # Alternative launchers (for development only)
-python launch_gui.py  # Direct GUI (bypasses validation)
-python test_gui.py    # Minimal test interface
+python scripts/launch_gui.py  # Direct GUI (bypasses validation)
+python tests/test_gui.py      # Minimal test interface
 ```
 
 ---
@@ -145,7 +148,7 @@ python test_gui.py    # Minimal test interface
 
 ```bash
 # Complete setup with dependency validation
-python start.py --all
+python scripts/start.py --all
 
 # Validates all dependencies, installs missing packages,
 # sets up virtual environment, and launches GUI
@@ -155,13 +158,13 @@ python start.py --all
 
 ```bash
 # Direct GUI (bypasses CLI conflicts)
-python launch_gui.py
+python scripts/launch_gui.py
 
 # Full setup + validation + launch
-python start.py
+python scripts/start.py
 
 # Minimal test interface
-python test_gui.py
+python tests/test_gui.py
 
 # Dependency validation only
 python src/pokertool/dependency_manager.py
@@ -171,19 +174,19 @@ python src/pokertool/dependency_manager.py
 
 ```bash
 # Setup virtual environment only
-python start.py --venv
+python scripts/start.py --venv
 
 # Install Python dependencies only
-python start.py --python
+python scripts/start.py --python
 
-# Install Node.js dependencies only  
-python start.py --node
+# Install Node.js dependencies only
+python scripts/start.py --node
 
 # Run comprehensive system test
-python start.py --self-test
+python scripts/start.py --self-test
 
 # Validate environment only
-python start.py --validate
+python scripts/start.py --validate
 ```
 
 ---
@@ -253,7 +256,7 @@ PokerTool features intelligent screen scraping with Betfair-optimized detection:
 
 ```bash
 # Enable screen scraper through GUI
-python launch_gui.py
+python scripts/launch_gui.py
 # Click "Screen Scraper" button in Autopilot tab
 
 # Or validate scraper dependencies
@@ -311,20 +314,20 @@ open assets/ui_baselines/baseline_manifest.json
 
 ```bash
 # 🧪 COMPREHENSIVE TEST SUITE (Recommended)
-python test_everything.py              # Run ALL tests with detailed logging
-python test_everything.py --verbose    # Verbose output with full details
-python test_everything.py --quick      # Quick tests only (no system tests)
-python test_everything.py --system     # System tests only
-python test_everything.py --coverage   # Run with coverage report
+python tests/test_everything.py              # Run ALL tests with detailed logging
+python tests/test_everything.py --verbose    # Verbose output with full details
+python tests/test_everything.py --quick      # Quick tests only (no system tests)
+python tests/test_everything.py --system     # System tests only
+python tests/test_everything.py --coverage   # Run with coverage report
 
 # Comprehensive system test
-python start.py --self-test
+python scripts/start.py --self-test
 
 # Dependency validation
 python src/pokertool/dependency_manager.py
 
 # Legacy test runner
-python run_tests.py
+python scripts/run_tests.py
 
 # Code quality checks (when available)
 python tools/poker_go.py --check-only
@@ -336,10 +339,11 @@ PokerTool includes a comprehensive test runner that executes all 69+ test files 
 
 ```bash
 # Run all tests with detailed logging
-python test_everything.py
+python tests/test_everything.py
 ```
 
 **Features:**
+
 - ✅ **Automatic test discovery** - Finds all test files across the project
 - ✅ **Detailed logging** - Logs to both console and timestamped log files
 - ✅ **JSON reports** - Machine-readable test results
@@ -408,11 +412,11 @@ Pass Rate:        97.1%
 # Clone and setup
 git clone https://github.com/gmanldn/pokertool.git
 cd pokertool
-python start.py --all  # Complete setup
+python scripts/start.py --all  # Complete setup
 
 # Make changes and test
-python start.py --self-test  # Comprehensive validation
-python run_tests.py          # Run test suite
+python scripts/start.py --self-test  # Comprehensive validation
+python scripts/run_tests.py          # Run test suite
 
 # Create feature branch
 git checkout -b feature/your-feature
@@ -427,6 +431,39 @@ git push origin feature/your-feature
 - **Testing**: Tests required for new features
 - **Error Handling**: Graceful failure modes
 - **Dependency Management**: Use the validation system
+- **Markdown Formatting**: Lists must be surrounded by blank lines
+
+### **Markdown Formatting Guidelines:**
+
+**IMPORTANT**: All markdown lists must be surrounded by blank lines to ensure proper rendering and linting compliance.
+
+**❌ Incorrect:**
+```markdown
+Some text here.
+- Item 1
+- Item 2
+More text here.
+```
+
+**✅ Correct:**
+```markdown
+Some text here.
+
+- Item 1
+- Item 2
+
+More text here.
+```
+
+**Tools:**
+
+```bash
+# Check markdown formatting
+python -m pytest tests/test_markdown_formatting.py
+
+# Fix markdown list formatting automatically
+python scripts/fix_markdown_lists.py
+```
 
 ### **Supported Contributions:**
 
