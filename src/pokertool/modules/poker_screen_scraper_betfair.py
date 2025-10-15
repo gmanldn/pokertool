@@ -1241,7 +1241,33 @@ class PokerScreenScraper:
                  enable_learning: bool = True):
         """Initialize the scraper."""
         if not SCRAPER_DEPENDENCIES_AVAILABLE:
-            logger.warning("Screen scraper dependencies not fully available")
+            error_msg = (
+                "Screen scraper dependencies not available!\n"
+                "Install required packages:\n"
+                "  pip install mss opencv-python pytesseract pillow numpy\n"
+                "  brew install tesseract (Mac) or apt-get install tesseract-ocr (Linux)"
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        # CRITICAL: Verify OCR is available before proceeding
+        # The scraper cannot function without OCR for text extraction
+        try:
+            import pytesseract
+            # Test that tesseract is actually installed and accessible
+            pytesseract.get_tesseract_version()
+            logger.info("✓ Tesseract OCR verified and operational")
+        except Exception as e:
+            error_msg = (
+                f"Tesseract OCR not available: {e}\n"
+                "OCR is mandatory for poker table scraping.\n"
+                "Install Tesseract:\n"
+                "  Mac: brew install tesseract\n"
+                "  Linux: apt-get install tesseract-ocr\n"
+                "  Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki"
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
         self.site = site
         self.use_cdp = use_cdp

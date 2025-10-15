@@ -309,7 +309,15 @@ class OCREnsemble:
             logger.warning(f"EasyOCR not available: {e}")
 
         if not available:
-            logger.error("No OCR engines available!")
+            error_msg = (
+                "No OCR engines available! At least one OCR engine is required.\n"
+                "Install one of the following:\n"
+                "  - Tesseract: brew install tesseract (Mac) or apt-get install tesseract-ocr (Linux)\n"
+                "  - PaddleOCR: pip install paddleocr\n"
+                "  - EasyOCR: pip install easyocr"
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
         return available
 
