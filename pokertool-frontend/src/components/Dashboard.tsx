@@ -47,6 +47,7 @@ import {
 } from 'chart.js';
 import { WebSocketMessage } from '../hooks/useWebSocket';
 import { SessionGoalsTracker } from './SessionGoalsTracker';
+import { SessionClock } from './SessionClock';
 
 ChartJS.register(
   CategoryScale,
@@ -215,8 +216,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
       </Box>
 
       <Grid container spacing={3}>
+        {/* Session Clock */}
+        <Grid item xs={12} md={6}>
+          <SessionClock
+            compact={isMobile}
+            inactivityThreshold={300}
+            onTimeUpdate={(total, active) => {
+              // Update duration in stats
+              const hours = Math.floor(active / 3600);
+              const minutes = Math.floor((active % 3600) / 60);
+              const seconds = active % 60;
+              setStats(prev => ({
+                ...prev,
+                duration: `${hours.toString().padStart(2, '0')}:${minutes
+                  .toString()
+                  .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
+              }));
+            }}
+          />
+        </Grid>
+
         {/* Session Goals Tracker */}
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <SessionGoalsTracker compact={isMobile} />
         </Grid>
 
