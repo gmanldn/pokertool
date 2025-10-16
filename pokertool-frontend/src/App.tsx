@@ -11,34 +11,51 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, useMediaQuery } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, useMediaQuery, CircularProgress, Box } from '@mui/material';
 import { Provider } from 'react-redux';
-import { Dashboard } from './components/Dashboard';
+
+// Eagerly load critical components needed for initial render
 import { Navigation } from './components/Navigation';
-import { TableView } from './components/TableView';
-import { DetectionLog } from './components/DetectionLog';
-import { Statistics } from './components/Statistics';
-import { BankrollManager } from './components/BankrollManager';
-import { TournamentView } from './components/TournamentView';
-import { Settings } from './components/Settings';
-import { HUDOverlay } from './components/HUDOverlay';
-import { GTOTrainer } from './components/GTOTrainer';
-import { HandHistory } from './components/HandHistory';
-import { SystemStatus } from './components/SystemStatus';
-import { ModelCalibration } from './components/ModelCalibration';
-import { OpponentFusion } from './components/OpponentFusion';
-import { ActiveLearning } from './components/ActiveLearning';
-import { ScrapingAccuracy } from './components/ScrapingAccuracy';
+import { MobileBottomNav } from './components/MobileBottomNav';
+
+// Lazy load route components for code splitting
+const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
+const TableView = lazy(() => import('./components/TableView').then(module => ({ default: module.TableView })));
+const DetectionLog = lazy(() => import('./components/DetectionLog').then(module => ({ default: module.DetectionLog })));
+const Statistics = lazy(() => import('./components/Statistics').then(module => ({ default: module.Statistics })));
+const BankrollManager = lazy(() => import('./components/BankrollManager').then(module => ({ default: module.BankrollManager })));
+const TournamentView = lazy(() => import('./components/TournamentView').then(module => ({ default: module.TournamentView })));
+const Settings = lazy(() => import('./components/Settings').then(module => ({ default: module.Settings })));
+const HUDOverlay = lazy(() => import('./components/HUDOverlay').then(module => ({ default: module.HUDOverlay })));
+const GTOTrainer = lazy(() => import('./components/GTOTrainer').then(module => ({ default: module.GTOTrainer })));
+const HandHistory = lazy(() => import('./components/HandHistory').then(module => ({ default: module.HandHistory })));
+const SystemStatus = lazy(() => import('./components/SystemStatus').then(module => ({ default: module.SystemStatus })));
+const ModelCalibration = lazy(() => import('./components/ModelCalibration').then(module => ({ default: module.ModelCalibration })));
+const OpponentFusion = lazy(() => import('./components/OpponentFusion').then(module => ({ default: module.OpponentFusion })));
+const ActiveLearning = lazy(() => import('./components/ActiveLearning').then(module => ({ default: module.ActiveLearning })));
+const ScrapingAccuracy = lazy(() => import('./components/ScrapingAccuracy').then(module => ({ default: module.ScrapingAccuracy })));
+
 import { useWebSocket } from './hooks/useWebSocket';
 import { ThemeContext } from './contexts/ThemeContext';
 import { store, useAppSelector, RootState } from './store';
 import { setMobileLayout, SettingsState } from './store/slices/settingsSlice';
-import { MobileBottomNav } from './components/MobileBottomNav';
 import { buildWsUrl } from './config/api';
 import './styles/App.css';
 import './styles/mobile.css';
+
+// Loading fallback component
+const LoadingFallback: React.FC = () => (
+  <Box
+    display="flex"
+    justifyContent="center"
+    alignItems="center"
+    minHeight="80vh"
+  >
+    <CircularProgress size={60} />
+  </Box>
+);
 
 // Separate component to use Redux hooks
 function AppContent() {
@@ -120,24 +137,26 @@ function AppContent() {
           <div className={`app ${mobileLayout ? 'mobile-layout' : ''}`}>
             <Navigation connected={connected} />
             <main className="app-main">
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard messages={messages} />} />
-                <Route path="/tables" element={<TableView sendMessage={sendMessage} />} />
-                <Route path="/detection-log" element={<DetectionLog messages={messages} />} />
-                <Route path="/statistics" element={<Statistics />} />
-                <Route path="/bankroll" element={<BankrollManager />} />
-                <Route path="/tournament" element={<TournamentView />} />
-                <Route path="/hud" element={<HUDOverlay />} />
-                <Route path="/gto" element={<GTOTrainer />} />
-                <Route path="/history" element={<HandHistory />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/model-calibration" element={<ModelCalibration />} />
-                <Route path="/system-status" element={<SystemStatus />} />
-                <Route path="/opponent-fusion" element={<OpponentFusion />} />
-                <Route path="/active-learning" element={<ActiveLearning />} />
-                <Route path="/scraping-accuracy" element={<ScrapingAccuracy />} />
-              </Routes>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Dashboard messages={messages} />} />
+                  <Route path="/tables" element={<TableView sendMessage={sendMessage} />} />
+                  <Route path="/detection-log" element={<DetectionLog messages={messages} />} />
+                  <Route path="/statistics" element={<Statistics />} />
+                  <Route path="/bankroll" element={<BankrollManager />} />
+                  <Route path="/tournament" element={<TournamentView />} />
+                  <Route path="/hud" element={<HUDOverlay />} />
+                  <Route path="/gto" element={<GTOTrainer />} />
+                  <Route path="/history" element={<HandHistory />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/model-calibration" element={<ModelCalibration />} />
+                  <Route path="/system-status" element={<SystemStatus />} />
+                  <Route path="/opponent-fusion" element={<OpponentFusion />} />
+                  <Route path="/active-learning" element={<ActiveLearning />} />
+                  <Route path="/scraping-accuracy" element={<ScrapingAccuracy />} />
+                </Routes>
+              </Suspense>
             </main>
             <MobileBottomNav />
           </div>
