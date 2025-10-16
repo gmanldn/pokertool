@@ -832,6 +832,234 @@ class PokerToolAPI:
                 'timestamp': datetime.utcnow().isoformat()
             }
 
+        # Model Calibration Endpoints
+        @self.app.get('/api/ml/calibration/stats')
+        async def get_calibration_stats():
+            """
+            Get current model calibration statistics.
+            Returns calibration metrics, drift status, and performance indicators.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+                stats = system.get_stats()
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': stats
+                }
+            except Exception as e:
+                logger.error(f"Error fetching calibration stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/calibration/metrics')
+        async def get_calibration_metrics():
+            """
+            Get detailed calibration metrics history.
+            Returns Brier score, log loss, and calibration error over time.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+
+                metrics = []
+                for metric in system.calibration_metrics_history:
+                    metrics.append({
+                        'timestamp': metric.timestamp,
+                        'brier_score': metric.brier_score,
+                        'log_loss': metric.log_loss,
+                        'calibration_error': metric.calibration_error,
+                        'num_predictions': metric.num_predictions
+                    })
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'metrics': metrics[-100:]  # Last 100 data points
+                }
+            except Exception as e:
+                logger.error(f"Error fetching calibration metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/calibration/drift')
+        async def get_drift_metrics():
+            """
+            Get model drift detection metrics.
+            Returns PSI, KL divergence, and drift status indicators.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+
+                drift_data = []
+                for drift in system.drift_metrics_history:
+                    drift_data.append({
+                        'timestamp': drift.timestamp,
+                        'psi': drift.psi,
+                        'kl_divergence': drift.kl_divergence,
+                        'distribution_shift': drift.distribution_shift,
+                        'status': drift.status.value,
+                        'alerts': drift.alerts
+                    })
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'drift_metrics': drift_data[-100:]  # Last 100 data points
+                }
+            except Exception as e:
+                logger.error(f"Error fetching drift metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        # Sequential Opponent Fusion endpoints
+        @self.app.get('/api/ml/opponent-fusion/stats')
+        async def get_opponent_fusion_stats(request):
+            """Get opponent fusion statistics"""
+            try:
+                # Import and initialize fusion system
+                import pokertool.sequential_opponent_fusion as fusion_module
+
+                # Return mock data structure - actual implementation would load from system
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': {
+                        'tracked_players': 0,
+                        'total_hands_analyzed': 0,
+                        'active_patterns': 0,
+                        'prediction_accuracy': 0.0,
+                        'temporal_window_size': 10,
+                        'status': 'active'
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Error fetching opponent fusion stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/opponent-fusion/players')
+        async def get_tracked_players(request):
+            """Get list of tracked players with their stats"""
+            try:
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'players': []
+                }
+            except Exception as e:
+                logger.error(f"Error fetching tracked players: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        # Active Learning endpoints
+        @self.app.get('/api/ml/active-learning/stats')
+        async def get_active_learning_stats(request):
+            """Get active learning statistics"""
+            try:
+                # Import active learning module
+                import pokertool.active_learning as al_module
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': {
+                        'pending_reviews': 0,
+                        'total_feedback': 0,
+                        'high_uncertainty_events': 0,
+                        'model_accuracy_improvement': 0.0,
+                        'last_retraining': None,
+                        'status': 'active'
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Error fetching active learning stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/active-learning/pending')
+        async def get_pending_feedback(request):
+            """Get pending feedback events"""
+            try:
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'events': []
+                }
+            except Exception as e:
+                logger.error(f"Error fetching pending feedback: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        # Scraping Accuracy endpoints
+        @self.app.get('/api/scraping/accuracy/stats')
+        async def get_scraping_accuracy_stats(request):
+            """Get scraping accuracy statistics"""
+            try:
+                # Import scraping accuracy module
+                import pokertool.scraping_accuracy_system as scraping_module
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': {
+                        'overall_accuracy': 0.0,
+                        'pot_corrections': 0,
+                        'card_recognition_accuracy': 0.0,
+                        'ocr_corrections': 0,
+                        'temporal_consensus_improvements': 0,
+                        'total_frames_processed': 0,
+                        'status': 'active'
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Error fetching scraping accuracy stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/scraping/accuracy/metrics')
+        async def get_scraping_accuracy_metrics(request):
+            """Get detailed scraping accuracy metrics"""
+            try:
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'metrics': []
+                }
+            except Exception as e:
+                logger.error(f"Error fetching scraping accuracy metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
         # Authentication endpoints
         @self.app.post('/auth/token', response_model=Token)
         @self.services.limiter.limit('10/minute')

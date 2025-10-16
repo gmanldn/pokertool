@@ -25,6 +25,7 @@ Usage:
     python test_everything.py --verbose    # Run with verbose output
     python test_everything.py --quick      # Run only quick tests (no system tests)
     python test_everything.py --system     # Run only system tests
+    python test_everything.py --smoke      # Run only smoke tests (fast validation)
     python test_everything.py --failed     # Run only previously failed tests
     python test_everything.py --coverage   # Run with coverage report
 """
@@ -63,10 +64,11 @@ class Colors:
 class TestRunner:
     """Comprehensive test runner with detailed logging."""
 
-    def __init__(self, verbose: bool = False, quick: bool = False, system_only: bool = False):
+    def __init__(self, verbose: bool = False, quick: bool = False, system_only: bool = False, smoke_only: bool = False):
         self.verbose = verbose
         self.quick = quick
         self.system_only = system_only
+        self.smoke_only = smoke_only
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.log_file = LOGS_DIR / f"test_run_{self.timestamp}.log"
         self.results: Dict[str, Any] = {
@@ -103,6 +105,8 @@ class TestRunner:
             self.log("Mode: QUICK (unit tests only)", Colors.WARNING)
         elif self.system_only:
             self.log("Mode: SYSTEM (system tests only)", Colors.WARNING)
+        elif self.smoke_only:
+            self.log("Mode: SMOKE (fast validation tests)", Colors.OKCYAN)
         else:
             self.log("Mode: COMPREHENSIVE (all tests)", Colors.OKGREEN)
         self.log("-" * 80)
@@ -112,7 +116,12 @@ class TestRunner:
         """Discover all test files."""
         test_files = []
 
-        if self.system_only:
+        if self.smoke_only:
+            # Only smoke tests
+            smoke_test = TESTS_DIR / 'test_smoke_suite.py'
+            if smoke_test.exists():
+                test_files.append(smoke_test)
+        elif self.system_only:
             # Only system tests
             system_dir = TESTS_DIR / 'system'
             if system_dir.exists():
@@ -171,8 +180,10 @@ class TestRunner:
         if self.verbose:
             cmd.append('-vv')
 
-        # Add quick mode filter
-        if self.quick:
+        # Add filters based on mode
+        if self.smoke_only:
+            cmd.extend(['-m', 'smoke'])
+        elif self.quick:
             cmd.extend(['-k', 'not system'])
         elif self.system_only:
             cmd.append(str(TESTS_DIR / 'system'))
@@ -362,6 +373,7 @@ Examples:
   python test_everything.py --verbose    # Verbose output
   python test_everything.py --quick      # Quick tests only (no system tests)
   python test_everything.py --system     # System tests only
+  python test_everything.py --smoke      # Smoke tests only (fast validation)
   python test_everything.py --coverage   # Run with coverage report
         """
     )
@@ -372,6 +384,8 @@ Examples:
                         help='Run only quick tests (exclude system tests)')
     parser.add_argument('-s', '--system', action='store_true',
                         help='Run only system tests')
+    parser.add_argument('--smoke', action='store_true',
+                        help='Run only smoke tests (fast validation)')
     parser.add_argument('-c', '--coverage', action='store_true',
                         help='Run with coverage report')
     parser.add_argument('-f', '--failed', action='store_true',
@@ -394,7 +408,8 @@ Examples:
     runner = TestRunner(
         verbose=args.verbose,
         quick=args.quick,
-        system_only=args.system
+        system_only=args.system,
+        smoke_only=args.smoke
     )
 
     exit_code = runner.run(with_coverage=args.coverage)

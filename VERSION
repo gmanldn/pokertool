@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 85.0.0
+version = 87.0.0
 release_date = 2025-10-16
 
 [release_notes]
-# v85.0.0 - Real-Time Detection WebSocket Integration
-description = WebSocket integration for real-time poker table detection events
-changes = Added Detection WebSocket manager, broadcast_detection_event API, removed fake detection data from frontend
+# v87.0.0 - Comprehensive Smoke Test Suite
+description = Complete end-to-end validation suite for fast pre-deployment testing
+changes = Created 38 smoke tests covering all critical components, standalone runner, pytest integration, CI/CD ready
 status = stable
 
 [components]

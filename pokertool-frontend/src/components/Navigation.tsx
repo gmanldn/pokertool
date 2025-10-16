@@ -51,9 +51,14 @@ import {
   Article,
   PlayArrow,
   SettingsApplications,
+  TrendingUp,
+  People,
+  Psychology,
+  Biotech,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
+import { buildApiUrl } from '../config/api';
 
 interface NavigationProps {
   connected: boolean;
@@ -79,6 +84,10 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
     { text: 'GTO Trainer', icon: <School />, path: '/gto' },
     { text: 'Hand History', icon: <History />, path: '/history' },
     { text: 'Settings', icon: <Settings />, path: '/settings' },
+    { text: 'Model Calibration', icon: <TrendingUp />, path: '/model-calibration' },
+    { text: 'Opponent Fusion', icon: <People />, path: '/opponent-fusion' },
+    { text: 'Active Learning', icon: <Psychology />, path: '/active-learning' },
+    { text: 'Scraping Accuracy', icon: <Biotech />, path: '/scraping-accuracy' },
     { text: 'System Status', icon: <SettingsApplications />, path: '/system-status' },
   ];
 
@@ -91,7 +100,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
     setStartingBackend(true);
     try {
       // Call the backend start API endpoint
-      const response = await fetch('http://localhost:5001/api/start-backend', {
+      const response = await fetch(buildApiUrl('/api/start-backend'), {
         method: 'POST',
       });
 
@@ -227,6 +236,15 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
                     </IconButton>
                   </Tooltip>
                 ))}
+                {/* Add System Status as 6th item */}
+                <Tooltip title="System Status">
+                  <IconButton
+                    color={location.pathname === '/system-status' ? 'primary' : 'inherit'}
+                    onClick={() => handleNavigation('/system-status')}
+                  >
+                    <SettingsApplications />
+                  </IconButton>
+                </Tooltip>
               </Box>
               <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
             </>

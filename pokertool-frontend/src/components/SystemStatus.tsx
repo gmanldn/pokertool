@@ -33,11 +33,9 @@ import {
   InputAdornment,
 } from '@mui/material';
 import {
-  Circle,
   Refresh,
   GetApp,
   Search,
-  FilterList,
   ExpandMore,
   ExpandLess,
   CheckCircle,
@@ -45,6 +43,7 @@ import {
   Warning,
   HelpOutline,
 } from '@mui/icons-material';
+import { buildApiUrl, httpToWs } from '../config/api';
 
 interface HealthStatus {
   feature_name: string;
@@ -86,7 +85,7 @@ export const SystemStatus: React.FC = () => {
   const fetchHealthData = async () => {
     try {
       setError(null);
-      const response = await fetch('http://localhost:5001/api/system/health');
+      const response = await fetch(buildApiUrl('/api/system/health'));
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
       }
@@ -109,7 +108,8 @@ export const SystemStatus: React.FC = () => {
     // WebSocket connection for real-time updates
     const connectWebSocket = () => {
       try {
-        const ws = new WebSocket('ws://localhost:5001/ws/system-health');
+        const wsUrl = httpToWs(buildApiUrl('/ws/system-health'));
+        const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           console.log('System health WebSocket connected');
