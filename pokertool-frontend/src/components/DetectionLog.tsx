@@ -105,8 +105,8 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
         ...prev,
         {
           timestamp: new Date().toISOString(),
-          type: 'error',
-          severity: 'error',
+          type: 'error' as const,
+          severity: 'error' as const,
           message: 'Failed to connect to detection stream - is the backend running?',
           data: {},
         },
