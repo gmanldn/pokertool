@@ -28,6 +28,9 @@ import { GTOTrainer } from './components/GTOTrainer';
 import { HandHistory } from './components/HandHistory';
 import { SystemStatus } from './components/SystemStatus';
 import { ModelCalibration } from './components/ModelCalibration';
+import { OpponentFusion } from './components/OpponentFusion';
+import { ActiveLearning } from './components/ActiveLearning';
+import { ScrapingAccuracy } from './components/ScrapingAccuracy';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ThemeContext } from './contexts/ThemeContext';
 import { store, useAppSelector, RootState } from './store';
@@ -131,6 +134,9 @@ function AppContent() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/model-calibration" element={<ModelCalibration />} />
                 <Route path="/system-status" element={<SystemStatus />} />
+                <Route path="/opponent-fusion" element={<OpponentFusion />} />
+                <Route path="/active-learning" element={<ActiveLearning />} />
+                <Route path="/scraping-accuracy" element={<ScrapingAccuracy />} />
               </Routes>
             </main>
             <MobileBottomNav />

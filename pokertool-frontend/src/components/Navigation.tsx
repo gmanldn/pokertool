@@ -52,6 +52,9 @@ import {
   PlayArrow,
   SettingsApplications,
   TrendingUp,
+  People,
+  Psychology,
+  Biotech,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
@@ -82,6 +85,9 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
     { text: 'Hand History', icon: <History />, path: '/history' },
     { text: 'Settings', icon: <Settings />, path: '/settings' },
     { text: 'Model Calibration', icon: <TrendingUp />, path: '/model-calibration' },
+    { text: 'Opponent Fusion', icon: <People />, path: '/opponent-fusion' },
+    { text: 'Active Learning', icon: <Psychology />, path: '/active-learning' },
+    { text: 'Scraping Accuracy', icon: <Biotech />, path: '/scraping-accuracy' },
     { text: 'System Status', icon: <SettingsApplications />, path: '/system-status' },
   ];
 
