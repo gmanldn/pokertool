@@ -691,9 +691,28 @@ class PokerToolAPI:
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             # Startup
+            logger.info("Starting PokerTool API background tasks...")
+
+            # Initialize and start health checker
+            from pokertool.system_health_checker import get_health_checker, register_all_health_checks
+            health_checker = get_health_checker(check_interval=30)
+            register_all_health_checks(health_checker)
+            health_checker.start_periodic_checks()
+            logger.info("System health checker initialized and started")
+
+            # Start periodic cleanup task
             cleanup_task = asyncio.create_task(self._periodic_cleanup())
+
             yield
+
             # Shutdown
+            logger.info("Shutting down PokerTool API background tasks...")
+
+            # Stop health checker
+            await health_checker.stop_periodic_checks()
+            logger.info("System health checker stopped")
+
+            # Stop cleanup task
             cleanup_task.cancel()
             try:
                 await cleanup_task
@@ -718,6 +737,8 @@ class PokerToolAPI:
 
     def _setup_middleware(self):
         """Setup API middleware."""
+        # Set the limiter on app.state so SlowAPIMiddleware can access it
+        self.app.state.limiter = self.services.limiter
         self.app.add_middleware(SlowAPIMiddleware)
         self.app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -755,6 +776,61 @@ class PokerToolAPI:
         @self.app.get('/health')
         async def health_check():
             return {'status': 'healthy', 'timestamp': datetime.utcnow()}
+
+        # System Health Monitoring Endpoints
+        @self.app.get('/api/system/health')
+        async def get_system_health():
+            """
+            Get comprehensive system health status for all features.
+            Returns health data for all monitored components.
+            """
+            from pokertool.system_health_checker import get_health_checker
+            checker = get_health_checker()
+            summary = checker.get_summary()
+            return summary
+
+        @self.app.get('/api/system/health/{category}')
+        async def get_category_health(category: str):
+            """
+            Get health status for a specific category.
+            Categories: backend, scraping, ml, gui, advanced
+            """
+            from pokertool.system_health_checker import get_health_checker
+            checker = get_health_checker()
+            summary = checker.get_summary()
+
+            if category not in summary['categories']:
+                raise HTTPException(status_code=404, detail=f'Category {category} not found')
+
+            return {
+                'timestamp': summary['timestamp'],
+                'category': category,
+                'data': summary['categories'][category]
+            }
+
+        @self.app.post('/api/system/health/refresh')
+        async def refresh_system_health(background_tasks: BackgroundTasks):
+            """
+            Trigger immediate execution of all health checks.
+            Returns job ID for tracking completion.
+            """
+            from pokertool.system_health_checker import get_health_checker
+
+            checker = get_health_checker()
+
+            # Run checks in background
+            async def run_checks():
+                await checker.run_all_checks()
+
+            background_tasks.add_task(run_checks)
+
+            job_id = f"health_check_{int(time.time() * 1000)}"
+            return {
+                'job_id': job_id,
+                'status': 'started',
+                'message': 'Health checks initiated',
+                'timestamp': datetime.utcnow().isoformat()
+            }
 
         # Authentication endpoints
         @self.app.post('/auth/token', response_model=Token)
@@ -1175,6 +1251,108 @@ class PokerToolAPI:
             finally:
                 # Unregister connection
                 await detection_manager.disconnect(connection_id)
+
+        # System Health WebSocket endpoint
+        @self.app.websocket('/ws/system-health')
+        async def system_health_websocket(websocket: WebSocket):
+            """
+            WebSocket endpoint for real-time system health updates.
+            Pushes health status updates to connected clients whenever health checks complete.
+            """
+            await websocket.accept()
+            connection_id = f'health_{int(time.time() * 1000)}'
+
+            # Create a simple connection manager for health updates
+            if not hasattr(self, '_health_ws_connections'):
+                self._health_ws_connections = {}
+
+            try:
+                # Register connection
+                self._health_ws_connections[connection_id] = websocket
+
+                # Send welcome message
+                await websocket.send_json({
+                    'type': 'system',
+                    'message': 'Connected to system health monitor',
+                    'timestamp': datetime.utcnow().isoformat(),
+                })
+
+                # Send initial health status
+                from pokertool.system_health_checker import get_health_checker
+                checker = get_health_checker()
+                summary = checker.get_summary()
+                await websocket.send_json({
+                    'type': 'health_update',
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': summary
+                })
+
+                # Keep connection alive - health updates are broadcast via health checker callback
+                while True:
+                    try:
+                        # Keep alive - receive any client messages (like ping)
+                        data = await websocket.receive_text()
+
+                        # Send pong response
+                        if data == 'ping':
+                            await websocket.send_json({
+                                'type': 'pong',
+                                'timestamp': datetime.utcnow().isoformat(),
+                            })
+                        # Send current health status if requested
+                        elif data == 'refresh':
+                            summary = checker.get_summary()
+                            await websocket.send_json({
+                                'type': 'health_update',
+                                'timestamp': datetime.utcnow().isoformat(),
+                                'data': summary
+                            })
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'System health WebSocket error: {e}')
+                        break
+
+            except Exception as e:
+                logger.error(f'System health WebSocket setup error: {e}')
+                try:
+                    await websocket.close()
+                except:
+                    pass
+            finally:
+                # Unregister connection
+                if connection_id in self._health_ws_connections:
+                    del self._health_ws_connections[connection_id]
+
+        # Setup health checker broadcast callback
+        async def broadcast_health_update(health_data: Dict):
+            """Broadcast health updates to all connected WebSocket clients."""
+            if not hasattr(self, '_health_ws_connections'):
+                return
+
+            disconnected = []
+            for conn_id, ws in self._health_ws_connections.items():
+                try:
+                    if ws.client_state == WebSocketState.CONNECTED:
+                        await ws.send_json({
+                            'type': 'health_update',
+                            'timestamp': datetime.utcnow().isoformat(),
+                            'updates': [status.to_dict() for status in health_data.values()]
+                        })
+                except Exception as e:
+                    logger.error(f'Failed to broadcast health update to {conn_id}: {e}')
+                    disconnected.append(conn_id)
+
+            # Clean up disconnected clients
+            for conn_id in disconnected:
+                if conn_id in self._health_ws_connections:
+                    del self._health_ws_connections[conn_id]
+
+        # Set the broadcast callback on the health checker
+        from pokertool.system_health_checker import get_health_checker
+        health_checker = get_health_checker()
+        health_checker.set_broadcast_callback(broadcast_health_update)
 
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None

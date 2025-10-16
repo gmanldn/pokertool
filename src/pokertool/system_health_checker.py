@@ -512,6 +512,347 @@ async def check_frontend_health() -> HealthStatus:
         )
 
 
+async def check_poker_table_detection_health() -> HealthStatus:
+    """Check poker table detection model."""
+    try:
+        # Try to import table detection module
+        from pokertool.modules.poker_screen_scraper_betfair import create_scraper
+        scraper = create_scraper()
+        if scraper:
+            return HealthStatus(
+                feature_name='poker_table_detection',
+                category='scraping',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Poker table detection model availability'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='poker_table_detection',
+            category='scraping',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Poker table detection model availability'
+        )
+
+
+async def check_gto_solver_health() -> HealthStatus:
+    """Check GTO solver functionality."""
+    try:
+        from pokertool.gto_engine import GTOEngine
+        engine = GTOEngine()
+        if engine:
+            return HealthStatus(
+                feature_name='gto_solver',
+                category='ml',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='GTO solver engine for optimal play calculations'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='gto_solver',
+            category='ml',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='GTO solver engine for optimal play calculations'
+        )
+
+
+async def check_opponent_modeling_health() -> HealthStatus:
+    """Check opponent modeling system."""
+    try:
+        from pokertool.opponent_modeling import OpponentModeler
+        modeler = OpponentModeler()
+        if modeler:
+            return HealthStatus(
+                feature_name='opponent_modeling',
+                category='ml',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='ML-based opponent behavior modeling'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='opponent_modeling',
+            category='ml',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='ML-based opponent behavior modeling'
+        )
+
+
+async def check_sequential_opponent_fusion_health() -> HealthStatus:
+    """Check sequential opponent fusion system."""
+    try:
+        from pokertool.sequential_opponent_fusion import SequentialOpponentFusion
+        fusion = SequentialOpponentFusion()
+        if fusion:
+            return HealthStatus(
+                feature_name='sequential_opponent_fusion',
+                category='ml',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Temporal opponent behavior analysis'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='sequential_opponent_fusion',
+            category='ml',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Temporal opponent behavior analysis'
+        )
+
+
+async def check_active_learning_health() -> HealthStatus:
+    """Check active learning feedback system."""
+    try:
+        from pokertool.active_learning import ActiveLearningService
+        service = ActiveLearningService()
+        if service:
+            return HealthStatus(
+                feature_name='active_learning',
+                category='ml',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Active learning feedback and model improvement'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='active_learning',
+            category='ml',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Active learning feedback and model improvement'
+        )
+
+
+async def check_neural_evaluator_health() -> HealthStatus:
+    """Check neural network evaluator."""
+    try:
+        from pokertool.neural_evaluator import NeuralEvaluator
+        evaluator = NeuralEvaluator()
+        if evaluator:
+            return HealthStatus(
+                feature_name='neural_evaluator',
+                category='ml',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Neural network hand evaluation'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='neural_evaluator',
+            category='ml',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Neural network hand evaluation'
+        )
+
+
+async def check_hand_range_analyzer_health() -> HealthStatus:
+    """Check hand range analyzer."""
+    try:
+        from pokertool.hand_evaluator import HandEvaluator
+        evaluator = HandEvaluator()
+        if evaluator:
+            return HealthStatus(
+                feature_name='hand_range_analyzer',
+                category='ml',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Hand range calculation and analysis'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='hand_range_analyzer',
+            category='ml',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Hand range calculation and analysis'
+        )
+
+
+async def check_scraping_accuracy_health() -> HealthStatus:
+    """Check scraping accuracy system."""
+    try:
+        from pokertool.scraping_accuracy import ScrapingAccuracyTracker
+        tracker = ScrapingAccuracyTracker()
+        if tracker:
+            return HealthStatus(
+                feature_name='scraping_accuracy',
+                category='advanced',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Scraping accuracy tracking and validation'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='scraping_accuracy',
+            category='advanced',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Scraping accuracy tracking and validation'
+        )
+
+
+async def check_roi_tracking_health() -> HealthStatus:
+    """Check ROI tracking system."""
+    try:
+        from pokertool.database import get_database
+        db = get_database()
+        stats = db.get_session_statistics()
+        if stats is not None:
+            return HealthStatus(
+                feature_name='roi_tracking',
+                category='advanced',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='ROI and bankroll tracking'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='roi_tracking',
+            category='advanced',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='ROI and bankroll tracking'
+        )
+
+
+async def check_tournament_support_health() -> HealthStatus:
+    """Check tournament support system."""
+    try:
+        from pokertool.tournament_module import TournamentModule
+        module = TournamentModule()
+        if module:
+            return HealthStatus(
+                feature_name='tournament_support',
+                category='advanced',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Tournament tracking and ICM calculations'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='tournament_support',
+            category='advanced',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Tournament tracking and ICM calculations'
+        )
+
+
+async def check_multi_table_support_health() -> HealthStatus:
+    """Check multi-table support."""
+    try:
+        from pokertool.multi_table_manager import MultiTableManager
+        manager = MultiTableManager()
+        if manager:
+            return HealthStatus(
+                feature_name='multi_table_support',
+                category='advanced',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Multi-table detection and management'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='multi_table_support',
+            category='advanced',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Multi-table detection and management'
+        )
+
+
+async def check_hand_history_database_health() -> HealthStatus:
+    """Check hand history database."""
+    try:
+        from pokertool.database import get_database
+        db = get_database()
+        # Try to fetch recent hands
+        recent_hands = db.get_recent_hands(limit=1)
+        if recent_hands is not None:
+            return HealthStatus(
+                feature_name='hand_history_database',
+                category='advanced',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='Hand history storage and retrieval'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='hand_history_database',
+            category='advanced',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='Hand history storage and retrieval'
+        )
+
+
+async def check_websocket_server_health() -> HealthStatus:
+    """Check WebSocket server."""
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            ws = await session.ws_connect('ws://localhost:5001/ws')
+            await ws.close()
+            return HealthStatus(
+                feature_name='websocket_server',
+                category='backend',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='WebSocket server for real-time updates'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='websocket_server',
+            category='backend',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='WebSocket server for real-time updates'
+        )
+
+
+async def check_region_extraction_health() -> HealthStatus:
+    """Check region extraction functionality."""
+    try:
+        from pokertool.region_extractor import RegionExtractor
+        extractor = RegionExtractor()
+        if extractor:
+            return HealthStatus(
+                feature_name='region_extraction',
+                category='scraping',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='ROI extraction from poker table screenshots'
+            )
+    except Exception as e:
+        return HealthStatus(
+            feature_name='region_extraction',
+            category='scraping',
+            status='failing',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=str(e),
+            description='ROI extraction from poker table screenshots'
+        )
+
+
 def register_all_health_checks(checker: SystemHealthChecker):
     """Register all health checks with the checker."""
 
@@ -532,6 +873,14 @@ def register_all_health_checks(checker: SystemHealthChecker):
         timeout=2.0
     )
 
+    checker.register_check(
+        'websocket_server',
+        'backend',
+        check_websocket_server_health,
+        'WebSocket server for real-time updates',
+        timeout=3.0
+    )
+
     # Screen Scraping Checks
     checker.register_check(
         'ocr_engine',
@@ -549,6 +898,22 @@ def register_all_health_checks(checker: SystemHealthChecker):
         timeout=2.0
     )
 
+    checker.register_check(
+        'poker_table_detection',
+        'scraping',
+        check_poker_table_detection_health,
+        'Poker table detection model availability',
+        timeout=3.0
+    )
+
+    checker.register_check(
+        'region_extraction',
+        'scraping',
+        check_region_extraction_health,
+        'ROI extraction from poker table screenshots',
+        timeout=2.0
+    )
+
     # ML/Analytics Checks
     checker.register_check(
         'model_calibration',
@@ -558,12 +923,101 @@ def register_all_health_checks(checker: SystemHealthChecker):
         timeout=3.0
     )
 
+    checker.register_check(
+        'gto_solver',
+        'ml',
+        check_gto_solver_health,
+        'GTO solver engine for optimal play calculations',
+        timeout=5.0
+    )
+
+    checker.register_check(
+        'opponent_modeling',
+        'ml',
+        check_opponent_modeling_health,
+        'ML-based opponent behavior modeling',
+        timeout=3.0
+    )
+
+    checker.register_check(
+        'sequential_opponent_fusion',
+        'ml',
+        check_sequential_opponent_fusion_health,
+        'Temporal opponent behavior analysis',
+        timeout=3.0
+    )
+
+    checker.register_check(
+        'active_learning',
+        'ml',
+        check_active_learning_health,
+        'Active learning feedback and model improvement',
+        timeout=3.0
+    )
+
+    checker.register_check(
+        'neural_evaluator',
+        'ml',
+        check_neural_evaluator_health,
+        'Neural network hand evaluation',
+        timeout=3.0
+    )
+
+    checker.register_check(
+        'hand_range_analyzer',
+        'ml',
+        check_hand_range_analyzer_health,
+        'Hand range calculation and analysis',
+        timeout=2.0
+    )
+
     # GUI Checks
     checker.register_check(
         'frontend_server',
         'gui',
         check_frontend_health,
         'React frontend server availability',
+        timeout=2.0
+    )
+
+    # Advanced Feature Checks
+    checker.register_check(
+        'scraping_accuracy',
+        'advanced',
+        check_scraping_accuracy_health,
+        'Scraping accuracy tracking and validation',
+        timeout=2.0
+    )
+
+    checker.register_check(
+        'roi_tracking',
+        'advanced',
+        check_roi_tracking_health,
+        'ROI and bankroll tracking',
+        timeout=2.0
+    )
+
+    checker.register_check(
+        'tournament_support',
+        'advanced',
+        check_tournament_support_health,
+        'Tournament tracking and ICM calculations',
+        timeout=3.0
+    )
+
+    checker.register_check(
+        'multi_table_support',
+        'advanced',
+        check_multi_table_support_health,
+        'Multi-table detection and management',
+        timeout=2.0
+    )
+
+    checker.register_check(
+        'hand_history_database',
+        'advanced',
+        check_hand_history_database_health,
+        'Hand history storage and retrieval',
         timeout=2.0
     )
 
