@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 83.0.0
-release_date = 2025-10-15
+version = 84.0.0
+release_date = 2025-10-16
 
 [release_notes]
-# v83.0.0 - Tkinter Removal & Web-Only Architecture
-description = Completed removal of all tkinter/GUI dependencies, transitioning to web-only architecture
-changes = Removed tkinter imports from tests, verified codebase is clean of GUI dependencies
+# v84.0.0 - Version Bump
+description = Version increment
+changes = Updated version to 84.0.0
 status = stable
 
 [components]
