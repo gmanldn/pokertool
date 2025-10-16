@@ -10,15 +10,7 @@ import {
   Alert,
   AlertTitle,
 } from '@mui/material';
-import {
-  Timer,
-  TimerOff,
-  VolumeUp,
-  VolumeOff,
-  AccessTime,
-  Warning,
-  Speed,
-} from '@mui/icons-material';
+import { Timer, VolumeUp, VolumeOff, AccessTime, Warning, Speed } from '@mui/icons-material';
 import { keyframes } from '@mui/system';
 
 // Define pulsing animation for urgency
@@ -48,12 +40,14 @@ const flash = keyframes`
 `;
 
 interface DecisionTimerProps {
-  totalTime: number; // Total time in seconds
+  totalTime?: number; // Total time in seconds
+  timeLimit?: number; // Optional alias for total time
   timeBank?: number; // Optional time bank in seconds
   onTimeout?: () => void; // Callback when time expires
   isActive?: boolean; // Whether timer is active
   soundEnabled?: boolean; // Whether sound alerts are enabled
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  compact?: boolean; // Render compact variant
 }
 
 interface TimerState {
@@ -65,16 +59,33 @@ interface TimerState {
   hasPlayedTimeBank: boolean;
 }
 
-export const DecisionTimer: React.FC<DecisionTimerProps> = ({
+export const DecisionTimer: React.FC<DecisionTimerProps> = (props) => {
+  if (props.compact) {
+    return (
+      <CompactDecisionTimer
+        totalTime={props.totalTime}
+        timeLimit={props.timeLimit}
+        isActive={props.isActive}
+      />
+    );
+  }
+
+  return <FullDecisionTimer {...props} />;
+};
+
+const FullDecisionTimer: React.FC<DecisionTimerProps> = ({
   totalTime = 30,
+  timeLimit,
   timeBank = 30,
   onTimeout,
   isActive = true,
   soundEnabled = true,
   position = 'top-right',
-}) => {
+}: DecisionTimerProps) => {
+  const effectiveTotalTime = timeLimit ?? totalTime;
+
   const [state, setState] = useState<TimerState>({
-    timeRemaining: totalTime,
+    timeRemaining: effectiveTotalTime,
     timeBankRemaining: timeBank,
     isUsingTimeBank: false,
     hasPlayedWarning: false,
@@ -128,14 +139,14 @@ export const DecisionTimer: React.FC<DecisionTimerProps> = ({
   // Reset timer
   const resetTimer = useCallback(() => {
     setState({
-      timeRemaining: totalTime,
+      timeRemaining: effectiveTotalTime,
       timeBankRemaining: timeBank,
       isUsingTimeBank: false,
       hasPlayedWarning: false,
       hasPlayedCritical: false,
       hasPlayedTimeBank: false,
     });
-  }, [totalTime, timeBank]);
+  }, [effectiveTotalTime, timeBank]);
 
   // Timer effect
   useEffect(() => {
@@ -203,7 +214,7 @@ export const DecisionTimer: React.FC<DecisionTimerProps> = ({
   // Get timer color based on remaining time
   const getTimerColor = () => {
     const currentTime = state.isUsingTimeBank ? state.timeBankRemaining : state.timeRemaining;
-    const maxTime = state.isUsingTimeBank ? timeBank : totalTime;
+    const maxTime = state.isUsingTimeBank ? timeBank : effectiveTotalTime;
     const percentage = (currentTime / maxTime) * 100;
 
     if (state.isUsingTimeBank) return '#9C27B0'; // Purple for time bank
@@ -247,7 +258,7 @@ export const DecisionTimer: React.FC<DecisionTimerProps> = ({
   };
 
   const currentTime = state.isUsingTimeBank ? state.timeBankRemaining : state.timeRemaining;
-  const maxTime = state.isUsingTimeBank ? timeBank : totalTime;
+  const maxTime = state.isUsingTimeBank ? timeBank : effectiveTotalTime;
   const progress = (currentTime / maxTime) * 100;
   const urgency = getUrgencyLevel();
   const color = getTimerColor();
@@ -379,13 +390,15 @@ export const DecisionTimer: React.FC<DecisionTimerProps> = ({
 // Optional: Compact version for mobile or minimal UI
 export const CompactDecisionTimer: React.FC<DecisionTimerProps> = ({
   totalTime = 30,
+  timeLimit,
   isActive = true,
 }) => {
-  const [timeRemaining, setTimeRemaining] = useState(totalTime);
+  const effectiveTotalTime = timeLimit ?? totalTime;
+  const [timeRemaining, setTimeRemaining] = useState(effectiveTotalTime);
 
   useEffect(() => {
     if (!isActive) {
-      setTimeRemaining(totalTime);
+      setTimeRemaining(effectiveTotalTime);
       return;
     }
 
@@ -394,9 +407,9 @@ export const CompactDecisionTimer: React.FC<DecisionTimerProps> = ({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isActive, totalTime]);
+  }, [isActive, effectiveTotalTime]);
 
-  const progress = (timeRemaining / totalTime) * 100;
+  const progress = (timeRemaining / effectiveTotalTime) * 100;
   const color = progress > 50 ? '#4CAF50' : progress > 20 ? '#FFC107' : '#F44336';
 
   if (!isActive) return null;

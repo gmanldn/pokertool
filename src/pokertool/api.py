@@ -474,7 +474,38 @@ class APIServices:
     def __init__(self):
         self.auth_service = AuthenticationService()
         self.connection_manager = ConnectionManager()
-        self.db = get_production_db()
+        try:
+            self.db = get_production_db()
+        except RuntimeError:
+            # Fall back to the SQLite-backed development database if the
+            # production database has not been initialised.
+            try:
+                from .database import (
+                    ProductionDatabase as FallbackDatabase,
+                    DatabaseConfig as FallbackConfig,
+                    DatabaseType,
+                )
+
+                fallback_path = os.getenv("POKER_DB_PATH", "poker_decisions.db")
+                fallback_config = FallbackConfig(
+                    db_type=DatabaseType.SQLITE,
+                    db_path=fallback_path,
+                )
+                self.db = FallbackDatabase(fallback_config)
+
+                # Update production_database module so subsequent lookups reuse the fallback.
+                try:
+                    from . import production_database as prod_db
+
+                    prod_db._production_db = self.db  # type: ignore[attr-defined]
+                    logger.info(
+                        "Using SQLite fallback production database at %s", fallback_path
+                    )
+                except Exception:
+                    pass
+            except Exception as exc:
+                logger.error("Failed to initialize fallback database: %s", exc)
+                raise
         self.thread_pool = get_thread_pool()
         self.analytics_dashboard = AnalyticsDashboard()
         self.gamification_engine = GamificationEngine()
@@ -745,7 +776,7 @@ class PokerToolAPI:
         # Database endpoints
         @self.app.get('/hands/recent')
         @self.services.limiter.limit('50/minute')
-        async def get_recent_hands(limit: int = 10, offset: int = 0, 
+        async def get_recent_hands(request, limit: int = 10, offset: int = 0,
                                   user: APIUser = Depends(get_current_user)):
             hands = self.services.db.get_recent_hands(limit=min(limit, 100), offset=offset)
             return {'hands': hands, 'count': len(hands)}
