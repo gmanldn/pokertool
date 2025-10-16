@@ -860,6 +860,65 @@ class PokerToolAPI:
             result = stop_screen_scraper()
             return {'message': 'Scraper stopped', 'result': result}
 
+        @self.app.post('/api/start-backend')
+        async def start_backend():
+            """Start the backend server process."""
+            import subprocess
+            import sys
+            from pathlib import Path
+
+            try:
+                # Get the project root and venv python
+                project_root = Path(__file__).resolve().parent.parent.parent
+                venv_python = project_root / '.venv' / 'bin' / 'python'
+
+                if not venv_python.exists():
+                    venv_python = project_root / '.venv' / 'Scripts' / 'python.exe'
+
+                if not venv_python.exists():
+                    return {
+                        'success': False,
+                        'message': 'Virtual environment not found'
+                    }
+
+                # Check if backend is already running
+                import socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                result = sock.connect_ex(('localhost', 5001))
+                sock.close()
+
+                if result == 0:
+                    return {
+                        'success': True,
+                        'message': 'Backend already running'
+                    }
+
+                # Start the backend server
+                env = os.environ.copy()
+                env['PYTHONPATH'] = str(project_root / 'src')
+
+                subprocess.Popen(
+                    [str(venv_python), '-m', 'uvicorn', 'pokertool.api:create_app',
+                     '--host', '0.0.0.0', '--port', '5001', '--factory'],
+                    env=env,
+                    cwd=project_root,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True
+                )
+
+                return {
+                    'success': True,
+                    'message': 'Backend server starting...'
+                }
+
+            except Exception as e:
+                logger.error(f'Failed to start backend: {e}')
+                return {
+                    'success': False,
+                    'message': f'Failed to start backend: {str(e)}'
+                }
+
         # Database endpoints
         @self.app.get('/hands/recent')
         @self.services.limiter.limit('50/minute')

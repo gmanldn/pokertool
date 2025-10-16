@@ -32,6 +32,7 @@ import {
   useMediaQuery,
   Tooltip,
   Chip,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -48,6 +49,7 @@ import {
   History,
   Circle,
   Article,
+  PlayArrow,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
@@ -63,6 +65,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [startingBackend, setStartingBackend] = useState(false);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -80,6 +83,27 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
   const handleNavigation = (path: string) => {
     navigate(path);
     setDrawerOpen(false);
+  };
+
+  const handleStartBackend = async () => {
+    setStartingBackend(true);
+    try {
+      // Call the backend start API endpoint
+      const response = await fetch('http://localhost:5001/api/start-backend', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        console.log('Backend start request sent successfully');
+      } else {
+        console.error('Failed to start backend');
+      }
+    } catch (error) {
+      console.error('Error starting backend:', error);
+    } finally {
+      // Reset button state after 3 seconds
+      setTimeout(() => setStartingBackend(false), 3000);
+    }
   };
 
   const drawer = (
@@ -204,6 +228,22 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
               </Box>
               <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
             </>
+          )}
+
+          {!connected && (
+            <Tooltip title="Start the backend server">
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                startIcon={<PlayArrow />}
+                onClick={handleStartBackend}
+                disabled={startingBackend}
+                sx={{ mr: 2 }}
+              >
+                {startingBackend ? 'Starting...' : 'Start Backend'}
+              </Button>
+            </Tooltip>
           )}
 
           <Badge
