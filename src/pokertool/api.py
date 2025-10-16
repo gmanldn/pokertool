@@ -673,8 +673,77 @@ class PokerToolAPI:
         
         self.app = FastAPI(
             title='PokerTool API',
-            description='RESTful API for poker analysis and screen scraping',
-            version='1.0.0'
+            description='''
+# PokerTool RESTful API
+
+Comprehensive poker analysis and real-time screen scraping API with advanced features.
+
+## Features
+
+- **Hand Analysis**: GTO-based poker hand analysis and recommendations
+- **Screen Scraping**: Real-time poker table detection and data extraction
+- **ML Analytics**: Opponent modeling, calibration metrics, and active learning
+- **System Health**: Real-time monitoring of all system components
+- **WebSockets**: Real-time updates for detections and health status
+- **Authentication**: JWT-based secure authentication with role-based access control
+- **Analytics**: Usage tracking, gamification, and community features
+
+## Authentication
+
+Most endpoints require Bearer token authentication. Obtain a token via `/auth/token` endpoint.
+
+Example:
+```
+Authorization: Bearer <your_token_here>
+```
+
+## Rate Limiting
+
+API endpoints are rate-limited to prevent abuse. Limits vary by endpoint and user role.
+
+## WebSocket Endpoints
+
+- `/ws/{user_id}?token={token}`: Authenticated WebSocket for user-specific updates
+- `/ws/detections`: Public WebSocket for real-time poker table detection events
+- `/ws/system-health`: System health monitoring updates
+
+## Security
+
+This API implements comprehensive security measures including:
+- HTTPS/WSS enforcement
+- Content Security Policy (CSP)
+- XSS protection
+- CSRF protection
+- Rate limiting
+- Input validation
+            ''',
+            version='1.0.0',
+            contact={
+                'name': 'PokerTool Development Team',
+                'email': 'support@pokertool.com'
+            },
+            license_info={
+                'name': 'MIT',
+                'url': 'https://opensource.org/licenses/MIT'
+            },
+            openapi_tags=[
+                {'name': 'health', 'description': 'Health check and system status'},
+                {'name': 'auth', 'description': 'Authentication and user management'},
+                {'name': 'analysis', 'description': 'Hand analysis and poker strategy'},
+                {'name': 'scraper', 'description': 'Screen scraping and table detection'},
+                {'name': 'system', 'description': 'System health monitoring'},
+                {'name': 'ml', 'description': 'Machine learning features and analytics'},
+                {'name': 'database', 'description': 'Hand history and statistics'},
+                {'name': 'analytics', 'description': 'Usage analytics and metrics'},
+                {'name': 'gamification', 'description': 'Achievements, badges, and leaderboards'},
+                {'name': 'community', 'description': 'Community features and social'},
+                {'name': 'admin', 'description': 'Administrative endpoints (admin only)'}
+            ],
+            swagger_ui_parameters={
+                'docExpansion': 'none',
+                'filter': True,
+                'syntaxHighlight.theme': 'monokai'
+            }
         )
 
         self._setup_middleware()
@@ -742,6 +811,124 @@ class PokerToolAPI:
         self.app.add_middleware(SlowAPIMiddleware)
         self.app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+        # Add request logging and correlation ID middleware
+        @self.app.middleware("http")
+        async def add_correlation_id_and_logging(request, call_next):
+            """Add correlation ID for distributed tracing and log requests/responses."""
+            import uuid
+
+            # Generate or extract correlation ID
+            correlation_id = request.headers.get('X-Correlation-ID', str(uuid.uuid4()))
+            request.state.correlation_id = correlation_id
+
+            # Log incoming request
+            start_time = time.time()
+            logger.info(
+                f"Request started",
+                extra={
+                    'correlation_id': correlation_id,
+                    'method': request.method,
+                    'path': request.url.path,
+                    'client_ip': request.client.host if request.client else 'unknown',
+                    'user_agent': request.headers.get('user-agent', 'unknown')
+                }
+            )
+
+            # Process request
+            try:
+                response = await call_next(request)
+
+                # Calculate request duration
+                duration = time.time() - start_time
+
+                # Log response
+                logger.info(
+                    f"Request completed",
+                    extra={
+                        'correlation_id': correlation_id,
+                        'method': request.method,
+                        'path': request.url.path,
+                        'status_code': response.status_code,
+                        'duration_ms': round(duration * 1000, 2)
+                    }
+                )
+
+                # Add correlation ID to response headers
+                response.headers['X-Correlation-ID'] = correlation_id
+                response.headers['X-Response-Time'] = f"{round(duration * 1000, 2)}ms"
+
+                return response
+
+            except Exception as e:
+                # Log error with correlation ID
+                duration = time.time() - start_time
+                logger.error(
+                    f"Request failed: {str(e)}",
+                    extra={
+                        'correlation_id': correlation_id,
+                        'method': request.method,
+                        'path': request.url.path,
+                        'duration_ms': round(duration * 1000, 2),
+                        'error': str(e)
+                    },
+                    exc_info=True
+                )
+                raise
+
+        # Add security headers middleware
+        @self.app.middleware("http")
+        async def add_security_headers(request, call_next):
+            """Add comprehensive security headers to all responses."""
+            response = await call_next(request)
+
+            # Content Security Policy - Prevents XSS and other injection attacks
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self' ws: wss:; "
+                "frame-ancestors 'none'"
+            )
+
+            # HTTP Strict Transport Security - Enforces HTTPS
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+
+            # X-Frame-Options - Prevents clickjacking
+            response.headers["X-Frame-Options"] = "DENY"
+
+            # X-Content-Type-Options - Prevents MIME sniffing
+            response.headers["X-Content-Type-Options"] = "nosniff"
+
+            # X-XSS-Protection - Legacy XSS protection
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+
+            # Referrer-Policy - Controls referrer information
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+            # Permissions-Policy - Controls browser features
+            response.headers["Permissions-Policy"] = (
+                "geolocation=(), "
+                "microphone=(), "
+                "camera=(), "
+                "payment=(), "
+                "usb=(), "
+                "magnetometer=(), "
+                "gyroscope=(), "
+                "accelerometer=()"
+            )
+
+            return response
+
+        # Add response compression middleware
+        try:
+            from fastapi.middleware.gzip import GZipMiddleware
+            self.app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
+            logger.info("Response compression enabled (GZip)")
+        except ImportError:
+            logger.warning("GZip middleware not available")
+
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=['*'],  # In production, specify actual origins
@@ -773,12 +960,17 @@ class PokerToolAPI:
             return user
 
         # Health check
-        @self.app.get('/health')
+        @self.app.get('/health', tags=['health'], summary='Health Check')
         async def health_check():
+            """
+            Basic health check endpoint to verify API is running.
+
+            Returns a simple status message with timestamp.
+            """
             return {'status': 'healthy', 'timestamp': datetime.utcnow()}
 
         # System Health Monitoring Endpoints
-        @self.app.get('/api/system/health')
+        @self.app.get('/api/system/health', tags=['system'], summary='Get System Health')
         async def get_system_health():
             """
             Get comprehensive system health status for all features.
@@ -833,7 +1025,7 @@ class PokerToolAPI:
             }
 
         # Model Calibration Endpoints
-        @self.app.get('/api/ml/calibration/stats')
+        @self.app.get('/api/ml/calibration/stats', tags=['ml'], summary='Get Calibration Stats')
         async def get_calibration_stats():
             """
             Get current model calibration statistics.
@@ -1061,7 +1253,7 @@ class PokerToolAPI:
                 }
 
         # Authentication endpoints
-        @self.app.post('/auth/token', response_model=Token)
+        @self.app.post('/auth/token', response_model=Token, tags=['auth'], summary='Login')
         @self.services.limiter.limit('10/minute')
         async def login(request, username: str, password: str):
             user = self.services.auth_service.get_user_by_credentials(username, password)
