@@ -77,47 +77,102 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
     }
   }, [logs, autoScroll]);
 
-  // Connect to WebSocket for real detection events
+  // Connect to WebSocket for real detection events with retry logic
   useEffect(() => {
     if (isPaused) return;
 
-    const ws = new WebSocket('ws://localhost:5001/ws/detections');
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let hasShownError = false;
+    let isCleaningUp = false;
 
-    ws.onopen = () => {
-      console.log('Detection WebSocket connected');
+    const connect = () => {
+      if (isCleaningUp) return;
+
+      try {
+        ws = new WebSocket('ws://localhost:5001/ws/detections');
+
+        ws.onopen = () => {
+          console.log('Detection WebSocket connected');
+          hasShownError = false;
+          setLogs((prev) => [
+            ...prev,
+            {
+              timestamp: new Date().toISOString(),
+              type: 'system' as const,
+              severity: 'success' as const,
+              message: 'Connected to detection stream',
+              data: {},
+            },
+          ].slice(-100));
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          const newLog: LogEntry = {
+            timestamp: data.timestamp || new Date().toISOString(),
+            type: data.type || 'system',
+            severity: data.severity || 'info',
+            message: data.message,
+            data: data.data || {},
+          };
+          setLogs((prev) => [...prev, newLog].slice(-100)); // Keep last 100 entries
+        };
+
+        ws.onerror = (error) => {
+          console.error('Detection WebSocket error:', error);
+          if (!hasShownError) {
+            hasShownError = true;
+            setLogs((prev) => [
+              ...prev,
+              {
+                timestamp: new Date().toISOString(),
+                type: 'error' as const,
+                severity: 'warning' as const,
+                message: 'Backend not available - will retry in 10 seconds',
+                data: {},
+              },
+            ].slice(-100));
+          }
+        };
+
+        ws.onclose = () => {
+          console.log('Detection WebSocket closed');
+          if (!isCleaningUp && !isPaused) {
+            // Reconnect after 10 seconds
+            reconnectTimeout = setTimeout(connect, 10000);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to create WebSocket:', error);
+        if (!hasShownError && !isCleaningUp) {
+          hasShownError = true;
+          setLogs((prev) => [
+            ...prev,
+            {
+              timestamp: new Date().toISOString(),
+              type: 'error' as const,
+              severity: 'warning' as const,
+              message: 'Backend not available - will retry in 10 seconds',
+              data: {},
+            },
+          ].slice(-100));
+          reconnectTimeout = setTimeout(connect, 10000);
+        }
+      }
     };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const newLog: LogEntry = {
-        timestamp: data.timestamp || new Date().toISOString(),
-        type: data.type || 'system',
-        severity: data.severity || 'info',
-        message: data.message,
-        data: data.data || {},
-      };
-      setLogs((prev) => [...prev, newLog].slice(-100)); // Keep last 100 entries
-    };
+    connect();
 
-    ws.onerror = (error) => {
-      console.error('Detection WebSocket error:', error);
-      setLogs((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toISOString(),
-          type: 'error' as const,
-          severity: 'error' as const,
-          message: 'Failed to connect to detection stream - is the backend running?',
-          data: {},
-        },
-      ].slice(-100));
+    return () => {
+      isCleaningUp = true;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (ws) {
+        ws.close();
+      }
     };
-
-    ws.onclose = () => {
-      console.log('Detection WebSocket closed');
-    };
-
-    return () => ws.close();
   }, [isPaused]);
 
   const handleClearLogs = () => {
