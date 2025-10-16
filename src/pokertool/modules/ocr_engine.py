@@ -336,6 +336,7 @@ class PokerOCREngine:
     def _parse_currency_amount(self, text: str) -> Tuple[float, float]:
         """
         Parse currency amount from OCR text.
+        Supports both US format (1,234.56) and European format (1.234,56).
         
         Args:
             text: OCR text containing amount
@@ -349,10 +350,26 @@ class PokerOCREngine:
             for symbol in self.CURRENCY_SYMBOLS:
                 cleaned = cleaned.replace(symbol, '')
             
-            # Remove commas (thousand separators)
-            cleaned = cleaned.replace(',', '')
+            # Detect format: if comma is followed by exactly 2 digits at end, it's European decimal
+            # Examples: "0,01" "0,50" "12,50" "1.234,56"
+            european_decimal_pattern = r',\d{2}(?:\D|$)'
+            is_european = bool(re.search(european_decimal_pattern, cleaned))
             
-            # Extract number using regex
+            if is_european:
+                # European format: comma is decimal, period is thousands separator
+                # First remove thousands separators (periods)
+                cleaned = cleaned.replace('.', '')
+                # Then replace decimal comma with period for float conversion
+                cleaned = cleaned.replace(',', '.')
+            else:
+                # US format: comma is thousands separator, period is decimal
+                # Remove thousands separators (commas)
+                cleaned = cleaned.replace(',', '')
+            
+            # Handle common OCR errors
+            cleaned = cleaned.replace('O', '0').replace('o', '0').replace('l', '1')
+            
+            # Extract number using regex (now normalized to use . for decimal)
             pattern = r'(\d+\.?\d*)'
             match = re.search(pattern, cleaned)
             
@@ -363,12 +380,16 @@ class PokerOCREngine:
                 confidence = len(match.group(1)) / max(len(cleaned), 1)
                 confidence = min(1.0, confidence)
                 
+                # Log for debugging
+                if is_european:
+                    logger.debug(f"Parsed European format: '{text}' -> {amount} (conf: {confidence:.2f})")
+                
                 return amount, confidence
             
             return 0.0, 0.0
             
         except Exception as e:
-            logger.debug(f"Currency parsing error: {e}")
+            logger.debug(f"Currency parsing error for '{text}': {e}")
             return 0.0, 0.0
     
     def _parse_time_string(self, text: str) -> Tuple[float, float]:
