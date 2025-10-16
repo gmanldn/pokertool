@@ -3,9 +3,11 @@
 schema: pokerheader.v1
 project: pokertool
 file: pokertool-frontend/src/components/TableView.tsx
-version: v28.0.0
-last_commit: '2025-09-23T08:41:38+01:00'
+version: v86.3.0
+last_commit: '2025-10-16T00:00:00+01:00'
 fixes:
+- date: '2025-10-16'
+  summary: Added position labels, dealer button indicator, blind badges, and stack sizes in BB
 - date: '2025-09-25'
   summary: Enhanced enterprise documentation and comprehensive unit tests added
 ---
@@ -31,6 +33,8 @@ import {
   Fullscreen,
   Casino,
   FiberManualRecord,
+  Album,
+  Star,
 } from '@mui/icons-material';
 import { AdvicePanel } from './AdvicePanel';
 import { DecisionTimer } from './DecisionTimer';
@@ -38,6 +42,7 @@ import { HandStrengthMeter } from './HandStrengthMeter';
 import { EquityCalculator } from './EquityCalculator';
 import { BetSizingRecommendations } from './BetSizingRecommendations';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { buildWsUrl } from '../config/api';
 
 interface TableViewProps {
   sendMessage: (message: any) => void;
@@ -60,14 +65,88 @@ interface Player {
   cards?: string[];
   isActive: boolean;
   isFolded: boolean;
+  position?: string; // UTG, MP, CO, BTN, SB, BB
+  isDealer?: boolean;
+  isSmallBlind?: boolean;
+  isBigBlind?: boolean;
+  isHero?: boolean; // The user's position
 }
+
+// Helper function to get position color
+const getPositionColor = (position?: string): string => {
+  if (!position) return 'rgba(150, 150, 150, 0.8)';
+
+  const positionLower = position.toLowerCase();
+
+  // Red: Early position
+  if (positionLower.includes('utg')) return '#f44336';
+
+  // Yellow: Middle position
+  if (positionLower.includes('mp')) return '#ff9800';
+
+  // Green: Late position
+  if (positionLower === 'co' || positionLower === 'btn') return '#4caf50';
+
+  // Blue: Blinds
+  if (positionLower === 'sb' || positionLower === 'bb') return '#2196f3';
+
+  return 'rgba(150, 150, 150, 0.8)';
+};
+
+// Helper function to calculate stack in big blinds
+const getStackInBB = (chips: number, bigBlind: number = 2): string => {
+  const bb = Math.floor(chips / bigBlind);
+  return `${bb} BB`;
+};
+
+// Helper function to determine positions based on seat count and dealer position
+const assignPositions = (players: Player[], dealerSeat: number): Player[] => {
+  const playerCount = players.length;
+  if (playerCount < 2) return players;
+
+  // Sort players by seat number
+  const sortedPlayers = [...players].sort((a, b) => a.seat - b.seat);
+
+  // Find dealer index
+  const dealerIndex = sortedPlayers.findIndex(p => p.seat === dealerSeat);
+  if (dealerIndex === -1) return players;
+
+  // Position names for different table sizes
+  const getPositionNames = (count: number): string[] => {
+    if (count === 2) return ['BTN', 'BB'];
+    if (count === 3) return ['BTN', 'SB', 'BB'];
+    if (count === 4) return ['BTN', 'SB', 'BB', 'UTG'];
+    if (count === 5) return ['BTN', 'SB', 'BB', 'UTG', 'CO'];
+    if (count === 6) return ['BTN', 'SB', 'BB', 'UTG', 'MP', 'CO'];
+    if (count === 7) return ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'MP', 'CO'];
+    if (count === 8) return ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'MP', 'MP+1', 'CO'];
+    // 9-max (most common)
+    return ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'MP', 'MP+1', 'CO'];
+  };
+
+  const positions = getPositionNames(playerCount);
+
+  return sortedPlayers.map((player, idx) => {
+    // Calculate position index relative to dealer
+    const positionIdx = (idx - dealerIndex + playerCount) % playerCount;
+    const position = positions[positionIdx] || `Seat ${player.seat}`;
+
+    return {
+      ...player,
+      position,
+      isDealer: positionIdx === 0,
+      isSmallBlind: positionIdx === 1,
+      isBigBlind: positionIdx === 2,
+    };
+  });
+};
 
 export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // WebSocket connection for real-time advice
-  const { messages } = useWebSocket('http://localhost:8000');
+  const { messages } = useWebSocket(buildWsUrl());
   
   // State for tables - will be populated by backend detection
   const [tables, setTables] = useState<TableData[]>([
@@ -181,6 +260,8 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   const [playerDetection, setPlayerDetection] = useState(true);
   const [cardDetection, setCardDetection] = useState(true);
   const [potDetection, setPotDetection] = useState(true);
+  const [dealerPosition, setDealerPosition] = useState<number>(0); // Dealer seat number
+  const [bigBlindAmount, setBigBlindAmount] = useState<number>(2); // For BB calculation
 
   // Auto-start tracking on mount
   React.useEffect(() => {
@@ -197,7 +278,13 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
     });
   };
 
-  const PokerTable = ({ table }: { table: TableData }) => (
+  const PokerTable = ({ table }: { table: TableData }) => {
+    // Assign positions to players based on dealer button
+    const playersWithPositions = table.players.length > 0
+      ? assignPositions(table.players, dealerPosition)
+      : table.players;
+
+    return (
     <Box
       sx={{
         position: 'relative',
@@ -282,11 +369,13 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
       </Box>
 
       {/* Players */}
-      {table.players.map((player, index) => {
-        const angle = (index * 360) / table.players.length - 90;
+      {playersWithPositions.map((player, index) => {
+        const angle = (index * 360) / playersWithPositions.length - 90;
         const radius = isMobile ? 100 : 140;
         const x = radius * Math.cos((angle * Math.PI) / 180);
         const y = radius * Math.sin((angle * Math.PI) / 180);
+
+        const positionColor = getPositionColor(player.position);
 
         return (
           <Box
@@ -298,6 +387,91 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
               transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
             }}
           >
+            {/* Dealer Button Indicator */}
+            {player.isDealer && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -12,
+                  right: -12,
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(255, 215, 0, 0.6), inset 0 -2px 4px rgba(0,0,0,0.2)',
+                  border: '2px solid #fff',
+                  zIndex: 10,
+                  animation: 'spin 3s linear infinite',
+                  '@keyframes spin': {
+                    from: { transform: 'rotate(0deg)' },
+                    to: { transform: 'rotate(360deg)' },
+                  },
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#000',
+                    textShadow: '0 1px 2px rgba(255,255,255,0.5)',
+                  }}
+                >
+                  D
+                </Typography>
+              </Box>
+            )}
+
+            {/* Position Label */}
+            {player.position && (
+              <Chip
+                label={player.position}
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  top: -20,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  backgroundColor: positionColor,
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  fontSize: '0.7rem',
+                  height: 18,
+                  minWidth: 40,
+                  boxShadow: `0 2px 8px ${positionColor}60`,
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  zIndex: 5,
+                }}
+              />
+            )}
+
+            {/* Hero Indicator */}
+            {player.isHero && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -8,
+                  left: -8,
+                  zIndex: 9,
+                }}
+              >
+                <Star
+                  sx={{
+                    fontSize: 20,
+                    color: '#ffd700',
+                    filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.8))',
+                    animation: 'pulse 2s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                      '50%': { opacity: 0.7, transform: 'scale(1.1)' },
+                    },
+                  }}
+                />
+              </Box>
+            )}
+
             <Card
               sx={{
                 minWidth: 110,
@@ -332,15 +506,41 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
                 >
                   {player.name}
                 </Typography>
+                <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: player.isActive ? theme.palette.primary.light : '#b0b0b0',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ${player.chips}
+                  </Typography>
+                  {/* Blind indicators */}
+                  {(player.isSmallBlind || player.isBigBlind) && (
+                    <Chip
+                      label={player.isSmallBlind ? 'SB' : 'BB'}
+                      size="small"
+                      sx={{
+                        height: 16,
+                        fontSize: '0.6rem',
+                        backgroundColor: '#2196f3',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                      }}
+                    />
+                  )}
+                </Box>
+                {/* Stack in BB */}
                 <Typography
-                  variant="body2"
+                  variant="caption"
                   sx={{
-                    color: player.isActive ? theme.palette.primary.light : '#b0b0b0',
-                    fontWeight: 600,
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    fontSize: '0.65rem',
                     mb: player.cards && player.cards.length > 0 ? 0.5 : 0,
                   }}
                 >
-                  ${player.chips}
+                  {getStackInBB(player.chips, bigBlindAmount)}
                 </Typography>
                 {/* Hole Cards */}
                 {player.cards && player.cards.length > 0 && (
@@ -374,7 +574,8 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
         );
       })}
     </Box>
-  );
+    );
+  };
 
   return (
     <Box sx={{ p: isMobile ? 2 : 3 }}>

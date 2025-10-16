@@ -154,7 +154,23 @@ class PokerLexicalValidator:
     def _validate_monetary_value(self, text: str, messages: List[str]) -> Tuple[bool, List[str]]:
         """Validate monetary values (bet, pot, stack sizes)."""
         # Remove common currency symbols
-        cleaned = text.replace("$", "").replace("£", "").replace("€", "").replace(",", "").strip()
+        cleaned = text.replace("$", "").replace("£", "").replace("€", "").strip()
+        
+        # Detect format: if comma is followed by exactly 2 digits at end, it's European decimal
+        # Examples: "0,01" "0,50" "12,50" "1.234,56"
+        european_decimal_pattern = r',\d{2}(?:\D|$)'
+        is_european = bool(re.search(european_decimal_pattern, cleaned))
+        
+        if is_european:
+            # European format: comma is decimal, period is thousands separator
+            # First remove thousands separators (periods)
+            cleaned = cleaned.replace('.', '')
+            # Then replace decimal comma with period for float conversion
+            cleaned = cleaned.replace(',', '.')
+        else:
+            # US format: comma is thousands separator, period is decimal
+            # Remove thousands separators (commas)
+            cleaned = cleaned.replace(',', '')
 
         # Apply common corrections
         for wrong, right in self.COMMON_CORRECTIONS.items():

@@ -3,8 +3,14 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 82.0.0
-release_date = 2025-10-15
+version = 87.0.0
+release_date = 2025-10-16
+
+[release_notes]
+# v87.0.0 - Comprehensive Smoke Test Suite
+description = Complete end-to-end validation suite for fast pre-deployment testing
+changes = Created 38 smoke tests covering all critical components, standalone runner, pytest integration, CI/CD ready
+status = stable
 
 [components]
 # Scraping System Components - v75.0.0 Implementation
@@ -191,13 +197,31 @@ description = Enhanced startup script to cleanup React dev servers before launch
 last_updated = 2025-10-15
 status = active
 
+# Tkinter Removal - v83.0.0 Implementation
+
+[components.web_only_architecture]
+version = 1.0.0
+features = ARCH-001
+description = Completed removal of all tkinter/GUI dependencies, web-only architecture
+last_updated = 2025-10-15
+status = active
+
+# Detection WebSocket System - v85.0.0 Implementation
+
+[components.detection_websocket]
+version = 1.0.0
+features = WS-DETECT-001
+description = Real-time detection event broadcasting via WebSocket with connection management
+last_updated = 2025-10-16
+status = active
+
 [tracking]
 # Version tracking metadata
-total_features_implemented = 52
-total_components = 24
-last_regression_check = 2025-10-15
-last_feature_audit = 2025-10-15
-web_features_implemented = 12
+total_features_implemented = 54
+total_components = 26
+last_regression_check = 2025-10-16
+last_feature_audit = 2025-10-16
+web_features_implemented = 13
 
 # Component Version Guidelines:
 # - Increment patch (x.y.Z) for bug fixes and minor improvements

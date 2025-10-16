@@ -20,42 +20,15 @@ def is_test_mode() -> bool:
 
 
 def safe_messagebox_showerror(title: str, message: str, parent=None):
-    """Show error dialog, or just log if in test mode."""
-    if is_test_mode():
-        logger.error(f"{title}: {message}")
-        return
-
-    try:
-        from tkinter import messagebox
-        messagebox.showerror(title, message, parent=parent)
-    except Exception as e:
-        logger.error(f"Failed to show error dialog: {e}")
-        logger.error(f"{title}: {message}")
+    """Log error message (GUI dialogs removed in web-only architecture)."""
+    logger.error(f"{title}: {message}")
 
 
 def safe_messagebox_showwarning(title: str, message: str, parent=None):
-    """Show warning dialog, or just log if in test mode."""
-    if is_test_mode():
-        logger.warning(f"{title}: {message}")
-        return
-
-    try:
-        from tkinter import messagebox
-        messagebox.showwarning(title, message, parent=parent)
-    except Exception as e:
-        logger.warning(f"Failed to show warning dialog: {e}")
-        logger.warning(f"{title}: {message}")
+    """Log warning message (GUI dialogs removed in web-only architecture)."""
+    logger.warning(f"{title}: {message}")
 
 
 def safe_messagebox_showinfo(title: str, message: str, parent=None):
-    """Show info dialog, or just log if in test mode."""
-    if is_test_mode():
-        logger.info(f"{title}: {message}")
-        return
-
-    try:
-        from tkinter import messagebox
-        messagebox.showinfo(title, message, parent=parent)
-    except Exception as e:
-        logger.info(f"Failed to show info dialog: {e}")
-        logger.info(f"{title}: {message}")
+    """Log info message (GUI dialogs removed in web-only architecture)."""
+    logger.info(f"{title}: {message}")

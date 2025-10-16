@@ -2458,7 +2458,25 @@ class PokerScreenScraper:
                             # Choose the number with the most digits as it's likely the stack
                             num_str = max(nums, key=lambda s: len(s.replace(',', '').replace('.', '')))
                             try:
-                                cleaned = num_str.replace(',', '').replace('$', '').replace('£', '').replace('€', '').strip()
+                                # Remove currency symbols
+                                cleaned = num_str.replace('$', '').replace('£', '').replace('€', '').strip()
+                                
+                                # Detect format: if comma is followed by exactly 2 digits at end, it's European decimal
+                                # Examples: "0,01" "0,50" "12,50" "1.234,56"
+                                european_decimal_pattern = r',\d{2}(?:\D|$)'
+                                is_european = bool(re.search(european_decimal_pattern, cleaned))
+                                
+                                if is_european:
+                                    # European format: comma is decimal, period is thousands separator
+                                    # First remove thousands separators (periods)
+                                    cleaned = cleaned.replace('.', '')
+                                    # Then replace decimal comma with period for float conversion
+                                    cleaned = cleaned.replace(',', '.')
+                                else:
+                                    # US format: comma is thousands separator, period is decimal
+                                    # Remove thousands separators (commas)
+                                    cleaned = cleaned.replace(',', '')
+                                
                                 stack = float(cleaned)
 
                                 # Validate extracted stack

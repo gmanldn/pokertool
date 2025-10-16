@@ -118,7 +118,7 @@ from .storage import get_secure_db
 from .error_handling import retry_on_failure
 from .core import analyse_hand, parse_card
 from .concurrency import get_thread_pool
-from .threading import TaskPriority
+from .thread_utils import TaskPriority
 
 logger = logging.getLogger(__name__)
 
@@ -193,13 +193,18 @@ class _FallbackScraperBridge:
                 pass
         return {'raw_state': table_state}
 
-# Import HUD overlay system
+# Import HUD overlay system (optional - not yet implemented)
 try:
     from .hud_overlay import update_hud_state, is_hud_running
     HUD_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f'Could not import HUD overlay system: {e}')
+except ImportError:
+    # HUD overlay is optional and not yet implemented - silently skip
     HUD_AVAILABLE = False
+    # Define dummy functions to avoid errors in code that checks for HUD
+    def update_hud_state(*args, **kwargs):
+        pass
+    def is_hud_running():
+        return False
 
 class EnhancedScraperManager:
     """

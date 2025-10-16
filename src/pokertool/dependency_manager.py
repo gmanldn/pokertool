@@ -183,16 +183,6 @@ class DependencyManager:
         }
         
         self.system_dependencies = {
-            'tkinter': {
-                'description': 'GUI framework',
-                'is_critical': True,
-                'install_commands': {
-                    'darwin': 'brew install python-tk',
-                    'linux': 'apt-get install python3-tk',
-                    'windows': 'Usually included with Python'
-                },
-                'import_name': 'tkinter'
-            },
             'tesseract': {
                 'description': 'OCR engine (required by pytesseract)',
                 'is_critical': True,
@@ -474,8 +464,6 @@ class DependencyManager:
         # System-specific recommendations
         system = platform.system().lower()
         if system == 'darwin':
-            if any(name == 'tkinter' and dep.status == 'missing' for name, dep in all_deps.items()):
-                recommendations.append("Install tkinter: brew install python-tk")
             if any(name == 'tesseract' and dep.status == 'missing' for name, dep in all_deps.items()):
                 recommendations.append("Install Tesseract OCR: brew install tesseract")
         

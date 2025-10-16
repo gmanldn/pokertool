@@ -32,6 +32,7 @@ import {
   useMediaQuery,
   Tooltip,
   Chip,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -48,9 +49,16 @@ import {
   History,
   Circle,
   Article,
+  PlayArrow,
+  SettingsApplications,
+  TrendingUp,
+  People,
+  Psychology,
+  Biotech,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
+import { buildApiUrl } from '../config/api';
 
 interface NavigationProps {
   connected: boolean;
@@ -63,6 +71,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [startingBackend, setStartingBackend] = useState(false);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -75,11 +84,37 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
     { text: 'GTO Trainer', icon: <School />, path: '/gto' },
     { text: 'Hand History', icon: <History />, path: '/history' },
     { text: 'Settings', icon: <Settings />, path: '/settings' },
+    { text: 'Model Calibration', icon: <TrendingUp />, path: '/model-calibration' },
+    { text: 'Opponent Fusion', icon: <People />, path: '/opponent-fusion' },
+    { text: 'Active Learning', icon: <Psychology />, path: '/active-learning' },
+    { text: 'Scraping Accuracy', icon: <Biotech />, path: '/scraping-accuracy' },
+    { text: 'System Status', icon: <SettingsApplications />, path: '/system-status' },
   ];
 
   const handleNavigation = (path: string) => {
     navigate(path);
     setDrawerOpen(false);
+  };
+
+  const handleStartBackend = async () => {
+    setStartingBackend(true);
+    try {
+      // Call the backend start API endpoint
+      const response = await fetch(buildApiUrl('/api/start-backend'), {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        console.log('Backend start request sent successfully');
+      } else {
+        console.error('Failed to start backend');
+      }
+    } catch (error) {
+      console.error('Error starting backend:', error);
+    } finally {
+      // Reset button state after 3 seconds
+      setTimeout(() => setStartingBackend(false), 3000);
+    }
   };
 
   const drawer = (
@@ -201,9 +236,34 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
                     </IconButton>
                   </Tooltip>
                 ))}
+                {/* Add System Status as 6th item */}
+                <Tooltip title="System Status">
+                  <IconButton
+                    color={location.pathname === '/system-status' ? 'primary' : 'inherit'}
+                    onClick={() => handleNavigation('/system-status')}
+                  >
+                    <SettingsApplications />
+                  </IconButton>
+                </Tooltip>
               </Box>
               <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
             </>
+          )}
+
+          {!connected && (
+            <Tooltip title="Start the backend server">
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                startIcon={<PlayArrow />}
+                onClick={handleStartBackend}
+                disabled={startingBackend}
+                sx={{ mr: 2 }}
+              >
+                {startingBackend ? 'Starting...' : 'Start Backend'}
+              </Button>
+            </Tooltip>
           )}
 
           <Badge

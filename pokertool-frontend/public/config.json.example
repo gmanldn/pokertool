@@ -1,0 +1,30 @@
+{
+  "_comment": "PokerTool Portable Configuration",
+  "_description": "Copy this file to config.json to customize API endpoints without rebuilding",
+  "_note": "This file is optional - the app will use sensible defaults if not present",
+
+  "apiUrl": "http://localhost:5001",
+  "wsUrl": "http://localhost:8000",
+  "apiPort": 5001,
+  "wsPort": 8000,
+
+  "_examples": {
+    "local_development": {
+      "apiUrl": "http://localhost:5001",
+      "wsUrl": "http://localhost:8000"
+    },
+    "custom_ip": {
+      "apiUrl": "http://192.168.1.100:5001",
+      "wsUrl": "http://192.168.1.100:8000"
+    },
+    "production": {
+      "apiUrl": "https://api.pokertool.app",
+      "wsUrl": "wss://ws.pokertool.app"
+    },
+    "auto_detect": {
+      "_note": "Leave apiUrl/wsUrl empty to auto-detect based on browser location",
+      "apiPort": 5001,
+      "wsPort": 8000
+    }
+  }
+}

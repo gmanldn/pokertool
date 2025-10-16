@@ -33,6 +33,7 @@ __status__ = 'Production'
 
 import os
 import logging
+import re
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
@@ -46,8 +47,9 @@ try:
     from PIL import Image, ImageEnhance, ImageFilter
     import easyocr
     OCR_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"OCR dependencies not available: {e}")
+except ImportError:
+    # EasyOCR is optional - pytesseract provides sufficient OCR capability
+    # Silently handle missing dependencies as they're checked before use
     cv2 = None
     pytesseract = None
     Image = None
@@ -331,8 +333,6 @@ class PokerOCR:
             text = text.replace(old, new)
         
         # Look for card patterns (rank + suit)
-        import re
-        
         # Pattern for cards like "AS", "KH", "10D", etc.
         card_pattern = r'([AKQJT2-9]|10)([SHDC])'
         matches = re.findall(card_pattern, text)
@@ -467,19 +467,133 @@ class PokerOCR:
                 # Include comma for European decimal format (0,01) and cent symbol
                 config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789.,€$£¢'
                 
+                tess_amount = 0.0
+                tess_text = ""
                 if pytesseract:
-                    text = pytesseract.image_to_string(processed, config=config)
-                    
-                    # Parse amount
-                    amount = self._parse_amount(text)
-                    if amount > 0:
-                        amounts[region.card_type] = amount
+                    tess_text = pytesseract.image_to_string(processed, config=config)
+                    tess_amount = self._parse_amount(tess_text)
+                
+                easy_amount = 0.0
+                easy_confidence = 0.0
+                easy_text = ""
+                if self.easyocr_reader:
+                    easy_amount, easy_confidence, easy_text = self._recognize_amount_easyocr(roi)
+                
+                chosen_amount = 0.0
+                chosen_source = None
+                
+                if tess_amount > 0:
+                    chosen_amount = tess_amount
+                    chosen_source = "tesseract"
+                
+                if easy_amount > 0:
+                    if chosen_source is None:
+                        chosen_amount = easy_amount
+                        chosen_source = "easyocr"
+                    else:
+                        if self._should_prefer_easyocr(
+                            tess_amount,
+                            easy_amount,
+                            tess_text,
+                            easy_text,
+                            easy_confidence
+                        ):
+                            chosen_amount = easy_amount
+                            chosen_source = "easyocr"
+                
+                if chosen_source:
+                    amounts[region.card_type] = chosen_amount
+                    logger.debug(
+                        "Amount recognized for %s: %.2f using %s (tess='%s', easy='%s', easy_conf=%.2f)",
+                        region.card_type,
+                        chosen_amount,
+                        chosen_source,
+                        tess_text.strip(),
+                        easy_text.strip(),
+                        easy_confidence
+                    )
                         
             except Exception as e:
                 logger.error(f"Amount recognition failed for {region.card_type}: {e}")
                 continue
         
         return amounts
+
+    def _should_prefer_easyocr(
+        self,
+        tess_amount: float,
+        easy_amount: float,
+        tess_text: str,
+        easy_text: str,
+        easy_confidence: float
+    ) -> bool:
+        """Decide if EasyOCR result should replace Tesseract."""
+        if easy_confidence >= 0.85 and abs(easy_amount - tess_amount) > 1e-3:
+            return True
+        
+        if tess_amount <= 0:
+            return easy_amount > 0
+        
+        # Prefer EasyOCR when Tesseract result looks suspicious (missing separator on large number)
+        if self._is_amount_suspicious(tess_amount, tess_text) and easy_amount > 0:
+            return True
+        
+        # If EasyOCR detects a small amount but Tesseract is orders of magnitude larger, prefer EasyOCR
+        if easy_amount > 0 and easy_amount <= 100 and tess_amount > easy_amount * 5:
+            return True
+        
+        # If EasyOCR captured decimal separators but Tesseract did not, prefer EasyOCR
+        tess_has_decimal = '.' in tess_text or ',' in tess_text
+        easy_has_decimal = '.' in easy_text or ',' in easy_text
+        if easy_has_decimal and not tess_has_decimal and easy_amount > 0:
+            return True
+        
+        return False
+
+    def _recognize_amount_easyocr(self, roi: np.ndarray) -> Tuple[float, float, str]:
+        """Recognize amount using EasyOCR."""
+        if not self.easyocr_reader:
+            return 0.0, 0.0, ""
+        
+        try:
+            processed = self.preprocess_image(roi, 'numbers')
+            if len(processed.shape) == 2:
+                processed = cv2.cvtColor(processed, cv2.COLOR_GRAY2RGB)
+            
+            results = self.easyocr_reader.readtext(processed, detail=1, paragraph=False)
+            
+            best_amount = 0.0
+            best_confidence = 0.0
+            best_text = ""
+            
+            for _, text, confidence in results:
+                amount = self._parse_amount(text)
+                if amount > 0 and confidence >= best_confidence:
+                    best_amount = amount
+                    best_confidence = confidence
+                    best_text = text
+            
+            return best_amount, best_confidence, best_text
+        
+        except Exception as e:
+            logger.error(f"EasyOCR amount recognition failed: {e}")
+            return 0.0, 0.0, ""
+
+    def _is_amount_suspicious(self, amount: float, raw_text: str) -> bool:
+        """Determine if an amount is likely misread by Tesseract."""
+        if amount <= 0:
+            return True
+        
+        raw_text = raw_text or ""
+        digits_only = re.sub(r'\D', '', raw_text)
+        
+        if amount >= 1000 and len(digits_only) <= 4:
+            return True
+        
+        if amount >= 100 and '.' not in raw_text and ',' not in raw_text:
+            return True
+        
+        return False
     
     def _parse_amount(self, text: str) -> float:
         """Parse text to extract monetary amount.
@@ -487,8 +601,6 @@ class PokerOCR:
         Supports both US format (1,234.56) and European format (1.234,56).
         Handles small stakes like 0.01, 0.02, 0,01, 0,02 etc.
         """
-        import re
-
         # Clean text - remove currency symbols
         text = text.strip().replace('$', '').replace('€', '').replace('£', '').replace('¢', '')
 

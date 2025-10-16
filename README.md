@@ -1,23 +1,23 @@
-# PokerTool v29.0.0 — Advanced Poker Assistant
+# PokerTool v83.0.0 — Advanced Poker Assistant (Web Edition)
 
 <!-- POKERTOOL-HEADER-START
 ---
 schema: pokerheader.v1
 project: pokertool
 file: README.md
-version: v28.0.0
-last_commit: '2025-09-23T12:55:52+01:00'
+version: v83.0.0
+last_commit: '2025-10-15T22:40:00+00:00'
 fixes:
 
-- Merged duplicate root readmes into a single canonical README.md
-- date: '2025-09-25'
+- Complete removal of tkinter/GUI dependencies
+- Transitioned to web-only architecture
+- date: '2025-10-15'
 
-  summary: Enhanced enterprise documentation and comprehensive unit tests added
-  summary: Enhanced enterprise documentation and comprehensive unit tests added
+  summary: Web-only architecture with React frontend
 ---
 POKERTOOL-HEADER-END -->
 
-PokerTool is a comprehensive, professional-grade poker analysis and automation toolkit. It features a robust GUI, advanced dependency management, multi-table support, and intelligent screen scraping capabilities.
+PokerTool is a comprehensive, professional-grade poker analysis and automation toolkit. It features a modern web interface, advanced dependency management, multi-table support, and intelligent screen scraping capabilities.
 
 **📊 Project Statistics:**
 
@@ -27,10 +27,10 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 - **300+ features** across core engine, GUI, ML, and analytics
 - **19 dependencies** automatically validated and managed
 
-**Latest Version:** v29.0.0 - Complete Dependency Validation & Robust GUI System  
-**Release Date:** January 2025  
+**Latest Version:** v83.0.0 - Web-Only Architecture with React Frontend  
+**Release Date:** October 2025  
 **Status:** Production Ready ✅  
-**Architecture:** Modular, enterprise-grade, fully tested
+**Architecture:** Web-based, modular, enterprise-grade, fully tested
 
 ---
 
@@ -51,46 +51,51 @@ PokerTool is a comprehensive, professional-grade poker analysis and automation t
 
 ## 🚀 Quick Start
 
-### **🏆 Primary Method: Comprehensive Setup (Recommended)**
+### **🏆 Primary Method: Web Interface Launch (Recommended)**
 
 ```bash
-# The ONLY recommended way to launch PokerTool
-python scripts/start.py
+# Launch the web interface
+python -m pokertool web
 
-# This single command handles everything:
-# • Validates all 19 dependencies
-# • Installs missing packages automatically
-# • Sets up virtual environment if needed
-# • Resolves import conflicts
-# • Launches robust multi-tab GUI
+# Or use the CLI directly
+pokertool web
+
+# This command:
+# • Validates all dependencies
+# • Starts the Flask web server
+# • Opens the web interface in your browser
+# • Provides real-time WebSocket updates
 ```
 
-### **🔧 Advanced Setup Options**
+### **🔧 Advanced Launch Options**
 
 ```bash
-# Virtual environment only
-python scripts/start.py --venv
+# Test basic functionality
+python -m pokertool test
 
-# Dependencies only (no GUI)
-python scripts/start.py --python
+# Run screen scraper (headless)
+python -m pokertool scrape
 
-# Full system validation
-python scripts/start.py --self-test
-
-# Launch GUI only (after setup)
-python scripts/start.py --launch
-```
-
-### **⚡ Quick Validation**
-
-```bash
 # Check all dependencies
 python src/pokertool/dependency_manager.py
 
-# Alternative launchers (for development only)
-python scripts/launch_gui.py  # Direct GUI (bypasses validation)
-python tests/test_gui.py      # Minimal test interface
+# Full system validation
+python scripts/start.py --self-test
 ```
+
+### **⚡ Accessing the Web Interface**
+
+Once launched, the web interface is available at:
+
+- **Local:** http://localhost:5000
+- **Network:** http://your-ip:5000 (for remote access)
+
+The interface provides:
+
+- Real-time poker advice and analysis
+- Session tracking and statistics
+- Opponent modeling and insights
+- Settings and configuration management
 
 ---
 
@@ -310,36 +315,89 @@ open assets/ui_baselines/baseline_manifest.json
 - **Testing**: 17,953 lines of test code ensuring reliability
 - **Documentation**: Extensive docstrings and API documentation
 
-### **Key Development Tools**
+### **Testing & Quality Assurance**
+
+#### **Primary Test Runner** (Recommended)
+
+Use the root `test.py` script for comprehensive testing with architecture validation:
 
 ```bash
-# 🧪 COMPREHENSIVE TEST SUITE (Recommended)
-python tests/test_everything.py              # Run ALL tests with detailed logging
-python tests/test_everything.py --verbose    # Verbose output with full details
-python tests/test_everything.py --quick      # Quick tests only (no system tests)
-python tests/test_everything.py --system     # System tests only
-python tests/test_everything.py --coverage   # Run with coverage report
+# Full test cycle with architecture graph update
+python test.py
 
-# Comprehensive system test
+# This automatically:
+# 1. Updates architecture graph database
+# 2. Runs architecture validation tests
+# 3. Runs all unit and integration tests
+
+# Quick tests only (skip slow tests)
+python test.py --quick
+
+# Skip graph database update
+python test.py --no-graph
+
+# Run with coverage report
+python test.py --coverage
+
+# Only architecture tests
+python test.py --architecture
+
+# Verbose output
+python test.py -v
+```
+
+#### **Architecture Graph Database**
+
+PokerTool includes a comprehensive graph database documenting:
+
+- **1,067 nodes**: 116 modules, 653 classes, 298 functions
+- **1,054 edges**: Dependencies, calls, inheritance relationships
+- **Complexity metrics**: Cyclomatic complexity for all code
+- **Circular dependency detection**: 7 cycles currently detected
+
+The graph is automatically updated before each test cycle and validated for codebase integrity.
+
+**Files:**
+
+- `tests/architecture/data/architecture.json` - Graph data (JSON)
+- `tests/architecture/data/architecture.graphml` - Visualization format
+- `GRAPHDATA.md` - Complete schema and usage documentation
+
+**Manual Operations:**
+
+```bash
+# Manually rebuild graph database
+python -m tests.architecture.graph_builder
+
+# Run architecture tests with graph update
+pytest tests/test_architecture_graph.py -v --update-graph
+
+# View graph statistics
+python -c "from tests.architecture.storage.json_store import ArchitectureGraphStore; \
+           from pathlib import Path; \
+           store = ArchitectureGraphStore(Path('tests/architecture/data')); \
+           store.load(); \
+           import json; \
+           print(json.dumps(store.get_statistics(), indent=2))"
+```
+
+#### **Alternative Test Runners**
+
+```bash
+# Legacy comprehensive test suite
+python tests/test_everything.py              # All tests with detailed logging
+python tests/test_everything.py --verbose    # Verbose output
+python tests/test_everything.py --quick      # Quick tests only
+python tests/test_everything.py --coverage   # With coverage report
+
+# System validation
 python scripts/start.py --self-test
 
 # Dependency validation
 python src/pokertool/dependency_manager.py
 
-# Legacy test runner
-python scripts/run_tests.py
-
-# Code quality checks (when available)
-python tools/poker_go.py --check-only
-```
-
-### **Comprehensive Test Suite**
-
-PokerTool includes a comprehensive test runner that executes all 69+ test files and provides detailed logging:
-
-```bash
-# Run all tests with detailed logging
-python tests/test_everything.py
+# Direct pytest
+pytest tests/ -v
 ```
 
 **Features:**

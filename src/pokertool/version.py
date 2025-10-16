@@ -49,14 +49,32 @@ VERSION_INFO = {
     'major': VERSION_MAJOR,
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
-    'release_date': '2025-10-15',
-    'release_name': 'Live Table Revolution',
+    'release_date': '2025-10-16',
+    'release_name': 'Smoke Test Suite',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '87.0.0',
+        'date': '2025-10-16',
+        'name': 'Smoke Test Suite',
+        'description': 'Comprehensive smoke test suite for fast end-to-end validation',
+        'highlights': [
+            'SMOKE TESTS: Complete end-to-end validation suite (38 tests, <2min runtime)',
+            'Test Coverage: System health, API, frontend, database, scraper, ML, WebSocket, auth',
+            'Standalone Runner: scripts/run_smoke_tests.py with service management',
+            'pytest Integration: Marked tests, custom markers, pytest.ini configuration',
+            'Test Infrastructure: Integrated with test_everything.py --smoke flag',
+            'Documentation: Comprehensive README with usage examples and best practices',
+            'CI/CD Ready: Exit codes, HTML reports, logging, non-destructive tests',
+            'Quick Validation: Fast feedback loop for development and deployment',
+            'Auto Service Start: Automatically starts/stops backend for testing',
+            'Impact: Confidence in deployment, faster development iteration',
+        ],
+    },
     {
         'version': '72.0.0',
         'date': '2025-10-15',

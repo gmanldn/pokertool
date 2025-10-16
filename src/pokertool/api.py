@@ -51,6 +51,7 @@ __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
 
+import os
 import json
 import time
 import hashlib
@@ -107,9 +108,23 @@ except ImportError:
 
 from .production_database import get_production_db, ProductionDatabase, DatabaseConfig, initialize_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
-from .threading import get_thread_pool, TaskPriority, get_poker_concurrency_manager
+from .thread_utils import get_thread_pool, TaskPriority
 from .error_handling import SecurityError, retry_on_failure
-from .hud_overlay import start_hud_overlay, stop_hud_overlay, update_hud_state, is_hud_running
+
+# Optional HUD overlay - not yet implemented
+try:
+    from .hud_overlay import start_hud_overlay, stop_hud_overlay, update_hud_state, is_hud_running
+except ImportError:
+    # Define dummy functions if HUD overlay not available
+    def start_hud_overlay(*args, **kwargs):
+        pass
+    def stop_hud_overlay(*args, **kwargs):
+        pass
+    def update_hud_state(*args, **kwargs):
+        pass
+    def is_hud_running():
+        return False
+
 from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
 from .gamification import GamificationEngine, Achievement, Badge, ProgressState
 from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle
@@ -172,7 +187,7 @@ if FASTAPI_AVAILABLE:
     class UserCreate(BaseModel):
         """User creation model."""
         username: str = Field(..., min_length=3, max_length=50)
-        email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
+        email: str = Field(..., pattern=r'^[^@]+@[^@]+\.[^@]+$')
         password: str = Field(..., min_length=8)
         role: UserRole = UserRole.USER
 
@@ -468,13 +483,116 @@ class ConnectionManager:
         if user_id:
             self.disconnect(connection_id, user_id)
 
+class DetectionWebSocketManager:
+    """Manages WebSocket connections for real-time detection events (no authentication)."""
+
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.connection_timestamps: Dict[str, float] = {}
+
+    async def connect(self, connection_id: str, websocket: WebSocket):
+        """Register a new detection WebSocket connection."""
+        self.active_connections[connection_id] = websocket
+        self.connection_timestamps[connection_id] = time.time()
+        logger.info(f'Detection WebSocket connected: {connection_id} (total: {len(self.active_connections)})')
+
+    async def disconnect(self, connection_id: str):
+        """Remove a detection WebSocket connection."""
+        if connection_id in self.active_connections:
+            del self.active_connections[connection_id]
+        if connection_id in self.connection_timestamps:
+            del self.connection_timestamps[connection_id]
+        logger.info(f'Detection WebSocket disconnected: {connection_id} (remaining: {len(self.active_connections)})')
+
+    async def broadcast_detection(self, event: Dict[str, Any]):
+        """Broadcast a detection event to all connected clients."""
+        if not self.active_connections:
+            return
+
+        disconnected = []
+        for connection_id, websocket in list(self.active_connections.items()):
+            try:
+                if WebSocketState and websocket.client_state == WebSocketState.CONNECTED:
+                    await websocket.send_json(event)
+                    self.connection_timestamps[connection_id] = time.time()
+                else:
+                    disconnected.append(connection_id)
+            except Exception as e:
+                logger.warning(f'Failed to send detection to {connection_id}: {e}')
+                disconnected.append(connection_id)
+
+        # Clean up disconnected connections
+        for connection_id in disconnected:
+            await self.disconnect(connection_id)
+
+# Global detection WebSocket manager
+_detection_ws_manager = None
+
+def get_detection_ws_manager() -> DetectionWebSocketManager:
+    """Get the global detection WebSocket manager."""
+    global _detection_ws_manager
+    if _detection_ws_manager is None:
+        _detection_ws_manager = DetectionWebSocketManager()
+    return _detection_ws_manager
+
+async def broadcast_detection_event(event_type: str, severity: str, message: str, data: Dict[str, Any] = None):
+    """
+    Broadcast a detection event to all connected WebSocket clients.
+
+    Args:
+        event_type: Type of detection (player, card, pot, action, system, error)
+        severity: Severity level (info, success, warning, error)
+        message: Human-readable message describing the detection
+        data: Optional additional data about the detection
+    """
+    manager = get_detection_ws_manager()
+    event = {
+        'type': event_type,
+        'severity': severity,
+        'message': message,
+        'timestamp': datetime.utcnow().isoformat(),
+        'data': data or {}
+    }
+    await manager.broadcast_detection(event)
+
 class APIServices:
     """Container for API services with dependency injection."""
-    
+
     def __init__(self):
         self.auth_service = AuthenticationService()
         self.connection_manager = ConnectionManager()
-        self.db = get_production_db()
+        try:
+            self.db = get_production_db()
+        except RuntimeError:
+            # Fall back to the SQLite-backed development database if the
+            # production database has not been initialised.
+            try:
+                from .database import (
+                    ProductionDatabase as FallbackDatabase,
+                    DatabaseConfig as FallbackConfig,
+                    DatabaseType,
+                )
+
+                fallback_path = os.getenv("POKER_DB_PATH", "poker_decisions.db")
+                fallback_config = FallbackConfig(
+                    db_type=DatabaseType.SQLITE,
+                    db_path=fallback_path,
+                )
+                self.db = FallbackDatabase(fallback_config)
+
+                # Update production_database module so subsequent lookups reuse the fallback.
+                try:
+                    from . import production_database as prod_db
+
+                    prod_db._production_db = self.db  # type: ignore[attr-defined]
+                    logger.info(
+                        "Using SQLite fallback production database at %s", fallback_path
+                    )
+                except Exception:
+                    pass
+            except Exception as exc:
+                logger.error("Failed to initialize fallback database: %s", exc)
+                raise
         self.thread_pool = get_thread_pool()
         self.analytics_dashboard = AnalyticsDashboard()
         self.gamification_engine = GamificationEngine()
@@ -555,8 +673,77 @@ class PokerToolAPI:
         
         self.app = FastAPI(
             title='PokerTool API',
-            description='RESTful API for poker analysis and screen scraping',
-            version='1.0.0'
+            description='''
+# PokerTool RESTful API
+
+Comprehensive poker analysis and real-time screen scraping API with advanced features.
+
+## Features
+
+- **Hand Analysis**: GTO-based poker hand analysis and recommendations
+- **Screen Scraping**: Real-time poker table detection and data extraction
+- **ML Analytics**: Opponent modeling, calibration metrics, and active learning
+- **System Health**: Real-time monitoring of all system components
+- **WebSockets**: Real-time updates for detections and health status
+- **Authentication**: JWT-based secure authentication with role-based access control
+- **Analytics**: Usage tracking, gamification, and community features
+
+## Authentication
+
+Most endpoints require Bearer token authentication. Obtain a token via `/auth/token` endpoint.
+
+Example:
+```
+Authorization: Bearer <your_token_here>
+```
+
+## Rate Limiting
+
+API endpoints are rate-limited to prevent abuse. Limits vary by endpoint and user role.
+
+## WebSocket Endpoints
+
+- `/ws/{user_id}?token={token}`: Authenticated WebSocket for user-specific updates
+- `/ws/detections`: Public WebSocket for real-time poker table detection events
+- `/ws/system-health`: System health monitoring updates
+
+## Security
+
+This API implements comprehensive security measures including:
+- HTTPS/WSS enforcement
+- Content Security Policy (CSP)
+- XSS protection
+- CSRF protection
+- Rate limiting
+- Input validation
+            ''',
+            version='1.0.0',
+            contact={
+                'name': 'PokerTool Development Team',
+                'email': 'support@pokertool.com'
+            },
+            license_info={
+                'name': 'MIT',
+                'url': 'https://opensource.org/licenses/MIT'
+            },
+            openapi_tags=[
+                {'name': 'health', 'description': 'Health check and system status'},
+                {'name': 'auth', 'description': 'Authentication and user management'},
+                {'name': 'analysis', 'description': 'Hand analysis and poker strategy'},
+                {'name': 'scraper', 'description': 'Screen scraping and table detection'},
+                {'name': 'system', 'description': 'System health monitoring'},
+                {'name': 'ml', 'description': 'Machine learning features and analytics'},
+                {'name': 'database', 'description': 'Hand history and statistics'},
+                {'name': 'analytics', 'description': 'Usage analytics and metrics'},
+                {'name': 'gamification', 'description': 'Achievements, badges, and leaderboards'},
+                {'name': 'community', 'description': 'Community features and social'},
+                {'name': 'admin', 'description': 'Administrative endpoints (admin only)'}
+            ],
+            swagger_ui_parameters={
+                'docExpansion': 'none',
+                'filter': True,
+                'syntaxHighlight.theme': 'monokai'
+            }
         )
 
         self._setup_middleware()
@@ -573,9 +760,28 @@ class PokerToolAPI:
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             # Startup
+            logger.info("Starting PokerTool API background tasks...")
+
+            # Initialize and start health checker
+            from pokertool.system_health_checker import get_health_checker, register_all_health_checks
+            health_checker = get_health_checker(check_interval=30)
+            register_all_health_checks(health_checker)
+            health_checker.start_periodic_checks()
+            logger.info("System health checker initialized and started")
+
+            # Start periodic cleanup task
             cleanup_task = asyncio.create_task(self._periodic_cleanup())
+
             yield
+
             # Shutdown
+            logger.info("Shutting down PokerTool API background tasks...")
+
+            # Stop health checker
+            await health_checker.stop_periodic_checks()
+            logger.info("System health checker stopped")
+
+            # Stop cleanup task
             cleanup_task.cancel()
             try:
                 await cleanup_task
@@ -600,8 +806,128 @@ class PokerToolAPI:
 
     def _setup_middleware(self):
         """Setup API middleware."""
+        # Set the limiter on app.state so SlowAPIMiddleware can access it
+        self.app.state.limiter = self.services.limiter
         self.app.add_middleware(SlowAPIMiddleware)
         self.app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+        # Add request logging and correlation ID middleware
+        @self.app.middleware("http")
+        async def add_correlation_id_and_logging(request, call_next):
+            """Add correlation ID for distributed tracing and log requests/responses."""
+            import uuid
+
+            # Generate or extract correlation ID
+            correlation_id = request.headers.get('X-Correlation-ID', str(uuid.uuid4()))
+            request.state.correlation_id = correlation_id
+
+            # Log incoming request
+            start_time = time.time()
+            logger.info(
+                f"Request started",
+                extra={
+                    'correlation_id': correlation_id,
+                    'method': request.method,
+                    'path': request.url.path,
+                    'client_ip': request.client.host if request.client else 'unknown',
+                    'user_agent': request.headers.get('user-agent', 'unknown')
+                }
+            )
+
+            # Process request
+            try:
+                response = await call_next(request)
+
+                # Calculate request duration
+                duration = time.time() - start_time
+
+                # Log response
+                logger.info(
+                    f"Request completed",
+                    extra={
+                        'correlation_id': correlation_id,
+                        'method': request.method,
+                        'path': request.url.path,
+                        'status_code': response.status_code,
+                        'duration_ms': round(duration * 1000, 2)
+                    }
+                )
+
+                # Add correlation ID to response headers
+                response.headers['X-Correlation-ID'] = correlation_id
+                response.headers['X-Response-Time'] = f"{round(duration * 1000, 2)}ms"
+
+                return response
+
+            except Exception as e:
+                # Log error with correlation ID
+                duration = time.time() - start_time
+                logger.error(
+                    f"Request failed: {str(e)}",
+                    extra={
+                        'correlation_id': correlation_id,
+                        'method': request.method,
+                        'path': request.url.path,
+                        'duration_ms': round(duration * 1000, 2),
+                        'error': str(e)
+                    },
+                    exc_info=True
+                )
+                raise
+
+        # Add security headers middleware
+        @self.app.middleware("http")
+        async def add_security_headers(request, call_next):
+            """Add comprehensive security headers to all responses."""
+            response = await call_next(request)
+
+            # Content Security Policy - Prevents XSS and other injection attacks
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self' ws: wss:; "
+                "frame-ancestors 'none'"
+            )
+
+            # HTTP Strict Transport Security - Enforces HTTPS
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+
+            # X-Frame-Options - Prevents clickjacking
+            response.headers["X-Frame-Options"] = "DENY"
+
+            # X-Content-Type-Options - Prevents MIME sniffing
+            response.headers["X-Content-Type-Options"] = "nosniff"
+
+            # X-XSS-Protection - Legacy XSS protection
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+
+            # Referrer-Policy - Controls referrer information
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+            # Permissions-Policy - Controls browser features
+            response.headers["Permissions-Policy"] = (
+                "geolocation=(), "
+                "microphone=(), "
+                "camera=(), "
+                "payment=(), "
+                "usb=(), "
+                "magnetometer=(), "
+                "gyroscope=(), "
+                "accelerometer=()"
+            )
+
+            return response
+
+        # Add response compression middleware
+        try:
+            from fastapi.middleware.gzip import GZipMiddleware
+            self.app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
+            logger.info("Response compression enabled (GZip)")
+        except ImportError:
+            logger.warning("GZip middleware not available")
 
         self.app.add_middleware(
             CORSMiddleware,
@@ -634,12 +960,300 @@ class PokerToolAPI:
             return user
 
         # Health check
-        @self.app.get('/health')
+        @self.app.get('/health', tags=['health'], summary='Health Check')
         async def health_check():
+            """
+            Basic health check endpoint to verify API is running.
+
+            Returns a simple status message with timestamp.
+            """
             return {'status': 'healthy', 'timestamp': datetime.utcnow()}
 
+        # System Health Monitoring Endpoints
+        @self.app.get('/api/system/health', tags=['system'], summary='Get System Health')
+        async def get_system_health():
+            """
+            Get comprehensive system health status for all features.
+            Returns health data for all monitored components.
+            """
+            from pokertool.system_health_checker import get_health_checker
+            checker = get_health_checker()
+            summary = checker.get_summary()
+            return summary
+
+        @self.app.get('/api/system/health/{category}')
+        async def get_category_health(category: str):
+            """
+            Get health status for a specific category.
+            Categories: backend, scraping, ml, gui, advanced
+            """
+            from pokertool.system_health_checker import get_health_checker
+            checker = get_health_checker()
+            summary = checker.get_summary()
+
+            if category not in summary['categories']:
+                raise HTTPException(status_code=404, detail=f'Category {category} not found')
+
+            return {
+                'timestamp': summary['timestamp'],
+                'category': category,
+                'data': summary['categories'][category]
+            }
+
+        @self.app.post('/api/system/health/refresh')
+        async def refresh_system_health(background_tasks: BackgroundTasks):
+            """
+            Trigger immediate execution of all health checks.
+            Returns job ID for tracking completion.
+            """
+            from pokertool.system_health_checker import get_health_checker
+
+            checker = get_health_checker()
+
+            # Run checks in background
+            async def run_checks():
+                await checker.run_all_checks()
+
+            background_tasks.add_task(run_checks)
+
+            job_id = f"health_check_{int(time.time() * 1000)}"
+            return {
+                'job_id': job_id,
+                'status': 'started',
+                'message': 'Health checks initiated',
+                'timestamp': datetime.utcnow().isoformat()
+            }
+
+        # Model Calibration Endpoints
+        @self.app.get('/api/ml/calibration/stats', tags=['ml'], summary='Get Calibration Stats')
+        async def get_calibration_stats():
+            """
+            Get current model calibration statistics.
+            Returns calibration metrics, drift status, and performance indicators.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+                stats = system.get_stats()
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': stats
+                }
+            except Exception as e:
+                logger.error(f"Error fetching calibration stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/calibration/metrics')
+        async def get_calibration_metrics():
+            """
+            Get detailed calibration metrics history.
+            Returns Brier score, log loss, and calibration error over time.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+
+                metrics = []
+                for metric in system.calibration_metrics_history:
+                    metrics.append({
+                        'timestamp': metric.timestamp,
+                        'brier_score': metric.brier_score,
+                        'log_loss': metric.log_loss,
+                        'calibration_error': metric.calibration_error,
+                        'num_predictions': metric.num_predictions
+                    })
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'metrics': metrics[-100:]  # Last 100 data points
+                }
+            except Exception as e:
+                logger.error(f"Error fetching calibration metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/calibration/drift')
+        async def get_drift_metrics():
+            """
+            Get model drift detection metrics.
+            Returns PSI, KL divergence, and drift status indicators.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+
+                drift_data = []
+                for drift in system.drift_metrics_history:
+                    drift_data.append({
+                        'timestamp': drift.timestamp,
+                        'psi': drift.psi,
+                        'kl_divergence': drift.kl_divergence,
+                        'distribution_shift': drift.distribution_shift,
+                        'status': drift.status.value,
+                        'alerts': drift.alerts
+                    })
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'drift_metrics': drift_data[-100:]  # Last 100 data points
+                }
+            except Exception as e:
+                logger.error(f"Error fetching drift metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        # Sequential Opponent Fusion endpoints
+        @self.app.get('/api/ml/opponent-fusion/stats')
+        async def get_opponent_fusion_stats(request):
+            """Get opponent fusion statistics"""
+            try:
+                # Import and initialize fusion system
+                import pokertool.sequential_opponent_fusion as fusion_module
+
+                # Return mock data structure - actual implementation would load from system
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': {
+                        'tracked_players': 0,
+                        'total_hands_analyzed': 0,
+                        'active_patterns': 0,
+                        'prediction_accuracy': 0.0,
+                        'temporal_window_size': 10,
+                        'status': 'active'
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Error fetching opponent fusion stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/opponent-fusion/players')
+        async def get_tracked_players(request):
+            """Get list of tracked players with their stats"""
+            try:
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'players': []
+                }
+            except Exception as e:
+                logger.error(f"Error fetching tracked players: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        # Active Learning endpoints
+        @self.app.get('/api/ml/active-learning/stats')
+        async def get_active_learning_stats(request):
+            """Get active learning statistics"""
+            try:
+                # Import active learning module
+                import pokertool.active_learning as al_module
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': {
+                        'pending_reviews': 0,
+                        'total_feedback': 0,
+                        'high_uncertainty_events': 0,
+                        'model_accuracy_improvement': 0.0,
+                        'last_retraining': None,
+                        'status': 'active'
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Error fetching active learning stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/active-learning/pending')
+        async def get_pending_feedback(request):
+            """Get pending feedback events"""
+            try:
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'events': []
+                }
+            except Exception as e:
+                logger.error(f"Error fetching pending feedback: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        # Scraping Accuracy endpoints
+        @self.app.get('/api/scraping/accuracy/stats')
+        async def get_scraping_accuracy_stats(request):
+            """Get scraping accuracy statistics"""
+            try:
+                # Import scraping accuracy module
+                import pokertool.scraping_accuracy_system as scraping_module
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': {
+                        'overall_accuracy': 0.0,
+                        'pot_corrections': 0,
+                        'card_recognition_accuracy': 0.0,
+                        'ocr_corrections': 0,
+                        'temporal_consensus_improvements': 0,
+                        'total_frames_processed': 0,
+                        'status': 'active'
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Error fetching scraping accuracy stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/scraping/accuracy/metrics')
+        async def get_scraping_accuracy_metrics(request):
+            """Get detailed scraping accuracy metrics"""
+            try:
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'metrics': []
+                }
+            except Exception as e:
+                logger.error(f"Error fetching scraping accuracy metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
         # Authentication endpoints
-        @self.app.post('/auth/token', response_model=Token)
+        @self.app.post('/auth/token', response_model=Token, tags=['auth'], summary='Login')
         @self.services.limiter.limit('10/minute')
         async def login(request, username: str, password: str):
             user = self.services.auth_service.get_user_by_credentials(username, password)
@@ -742,10 +1356,69 @@ class PokerToolAPI:
             result = stop_screen_scraper()
             return {'message': 'Scraper stopped', 'result': result}
 
+        @self.app.post('/api/start-backend')
+        async def start_backend():
+            """Start the backend server process."""
+            import subprocess
+            import sys
+            from pathlib import Path
+
+            try:
+                # Get the project root and venv python
+                project_root = Path(__file__).resolve().parent.parent.parent
+                venv_python = project_root / '.venv' / 'bin' / 'python'
+
+                if not venv_python.exists():
+                    venv_python = project_root / '.venv' / 'Scripts' / 'python.exe'
+
+                if not venv_python.exists():
+                    return {
+                        'success': False,
+                        'message': 'Virtual environment not found'
+                    }
+
+                # Check if backend is already running
+                import socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                result = sock.connect_ex(('localhost', 5001))
+                sock.close()
+
+                if result == 0:
+                    return {
+                        'success': True,
+                        'message': 'Backend already running'
+                    }
+
+                # Start the backend server
+                env = os.environ.copy()
+                env['PYTHONPATH'] = str(project_root / 'src')
+
+                subprocess.Popen(
+                    [str(venv_python), '-m', 'uvicorn', 'pokertool.api:create_app',
+                     '--host', '0.0.0.0', '--port', '5001', '--factory'],
+                    env=env,
+                    cwd=project_root,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True
+                )
+
+                return {
+                    'success': True,
+                    'message': 'Backend server starting...'
+                }
+
+            except Exception as e:
+                logger.error(f'Failed to start backend: {e}')
+                return {
+                    'success': False,
+                    'message': f'Failed to start backend: {str(e)}'
+                }
+
         # Database endpoints
         @self.app.get('/hands/recent')
         @self.services.limiter.limit('50/minute')
-        async def get_recent_hands(limit: int = 10, offset: int = 0, 
+        async def get_recent_hands(request, limit: int = 10, offset: int = 0,
                                   user: APIUser = Depends(get_current_user)):
             hands = self.services.db.get_recent_hands(limit=min(limit, 100), offset=offset)
             return {'hands': hands, 'count': len(hands)}
@@ -946,6 +1619,160 @@ class PokerToolAPI:
 
             finally:
                 self.services.connection_manager.disconnect(connection_id, user_id)
+
+        # Public WebSocket endpoint for detection events (no auth required)
+        @self.app.websocket('/ws/detections')
+        async def detections_websocket(websocket: WebSocket):
+            """
+            Public WebSocket endpoint for real-time poker table detection events.
+            No authentication required - sends detection log messages.
+            """
+            await websocket.accept()
+            connection_id = f'det_{int(time.time() * 1000)}'
+            detection_manager = get_detection_ws_manager()
+
+            try:
+                # Register connection
+                await detection_manager.connect(connection_id, websocket)
+
+                # Send welcome message
+                await websocket.send_json({
+                    'type': 'system',
+                    'severity': 'info',
+                    'message': 'Connected to detection stream - ready to receive poker table events',
+                    'timestamp': datetime.utcnow().isoformat(),
+                })
+
+                # Keep connection alive - detection events are broadcasted via broadcast_detection_event()
+                while True:
+                    try:
+                        # Keep alive - receive any client messages (like ping)
+                        data = await websocket.receive_text()
+
+                        # Send pong response
+                        if data == 'ping':
+                            await websocket.send_json({
+                                'type': 'pong',
+                                'timestamp': datetime.utcnow().isoformat(),
+                            })
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'Detection WebSocket error: {e}')
+                        break
+
+            except Exception as e:
+                logger.error(f'Detection WebSocket setup error: {e}')
+                try:
+                    await websocket.close()
+                except:
+                    pass
+            finally:
+                # Unregister connection
+                await detection_manager.disconnect(connection_id)
+
+        # System Health WebSocket endpoint
+        @self.app.websocket('/ws/system-health')
+        async def system_health_websocket(websocket: WebSocket):
+            """
+            WebSocket endpoint for real-time system health updates.
+            Pushes health status updates to connected clients whenever health checks complete.
+            """
+            await websocket.accept()
+            connection_id = f'health_{int(time.time() * 1000)}'
+
+            # Create a simple connection manager for health updates
+            if not hasattr(self, '_health_ws_connections'):
+                self._health_ws_connections = {}
+
+            try:
+                # Register connection
+                self._health_ws_connections[connection_id] = websocket
+
+                # Send welcome message
+                await websocket.send_json({
+                    'type': 'system',
+                    'message': 'Connected to system health monitor',
+                    'timestamp': datetime.utcnow().isoformat(),
+                })
+
+                # Send initial health status
+                from pokertool.system_health_checker import get_health_checker
+                checker = get_health_checker()
+                summary = checker.get_summary()
+                await websocket.send_json({
+                    'type': 'health_update',
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': summary
+                })
+
+                # Keep connection alive - health updates are broadcast via health checker callback
+                while True:
+                    try:
+                        # Keep alive - receive any client messages (like ping)
+                        data = await websocket.receive_text()
+
+                        # Send pong response
+                        if data == 'ping':
+                            await websocket.send_json({
+                                'type': 'pong',
+                                'timestamp': datetime.utcnow().isoformat(),
+                            })
+                        # Send current health status if requested
+                        elif data == 'refresh':
+                            summary = checker.get_summary()
+                            await websocket.send_json({
+                                'type': 'health_update',
+                                'timestamp': datetime.utcnow().isoformat(),
+                                'data': summary
+                            })
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'System health WebSocket error: {e}')
+                        break
+
+            except Exception as e:
+                logger.error(f'System health WebSocket setup error: {e}')
+                try:
+                    await websocket.close()
+                except:
+                    pass
+            finally:
+                # Unregister connection
+                if connection_id in self._health_ws_connections:
+                    del self._health_ws_connections[connection_id]
+
+        # Setup health checker broadcast callback
+        async def broadcast_health_update(health_data: Dict):
+            """Broadcast health updates to all connected WebSocket clients."""
+            if not hasattr(self, '_health_ws_connections'):
+                return
+
+            disconnected = []
+            for conn_id, ws in self._health_ws_connections.items():
+                try:
+                    if ws.client_state == WebSocketState.CONNECTED:
+                        await ws.send_json({
+                            'type': 'health_update',
+                            'timestamp': datetime.utcnow().isoformat(),
+                            'updates': [status.to_dict() for status in health_data.values()]
+                        })
+                except Exception as e:
+                    logger.error(f'Failed to broadcast health update to {conn_id}: {e}')
+                    disconnected.append(conn_id)
+
+            # Clean up disconnected clients
+            for conn_id in disconnected:
+                if conn_id in self._health_ws_connections:
+                    del self._health_ws_connections[conn_id]
+
+        # Set the broadcast callback on the health checker
+        from pokertool.system_health_checker import get_health_checker
+        health_checker = get_health_checker()
+        health_checker.set_broadcast_callback(broadcast_health_update)
 
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None

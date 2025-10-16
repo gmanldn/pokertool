@@ -309,15 +309,61 @@ class OCRPostProcessor:
     def clean_amount(self, text: str) -> str:
         """Clean currency amounts."""
         text = text.strip()
-        
-        # Apply correction rules
+
+        if not text:
+            return ''
+
+        # Apply correction rules (common OCR mistakes)
         for old, new in self.correction_rules.items():
             text = text.replace(old, new)
-        
-        # Remove non-numeric except decimal point
-        text = re.sub(r'[^\d.]', '', text)
-        
-        return text
+
+        # Remove currency symbols and whitespace that are irrelevant for parsing
+        text = re.sub(r'[£$€¢]', '', text)
+        text = text.replace(' ', '')
+
+        # Keep only digits and common separators so we can infer the format
+        candidate = re.sub(r'[^0-9.,-]', '', text)
+        if not candidate:
+            return ''
+
+        last_comma = candidate.rfind(',')
+        last_dot = candidate.rfind('.')
+
+        # Determine decimal separator:
+        # - If we have both separators and the comma is last -> European format (1.234,56)
+        # - If we only have commas -> treat comma as decimal (0,02)
+        # - Otherwise commas act as thousand separators
+        if last_comma != -1 and (last_dot == -1 or last_comma > last_dot):
+            normalized = candidate.replace('.', '')
+            normalized = normalized.replace(',', '.')
+        else:
+            normalized = candidate.replace(',', '')
+
+        # Consolidate multiple decimal points (keep first, drop the rest)
+        if normalized.count('.') > 1:
+            first_dot = normalized.find('.')
+            normalized = normalized[:first_dot + 1] + normalized[first_dot + 1:].replace('.', '')
+
+        # Handle leading/trailing separators introduced by OCR noise
+        if normalized.startswith('.'):
+            normalized = '0' + normalized
+        if normalized.endswith('.'):
+            normalized = normalized[:-1]
+
+        if not normalized or normalized in {'-', '-0'}:
+            return ''
+
+        try:
+            value = float(normalized)
+        except ValueError:
+            logger.debug(
+                "OCRPostProcessor.clean_amount failed to parse amount",
+                extra={'original_text': text, 'normalized_text': normalized}
+            )
+            return ''
+
+        # Normalize to two decimals which is typical for poker currencies
+        return f"{value:.2f}"
     
     def clean_card(self, text: str) -> Optional[str]:
         """Clean card text."""

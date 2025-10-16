@@ -1,0 +1,194 @@
+{
+  "version": "1.0.0",
+  "description": "PokerTool Architecture Graph Database Schema",
+  "node_types": {
+    "module": {
+      "description": "Python module (.py file)",
+      "required_attributes": ["id", "type", "path"],
+      "optional_attributes": [
+        "docstring",
+        "version",
+        "author",
+        "imports",
+        "exports",
+        "complexity",
+        "loc",
+        "dependencies"
+      ]
+    },
+    "class": {
+      "description": "Python class definition",
+      "required_attributes": ["id", "type", "module", "name"],
+      "optional_attributes": [
+        "docstring",
+        "bases",
+        "methods",
+        "class_attributes",
+        "instance_attributes",
+        "decorators",
+        "is_abstract",
+        "metaclass",
+        "complexity"
+      ]
+    },
+    "function": {
+      "description": "Python function or method",
+      "required_attributes": ["id", "type", "name", "module"],
+      "optional_attributes": [
+        "docstring",
+        "signature",
+        "parameters",
+        "return_type",
+        "decorators",
+        "is_async",
+        "is_generator",
+        "complexity",
+        "raises",
+        "calls"
+      ]
+    },
+    "component": {
+      "description": "React/TypeScript component",
+      "required_attributes": ["id", "type", "name", "path"],
+      "optional_attributes": [
+        "props_interface",
+        "hooks",
+        "imports",
+        "exports",
+        "state_variables",
+        "event_handlers",
+        "child_components"
+      ]
+    },
+    "endpoint": {
+      "description": "API endpoint (REST or WebSocket)",
+      "required_attributes": ["id", "type", "path", "method"],
+      "optional_attributes": [
+        "request_model",
+        "response_model",
+        "auth_required",
+        "rate_limit",
+        "dependencies",
+        "background_tasks",
+        "websocket",
+        "docstring"
+      ]
+    },
+    "model": {
+      "description": "Data model (Pydantic, dataclass, etc.)",
+      "required_attributes": ["id", "type", "name", "module"],
+      "optional_attributes": [
+        "fields",
+        "validators",
+        "config",
+        "relationships",
+        "base_classes",
+        "docstring"
+      ]
+    },
+    "test": {
+      "description": "Test function or test class",
+      "required_attributes": ["id", "type", "name", "path"],
+      "optional_attributes": [
+        "test_type",
+        "covers",
+        "fixtures",
+        "markers",
+        "parametrize",
+        "docstring"
+      ]
+    },
+    "config": {
+      "description": "Configuration file or setting",
+      "required_attributes": ["id", "type", "path"],
+      "optional_attributes": [
+        "format",
+        "schema",
+        "values",
+        "used_by"
+      ]
+    }
+  },
+  "edge_types": {
+    "imports": {
+      "description": "Module A imports Module B",
+      "from_types": ["module", "class", "function", "component"],
+      "to_types": ["module", "class", "function"],
+      "attributes": ["import_type", "symbols", "alias"]
+    },
+    "depends_on": {
+      "description": "Module A depends on Module B",
+      "from_types": ["module"],
+      "to_types": ["module"],
+      "attributes": ["strength", "coupling", "reason"]
+    },
+    "calls": {
+      "description": "Function A calls Function B",
+      "from_types": ["function"],
+      "to_types": ["function"],
+      "attributes": ["frequency", "context"]
+    },
+    "implements": {
+      "description": "Class A implements Interface/Protocol B",
+      "from_types": ["class"],
+      "to_types": ["class"],
+      "attributes": ["pattern", "methods"]
+    },
+    "extends": {
+      "description": "Class A extends Class B",
+      "from_types": ["class"],
+      "to_types": ["class"],
+      "attributes": ["inheritance_depth", "override_methods"]
+    },
+    "contains": {
+      "description": "Module/Class contains Function/Class",
+      "from_types": ["module", "class"],
+      "to_types": ["class", "function"],
+      "attributes": ["visibility"]
+    },
+    "tests": {
+      "description": "Test tests a component",
+      "from_types": ["test"],
+      "to_types": ["module", "class", "function", "endpoint"],
+      "attributes": ["coverage", "assertions"]
+    },
+    "consumes": {
+      "description": "Endpoint consumes Model",
+      "from_types": ["endpoint", "function"],
+      "to_types": ["model"],
+      "attributes": ["validation"]
+    },
+    "produces": {
+      "description": "Endpoint produces Model",
+      "from_types": ["endpoint", "function"],
+      "to_types": ["model"],
+      "attributes": ["serialization"]
+    },
+    "uses": {
+      "description": "Component uses another Component",
+      "from_types": ["component"],
+      "to_types": ["component"],
+      "attributes": ["composition", "props_passed"]
+    },
+    "configures": {
+      "description": "Config configures Module/Component",
+      "from_types": ["config"],
+      "to_types": ["module", "component", "endpoint"],
+      "attributes": ["settings"]
+    }
+  },
+  "complexity_metrics": {
+    "cyclomatic": "McCabe cyclomatic complexity",
+    "cognitive": "Cognitive complexity",
+    "maintainability": "Maintainability index (0-100)",
+    "loc": "Lines of code",
+    "coupling": "Afferent/Efferent coupling"
+  },
+  "validation_rules": {
+    "no_circular_imports": "Prevent circular import dependencies",
+    "max_complexity": 15,
+    "max_coupling": 10,
+    "require_tests": "All public functions must have tests",
+    "api_contract_match": "API models must match frontend expectations"
+  }
+}

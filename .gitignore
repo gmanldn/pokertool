@@ -46,6 +46,13 @@ Thumbs.db
 *~
 .*
 
+# VectorCode directory (third-party tool)
+VectorCode/
+.vectorcode/
+
+# Archive directory (old backups and cruft)
+archive/
+
 # Project-specific legacy
 poker.db
 pokertool.db

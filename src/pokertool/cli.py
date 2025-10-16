@@ -47,72 +47,44 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def _is_tk_ready() -> Tuple[bool, Optional[str]]:
-    """Check whether Tk can be imported and the GUI toolkit is available."""
-
-    try:
-        import tkinter
-    except Exception as exc:  # pragma: no cover - platform dependent
-        return False, str(exc)
-
-    try:
-        # Test if we can actually create a Tk root window (more reliable than Tcl package check)
-        root = tkinter.Tk()
-        root.withdraw()  # Hide the test window
-        root.destroy()
-        return True, None
-    except Exception as exc:
-        return False, str(exc)
 
 def main(argv=None):
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(prog='pokertool', description='PokerTool CLI')
     sub = parser.add_subparsers(dest='cmd')
 
-    sub.add_parser('gui', help='Launch the Enhanced Tkinter GUI')
+    sub.add_parser('web', help='Launch the web interface (default)')
     sub.add_parser('scrape', help='Run the screen scraper (headless)')
     sub.add_parser('test', help='Run basic functionality tests')
 
     args = parser.parse_args(argv)
 
-    if args.cmd in (None, 'gui'):
-        gui_ready, tk_reason = _is_tk_ready()
-        if not gui_ready:
-            logger.error(f'GUI not available: {tk_reason}')
-            logger.info('Tkinter runtime is not ready on this system.')
-            logger.info('On macOS, install with: brew install python-tk')
-            logger.info('On Linux, ensure tk/tcl packages are installed.')
-            logger.info('Falling back to test mode...')
-            return run_test_mode()
-        
-        # Import ONLY the enhanced GUI (no fallback)
-        logger.info('🚀 Launching Enhanced PokerTool GUI...')
+    if args.cmd in (None, 'web'):
+        logger.info('🚀 Launching PokerTool Web Interface...')
         try:
             # Try relative import first, then absolute import as fallback
             try:
-                from . import enhanced_gui
+                from . import api
             except ImportError:
-                import pokertool.enhanced_gui as enhanced_gui
+                import pokertool.api as api
             
-            # Run the enhanced GUI
-            if hasattr(enhanced_gui, 'main'):
-                return enhanced_gui.main()
-            elif hasattr(enhanced_gui, 'run'):
-                return enhanced_gui.run()
+            # Run the web server
+            if hasattr(api, 'main'):
+                return api.main()
+            elif hasattr(api, 'run'):
+                return api.run()
             else:
-                # Create and run IntegratedPokerAssistant directly
-                logger.info('Starting IntegratedPokerAssistant...')
-                app = enhanced_gui.IntegratedPokerAssistant()
-                app.mainloop()
-                return 0
+                logger.error('Web API module does not have a main() or run() function')
+                logger.info('The web interface needs to be properly configured.')
+                return 1
                 
         except ImportError as e:
-            logger.error(f'Enhanced GUI module not found: {e}')
-            logger.error('The enhanced GUI is required. Please ensure all dependencies are installed.')
-            logger.info('Run: python start.py --all')
+            logger.error(f'Web API module not found: {e}')
+            logger.error('Please ensure all dependencies are installed.')
+            logger.info('Run: pip install -r requirements.txt')
             return 1
         except Exception as e:
-            logger.error(f'Enhanced GUI startup failed: {e}')
+            logger.error(f'Web server startup failed: {e}')
             import traceback
             traceback.print_exc()
             return 1
@@ -168,7 +140,7 @@ def run_test_mode():
         logger.error(f'❌ Poker analysis failed: {e}')
     
     logger.info('=' * 40)
-    logger.info('Test mode completed. Use "pokertool gui" to launch Enhanced GUI (if tkinter is available).')
+    logger.info('Test mode completed. Use "pokertool web" to launch the web interface.')
     logger.info('Use "pokertool scrape" for headless screen scraping functionality.')
     
     return 0
