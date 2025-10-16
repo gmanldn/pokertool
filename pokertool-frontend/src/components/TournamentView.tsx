@@ -280,7 +280,7 @@ export const TournamentView: React.FC = () => {
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: { parsed: { y: number } }) => {
             return `${bankroll.currency} ${context.parsed.y.toFixed(2)}`;
           },
         },

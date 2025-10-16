@@ -142,7 +142,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
     ],
   };
 
-  const StatCard = ({ title, value, icon, trend, color }: any) => (
+  interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+    trend?: number;
+    color?: string;
+  }
+
+  const StatCard = ({ title, value, icon, trend, color }: StatCardProps) => (
     <Card
       sx={{
         height: '100%',

@@ -155,7 +155,7 @@ export const BankrollManager: React.FC = () => {
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: { parsed: { y: number } }) => {
             return `${bankroll.currency} ${context.parsed.y.toFixed(2)}`;
           },
         },
@@ -165,7 +165,7 @@ export const BankrollManager: React.FC = () => {
       y: {
         beginAtZero: false,
         ticks: {
-          callback: (value: any) => `${bankroll.currency} ${value}`,
+          callback: (value: string | number) => `${bankroll.currency} ${value}`,
         },
       },
       x: {

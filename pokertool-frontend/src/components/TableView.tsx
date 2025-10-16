@@ -43,9 +43,10 @@ import { EquityCalculator } from './EquityCalculator';
 import { BetSizingRecommendations } from './BetSizingRecommendations';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { buildWsUrl } from '../config/api';
+import { SendMessageFunction } from '../types/common';
 
 interface TableViewProps {
-  sendMessage: (message: any) => void;
+  sendMessage: SendMessageFunction;
 }
 
 interface TableData {
