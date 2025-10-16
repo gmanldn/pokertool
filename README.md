@@ -315,36 +315,89 @@ open assets/ui_baselines/baseline_manifest.json
 - **Testing**: 17,953 lines of test code ensuring reliability
 - **Documentation**: Extensive docstrings and API documentation
 
-### **Key Development Tools**
+### **Testing & Quality Assurance**
+
+#### **Primary Test Runner** (Recommended)
+
+Use the root `test.py` script for comprehensive testing with architecture validation:
 
 ```bash
-# 🧪 COMPREHENSIVE TEST SUITE (Recommended)
-python tests/test_everything.py              # Run ALL tests with detailed logging
-python tests/test_everything.py --verbose    # Verbose output with full details
-python tests/test_everything.py --quick      # Quick tests only (no system tests)
-python tests/test_everything.py --system     # System tests only
-python tests/test_everything.py --coverage   # Run with coverage report
+# Full test cycle with architecture graph update
+python test.py
 
-# Comprehensive system test
+# This automatically:
+# 1. Updates architecture graph database
+# 2. Runs architecture validation tests
+# 3. Runs all unit and integration tests
+
+# Quick tests only (skip slow tests)
+python test.py --quick
+
+# Skip graph database update
+python test.py --no-graph
+
+# Run with coverage report
+python test.py --coverage
+
+# Only architecture tests
+python test.py --architecture
+
+# Verbose output
+python test.py -v
+```
+
+#### **Architecture Graph Database**
+
+PokerTool includes a comprehensive graph database documenting:
+
+- **1,067 nodes**: 116 modules, 653 classes, 298 functions
+- **1,054 edges**: Dependencies, calls, inheritance relationships
+- **Complexity metrics**: Cyclomatic complexity for all code
+- **Circular dependency detection**: 7 cycles currently detected
+
+The graph is automatically updated before each test cycle and validated for codebase integrity.
+
+**Files:**
+
+- `tests/architecture/data/architecture.json` - Graph data (JSON)
+- `tests/architecture/data/architecture.graphml` - Visualization format
+- `GRAPHDATA.md` - Complete schema and usage documentation
+
+**Manual Operations:**
+
+```bash
+# Manually rebuild graph database
+python -m tests.architecture.graph_builder
+
+# Run architecture tests with graph update
+pytest tests/test_architecture_graph.py -v --update-graph
+
+# View graph statistics
+python -c "from tests.architecture.storage.json_store import ArchitectureGraphStore; \
+           from pathlib import Path; \
+           store = ArchitectureGraphStore(Path('tests/architecture/data')); \
+           store.load(); \
+           import json; \
+           print(json.dumps(store.get_statistics(), indent=2))"
+```
+
+#### **Alternative Test Runners**
+
+```bash
+# Legacy comprehensive test suite
+python tests/test_everything.py              # All tests with detailed logging
+python tests/test_everything.py --verbose    # Verbose output
+python tests/test_everything.py --quick      # Quick tests only
+python tests/test_everything.py --coverage   # With coverage report
+
+# System validation
 python scripts/start.py --self-test
 
 # Dependency validation
 python src/pokertool/dependency_manager.py
 
-# Legacy test runner
-python scripts/run_tests.py
-
-# Code quality checks (when available)
-python tools/poker_go.py --check-only
-```
-
-### **Comprehensive Test Suite**
-
-PokerTool includes a comprehensive test runner that executes all 69+ test files and provides detailed logging:
-
-```bash
-# Run all tests with detailed logging
-python tests/test_everything.py
+# Direct pytest
+pytest tests/ -v
 ```
 
 **Features:**
