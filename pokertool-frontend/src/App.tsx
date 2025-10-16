@@ -26,6 +26,7 @@ import { Settings } from './components/Settings';
 import { HUDOverlay } from './components/HUDOverlay';
 import { GTOTrainer } from './components/GTOTrainer';
 import { HandHistory } from './components/HandHistory';
+import { SystemStatus } from './components/SystemStatus';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ThemeContext } from './contexts/ThemeContext';
 import { store, useAppSelector, RootState } from './store';
@@ -126,6 +127,7 @@ function AppContent() {
                 <Route path="/gto" element={<GTOTrainer />} />
                 <Route path="/history" element={<HandHistory />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/system-status" element={<SystemStatus />} />
               </Routes>
             </main>
             <MobileBottomNav />
