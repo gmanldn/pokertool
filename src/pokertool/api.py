@@ -832,6 +832,97 @@ class PokerToolAPI:
                 'timestamp': datetime.utcnow().isoformat()
             }
 
+        # Model Calibration Endpoints
+        @self.app.get('/api/ml/calibration/stats')
+        async def get_calibration_stats():
+            """
+            Get current model calibration statistics.
+            Returns calibration metrics, drift status, and performance indicators.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+                stats = system.get_stats()
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'data': stats
+                }
+            except Exception as e:
+                logger.error(f"Error fetching calibration stats: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/calibration/metrics')
+        async def get_calibration_metrics():
+            """
+            Get detailed calibration metrics history.
+            Returns Brier score, log loss, and calibration error over time.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+
+                metrics = []
+                for metric in system.calibration_metrics_history:
+                    metrics.append({
+                        'timestamp': metric.timestamp,
+                        'brier_score': metric.brier_score,
+                        'log_loss': metric.log_loss,
+                        'calibration_error': metric.calibration_error,
+                        'num_predictions': metric.num_predictions
+                    })
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'metrics': metrics[-100:]  # Last 100 data points
+                }
+            except Exception as e:
+                logger.error(f"Error fetching calibration metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+        @self.app.get('/api/ml/calibration/drift')
+        async def get_drift_metrics():
+            """
+            Get model drift detection metrics.
+            Returns PSI, KL divergence, and drift status indicators.
+            """
+            try:
+                from pokertool.model_calibration import get_calibration_system
+                system = get_calibration_system()
+
+                drift_data = []
+                for drift in system.drift_metrics_history:
+                    drift_data.append({
+                        'timestamp': drift.timestamp,
+                        'psi': drift.psi,
+                        'kl_divergence': drift.kl_divergence,
+                        'distribution_shift': drift.distribution_shift,
+                        'status': drift.status.value,
+                        'alerts': drift.alerts
+                    })
+
+                return {
+                    'success': True,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'drift_metrics': drift_data[-100:]  # Last 100 data points
+                }
+            except Exception as e:
+                logger.error(f"Error fetching drift metrics: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
         # Authentication endpoints
         @self.app.post('/auth/token', response_model=Token)
         @self.services.limiter.limit('10/minute')

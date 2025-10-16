@@ -27,11 +27,13 @@ import { HUDOverlay } from './components/HUDOverlay';
 import { GTOTrainer } from './components/GTOTrainer';
 import { HandHistory } from './components/HandHistory';
 import { SystemStatus } from './components/SystemStatus';
+import { ModelCalibration } from './components/ModelCalibration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ThemeContext } from './contexts/ThemeContext';
 import { store, useAppSelector, RootState } from './store';
 import { setMobileLayout, SettingsState } from './store/slices/settingsSlice';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { buildWsUrl } from './config/api';
 import './styles/App.css';
 import './styles/mobile.css';
 
@@ -97,7 +99,7 @@ function AppContent() {
   );
 
   // WebSocket connection for real-time updates
-  const { connected, messages, sendMessage } = useWebSocket('http://localhost:8000');
+  const { connected, messages, sendMessage } = useWebSocket(buildWsUrl());
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
@@ -127,6 +129,7 @@ function AppContent() {
                 <Route path="/gto" element={<GTOTrainer />} />
                 <Route path="/history" element={<HandHistory />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/model-calibration" element={<ModelCalibration />} />
                 <Route path="/system-status" element={<SystemStatus />} />
               </Routes>
             </main>
