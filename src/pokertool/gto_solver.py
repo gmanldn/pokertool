@@ -52,7 +52,7 @@ except ImportError:
     from pokertool.core import Card, Rank, Suit, parse_card
 
 try:
-    from .threading import get_thread_pool, TaskPriority, cpu_intensive
+    from .thread_utils import get_thread_pool, TaskPriority, cpu_intensive
 except ImportError:
     from pokertool.concurrency import get_thread_pool, TaskPriority, cpu_intensive
 

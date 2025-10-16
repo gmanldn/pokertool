@@ -118,7 +118,7 @@ from .storage import get_secure_db
 from .error_handling import retry_on_failure
 from .core import analyse_hand, parse_card
 from .concurrency import get_thread_pool
-from .threading import TaskPriority
+from .thread_utils import TaskPriority
 
 logger = logging.getLogger(__name__)
 

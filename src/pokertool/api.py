@@ -107,7 +107,7 @@ except ImportError:
 
 from .production_database import get_production_db, ProductionDatabase, DatabaseConfig, initialize_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
-from .threading import get_thread_pool, TaskPriority, get_poker_concurrency_manager
+from .thread_utils import get_thread_pool, TaskPriority, get_poker_concurrency_manager
 from .error_handling import SecurityError, retry_on_failure
 from .hud_overlay import start_hud_overlay, stop_hud_overlay, update_hud_state, is_hud_running
 from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
