@@ -53,44 +53,9 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
     {
       timestamp: new Date().toISOString(),
       type: 'system',
-      severity: 'success',
-      message: 'Detection system initialized',
-      data: { version: '28.0.0' },
-    },
-    {
-      timestamp: new Date().toISOString(),
-      type: 'player',
       severity: 'info',
-      message: 'Player 1 detected at seat 1 - Stack: $10000',
-      data: { seat: 1, name: 'Player 1', chips: 10000 },
-    },
-    {
-      timestamp: new Date().toISOString(),
-      type: 'player',
-      severity: 'info',
-      message: 'Player 2 detected at seat 2 - Stack: $8500',
-      data: { seat: 2, name: 'Player 2', chips: 8500 },
-    },
-    {
-      timestamp: new Date().toISOString(),
-      type: 'card',
-      severity: 'success',
-      message: 'Community cards detected: As Kh 10d',
-      data: { cards: ['As', 'Kh', '10d'] },
-    },
-    {
-      timestamp: new Date().toISOString(),
-      type: 'pot',
-      severity: 'info',
-      message: 'Pot updated: $250',
-      data: { pot: 250 },
-    },
-    {
-      timestamp: new Date().toISOString(),
-      type: 'action',
-      severity: 'info',
-      message: 'Player 1 action detected: CHECK',
-      data: { player: 'Player 1', action: 'CHECK' },
+      message: 'Detection system ready - waiting for poker table...',
+      data: { version: '84.0.0' },
     },
   ]);
 
@@ -112,50 +77,47 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
     }
   }, [logs, autoScroll]);
 
-  // Simulate incoming detection events
+  // Connect to WebSocket for real detection events
   useEffect(() => {
     if (isPaused) return;
 
-    const interval = setInterval(() => {
-      const eventTypes: Array<LogEntry['type']> = ['player', 'card', 'pot', 'action'];
-      const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+    const ws = new WebSocket('ws://localhost:5001/ws/detections');
 
-      const sampleMessages: Record<string, string[]> = {
-        player: [
-          'Player stack change detected: Player 2 - $8200',
-          'Player 3 folded',
-          'Player 4 raised to $100',
-        ],
-        card: [
-          'Turn card detected: Qc',
-          'River card detected: 5h',
-          'New hand starting - cards cleared',
-        ],
-        pot: [
-          'Pot increased: $500',
-          'Pot decreased: $0 (hand ended)',
-          'Side pot created: $150',
-        ],
-        action: [
-          'Player 2 BET $50',
-          'Player 3 FOLD',
-          'Player 4 CALL $50',
-          'Player 1 RAISE to $150',
-        ],
-      };
+    ws.onopen = () => {
+      console.log('Detection WebSocket connected');
+    };
 
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
       const newLog: LogEntry = {
-        timestamp: new Date().toISOString(),
-        type: randomType,
-        severity: Math.random() > 0.9 ? 'warning' : 'info',
-        message: sampleMessages[randomType][Math.floor(Math.random() * sampleMessages[randomType].length)],
-        data: {},
+        timestamp: data.timestamp || new Date().toISOString(),
+        type: data.type || 'system',
+        severity: data.severity || 'info',
+        message: data.message,
+        data: data.data || {},
       };
-
       setLogs((prev) => [...prev, newLog].slice(-100)); // Keep last 100 entries
-    }, 2000);
+    };
 
-    return () => clearInterval(interval);
+    ws.onerror = (error) => {
+      console.error('Detection WebSocket error:', error);
+      setLogs((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toISOString(),
+          type: 'error',
+          severity: 'error',
+          message: 'Failed to connect to detection stream - is the backend running?',
+          data: {},
+        },
+      ].slice(-100));
+    };
+
+    ws.onclose = () => {
+      console.log('Detection WebSocket closed');
+    };
+
+    return () => ws.close();
   }, [isPaused]);
 
   const handleClearLogs = () => {

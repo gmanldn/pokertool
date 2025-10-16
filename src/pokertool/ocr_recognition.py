@@ -47,8 +47,9 @@ try:
     from PIL import Image, ImageEnhance, ImageFilter
     import easyocr
     OCR_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"OCR dependencies not available: {e}")
+except ImportError:
+    # EasyOCR is optional - pytesseract provides sufficient OCR capability
+    # Silently handle missing dependencies as they're checked before use
     cv2 = None
     pytesseract = None
     Image = None

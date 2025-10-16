@@ -51,6 +51,7 @@ __license__ = 'MIT'
 __maintainer__ = 'George Ridout'
 __status__ = 'Production'
 
+import os
 import json
 import time
 import hashlib
@@ -107,9 +108,23 @@ except ImportError:
 
 from .production_database import get_production_db, ProductionDatabase, DatabaseConfig, initialize_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
-from .thread_utils import get_thread_pool, TaskPriority, get_poker_concurrency_manager
+from .thread_utils import get_thread_pool, TaskPriority
 from .error_handling import SecurityError, retry_on_failure
-from .hud_overlay import start_hud_overlay, stop_hud_overlay, update_hud_state, is_hud_running
+
+# Optional HUD overlay - not yet implemented
+try:
+    from .hud_overlay import start_hud_overlay, stop_hud_overlay, update_hud_state, is_hud_running
+except ImportError:
+    # Define dummy functions if HUD overlay not available
+    def start_hud_overlay(*args, **kwargs):
+        pass
+    def stop_hud_overlay(*args, **kwargs):
+        pass
+    def update_hud_state(*args, **kwargs):
+        pass
+    def is_hud_running():
+        return False
+
 from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
 from .gamification import GamificationEngine, Achievement, Badge, ProgressState
 from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle
@@ -172,7 +187,7 @@ if FASTAPI_AVAILABLE:
     class UserCreate(BaseModel):
         """User creation model."""
         username: str = Field(..., min_length=3, max_length=50)
-        email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
+        email: str = Field(..., pattern=r'^[^@]+@[^@]+\.[^@]+$')
         password: str = Field(..., min_length=8)
         role: UserRole = UserRole.USER
 
@@ -468,9 +483,81 @@ class ConnectionManager:
         if user_id:
             self.disconnect(connection_id, user_id)
 
+class DetectionWebSocketManager:
+    """Manages WebSocket connections for real-time detection events (no authentication)."""
+
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.connection_timestamps: Dict[str, float] = {}
+
+    async def connect(self, connection_id: str, websocket: WebSocket):
+        """Register a new detection WebSocket connection."""
+        self.active_connections[connection_id] = websocket
+        self.connection_timestamps[connection_id] = time.time()
+        logger.info(f'Detection WebSocket connected: {connection_id} (total: {len(self.active_connections)})')
+
+    async def disconnect(self, connection_id: str):
+        """Remove a detection WebSocket connection."""
+        if connection_id in self.active_connections:
+            del self.active_connections[connection_id]
+        if connection_id in self.connection_timestamps:
+            del self.connection_timestamps[connection_id]
+        logger.info(f'Detection WebSocket disconnected: {connection_id} (remaining: {len(self.active_connections)})')
+
+    async def broadcast_detection(self, event: Dict[str, Any]):
+        """Broadcast a detection event to all connected clients."""
+        if not self.active_connections:
+            return
+
+        disconnected = []
+        for connection_id, websocket in list(self.active_connections.items()):
+            try:
+                if WebSocketState and websocket.client_state == WebSocketState.CONNECTED:
+                    await websocket.send_json(event)
+                    self.connection_timestamps[connection_id] = time.time()
+                else:
+                    disconnected.append(connection_id)
+            except Exception as e:
+                logger.warning(f'Failed to send detection to {connection_id}: {e}')
+                disconnected.append(connection_id)
+
+        # Clean up disconnected connections
+        for connection_id in disconnected:
+            await self.disconnect(connection_id)
+
+# Global detection WebSocket manager
+_detection_ws_manager = None
+
+def get_detection_ws_manager() -> DetectionWebSocketManager:
+    """Get the global detection WebSocket manager."""
+    global _detection_ws_manager
+    if _detection_ws_manager is None:
+        _detection_ws_manager = DetectionWebSocketManager()
+    return _detection_ws_manager
+
+async def broadcast_detection_event(event_type: str, severity: str, message: str, data: Dict[str, Any] = None):
+    """
+    Broadcast a detection event to all connected WebSocket clients.
+
+    Args:
+        event_type: Type of detection (player, card, pot, action, system, error)
+        severity: Severity level (info, success, warning, error)
+        message: Human-readable message describing the detection
+        data: Optional additional data about the detection
+    """
+    manager = get_detection_ws_manager()
+    event = {
+        'type': event_type,
+        'severity': severity,
+        'message': message,
+        'timestamp': datetime.utcnow().isoformat(),
+        'data': data or {}
+    }
+    await manager.broadcast_detection(event)
+
 class APIServices:
     """Container for API services with dependency injection."""
-    
+
     def __init__(self):
         self.auth_service = AuthenticationService()
         self.connection_manager = ConnectionManager()
@@ -977,6 +1064,58 @@ class PokerToolAPI:
 
             finally:
                 self.services.connection_manager.disconnect(connection_id, user_id)
+
+        # Public WebSocket endpoint for detection events (no auth required)
+        @self.app.websocket('/ws/detections')
+        async def detections_websocket(websocket: WebSocket):
+            """
+            Public WebSocket endpoint for real-time poker table detection events.
+            No authentication required - sends detection log messages.
+            """
+            await websocket.accept()
+            connection_id = f'det_{int(time.time() * 1000)}'
+            detection_manager = get_detection_ws_manager()
+
+            try:
+                # Register connection
+                await detection_manager.connect(connection_id, websocket)
+
+                # Send welcome message
+                await websocket.send_json({
+                    'type': 'system',
+                    'severity': 'info',
+                    'message': 'Connected to detection stream - ready to receive poker table events',
+                    'timestamp': datetime.utcnow().isoformat(),
+                })
+
+                # Keep connection alive - detection events are broadcasted via broadcast_detection_event()
+                while True:
+                    try:
+                        # Keep alive - receive any client messages (like ping)
+                        data = await websocket.receive_text()
+
+                        # Send pong response
+                        if data == 'ping':
+                            await websocket.send_json({
+                                'type': 'pong',
+                                'timestamp': datetime.utcnow().isoformat(),
+                            })
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'Detection WebSocket error: {e}')
+                        break
+
+            except Exception as e:
+                logger.error(f'Detection WebSocket setup error: {e}')
+                try:
+                    await websocket.close()
+                except:
+                    pass
+            finally:
+                # Unregister connection
+                await detection_manager.disconnect(connection_id)
 
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None

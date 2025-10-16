@@ -39,16 +39,19 @@
 # ---
 # POKERTOOL-HEADER-END
 
-PokerTool One-Click Launcher - v68.0.0
-======================================
+PokerTool Web Application Launcher - v84.0.0
+=============================================
 
-This script sets up everything and launches the Enhanced GUI in one command.
+This script sets up everything and launches the Web Application (Backend API + React Frontend).
+
+Web-Only Architecture - No tkinter/GUI windows.
 
 Usage:
-    python start.py              # One-click: Setup + launch enhanced GUI
-    python start.py --all        # Same as above
-    python start.py --self-test  # Run comprehensive tests
-    python start.py --gui        # Launch enhanced GUI only
+    python scripts/start.py              # Launch web application (default)
+    python scripts/start.py --setup-only # Install dependencies only
+    python scripts/start.py --self-test  # Run comprehensive tests
+
+After launching, access the app at: http://localhost:3000
 """
 from __future__ import annotations
 from pathlib import Path
@@ -71,7 +74,7 @@ except ImportError:
     format_version = lambda **kwargs: f"v{__version__}"
 
 # Constants
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent  # Go up from scripts/ to project root
 SRC_DIR = ROOT / 'src'
 VENV_DIR = ROOT / '.venv'
 
@@ -258,8 +261,8 @@ def cleanup_old_processes():
         log(f"⚠️  Cleanup warning: {e}")
         pass
 
-def launch_enhanced_gui() -> int:
-    """Launch the Enhanced GUI v36.0.0."""
+def launch_web_app() -> int:
+    """Launch the web-only application: Backend API + React frontend."""
     venv_python = get_venv_python()
 
     # Clean up any old processes first
@@ -270,99 +273,101 @@ def launch_enhanced_gui() -> int:
     env['PYTHONPATH'] = str(SRC_DIR)
 
     log("=" * 70)
-    log(f"🎰 LAUNCHING POKERTOOL ENHANCED GUI {format_version(include_name=True)}")
+    log(f"🎰 LAUNCHING POKERTOOL WEB APPLICATION {format_version(include_name=True)}")
     log("=" * 70)
     log("")
-    log("Features:")
-    log("  ✓ Desktop-independent screen scraping")
-    log("  ✓ Real-time poker table detection")
-    log("  ✓ Manual card entry and analysis")
-    log("  ✓ Professional table visualization with COMPACT TABLE INFO")
-    log("  ✓ Board cards, blinds, dealer in single clear display")
-    log("  ✓ Performance monitoring")
-    log("  ✓ Comprehensive startup validation")
-    log("  🧠 Adaptive Learning System (AUTO-ENABLED)")
-    log("     • Learns optimal OCR strategies")
-    log("     • Smart result caching (3-5x speedup)")
-    log("     • Environment-specific optimization")
-    log("     • Continuous performance improvement")
+    log("Architecture: Web-Only (No GUI)")
+    log("  ✓ FastAPI Backend (Python API)")
+    log("  ✓ React Frontend (Web UI)")
+    log("  ✓ WebSocket Real-time Updates")
+    log("  ✓ Screen Scraping Engine")
+    log("  ✓ Poker Analysis & ML")
+    log("")
+    log("Access the app at: http://localhost:3000")
     log("")
 
-    # Run dependency validation
-    log("Running startup validation...")
-    try:
-        validation_result = subprocess.run([
-            venv_python, '-c',
-            'import sys; sys.path.insert(0, "src"); '
-            'from pokertool.startup_validator import validate_startup_dependencies; '
-            'sys.exit(0 if validate_startup_dependencies() else 1)'
-        ], env=env, cwd=ROOT)
+    # Check for Node.js
+    log("Checking dependencies...")
+    if not shutil.which('node'):
+        log("❌ Node.js not found. Please install Node.js to run the frontend.")
+        log("   Visit: https://nodejs.org/")
+        return 1
 
-        if validation_result.returncode != 0:
-            log("")
-            log("❌ Startup validation failed - cannot start application")
-            log("Please install missing dependencies and try again")
+    log("✓ Node.js found")
+
+    # Check if frontend dependencies are installed
+    frontend_dir = ROOT / 'pokertool-frontend'
+    if not (frontend_dir / 'node_modules').exists():
+        log("Installing frontend dependencies...")
+        try:
+            subprocess.run(['npm', 'install'], cwd=frontend_dir, check=True)
+            log("✓ Frontend dependencies installed")
+        except subprocess.CalledProcessError:
+            log("❌ Failed to install frontend dependencies")
             return 1
 
-        log("")
-        log("✓ Startup validation passed")
-        log("")
-    except Exception as e:
-        log(f"⚠ Warning: Could not run startup validation: {e}")
-        log("Continuing anyway...")
-        log("")
+    # Start backend API server
+    log("")
+    log("Starting backend API server...")
+    backend_port = 5001  # Using 5001 since 5000 is often used by macOS Control Center
+    backend_process = subprocess.Popen(
+        [venv_python, '-m', 'uvicorn', 'pokertool.api:create_app',
+         '--host', '0.0.0.0', '--port', str(backend_port), '--factory'],
+        env=env,
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
 
-    # Check learning system status
-    log("Checking learning system...")
+    log(f"✓ Backend API starting on http://localhost:{backend_port}")
+
+    # Start React frontend
+    log("Starting React frontend...")
+    frontend_env = os.environ.copy()
+    frontend_env['REACT_APP_API_URL'] = f'http://localhost:{backend_port}'
+
+    frontend_process = subprocess.Popen(
+        ['npm', 'start'],
+        cwd=frontend_dir,
+        env=frontend_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+
+    log("✓ Frontend starting on http://localhost:3000")
+    log("")
+    log("=" * 70)
+    log("🎉 POKERTOOL IS RUNNING!")
+    log("=" * 70)
+    log("")
+    log("📱 Open your browser to: http://localhost:3000")
+    log("")
+    log("Press Ctrl+C to stop the application")
+    log("")
+
     try:
-        learning_check = subprocess.run([
-            venv_python, '-c',
-            'import sys; sys.path.insert(0, "src"); '
-            'from pokertool.modules.scraper_learning_system import ScraperLearningSystem; '
-            'ls = ScraperLearningSystem(); '
-            'report = ls.get_learning_report(); '
-            'envs = report["environment_profiles"]["total"]; '
-            'recent = len(report.get("recent_performance", {})); '
-            'health = int((envs > 0) * 30 + (recent > 0) * 20); '
-            'print(f"Profiles: {envs}, Health: {health}%")'
-        ], env=env, cwd=ROOT, capture_output=True, text=True, timeout=5)
-
-        if learning_check.returncode == 0 and learning_check.stdout.strip():
-            log(f"  🧠 Learning System: ✓ Active ({learning_check.stdout.strip()})")
-        else:
-            log("  🧠 Learning System: ✓ Ready (will learn from usage)")
+        # Wait for both processes
+        backend_process.wait()
+        frontend_process.wait()
+    except KeyboardInterrupt:
         log("")
-    except Exception:
-        log("  🧠 Learning System: ✓ Ready")
-        log("")
+        log("Shutting down...")
+        backend_process.terminate()
+        frontend_process.terminate()
+        backend_process.wait()
+        frontend_process.wait()
+        log("✓ Application stopped")
+        return 0
 
-    # Try launch_gui.py first (direct launcher)
-    launcher = ROOT / 'launch_gui.py'
-    if launcher.exists():
-        log(f"Starting Enhanced GUI {format_version()} via launcher...")
-        result = subprocess.run([venv_python, str(launcher)], env=env, cwd=ROOT)
-        return result.returncode
-
-    # Fallback: Try to import and run directly
-    log("Using direct import method...")
-    try:
-        result = subprocess.run([
-            venv_python, '-c',
-            'import sys; sys.path.insert(0, "src"); '
-            'from pokertool.enhanced_gui import main; sys.exit(main())'
-        ], env=env, cwd=ROOT)
-        return result.returncode
-    except Exception as e:
-        log(f"Error launching GUI: {e}")
-        return 1
+    return 0
 
 def show_banner():
     """Show startup banner."""
     clear_terminal()
     print("=" * 70)
-    print(f"🎰 POKERTOOL - Enhanced GUI {format_version()}")
+    print(f"🎰 POKERTOOL - Web Application {format_version()}")
     print("=" * 70)
-    print("Enterprise Edition with AI Learning & Version Tracking System")
+    print("Web-Only Architecture - No GUI | Backend API + React Frontend")
     print("")
     print(f"Platform: {platform.system()} {platform.release()}")
     print(f"Python: {sys.version.split()[0]}")
@@ -371,18 +376,12 @@ def show_banner():
     print("")
 
 def main() -> int:
-    """Main entry point - ONE CLICK DOES EVERYTHING."""
-    parser = argparse.ArgumentParser(description='PokerTool One-Click Launcher')
-    parser.add_argument('--all', action='store_true', help='Full setup and launch (default)')
+    """Main entry point - Launch PokerTool Web Application."""
+    parser = argparse.ArgumentParser(description='PokerTool Web Application Launcher')
+    parser.add_argument('--setup-only', action='store_true', help='Setup dependencies without launching')
     parser.add_argument('--self-test', action='store_true', help='Run comprehensive tests')
-    parser.add_argument('--gui', action='store_true', help='Launch enhanced GUI only')
-    parser.add_argument('--setup-only', action='store_true', help='Setup without launching')
 
     args = parser.parse_args()
-
-    # Default to --all if no args
-    if not any([args.all, args.self_test, args.gui, args.setup_only]):
-        args.all = True
 
     show_banner()
 
@@ -392,25 +391,23 @@ def main() -> int:
             create_venv()
             install_dependencies()
 
-        # Setup
-        if args.all or args.setup_only:
-            log("Verifying dependencies...")
-            install_dependencies()
-            log("✓ Setup complete")
+        # Setup dependencies
+        log("Verifying dependencies...")
+        install_dependencies()
+        log("✓ Setup complete")
 
-        # Self-test
-        if args.self_test or args.all:
+        # Self-test if requested
+        if args.self_test:
             run_tests()
+            return 0
 
-        # Launch GUI
-        if args.all or args.gui:
-            if not args.setup_only:
-                return launch_enhanced_gui()
-
+        # Launch web application unless setup-only
         if args.setup_only:
-            log("✓ Setup completed. Run 'python start.py --gui' to launch.")
+            log("✓ Setup completed. Run 'python scripts/start.py' to launch the web app.")
+            return 0
 
-        return 0
+        # Launch the web application
+        return launch_web_app()
 
     except KeyboardInterrupt:
         log("Interrupted by user")

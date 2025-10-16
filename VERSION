@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 84.0.0
+version = 85.0.0
 release_date = 2025-10-16
 
 [release_notes]
-# v84.0.0 - Version Bump
-description = Version increment
-changes = Updated version to 84.0.0
+# v85.0.0 - Real-Time Detection WebSocket Integration
+description = WebSocket integration for real-time poker table detection events
+changes = Added Detection WebSocket manager, broadcast_detection_event API, removed fake detection data from frontend
 status = stable
 
 [components]
@@ -206,13 +206,22 @@ description = Completed removal of all tkinter/GUI dependencies, web-only archit
 last_updated = 2025-10-15
 status = active
 
+# Detection WebSocket System - v85.0.0 Implementation
+
+[components.detection_websocket]
+version = 1.0.0
+features = WS-DETECT-001
+description = Real-time detection event broadcasting via WebSocket with connection management
+last_updated = 2025-10-16
+status = active
+
 [tracking]
 # Version tracking metadata
-total_features_implemented = 53
-total_components = 25
-last_regression_check = 2025-10-15
-last_feature_audit = 2025-10-15
-web_features_implemented = 12
+total_features_implemented = 54
+total_components = 26
+last_regression_check = 2025-10-16
+last_feature_audit = 2025-10-16
+web_features_implemented = 13
 
 # Component Version Guidelines:
 # - Increment patch (x.y.Z) for bug fixes and minor improvements
