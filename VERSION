@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 87.0.0
-release_date = 2025-10-16
+version = 87.1.0
+release_date = 2025-10-17
 
 [release_notes]
-# v87.0.0 - Comprehensive Smoke Test Suite
-description = Complete end-to-end validation suite for fast pre-deployment testing
-changes = Created 38 smoke tests covering all critical components, standalone runner, pytest integration, CI/CD ready
+# v87.1.0 - Infrastructure Documentation & Startup Improvements
+description = Complete infrastructure status documentation and improved startup experience
+changes = Updated TODO.md with complete infrastructure status, moved start.py to root with enhanced process cleanup
 status = stable
 
 [components]
