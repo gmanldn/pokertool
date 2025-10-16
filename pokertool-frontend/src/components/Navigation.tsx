@@ -50,6 +50,7 @@ import {
   Circle,
   Article,
   PlayArrow,
+  SettingsApplications,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
@@ -78,6 +79,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
     { text: 'GTO Trainer', icon: <School />, path: '/gto' },
     { text: 'Hand History', icon: <History />, path: '/history' },
     { text: 'Settings', icon: <Settings />, path: '/settings' },
+    { text: 'System Status', icon: <SettingsApplications />, path: '/system-status' },
   ];
 
   const handleNavigation = (path: string) => {
