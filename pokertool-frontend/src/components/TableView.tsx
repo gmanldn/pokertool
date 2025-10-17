@@ -43,7 +43,7 @@ import { EquityCalculator } from './EquityCalculator';
 import { BetSizingRecommendations } from './BetSizingRecommendations';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { buildWsUrl } from '../config/api';
-import { SendMessageFunction, JsonValue, TableData } from '../types/common';
+import { SendMessageFunction, JsonValue } from '../types/common';
 
 interface TableViewProps {
   sendMessage: SendMessageFunction;
@@ -263,12 +263,12 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   }, [messages]);
 
   const [selectedTable, setSelectedTable] = useState<string>('table-1');
-  const [detectionActive, setDetectionActive] = useState(true);
-  const [playerDetection, setPlayerDetection] = useState(true);
-  const [cardDetection, setCardDetection] = useState(true);
-  const [potDetection, setPotDetection] = useState(true);
-  const [dealerPosition, setDealerPosition] = useState<number>(0); // Dealer seat number
-  const [bigBlindAmount, setBigBlindAmount] = useState<number>(2); // For BB calculation
+  const [_detectionActive, _setDetectionActive] = useState(true);
+  const [playerDetection, _setPlayerDetection] = useState(true);
+  const [cardDetection, _setCardDetection] = useState(true);
+  const [potDetection, _setPotDetection] = useState(true);
+  const [dealerPosition, _setDealerPosition] = useState<number>(0); // Dealer seat number
+  const [bigBlindAmount, _setBigBlindAmount] = useState<number>(2); // For BB calculation
 
   // Auto-start tracking on mount
   React.useEffect(() => {

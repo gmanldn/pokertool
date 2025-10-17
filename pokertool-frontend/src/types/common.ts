@@ -165,8 +165,11 @@ export interface AlternativeActionsData extends WebSocketMessageData {
 
 /**
  * Table data for table view
+ * Note: Does not extend WebSocketMessageData due to Player[] array incompatibility with JsonValue
  */
-export interface TableData extends WebSocketMessageData {
+export interface TableData {
+  type?: string;
+  timestamp?: number;
   tableId: string;
   tableName: string;
   players: Player[];
@@ -213,9 +216,10 @@ export function isAlternativeActionsData(
   );
 }
 
-export function isTableData(data: WebSocketMessageData): data is TableData {
+export function isTableData(data: unknown): data is TableData {
   return (
     typeof data === 'object' &&
+    data !== null &&
     'tableId' in data &&
     'tableName' in data &&
     'players' in data

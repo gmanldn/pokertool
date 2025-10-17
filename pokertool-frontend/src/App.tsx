@@ -15,6 +15,13 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline, useMediaQuery, CircularProgress, Box } from '@mui/material';
 import { Provider } from 'react-redux';
+import { useWebSocket } from './hooks/useWebSocket';
+import { ThemeContext } from './contexts/ThemeContext';
+import { store, useAppSelector, RootState } from './store';
+import { setMobileLayout, SettingsState } from './store/slices/settingsSlice';
+import { buildWsUrl } from './config/api';
+import './styles/App.css';
+import './styles/mobile.css';
 
 // Eagerly load critical components needed for initial render
 import { Navigation } from './components/Navigation';
@@ -36,14 +43,6 @@ const ModelCalibration = lazy(() => import('./components/ModelCalibration').then
 const OpponentFusion = lazy(() => import('./components/OpponentFusion').then(module => ({ default: module.OpponentFusion })));
 const ActiveLearning = lazy(() => import('./components/ActiveLearning').then(module => ({ default: module.ActiveLearning })));
 const ScrapingAccuracy = lazy(() => import('./components/ScrapingAccuracy').then(module => ({ default: module.ScrapingAccuracy })));
-
-import { useWebSocket } from './hooks/useWebSocket';
-import { ThemeContext } from './contexts/ThemeContext';
-import { store, useAppSelector, RootState } from './store';
-import { setMobileLayout, SettingsState } from './store/slices/settingsSlice';
-import { buildWsUrl } from './config/api';
-import './styles/App.css';
-import './styles/mobile.css';
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (

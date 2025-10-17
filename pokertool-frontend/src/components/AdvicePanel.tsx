@@ -224,7 +224,7 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
     const actions: string[] = [];
     const evValues: number[] = [];
     const colors: string[] = [];
-    const intervals = advice.evConfidenceIntervals;
+  // const intervals = advice.evConfidenceIntervals; // Unused - commented out by auto-fixer
 
     // Map action names to display format
     const actionMap: { [key: string]: string } = {

@@ -12,7 +12,7 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import React from 'react';
-import { Box, Typography, LinearProgress, useTheme, Paper, Divider } from '@mui/material';
+import { Box, Typography, useTheme, Paper, Divider } from '@mui/material';
 import { TrendingUp, EmojiEvents } from '@mui/icons-material';
 
 interface EquityCalculatorProps {
