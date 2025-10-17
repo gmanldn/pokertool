@@ -135,12 +135,11 @@ describe('SystemStatus Component', () => {
 
   describe('Initial Render and Data Fetching', () => {
     it('should render loading state initially', async () => {
-      mockSuccessfulFetch();
+      (global.fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
 
       render(<SystemStatus />);
 
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
-      await screen.findByText('System Status Monitor');
+      expect(await screen.findByTestId('system-status-skeleton-heading')).toBeInTheDocument();
     });
 
     it('should fetch health data on mount', async () => {

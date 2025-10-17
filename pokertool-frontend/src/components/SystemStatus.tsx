@@ -36,6 +36,7 @@ import {
   ListItemIcon,
   ListItemText,
   Fade,
+  Skeleton,
 } from '@mui/material';
 import Refresh from '@mui/icons-material/Refresh';
 import GetApp from '@mui/icons-material/GetApp';
@@ -263,6 +264,47 @@ export const SystemStatus: React.FC = () => {
     }
     groupedChecks[check.category].push(check);
   });
+
+  if (loading && !healthData) {
+    return (
+      <Box sx={{ p: isMobile ? 2 : 3 }}>
+        <Skeleton variant="text" width={isMobile ? 220 : 320} height={isMobile ? 28 : 42} data-testid="system-status-skeleton-heading" />
+        <Skeleton variant="text" width={isMobile ? 180 : 260} height={isMobile ? 18 : 24} sx={{ mb: 2 }} />
+
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={3}>
+            {[...Array(4)].map((_, index) => (
+              <Grid item xs={12} sm={6} md={3} key={`summary-skeleton-${index}`}>
+                <Box textAlign="center">
+                  <Skeleton variant="circular" width={54} height={54} sx={{ mx: 'auto' }} />
+                  <Skeleton variant="text" width={80} sx={{ mx: 'auto', mt: 1 }} />
+                  <Skeleton variant="text" width={60} sx={{ mx: 'auto' }} />
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
+
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Skeleton variant="rectangular" height={isMobile ? 72 : 56} />
+        </Paper>
+
+        <Grid container spacing={2}>
+          {[...Array(isMobile ? 1 : 3)].map((_, index) => (
+            <Grid item xs={12} sm={6} md={4} key={`card-skeleton-${index}`}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent>
+                  <Skeleton variant="text" width="60%" />
+                  <Skeleton variant="text" width="40%" />
+                  <Skeleton variant="rectangular" height={80} sx={{ mt: 2, borderRadius: 2 }} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (
