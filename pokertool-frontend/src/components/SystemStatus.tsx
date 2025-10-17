@@ -51,6 +51,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import TableViewIcon from '@mui/icons-material/TableView';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 import type { HealthStatus, HealthData } from '../hooks/useSystemHealth';
+import { ErrorBoundary } from './ErrorBoundary';
 
 type FilterType = 'all' | 'healthy' | 'failing' | 'degraded' | 'unknown';
 
@@ -664,3 +665,11 @@ export const SystemStatus: React.FC = () => {
     </Box>
   );
 };
+
+export const SystemStatusWithBoundary: React.FC = () => (
+  <ErrorBoundary fallbackType="general">
+    <SystemStatus />
+  </ErrorBoundary>
+);
+
+export default SystemStatusWithBoundary;
