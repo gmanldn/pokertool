@@ -969,6 +969,44 @@ This API implements comprehensive security measures including:
             """
             return {'status': 'healthy', 'timestamp': datetime.utcnow()}
 
+        # Status endpoint for status window
+        @self.app.get('/api/status', tags=['health'], summary='Application Status')
+        async def app_status():
+            """
+            Get current application status for status window.
+
+            Returns information about scraper activity, table detection, etc.
+            """
+            try:
+                # Get scraper status if available
+                from pokertool.modules import poker_screen_scraper_betfair
+                scraper = getattr(poker_screen_scraper_betfair, '_scraper_instance', None)
+
+                status_data = {
+                    'scraper_active': scraper is not None and getattr(scraper, 'is_running', False),
+                    'last_detection': None,
+                    'table_name': 'N/A',
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+
+                # Try to get last detection info if scraper is active
+                if status_data['scraper_active'] and scraper:
+                    last_state = getattr(scraper, 'last_state', None)
+                    if last_state:
+                        status_data['last_detection'] = last_state.get('timestamp', 'Just now')
+                        status_data['table_name'] = last_state.get('table_name', 'N/A')
+
+                return status_data
+            except Exception as e:
+                logger.error(f"Error getting app status: {e}")
+                return {
+                    'scraper_active': False,
+                    'last_detection': None,
+                    'table_name': 'N/A',
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'error': str(e)
+                }
+
         # System Health Monitoring Endpoints
         @self.app.get('/api/system/health', tags=['system'], summary='Get System Health')
         async def get_system_health():

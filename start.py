@@ -98,19 +98,48 @@ if IS_MACOS:
             NSImage,
             NSApplicationActivationPolicyRegular,
         )
+        from Foundation import NSObject
         HAS_APPKIT = True
     except ImportError:
         # PyObjC not installed - will continue without dock icon
         pass
 
+# Global status window instance
+_status_window = None
+
+# AppDelegate for handling dock icon clicks
+if HAS_APPKIT:
+    class AppDelegate(NSObject):
+        """Delegate to handle dock icon clicks."""
+
+        def applicationShouldHandleReopen_hasVisibleWindows_(self, app, has_visible_windows):
+            """Called when dock icon is clicked."""
+            global _status_window
+            if _status_window:
+                _status_window.toggle()
+            return True
+
 def setup_dock_icon():
     """Set up macOS dock icon (if on macOS and PyObjC is available)."""
+    global _status_window
+
     if not IS_MACOS or not HAS_APPKIT:
         return None
 
     try:
+        # Import status window
+        from pokertool.status_window import StatusWindow
+
+        # Create status window instance
+        _status_window = StatusWindow(api_url="http://localhost:5001")
+
+        # Set up NSApplication
         app = NSApplication.sharedApplication()
         app.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+
+        # Set up delegate to handle dock icon clicks
+        delegate = AppDelegate.alloc().init()
+        app.setDelegate_(delegate)
 
         # Try to load custom icon if available
         icon_path = ROOT / "assets" / "pokertool-icon.png"
@@ -346,7 +375,7 @@ def launch_web_app() -> int:
     # Set up macOS dock icon (if on macOS)
     dock_app = setup_dock_icon()
     if dock_app and IS_MACOS:
-        log("✓ macOS dock icon configured")
+        log("✓ macOS dock icon configured (click for status window)")
 
     # Setup environment
     env = os.environ.copy()
@@ -363,9 +392,11 @@ def launch_web_app() -> int:
     log("  ✓ Screen Scraping Engine")
     log("  ✓ Poker Analysis & ML")
     if IS_MACOS and dock_app:
-        log("  ✓ macOS Dock Icon")
+        log("  ✓ macOS Dock Icon (click for status)")
     log("")
     log("Access the app at: http://localhost:3000")
+    if IS_MACOS and dock_app:
+        log("💡 Click dock icon to see app status & table detection")
     log("")
 
     # Check for Node.js
