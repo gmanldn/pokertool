@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.0.0
+version = 88.1.0
 release_date = 2025-10-17
 
 [release_notes]
-# v88.0.0 - macOS Dock Icon & Enhanced Process Management
-description = Automatic dock icon for web-based backend with comprehensive process cleanup
-changes = Added passive macOS dock icon with PyObjC auto-install, improved process cleanup with port-based detection, updated project memory documentation
+# v88.1.0 - Documentation & Feature Flags
+description = Comprehensive documentation and feature flags system for controlled rollouts
+changes = Added environment variables documentation, troubleshooting guide, and robust feature flags system with 34 test cases
 status = stable
 
 [components]
