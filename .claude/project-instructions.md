@@ -20,6 +20,14 @@ python scripts/start.py
 - Ensures all imports resolve correctly
 - Initializes logging and configuration properly
 - Prevents import errors and path resolution issues
+- Sets up macOS dock icon (when PyObjC is installed)
+- Cleans up old processes before starting
+
+### macOS Dock Icon
+- **Automatic**: When running on macOS with PyObjC installed, a dock icon appears automatically
+- **Passive**: The dock icon is purely visual - no menus, windows, or interactions
+- **Optional**: If PyObjC is not installed, the app runs normally without the dock icon
+- **Clean**: The dock icon disappears when the app is stopped
 
 ## Error Checking and Monitoring
 

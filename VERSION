@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 87.1.0
+version = 88.0.0
 release_date = 2025-10-17
 
 [release_notes]
-# v87.1.0 - Infrastructure Documentation & Startup Improvements
-description = Complete infrastructure status documentation and improved startup experience
-changes = Updated TODO.md with complete infrastructure status, moved start.py to root with enhanced process cleanup
+# v88.0.0 - macOS Dock Icon & Enhanced Process Management
+description = Automatic dock icon for web-based backend with comprehensive process cleanup
+changes = Added passive macOS dock icon with PyObjC auto-install, improved process cleanup with port-based detection, updated project memory documentation
 status = stable
 
 [components]

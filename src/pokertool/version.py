@@ -49,14 +49,32 @@ VERSION_INFO = {
     'major': VERSION_MAJOR,
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
-    'release_date': '2025-10-16',
-    'release_name': 'Smoke Test Suite',
+    'release_date': '2025-10-17',
+    'release_name': 'macOS Dock & Process Management',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '88.0.0',
+        'date': '2025-10-17',
+        'name': 'macOS Dock & Process Management',
+        'description': 'Automatic dock icon for web-based backend with comprehensive process cleanup',
+        'highlights': [
+            'macOS Dock Icon: Passive dock presence for web-based backend (no menus, windows, or interactions)',
+            'Auto PyObjC Install: Automatically installs pyobjc-framework-Cocoa on macOS during setup',
+            'Enhanced Process Cleanup: Improved cleanup_old_processes() with more pattern variations',
+            'Port-Based Cleanup: Kills processes using ports 5001 (backend) and 3000 (frontend)',
+            'Better Pattern Matching: Catches .venv/bin/python, scripts/*, and uvicorn variations',
+            'Force Kill Stuck Processes: SIGTERM → SIGKILL fallback with detailed logging',
+            'Project Memory: Added .claude/project-instructions.md for permanent documentation',
+            'Dock Icon Documentation: Updated project memory with dock icon behavior and requirements',
+            'Zero Configuration: Dock icon appears automatically when start.py launches on macOS',
+            'Impact: Clean restarts, visible dock presence, no stuck processes',
+        ],
+    },
     {
         'version': '87.0.0',
         'date': '2025-10-16',

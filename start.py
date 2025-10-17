@@ -89,6 +89,44 @@ IS_LINUX = platform.system() == 'Linux'
 MIN_PYTHON = (3, 10)
 MAX_PYTHON = (3, 13)
 
+# Try to import macOS AppKit for dock icon support
+HAS_APPKIT = False
+if IS_MACOS:
+    try:
+        from AppKit import (
+            NSApplication,
+            NSImage,
+            NSApplicationActivationPolicyRegular,
+        )
+        HAS_APPKIT = True
+    except ImportError:
+        # PyObjC not installed - will continue without dock icon
+        pass
+
+def setup_dock_icon():
+    """Set up macOS dock icon (if on macOS and PyObjC is available)."""
+    if not IS_MACOS or not HAS_APPKIT:
+        return None
+
+    try:
+        app = NSApplication.sharedApplication()
+        app.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+
+        # Try to load custom icon if available
+        icon_path = ROOT / "assets" / "pokertool-icon.png"
+        if icon_path.exists():
+            icon = NSImage.alloc().initWithContentsOfFile_(str(icon_path))
+            if icon:
+                app.setApplicationIconImage_(icon)
+
+        # Activate the app to show in dock
+        app.activateIgnoringOtherApps_(True)
+
+        return app
+    except Exception as e:
+        log(f"⚠️  Could not set up dock icon: {e}")
+        return None
+
 def clear_terminal():
     """Clear terminal for clean output."""
     os.system('cls' if IS_WINDOWS else 'clear')
@@ -149,6 +187,11 @@ def install_dependencies():
     # Install critical deps for enhanced GUI
     log("Ensuring enhanced GUI dependencies...")
     critical = ['opencv-python', 'Pillow', 'pytesseract', 'mss', 'numpy']
+
+    # Add PyObjC for macOS dock icon
+    if IS_MACOS:
+        critical.append('pyobjc-framework-Cocoa')
+
     for dep in critical:
         try:
             subprocess.run([venv_python, '-m', 'pip', 'install', dep],
@@ -210,17 +253,24 @@ def cleanup_old_processes():
             # Patterns to search for
             patterns = [
                 'python.*start\\.py',
+                '\\.venv/bin/python.*start\\.py',
+                'python.*scripts/start\\.py',
                 'python.*enhanced_gui',
                 'python.*simple_gui',
                 'python.*launch.*gui',
+                'python.*launch_gui',
+                'python.*launch_api',
                 'python.*run_gui',
                 'pokertool.*gui',
                 'uvicorn.*pokertool',
-                'python.*uvicorn',
+                'python.*uvicorn.*pokertool',
+                '\\.venv.*uvicorn.*pokertool',
+                'python.*-m.*uvicorn.*pokertool',
                 'python.*api\\.py',
                 'node.*react-scripts',
                 'react-scripts start',
-                'npm start'
+                'npm start',
+                'pokertool-frontend.*npm'
             ]
 
             all_pids = set()
@@ -233,6 +283,21 @@ def cleanup_old_processes():
                     pids = [int(pid) for pid in result.stdout.strip().split('\n')
                            if pid and pid.strip() and int(pid) != current_pid]
                     all_pids.update(pids)
+                except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
+                    pass
+
+            # Also check for processes using our ports (5001, 3000)
+            for port in [5001, 3000]:
+                try:
+                    result = subprocess.run(
+                        ['lsof', '-ti', f':{port}'],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    port_pids = [int(pid) for pid in result.stdout.strip().split('\n')
+                               if pid and pid.strip() and int(pid) != current_pid]
+                    if port_pids:
+                        log(f"Found process(es) using port {port}")
+                        all_pids.update(port_pids)
                 except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
                     pass
 
@@ -250,13 +315,17 @@ def cleanup_old_processes():
                 time.sleep(1.0)
 
                 # Step 3: Force kill any remaining processes with SIGKILL
+                still_running = []
                 for pid in all_pids:
                     try:
                         os.kill(pid, 0)  # Check if still running
                         os.kill(pid, signal.SIGKILL)  # Force kill
-                        log(f"Force killed stuck process PID {pid}")
+                        still_running.append(pid)
                     except (ProcessLookupError, PermissionError):
                         pass
+
+                if still_running:
+                    log(f"Force killed {len(still_running)} stuck process(es)")
 
                 time.sleep(0.5)
                 log("✓ Cleanup complete")
@@ -274,6 +343,11 @@ def launch_web_app() -> int:
     # Clean up any old processes first
     cleanup_old_processes()
 
+    # Set up macOS dock icon (if on macOS)
+    dock_app = setup_dock_icon()
+    if dock_app and IS_MACOS:
+        log("✓ macOS dock icon configured")
+
     # Setup environment
     env = os.environ.copy()
     env['PYTHONPATH'] = str(SRC_DIR)
@@ -288,6 +362,8 @@ def launch_web_app() -> int:
     log("  ✓ WebSocket Real-time Updates")
     log("  ✓ Screen Scraping Engine")
     log("  ✓ Poker Analysis & ML")
+    if IS_MACOS and dock_app:
+        log("  ✓ macOS Dock Icon")
     log("")
     log("Access the app at: http://localhost:3000")
     log("")
