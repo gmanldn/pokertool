@@ -35,6 +35,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Fade,
 } from '@mui/material';
 import Refresh from '@mui/icons-material/Refresh';
 import GetApp from '@mui/icons-material/GetApp';
@@ -190,13 +191,13 @@ export const SystemStatus: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'healthy':
-        return <CheckCircle sx={{ color: getStatusColor(status) }} />;
+        return <CheckCircle sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
       case 'degraded':
-        return <Warning sx={{ color: getStatusColor(status) }} />;
+        return <Warning sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
       case 'failing':
-        return <ErrorIcon sx={{ color: getStatusColor(status) }} />;
+        return <ErrorIcon sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
       default:
-        return <HelpOutline sx={{ color: getStatusColor(status) }} />;
+        return <HelpOutline sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
     }
   };
 
@@ -381,9 +382,11 @@ export const SystemStatus: React.FC = () => {
                 role="status"
                 aria-label={`Overall system status: ${healthData.overall_status}`}
               >
-                <Typography variant="h3" sx={{ color: getStatusColor(healthData.overall_status) }} aria-hidden="true">
-                  {getStatusIcon(healthData.overall_status)}
-                </Typography>
+                <Fade in timeout={300} key={`overall-${healthData.overall_status}`}>
+                  <Typography variant="h3" sx={{ color: getStatusColor(healthData.overall_status), transition: 'color 0.3s ease' }} aria-hidden="true">
+                    {getStatusIcon(healthData.overall_status)}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>
                   {healthData.overall_status.toUpperCase()}
                 </Typography>
@@ -394,12 +397,14 @@ export const SystemStatus: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box textAlign="center">
-                <Typography variant="h3" color="success.main">
-                  {Object.values(healthData.categories).reduce(
-                    (sum, cat) => sum + cat.checks.filter(c => c.status === 'healthy').length,
-                    0
-                  )}
-                </Typography>
+                <Fade in timeout={300} key={`count-healthy-${healthData.timestamp}`}>
+                  <Typography variant="h3" color="success.main">
+                    {Object.values(healthData.categories).reduce(
+                      (sum, cat) => sum + cat.checks.filter(c => c.status === 'healthy').length,
+                      0
+                    )}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>Healthy</Typography>
                 <Typography variant="caption" color="textSecondary">
                   Features
@@ -408,9 +413,11 @@ export const SystemStatus: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box textAlign="center">
-                <Typography variant="h3" color="warning.main">
-                  {healthData.degraded_count}
-                </Typography>
+                <Fade in timeout={300} key={`count-degraded-${healthData.degraded_count}`}>
+                  <Typography variant="h3" color="warning.main">
+                    {healthData.degraded_count}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>Degraded</Typography>
                 <Typography variant="caption" color="textSecondary">
                   Features
@@ -419,9 +426,11 @@ export const SystemStatus: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box textAlign="center">
-                <Typography variant="h3" color="error.main">
-                  {healthData.failing_count}
-                </Typography>
+                <Fade in timeout={300} key={`count-failing-${healthData.failing_count}`}>
+                  <Typography variant="h3" color="error.main">
+                    {healthData.failing_count}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>Failing</Typography>
                 <Typography variant="caption" color="textSecondary">
                   Features
@@ -499,8 +508,10 @@ export const SystemStatus: React.FC = () => {
                 <Card
                   sx={{
                     height: '100%',
-                    borderLeft: `4px solid ${getStatusColor(check.status)}`,
-                    transition: 'transform 0.2s',
+                    borderLeftWidth: 4,
+                    borderLeftStyle: 'solid',
+                    borderLeftColor: getStatusColor(check.status),
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-left-color 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-4px)',
                       boxShadow: 4,
@@ -516,7 +527,9 @@ export const SystemStatus: React.FC = () => {
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                       <Box display="flex" alignItems="center" gap={1}>
-                        <span aria-hidden="true">{getStatusIcon(check.status)}</span>
+                        <Fade in timeout={300} key={`icon-${check.status}`}>
+                          <span aria-hidden="true">{getStatusIcon(check.status)}</span>
+                        </Fade>
                         <Typography variant="subtitle1" fontWeight="bold">
                           {check.feature_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Typography>
@@ -538,18 +551,21 @@ export const SystemStatus: React.FC = () => {
                     </Typography>
 
                     <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                      <Chip
-                        label={check.status.toUpperCase()}
-                        size="small"
-                        role="status"
-                        aria-label={`Status: ${check.status}`}
-                        sx={{
-                          backgroundColor: getStatusColor(check.status),
-                          color: '#fff',
-                          fontWeight: 'bold',
-                          border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.3)' : 'none',
-                        }}
-                      />
+                      <Fade in timeout={200} key={`chip-${check.status}`}>
+                        <Chip
+                          label={check.status.toUpperCase()}
+                          size="small"
+                          role="status"
+                          aria-label={`Status: ${check.status}`}
+                          sx={{
+                            backgroundColor: getStatusColor(check.status),
+                            color: '#fff',
+                            fontWeight: 'bold',
+                            transition: 'background-color 0.3s ease, color 0.3s ease',
+                            border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.3)' : 'none',
+                          }}
+                        />
+                      </Fade>
                       <Typography variant="caption" color="textSecondary" aria-label={`Last checked ${getTimeAgo(check.last_check)}`}>
                         {getTimeAgo(check.last_check)}
                       </Typography>
