@@ -193,7 +193,7 @@ All modules now have production-ready implementations with comprehensive test su
   - [ ] Manual "Refresh All" button with loading spinner
   - [ ] Filter controls (All, Healthy, Failing, Degraded)
   - [ ] Search bar for filtering features by name
-  - [ ] Export button (download JSON/CSV status report with timestamp)
+  - [x] Export button (download JSON/CSV status report with timestamp)
 
 - [ ] **Visual Design Requirements**
   - [ ] Use consistent color coding:
@@ -248,7 +248,7 @@ All modules now have production-ready implementations with comprehensive test su
   - [ ] Status indicators update when data changes
   - [ ] Filter controls work correctly
   - [ ] Search functionality filters features
-  - [ ] Export button generates correct file format
+  - [x] Export button generates correct file format
   - [ ] Error states render appropriately
 - [ ] Integration tests
   - [ ] WebSocket connection established correctly

@@ -31,18 +31,22 @@ import {
   useMediaQuery,
   Alert,
   InputAdornment,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import {
-  Refresh,
-  GetApp,
-  Search,
-  ExpandMore,
-  ExpandLess,
-  CheckCircle,
-  Error as ErrorIcon,
-  Warning,
-  HelpOutline,
-} from '@mui/icons-material';
+import Refresh from '@mui/icons-material/Refresh';
+import GetApp from '@mui/icons-material/GetApp';
+import Search from '@mui/icons-material/Search';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import Warning from '@mui/icons-material/Warning';
+import HelpOutline from '@mui/icons-material/HelpOutline';
+import DescriptionIcon from '@mui/icons-material/Description';
+import TableViewIcon from '@mui/icons-material/TableView';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 import type { HealthStatus, HealthData } from '../hooks/useSystemHealth';
 
@@ -75,6 +79,7 @@ export const SystemStatus: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
   const announcerRef = useRef<HTMLDivElement>(null);
 
   // Screen reader announcer function
@@ -90,23 +95,71 @@ export const SystemStatus: React.FC = () => {
     announceToScreenReader('System health data refreshed.');
   };
 
-  const handleExport = () => {
-    if (!healthData) return;
+  const downloadReport = (content: string, mimeType: string, filename: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
-    const exportData = {
-      exported_at: new Date().toISOString(),
-      ...healthData,
+  const createCsvContent = (data: HealthData, exportedAt: string) => {
+    const csvRows: string[][] = [
+      ['exported_at', exportedAt],
+      ['overall_status', data.overall_status],
+      ['failing_count', data.failing_count.toString()],
+      ['degraded_count', data.degraded_count.toString()],
+      [''],
+      ['category', 'feature_name', 'status', 'last_check', 'latency_ms', 'error_message', 'description'],
+    ];
+
+    Object.entries(data.categories).forEach(([categoryKey, categoryData]) => {
+      categoryData.checks.forEach((check) => {
+        csvRows.push([
+          getCategoryDisplayName(categoryKey),
+          check.feature_name,
+          check.status,
+          check.last_check,
+          check.latency_ms !== undefined ? check.latency_ms.toFixed(2) : '',
+          check.error_message ?? '',
+          check.description ?? '',
+        ]);
+      });
+    });
+
+    const escapeCsvValue = (value: string) => {
+      const stringValue = value ?? '';
+      const sanitized = stringValue.replace(/"/g, '""');
+      return `"${sanitized}"`;
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json'
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `system-health-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return csvRows
+      .map((row) => row.length ? row.map((value) => escapeCsvValue(value)).join(',') : '')
+      .join('\n');
+  };
+
+  const handleExport = (format: 'json' | 'csv') => {
+    if (!healthData) return;
+
+    const exportedAt = new Date().toISOString();
+    const baseFilename = `system-health-${Date.now()}`;
+
+    if (format === 'json') {
+      const exportData = {
+        exported_at: exportedAt,
+        ...healthData,
+      };
+      downloadReport(JSON.stringify(exportData, null, 2), 'application/json', `${baseFilename}.json`);
+      announceToScreenReader('System health report exported as JSON.');
+    } else {
+      const csvContent = createCsvContent(healthData, exportedAt);
+      downloadReport(csvContent, 'text/csv', `${baseFilename}.csv`);
+      announceToScreenReader('System health report exported as CSV.');
+    }
+
+    setExportAnchorEl(null);
   };
 
   const toggleCardExpanded = (featureName: string) => {
@@ -252,25 +305,58 @@ export const SystemStatus: React.FC = () => {
         </Box>
         <Box display="flex" gap={1}>
           <Tooltip title="Refresh all checks">
-            <IconButton
-              onClick={handleRefresh}
-              disabled={refreshing}
-              color="primary"
-              aria-label="Refresh all health checks"
-              aria-busy={refreshing}
-            >
-              {refreshing ? <CircularProgress size={24} /> : <Refresh />}
-            </IconButton>
+            <span style={{ display: 'inline-flex' }}>
+              <IconButton
+                onClick={handleRefresh}
+                disabled={refreshing}
+                color="primary"
+                aria-label="Refresh all health checks"
+                aria-busy={refreshing}
+              >
+                {refreshing ? <CircularProgress size={24} /> : <Refresh />}
+              </IconButton>
+            </span>
           </Tooltip>
           <Tooltip title="Export health report">
-            <IconButton
-              onClick={handleExport}
-              disabled={!healthData}
-              aria-label="Export health report as JSON"
-            >
-              <GetApp />
-            </IconButton>
+            <span style={{ display: 'inline-flex' }}>
+              <IconButton
+                onClick={(event) => setExportAnchorEl(event.currentTarget)}
+                disabled={!healthData}
+                aria-label="Open export menu"
+                aria-haspopup="menu"
+                aria-controls={exportAnchorEl ? 'export-menu' : undefined}
+                aria-expanded={exportAnchorEl ? true : undefined}
+              >
+                <GetApp />
+              </IconButton>
+            </span>
           </Tooltip>
+          <Menu
+            id="export-menu"
+            anchorEl={exportAnchorEl}
+            open={Boolean(exportAnchorEl)}
+            onClose={() => setExportAnchorEl(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            MenuListProps={{ 'aria-label': 'Export format options' }}
+          >
+            <MenuItem
+              onClick={() => handleExport('json')}
+            >
+              <ListItemIcon>
+                <DescriptionIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Export as JSON" />
+            </MenuItem>
+            <MenuItem
+              onClick={() => handleExport('csv')}
+            >
+              <ListItemIcon>
+                <TableViewIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Export as CSV" />
+            </MenuItem>
+          </Menu>
         </Box>
       </Box>
 
@@ -477,7 +563,7 @@ export const SystemStatus: React.FC = () => {
 
                     {/* Error Details (Collapsible) */}
                     {check.error_message && (
-                      <Collapse in={expandedCards.has(check.feature_name)}>
+                      <Collapse in={expandedCards.has(check.feature_name)} unmountOnExit>
                         <Divider sx={{ my: 2 }} />
                         <Alert severity="error" sx={{ fontSize: '0.75rem' }}>
                           <Typography variant="caption" fontWeight="bold">

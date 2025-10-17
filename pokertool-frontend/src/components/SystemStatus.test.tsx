@@ -355,9 +355,7 @@ describe('SystemStatus Component', () => {
 
       render(<SystemStatus />);
 
-      await waitFor(() => {
-        expect(screen.getByText('HEALTHY')).toBeInTheDocument();
-      });
+      await screen.findByText('System Status Monitor');
 
       const refreshButton = screen.getByRole('button', { name: /refresh all checks/i });
       fireEvent.click(refreshButton);
@@ -377,9 +375,7 @@ describe('SystemStatus Component', () => {
 
       render(<SystemStatus />);
 
-      await waitFor(() => {
-        expect(screen.getByText('HEALTHY')).toBeInTheDocument();
-      });
+      await screen.findByText('System Status Monitor');
 
       const refreshButton = screen.getByRole('button', { name: /refresh all checks/i });
       fireEvent.click(refreshButton);
@@ -393,39 +389,75 @@ describe('SystemStatus Component', () => {
   });
 
   describe('Export Functionality', () => {
+    let createdAnchors: HTMLAnchorElement[] = [];
+
     beforeEach(async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => mockHealthData,
       });
 
-      // Mock URL.createObjectURL and document.createElement
+      createdAnchors = [];
+
       global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
       global.URL.revokeObjectURL = jest.fn();
 
-      const mockAnchor = document.createElement('a');
-      mockAnchor.click = jest.fn();
-      jest.spyOn(document, 'createElement').mockReturnValue(mockAnchor);
+      const originalCreateElement = Document.prototype.createElement;
+      jest.spyOn(document, 'createElement').mockImplementation(<K extends keyof HTMLElementTagNameMap>(tagName: K, options?: ElementCreationOptions) => {
+        const element = originalCreateElement.call(document, tagName, options);
+        if (tagName.toLowerCase() === 'a') {
+          const anchor = element as HTMLAnchorElement;
+          anchor.click = jest.fn();
+          createdAnchors.push(anchor);
+        }
+        return element;
+      });
     });
 
     afterEach(() => {
       jest.restoreAllMocks();
     });
 
-    it('should export health data as JSON when export button is clicked', async () => {
+    it('should export health data as JSON when export option is selected', async () => {
       render(<SystemStatus />);
 
-      await waitFor(() => {
-        expect(screen.getByText('HEALTHY')).toBeInTheDocument();
-      });
+      await screen.findByText('System Status Monitor');
 
-      const exportButton = screen.getByRole('button', { name: /export health report/i });
+      const exportButton = screen.getByRole('button', { name: /open export menu/i });
       fireEvent.click(exportButton);
+
+      const jsonOption = await screen.findByRole('menuitem', { name: /export as json/i });
+      fireEvent.click(jsonOption);
 
       await waitFor(() => {
         expect(global.URL.createObjectURL).toHaveBeenCalled();
         expect(global.URL.revokeObjectURL).toHaveBeenCalled();
       });
+
+      expect(createdAnchors).toHaveLength(1);
+      expect(createdAnchors[0].download).toMatch(/\.json$/);
+      expect(createdAnchors[0].click).toHaveBeenCalled();
+    });
+
+    it('should export health data as CSV when export option is selected', async () => {
+      render(<SystemStatus />);
+
+      await screen.findByText('System Status Monitor');
+
+      const exportButton = screen.getByRole('button', { name: /open export menu/i });
+      fireEvent.click(exportButton);
+
+      const csvOption = await screen.findByRole('menuitem', { name: /export as csv/i });
+      fireEvent.click(csvOption);
+
+      await waitFor(() => {
+        expect(global.URL.createObjectURL).toHaveBeenCalled();
+        expect(global.URL.revokeObjectURL).toHaveBeenCalled();
+      });
+
+      const csvAnchor = createdAnchors[createdAnchors.length - 1];
+      expect(csvAnchor.download).toMatch(/\.csv$/);
+      expect(csvAnchor.click).toHaveBeenCalled();
     });
   });
 
