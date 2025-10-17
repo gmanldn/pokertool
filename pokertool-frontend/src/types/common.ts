@@ -44,10 +44,10 @@ export interface JsonArray extends Array<JsonValue> {}
 /**
  * Generic WebSocket message structure
  */
-export interface WebSocketMessageData extends JsonObject {
+export interface WebSocketMessageData {
   type?: string;
   timestamp?: number;
-  [key: string]: JsonValue;
+  [key: string]: JsonValue | undefined;
 }
 
 /**
@@ -90,13 +90,13 @@ export interface ChartScaleContext {
 /**
  * Detection log entry data
  */
-export interface DetectionLogData extends JsonObject {
+export interface DetectionLogData {
   version?: string;
   player_id?: string;
   card?: string;
   amount?: number;
   action?: string;
-  [key: string]: JsonValue;
+  [key: string]: JsonValue | undefined;
 }
 
 /**
@@ -105,7 +105,7 @@ export interface DetectionLogData extends JsonObject {
 export interface DetectionMessage {
   type: string;
   data: DetectionLogData;
-  timestamp: string;
+  timestamp: number;  // Changed from string to match WebSocketMessage
   severity?: 'info' | 'success' | 'warning' | 'error';
   message?: string;
 }
@@ -132,3 +132,92 @@ export interface StatCardProps {
  * Table view send message function type
  */
 export type SendMessageFunction = (message: WebSocketMessageData | string) => void;
+
+// ============================================================================
+// Specific Message Data Types
+// ============================================================================
+
+/**
+ * Advice data from backend
+ */
+export interface Advice extends WebSocketMessageData {
+  action: string;
+  confidence: string;
+  confidenceScore: number;
+  ev: number;
+  reasoning: string;
+  situation: string;
+  alternatives?: Array<{ action: string; ev: number }>;
+}
+
+/**
+ * Alternative actions data
+ */
+export interface AlternativeActionsData extends WebSocketMessageData {
+  primaryEV: number;
+  alternatives: Array<{
+    action: string;
+    ev: number;
+    confidence?: number;
+    viable?: boolean;
+  }>;
+}
+
+/**
+ * Table data for table view
+ */
+export interface TableData extends WebSocketMessageData {
+  tableId: string;
+  tableName: string;
+  players: Player[];
+  pot: number;
+  communityCards: string[];
+  currentAction?: string;
+  dealer?: number;
+  smallBlind?: number;
+  bigBlind?: number;
+}
+
+/**
+ * Player data
+ */
+export interface Player {
+  seat: number;
+  name: string;
+  chips: number;
+  cards?: string[];
+  isActive: boolean;
+  isFolded: boolean;
+  currentBet?: number;
+  isDealer?: boolean;
+}
+
+// Type guards for narrowing WebSocketMessageData
+export function isAdvice(data: WebSocketMessageData): data is Advice {
+  return (
+    typeof data === 'object' &&
+    'action' in data &&
+    'confidence' in data &&
+    'confidenceScore' in data
+  );
+}
+
+export function isAlternativeActionsData(
+  data: WebSocketMessageData
+): data is AlternativeActionsData {
+  return (
+    typeof data === 'object' &&
+    'primaryEV' in data &&
+    'alternatives' in data &&
+    Array.isArray((data as AlternativeActionsData).alternatives)
+  );
+}
+
+export function isTableData(data: WebSocketMessageData): data is TableData {
+  return (
+    typeof data === 'object' &&
+    'tableId' in data &&
+    'tableName' in data &&
+    'players' in data
+  );
+}

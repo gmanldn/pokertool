@@ -176,7 +176,7 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
 
     // Parse advice data
     try {
-      const adviceData: Advice = latestMessage.data;
+      const adviceData = latestMessage.data as unknown as Advice;
       setAdvice(adviceData);
     } catch (error) {
       console.error('Failed to parse advice data:', error);
