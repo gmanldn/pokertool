@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -43,115 +43,51 @@ import {
   Warning,
   HelpOutline,
 } from '@mui/icons-material';
-import { buildApiUrl, httpToWs } from '../config/api';
-
-interface HealthStatus {
-  feature_name: string;
-  category: string;
-  status: 'healthy' | 'degraded' | 'failing' | 'unknown';
-  last_check: string;
-  latency_ms?: number;
-  error_message?: string;
-  metadata?: Record<string, any>;
-  description?: string;
-}
-
-interface HealthData {
-  timestamp: string;
-  overall_status: string;
-  categories: Record<string, {
-    status: string;
-    checks: HealthStatus[];
-  }>;
-  failing_count: number;
-  degraded_count: number;
-}
+import { useSystemHealth } from '../hooks/useSystemHealth';
+import type { HealthStatus, HealthData } from '../hooks/useSystemHealth';
 
 type FilterType = 'all' | 'healthy' | 'failing' | 'degraded' | 'unknown';
 
 export const SystemStatus: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [healthData, setHealthData] = useState<HealthData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+
+  // Use custom hook for health data management
+  const {
+    healthData,
+    loading,
+    error,
+    refreshing,
+    fetchHealthData,
+    isConnected,
+  } = useSystemHealth({
+    enableWebSocket: true,
+    enableCache: true,
+    cacheTTL: 5 * 60 * 1000, // 5 minutes
+    onStatusChange: (data) => {
+      // Screen reader announcement for status changes
+      announceToScreenReader(
+        `System status updated. ${data.failing_count} features failing, ${data.degraded_count} degraded.`
+      );
+    },
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  const announcerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch health data from API
-  const fetchHealthData = async () => {
-    try {
-      setError(null);
-      const response = await fetch(buildApiUrl('/api/system/health'));
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
-      const data = await response.json();
-      setHealthData(data);
-      setLoading(false);
-      setRefreshing(false);
-    } catch (err) {
-      console.error('Failed to fetch health data:', err);
-      setError('Failed to connect to backend. Is the server running?');
-      setLoading(false);
-      setRefreshing(false);
+  // Screen reader announcer function
+  const announceToScreenReader = (message: string) => {
+    if (announcerRef.current) {
+      announcerRef.current.textContent = message;
     }
   };
 
-  // Connect to WebSocket for real-time updates
-  useEffect(() => {
-    fetchHealthData();
-
-    // WebSocket connection for real-time updates
-    const connectWebSocket = () => {
-      try {
-        const wsUrl = httpToWs(buildApiUrl('/ws/system-health'));
-        const ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          console.log('System health WebSocket connected');
-        };
-
-        ws.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          if (data.type === 'health_update') {
-            // Update health data with new information
-            fetchHealthData();
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
-        };
-
-        ws.onclose = () => {
-          console.log('WebSocket closed, reconnecting in 10 seconds...');
-          setTimeout(connectWebSocket, 10000);
-        };
-
-        wsRef.current = ws;
-      } catch (err) {
-        console.error('Failed to connect WebSocket:', err);
-        setTimeout(connectWebSocket, 10000);
-      }
-    };
-
-    connectWebSocket();
-
-    // Cleanup
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, []);
-
   const handleRefresh = async () => {
-    setRefreshing(true);
+    announceToScreenReader('Refreshing system health data...');
     await fetchHealthData();
+    announceToScreenReader('System health data refreshed.');
   };
 
   const handleExport = () => {
@@ -276,14 +212,34 @@ export const SystemStatus: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}
+        role="status"
+        aria-live="polite"
+        aria-label="Loading system health data"
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: isMobile ? 2 : 3 }}>
+    <Box sx={{ p: isMobile ? 2 : 3 }} role="main" aria-label="System Status Monitor">
+      {/* Screen reader announcer (visually hidden) */}
+      <div
+        ref={announcerRef}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: 'absolute',
+          left: '-10000px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+        }}
+      />
+
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
         <Box>
@@ -296,12 +252,22 @@ export const SystemStatus: React.FC = () => {
         </Box>
         <Box display="flex" gap={1}>
           <Tooltip title="Refresh all checks">
-            <IconButton onClick={handleRefresh} disabled={refreshing} color="primary">
+            <IconButton
+              onClick={handleRefresh}
+              disabled={refreshing}
+              color="primary"
+              aria-label="Refresh all health checks"
+              aria-busy={refreshing}
+            >
               {refreshing ? <CircularProgress size={24} /> : <Refresh />}
             </IconButton>
           </Tooltip>
           <Tooltip title="Export health report">
-            <IconButton onClick={handleExport} disabled={!healthData}>
+            <IconButton
+              onClick={handleExport}
+              disabled={!healthData}
+              aria-label="Export health report as JSON"
+            >
               <GetApp />
             </IconButton>
           </Tooltip>
@@ -310,18 +276,26 @@ export const SystemStatus: React.FC = () => {
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
       {/* Overall Status Summary */}
       {healthData && (
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper
+          sx={{ p: 3, mb: 3 }}
+          role="region"
+          aria-label="System health summary"
+        >
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6} md={3}>
-              <Box textAlign="center">
-                <Typography variant="h3" sx={{ color: getStatusColor(healthData.overall_status) }}>
+              <Box
+                textAlign="center"
+                role="status"
+                aria-label={`Overall system status: ${healthData.overall_status}`}
+              >
+                <Typography variant="h3" sx={{ color: getStatusColor(healthData.overall_status) }} aria-hidden="true">
                   {getStatusIcon(healthData.overall_status)}
                 </Typography>
                 <Typography variant="h6" mt={1}>
@@ -373,7 +347,7 @@ export const SystemStatus: React.FC = () => {
       )}
 
       {/* Filters and Search */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ p: 2, mb: 3 }} role="search" aria-label="Filter and search health checks">
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <TextField
@@ -381,26 +355,45 @@ export const SystemStatus: React.FC = () => {
               size="small"
               placeholder="Search features..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                announceToScreenReader(`Searching for ${e.target.value || 'all features'}`);
+              }}
+              inputProps={{
+                'aria-label': 'Search features by name or category',
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search />
+                    <Search aria-hidden="true" />
                   </InputAdornment>
                 ),
               }}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <Box display="flex" gap={1} flexWrap="wrap">
+            <Box display="flex" gap={1} flexWrap="wrap" role="group" aria-label="Filter by status">
               {(['all', 'healthy', 'failing', 'degraded', 'unknown'] as FilterType[]).map((f) => (
                 <Chip
                   key={f}
                   label={f.toUpperCase()}
-                  onClick={() => setFilter(f)}
+                  onClick={() => {
+                    setFilter(f);
+                    announceToScreenReader(`Filtered to show ${f} features`);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setFilter(f);
+                      announceToScreenReader(`Filtered to show ${f} features`);
+                    }
+                  }}
                   color={filter === f ? 'primary' : 'default'}
                   variant={filter === f ? 'filled' : 'outlined'}
                   size="small"
+                  tabIndex={0}
+                  aria-label={`Filter by ${f} status`}
+                  aria-pressed={filter === f}
                 />
               ))}
             </Box>
@@ -410,7 +403,7 @@ export const SystemStatus: React.FC = () => {
 
       {/* Health Check Cards by Category */}
       {Object.entries(groupedChecks).map(([category, checks]) => (
-        <Box key={category} mb={4}>
+        <Box key={category} mb={4} role="region" aria-label={`${getCategoryDisplayName(category)} health checks`}>
           <Typography variant="h6" fontWeight="bold" mb={2}>
             {getCategoryDisplayName(category)} ({checks.length})
           </Typography>
@@ -425,13 +418,19 @@ export const SystemStatus: React.FC = () => {
                     '&:hover': {
                       transform: 'translateY(-4px)',
                       boxShadow: 4,
+                    },
+                    '&:focus-within': {
+                      outline: `3px solid ${theme.palette.primary.main}`,
+                      outlineOffset: '2px',
                     }
                   }}
+                  role="article"
+                  aria-label={`${check.feature_name.replace(/_/g, ' ')} health check`}
                 >
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                       <Box display="flex" alignItems="center" gap={1}>
-                        {getStatusIcon(check.status)}
+                        <span aria-hidden="true">{getStatusIcon(check.status)}</span>
                         <Typography variant="subtitle1" fontWeight="bold">
                           {check.feature_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Typography>
@@ -440,6 +439,8 @@ export const SystemStatus: React.FC = () => {
                         <IconButton
                           size="small"
                           onClick={() => toggleCardExpanded(check.feature_name)}
+                          aria-label={expandedCards.has(check.feature_name) ? 'Hide error details' : 'Show error details'}
+                          aria-expanded={expandedCards.has(check.feature_name)}
                         >
                           {expandedCards.has(check.feature_name) ? <ExpandLess /> : <ExpandMore />}
                         </IconButton>
@@ -454,19 +455,22 @@ export const SystemStatus: React.FC = () => {
                       <Chip
                         label={check.status.toUpperCase()}
                         size="small"
+                        role="status"
+                        aria-label={`Status: ${check.status}`}
                         sx={{
                           backgroundColor: getStatusColor(check.status),
                           color: '#fff',
                           fontWeight: 'bold',
+                          border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.3)' : 'none',
                         }}
                       />
-                      <Typography variant="caption" color="textSecondary">
+                      <Typography variant="caption" color="textSecondary" aria-label={`Last checked ${getTimeAgo(check.last_check)}`}>
                         {getTimeAgo(check.last_check)}
                       </Typography>
                     </Box>
 
                     {check.latency_ms && (
-                      <Typography variant="caption" color="textSecondary" display="block" mt={1}>
+                      <Typography variant="caption" color="textSecondary" display="block" mt={1} aria-label={`Response time: ${check.latency_ms.toFixed(2)} milliseconds`}>
                         Latency: {check.latency_ms.toFixed(2)}ms
                       </Typography>
                     )}

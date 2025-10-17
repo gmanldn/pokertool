@@ -12,10 +12,11 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { WebSocketMessageData } from '../types/common';
 
 export interface WebSocketMessage {
   type: string;
-  data: any;
+  data: WebSocketMessageData;
   timestamp: number;
 }
 
@@ -30,7 +31,7 @@ interface UseWebSocketReturn {
   connected: boolean;
   connectionStatus: ConnectionStatus;
   messages: WebSocketMessage[];
-  sendMessage: (message: any) => void;
+  sendMessage: (message: WebSocketMessageData | string) => void;
   clearMessages: () => void;
   reconnect: () => void;
   reconnectCountdown: number;
@@ -49,7 +50,7 @@ export const useWebSocket = (url: string): UseWebSocketReturn => {
   const reconnectCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastHeartbeatRef = useRef<number>(Date.now());
-  const messageQueueRef = useRef<any[]>([]);
+  const messageQueueRef = useRef<(WebSocketMessageData | string)[]>([]);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 10;
   const baseReconnectDelay = 1000;
@@ -220,7 +221,7 @@ export const useWebSocket = (url: string): UseWebSocketReturn => {
     };
   }, [connect, stopHeartbeat]);
 
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: WebSocketMessageData | string) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       try {
         const messageData = typeof message === 'string' ? message : JSON.stringify(message);

@@ -449,7 +449,7 @@ describe('SystemStatus Component', () => {
 
       // Find and click the expand button for the OCR Engine card
       const ocrCard = screen.getByText('Ocr Engine').closest('.MuiCard-root');
-      const expandButton = within(ocrCard!).getByRole('button');
+      const expandButton = within(ocrCard as HTMLElement).getByRole('button');
       fireEvent.click(expandButton);
 
       await waitFor(() => {
@@ -465,7 +465,7 @@ describe('SystemStatus Component', () => {
       });
 
       const ocrCard = screen.getByText('Ocr Engine').closest('.MuiCard-root');
-      const expandButton = within(ocrCard!).getByRole('button');
+      const expandButton = within(ocrCard as HTMLElement).getByRole('button');
 
       // Expand
       fireEvent.click(expandButton);

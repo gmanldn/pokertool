@@ -176,7 +176,7 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
 
     // Parse advice data
     try {
-      const adviceData: Advice = latestMessage.data;
+      const adviceData = latestMessage.data as unknown as Advice;
       setAdvice(adviceData);
     } catch (error) {
       console.error('Failed to parse advice data:', error);
@@ -224,7 +224,7 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
     const actions: string[] = [];
     const evValues: number[] = [];
     const colors: string[] = [];
-    const intervals = advice.evConfidenceIntervals;
+  // const intervals = advice.evConfidenceIntervals; // Unused - commented out by auto-fixer
 
     // Map action names to display format
     const actionMap: { [key: string]: string } = {

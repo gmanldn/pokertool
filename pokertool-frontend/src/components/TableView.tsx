@@ -43,9 +43,10 @@ import { EquityCalculator } from './EquityCalculator';
 import { BetSizingRecommendations } from './BetSizingRecommendations';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { buildWsUrl } from '../config/api';
+import { SendMessageFunction, JsonValue } from '../types/common';
 
 interface TableViewProps {
-  sendMessage: (message: any) => void;
+  sendMessage: SendMessageFunction;
 }
 
 interface TableData {
@@ -167,8 +168,8 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
       const latestMessage = messages[messages.length - 1];
 
       // Handle different message types from backend
-      if (latestMessage.type === 'table_update' && latestMessage.data) {
-        setTables([latestMessage.data]);
+      if (latestMessage.type === 'table_update' && latestMessage.data && typeof latestMessage.data === 'object' && latestMessage.data !== null && !Array.isArray(latestMessage.data)) {
+        setTables([latestMessage.data as unknown as TableData]);
       } else {
         // Handle incremental detection events to update current table
         setTables(prevTables => {
@@ -186,20 +187,21 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
 
           // Card detection events
           if (latestMessage.type === 'card_detected' || latestMessage.type === 'cards_detected') {
-            const cardData = latestMessage.data || latestMessage;
+            const cardData = (latestMessage.data || latestMessage) as Record<string, JsonValue>;
             if (cardData.cards && Array.isArray(cardData.cards)) {
+              const cards = cardData.cards.filter((c): c is string => typeof c === 'string');
               // Community cards
               if (cardData.type === 'community' || cardData.cardType === 'board') {
-                updated.communityCards = cardData.cards;
-                updated.currentAction = `${cardData.cards.length} community cards detected`;
+                updated.communityCards = cards;
+                updated.currentAction = `${cards.length} community cards detected`;
               }
               // Hole cards for a specific player
               else if (cardData.seat !== undefined || cardData.playerId !== undefined) {
-                const seatNum = cardData.seat || cardData.playerId;
+                const seatNum = typeof cardData.seat === 'number' ? cardData.seat : (typeof cardData.playerId === 'number' ? cardData.playerId : 0);
                 updated.players = [...updated.players];
                 const playerIndex = updated.players.findIndex(p => p.seat === seatNum);
                 if (playerIndex >= 0) {
-                  updated.players[playerIndex] = { ...updated.players[playerIndex], cards: cardData.cards };
+                  updated.players[playerIndex] = { ...updated.players[playerIndex], cards };
                 }
               }
             }
@@ -207,18 +209,22 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
 
           // Player detection events
           if (latestMessage.type === 'player_detected' || latestMessage.type === 'player_update') {
-            const playerData = latestMessage.data || latestMessage;
-            if (playerData.seat !== undefined) {
+            const playerData = (latestMessage.data || latestMessage) as Record<string, JsonValue>;
+            if (playerData.seat !== undefined && typeof playerData.seat === 'number') {
               updated.players = [...updated.players];
               const existingIndex = updated.players.findIndex(p => p.seat === playerData.seat);
 
+              const cards = playerData.cards && Array.isArray(playerData.cards)
+                ? playerData.cards.filter((c): c is string => typeof c === 'string')
+                : undefined;
+
               const player: Player = {
                 seat: playerData.seat,
-                name: playerData.name || `Player ${playerData.seat}`,
-                chips: playerData.chips || playerData.stack || 0,
-                cards: playerData.cards,
-                isActive: playerData.isActive !== undefined ? playerData.isActive : true,
-                isFolded: playerData.isFolded || playerData.folded || false,
+                name: typeof playerData.name === 'string' ? playerData.name : `Player ${playerData.seat}`,
+                chips: typeof playerData.chips === 'number' ? playerData.chips : (typeof playerData.stack === 'number' ? playerData.stack : 0),
+                cards,
+                isActive: playerData.isActive !== undefined ? (typeof playerData.isActive === 'boolean' ? playerData.isActive : true) : true,
+                isFolded: (typeof playerData.isFolded === 'boolean' && playerData.isFolded) || (typeof playerData.folded === 'boolean' && playerData.folded) || false,
               };
 
               if (existingIndex >= 0) {
@@ -232,18 +238,19 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
 
           // Pot detection events
           if (latestMessage.type === 'pot_update' || latestMessage.type === 'pot_detected') {
-            const potData = latestMessage.data || latestMessage;
+            const potData = (latestMessage.data || latestMessage) as Record<string, JsonValue>;
             if (potData.pot !== undefined || potData.amount !== undefined) {
-              updated.pot = potData.pot || potData.amount;
+              const potValue = typeof potData.pot === 'number' ? potData.pot : (typeof potData.amount === 'number' ? potData.amount : 0);
+              updated.pot = potValue;
               updated.currentAction = `Pot: ${updated.pot}`;
             }
           }
 
           // Action detection events
           if (latestMessage.type === 'action_detected' || latestMessage.type === 'player_action') {
-            const actionData = latestMessage.data || latestMessage;
-            if (actionData.action) {
-              updated.currentAction = actionData.player
+            const actionData = (latestMessage.data || latestMessage) as Record<string, JsonValue>;
+            if (actionData.action && typeof actionData.action === 'string') {
+              updated.currentAction = actionData.player && typeof actionData.player === 'string'
                 ? `${actionData.player} ${actionData.action}`
                 : actionData.action;
             }
@@ -256,12 +263,12 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   }, [messages]);
 
   const [selectedTable, setSelectedTable] = useState<string>('table-1');
-  const [detectionActive, setDetectionActive] = useState(true);
-  const [playerDetection, setPlayerDetection] = useState(true);
-  const [cardDetection, setCardDetection] = useState(true);
-  const [potDetection, setPotDetection] = useState(true);
-  const [dealerPosition, setDealerPosition] = useState<number>(0); // Dealer seat number
-  const [bigBlindAmount, setBigBlindAmount] = useState<number>(2); // For BB calculation
+  const [_detectionActive, _setDetectionActive] = useState(true);
+  const [playerDetection, _setPlayerDetection] = useState(true);
+  const [cardDetection, _setCardDetection] = useState(true);
+  const [potDetection, _setPotDetection] = useState(true);
+  const [dealerPosition, _setDealerPosition] = useState<number>(0); // Dealer seat number
+  const [bigBlindAmount, _setBigBlindAmount] = useState<number>(2); // For BB calculation
 
   // Auto-start tracking on mount
   React.useEffect(() => {
@@ -574,7 +581,7 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
         );
       })}
     </Box>
-    );
+  );
   };
 
   return (

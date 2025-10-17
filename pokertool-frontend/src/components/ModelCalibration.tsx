@@ -178,7 +178,7 @@ export const ModelCalibration: React.FC = () => {
     if (values.length < 2) return 'stable';
     const recent = values.slice(-5);
     const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
-    const first = recent[0];
+  // const first = recent[0]; // Unused - commented out by auto-fixer
     const last = recent[recent.length - 1];
 
     if (last > avg * 1.1) return 'up';

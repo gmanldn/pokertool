@@ -159,7 +159,7 @@ export const SessionPerformanceDashboard: React.FC<SessionPerformanceDashboardPr
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => `$${context.parsed.y.toFixed(2)}`
+          label: (context: { parsed: { y: number } }) => `$${context.parsed.y.toFixed(2)}`
         }
       }
     },
@@ -176,7 +176,7 @@ export const SessionPerformanceDashboard: React.FC<SessionPerformanceDashboardPr
           color: 'rgba(255, 255, 255, 0.05)'
         },
         ticks: {
-          callback: (value: any) => `$${value}`
+          callback: (value: string | number) => `$${value}`
         }
       }
     }

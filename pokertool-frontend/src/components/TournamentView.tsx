@@ -109,7 +109,7 @@ export const TournamentView: React.FC = () => {
 
   const [registerDialog, setRegisterDialog] = useState(false);
   const [completeDialog, setCompleteDialog] = useState(false);
-  const [editDialog, setEditDialog] = useState(false);
+  const [_detailsDialog, _setDetailsDialog] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [tabValue, setTabValue] = useState(0);
 
@@ -280,7 +280,7 @@ export const TournamentView: React.FC = () => {
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: { parsed: { y: number } }) => {
             return `${bankroll.currency} ${context.parsed.y.toFixed(2)}`;
           },
         },

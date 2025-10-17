@@ -101,8 +101,8 @@ export const AlternativeActions: React.FC<AlternativeActionsProps> = ({
     const latestMessage = alternativeMessages[alternativeMessages.length - 1];
 
     try {
-      const data: AlternativeActionsData = latestMessage.data;
-      
+      const data = latestMessage.data as unknown as AlternativeActionsData;
+
       // Sort alternatives by EV (highest first)
       const sortedAlternatives = [...data.alternatives].sort((a, b) => b.ev - a.ev);
       

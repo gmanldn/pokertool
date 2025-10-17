@@ -31,9 +31,10 @@ import {
   GetApp,
   FilterList,
 } from '@mui/icons-material';
+import { DetectionMessage, DetectionLogData } from '../types/common';
 
 interface DetectionLogProps {
-  messages?: any[];
+  messages?: DetectionMessage[];
 }
 
 interface LogEntry {
@@ -41,7 +42,7 @@ interface LogEntry {
   type: 'player' | 'card' | 'pot' | 'action' | 'system' | 'error';
   severity: 'info' | 'success' | 'warning' | 'error';
   message: string;
-  data?: any;
+  data?: DetectionLogData;
 }
 
 export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => {

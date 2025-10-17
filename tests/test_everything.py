@@ -43,7 +43,7 @@ from typing import List, Dict, Any, Optional
 ROOT = Path(__file__).resolve().parent
 SRC_DIR = ROOT / 'src'
 TESTS_DIR = ROOT / 'tests'
-LOGS_DIR = ROOT / 'test_logs'
+LOGS_DIR = ROOT / 'logs'
 
 # Ensure logs directory exists
 LOGS_DIR.mkdir(exist_ok=True)
@@ -206,7 +206,7 @@ class TestRunner:
         cmd = [
             sys.executable, '-m', 'pytest',
             '--cov=src/pokertool',
-            '--cov-report=html:test_logs/coverage_html',
+            '--cov-report=html:logs/coverage_html',
             '--cov-report=term-missing',
             '-v'
         ]
