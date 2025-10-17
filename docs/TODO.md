@@ -1312,3 +1312,352 @@ All modules now have production-ready implementations with comprehensive test su
 - All smoke tests must be non-destructive
 - Smoke tests suitable for pre-deployment validation
 - Run smoke tests before every release
+
+---
+
+## 🎯 BETFAIR SCRAPING ACCURACY IMPROVEMENTS
+### Based on BF_TEST.jpg Analysis (tests/BF_TEST.jpg)
+
+### Image Analysis Summary
+**Test Image Details:**
+- **Game State**: River (5 community cards: 10♦ A♦ 7♥ 5♥ 6♥)
+- **Pot**: £0.08 (displayed in 2 locations)
+- **Active Players**: 4 players visible (2 active, 1 sitting out, 1 empty)
+- **Tournament**: ELITE SERIES XL ULTIMATE EDITION
+- **Special Features**: VPIP/AF stats badges, timer display, dealer button
+
+### Critical Accuracy Tasks (Priority Order)
+
+#### 1. Player Name Detection Accuracy
+**Challenges Identified:**
+- Mixed case names: "FourBoysUnited", "ThelongbluevEin", "GmanLDN"
+- Names with numbers: "FourBoysUnited" contains "4"
+- Variable name lengths and capitalization
+- Names overlapping with player avatars
+
+**Tasks:**
+- [ ] **BF-001**: Implement robust OCR for mixed-case player names
+  - Test with: "FourBoysUnited", "ThelongbluevEin", "GmanLDN"
+  - Handle names with numbers embedded (e.g., "4" in "FourBoysUnited")
+  - Priority: CRITICAL
+  - Expected Accuracy: >98%
+
+- [ ] **BF-002**: Add player name validation against common patterns
+  - Validate against Betfair username rules (alphanumeric + underscore)
+  - Filter out false positives (UI text, table names)
+  - Priority: HIGH
+
+- [ ] **BF-003**: Improve name extraction ROI positioning
+  - Account for player name position relative to avatar
+  - Handle variable name lengths (3-20 characters)
+  - Test with empty seats showing "Empty" text
+  - Priority: HIGH
+
+#### 2. Currency & Stack Size Detection
+**Challenges Identified:**
+- Pound symbol (£) preceding amounts: £2.22, £2.62, £1.24, £0.08
+- Decimal precision (2 decimal places)
+- £0 display for sitting out players
+- Stack sizes displayed below player names
+
+**Tasks:**
+- [ ] **BF-004**: Implement robust £ symbol detection
+  - Handle Unicode pound symbol (£) vs ASCII variants
+  - Test OCR with currency symbols in different fonts
+  - Priority: CRITICAL
+  - Expected Accuracy: >99%
+
+- [ ] **BF-005**: Add decimal amount validation
+  - Enforce 2 decimal place format (XX.XX)
+  - Validate amounts are positive numbers
+  - Handle edge cases: £0.00, £0.08 (small amounts)
+  - Priority: HIGH
+
+- [ ] **BF-006**: Distinguish stack sizes from pot amounts
+  - Stack sizes: positioned below player names
+  - Pot amounts: centered on table with "Pot:" label
+  - Multiple pot displays (main pot + pot chips icon)
+  - Priority: CRITICAL
+
+#### 3. Player Stats Badge Detection (VPIP/AF)
+**Challenges Identified:**
+- Small badges above player names showing "VPIP" and "AF"
+- White text on dark background badges
+- Badges may not be present for all players
+- Close proximity to player names
+
+**Tasks:**
+- [ ] **BF-007**: Implement VPIP/AF badge detection
+  - Detect presence/absence of stats badges
+  - Extract badge text: "VPIP", "AF"
+  - Position badges relative to player seats
+  - Priority: MEDIUM
+
+- [ ] **BF-008**: Handle optional stats display
+  - Some players have stats, others don't
+  - Don't confuse badges with player names
+  - Validate badge positioning (always above name)
+  - Priority: MEDIUM
+
+#### 4. Timer & Time Bank Detection
+**Challenges Identified:**
+- Timer display format: "Time: 17" (seconds remaining)
+- White text on dark semi-transparent overlay
+- Positioned near active player's avatar
+- Dynamic countdown value
+
+**Tasks:**
+- [ ] **BF-009**: Implement time bank detection
+  - Extract "Time: XX" format
+  - Parse numeric seconds value
+  - Detect timer position relative to active player
+  - Priority: HIGH
+
+- [ ] **BF-010**: Add timer validation
+  - Validate timer is numeric (0-60 typical range)
+  - Associate timer with correct player
+  - Handle absence of timer (no active decision)
+  - Priority: MEDIUM
+
+#### 5. Community Cards Detection
+**Challenges Identified:**
+- 5 cards displayed: 10♦ A♦ 7♥ 5♥ 6♥
+- Large card images with clear suits and values
+- Cards have white borders
+- Suits in red (hearts/diamonds) and black (clubs/spades)
+
+**Tasks:**
+- [ ] **BF-011**: Enhance card suit detection for Betfair
+  - Verify diamond (♦) and heart (♥) color detection (red)
+  - Test with mixed suits on river (as in test image)
+  - Validate card borders and spacing
+  - Priority: CRITICAL
+  - Expected Accuracy: >99.5%
+
+- [ ] **BF-012**: Validate community card sequencing
+  - Ensure cards are read left-to-right
+  - Detect number of cards (2=preflop, 3=flop, 4=turn, 5=river)
+  - Handle card animations/transitions
+  - Priority: HIGH
+
+#### 6. Dealer Button Detection
+**Challenges Identified:**
+- Yellow circular "D" button on table
+- Positioned near active dealer player
+- Small icon, distinct color
+- Important for position determination
+
+**Tasks:**
+- [ ] **BF-013**: Implement dealer button detection
+  - Detect yellow "D" button via color + shape matching
+  - Determine button position on table
+  - Associate button with correct player seat
+  - Priority: CRITICAL
+
+- [ ] **BF-014**: Validate button position logic
+  - Button should be at valid player position
+  - Not at empty seats or sitting out players
+  - Cross-validate with positional logic
+  - Priority: HIGH
+
+#### 7. Player Status Detection (SIT OUT / Empty)
+**Challenges Identified:**
+- "SIT OUT" text overlay on inactive players
+- "Empty" label on vacant seats
+- £0 stack display for sitting out players
+- Different visual states for player seats
+
+**Tasks:**
+- [ ] **BF-015**: Detect "SIT OUT" status
+  - Extract "SIT OUT" text from player overlay
+  - Associate with correct player
+  - Update player active/inactive state
+  - Priority: HIGH
+
+- [ ] **BF-016**: Detect empty seats
+  - Identify "Empty" text in seat positions
+  - Distinguish from player names
+  - Mark seat as vacant in table state
+  - Priority: MEDIUM
+
+- [ ] **BF-017**: Handle zero stack (£0) players
+  - Detect £0 stack amounts
+  - Cross-reference with "SIT OUT" status
+  - Validate sitting out players don't have actions
+  - Priority: MEDIUM
+
+#### 8. Pot Amount Multi-Location Detection
+**Challenges Identified:**
+- Pot displayed in 2 locations: "Pot: £0.08" label + pot chips icon "£0.08"
+- Both should show same value
+- Need to handle multiple pot displays consistently
+
+**Tasks:**
+- [ ] **BF-018**: Extract pot from both display locations
+  - Main pot label: "Pot: £0.08" format
+  - Pot chips icon: "£0.08" (amount only)
+  - Priority: HIGH
+
+- [ ] **BF-019**: Validate pot consistency
+  - Both locations should match
+  - Use primary location if mismatch
+  - Log discrepancies for accuracy tracking
+  - Priority: MEDIUM
+
+- [ ] **BF-020**: Handle multi-pot scenarios
+  - Main pot + side pots
+  - Total pot calculation
+  - Pot distribution logic
+  - Priority: MEDIUM
+
+#### 9. Tournament Branding & Text Filtering
+**Challenges Identified:**
+- Tournament name: "ELITE SERIES XL ULTIMATE EDITION"
+- Background text/branding shouldn't be detected as game data
+- Date/time stamps: "04/09/2025 - 04/10/2025"
+- Need to filter decorative text
+
+**Tasks:**
+- [ ] **BF-021**: Filter tournament branding text
+  - Blacklist common tournament phrases
+  - Position-based filtering (center table area)
+  - Distinguish from player/game data
+  - Priority: MEDIUM
+
+- [ ] **BF-022**: Extract table/tournament metadata
+  - Tournament name detection
+  - Table ID extraction
+  - Date/time information
+  - Priority: LOW
+
+#### 10. Betfair-Specific UI Element Detection
+**Challenges Identified:**
+- Hamburger menu (top-left)
+- Rocket icon (mission/achievement indicator)
+- "Sit Out Options" panel (bottom-left)
+- "Wait for Big Blind" checkbox
+- Betfair-specific controls and overlays
+
+**Tasks:**
+- [ ] **BF-023**: Detect action panels and UI overlays
+  - Identify "Sit Out Options" panel
+  - Extract checkbox states ("Wait for Big Blind")
+  - Filter UI elements from game state
+  - Priority: LOW
+
+- [ ] **BF-024**: Handle Betfair UI element masking
+  - Mask/ignore hamburger menu area
+  - Mask achievement/mission icons
+  - Prevent UI text from being read as game data
+  - Priority: MEDIUM
+
+#### 11. Seat Position Mapping
+**Challenges Identified:**
+- 6-max table layout with specific seat positions
+- Seats at: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right
+- Need accurate seat-to-player mapping
+- Hero position is bottom-center (GmanLDN)
+
+**Tasks:**
+- [ ] **BF-025**: Create Betfair 6-max seat position map
+  - Define exact ROI coordinates for each seat
+  - Map seat positions to relative positions (BTN, SB, BB, etc.)
+  - Handle variable table sizes
+  - Priority: CRITICAL
+
+- [ ] **BF-026**: Validate hero seat detection
+  - Hero is typically bottom-center
+  - Cross-validate with username
+  - Ensure hero seat is correctly identified
+  - Priority: HIGH
+
+#### 12. Color & Theme Detection
+**Challenges Identified:**
+- Purple/blue felt table
+- Dark themed UI
+- Contrast between text and background
+- Multiple color schemes for different elements
+
+**Tasks:**
+- [ ] **BF-027**: Optimize OCR for dark theme
+  - Adjust contrast/brightness preprocessing
+  - Test with Betfair's purple table felt
+  - Handle text on semi-transparent overlays
+  - Priority: HIGH
+
+- [ ] **BF-028**: Add color-based element detection
+  - Yellow dealer button
+  - Red card suits (hearts/diamonds)
+  - Green/red status indicators
+  - Priority: MEDIUM
+
+#### 13. Multi-Table Support
+**Challenges Identified:**
+- Users may play multiple Betfair tables
+- Each table has unique layout/size
+- Need to distinguish between tables
+
+**Tasks:**
+- [ ] **BF-029**: Implement Betfair table detection
+  - Detect Betfair table window title
+  - Identify table boundaries
+  - Support multiple simultaneous tables
+  - Priority: MEDIUM
+
+- [ ] **BF-030**: Handle table switching/focus
+  - Track active table
+  - Update scraping for focused table
+  - Maintain state for background tables
+  - Priority: LOW
+
+### Testing & Validation
+
+#### 14. Betfair-Specific Test Suite
+**Tasks:**
+- [ ] **BF-031**: Create Betfair scraping test suite
+  - Use BF_TEST.jpg as baseline test image
+  - Add multiple game state test images (preflop, flop, turn, river)
+  - Include edge cases (empty seats, all-in, side pots)
+  - Priority: CRITICAL
+
+- [ ] **BF-032**: Implement accuracy benchmarking
+  - Target: >98% accuracy for all elements
+  - Track accuracy metrics per element type
+  - Generate accuracy reports
+  - Priority: HIGH
+
+- [ ] **BF-033**: Add regression testing
+  - Prevent accuracy degradation
+  - Automated comparison with baseline
+  - Alert on accuracy drops >2%
+  - Priority: HIGH
+
+### Documentation
+
+#### 15. Betfair Integration Documentation
+**Tasks:**
+- [ ] **BF-034**: Document Betfair-specific challenges
+  - UI layout differences
+  - Text formatting quirks
+  - Known limitations
+  - Priority: MEDIUM
+
+- [ ] **BF-035**: Create Betfair setup guide
+  - Optimal window size/position
+  - Recommended table settings
+  - Troubleshooting common issues
+  - Priority: MEDIUM
+
+### Success Criteria
+- **Player Names**: >98% accuracy (BF-001 to BF-003)
+- **Currency/Stacks**: >99% accuracy (BF-004 to BF-006)
+- **Cards**: >99.5% accuracy (BF-011 to BF-012)
+- **Dealer Button**: >99% accuracy (BF-013 to BF-014)
+- **Overall Accuracy**: >98% on all Betfair tables
+
+### Implementation Priority
+1. **Phase 1 (Critical)**: BF-001, BF-004, BF-006, BF-011, BF-013, BF-025 (Core game state)
+2. **Phase 2 (High)**: BF-002, BF-005, BF-009, BF-012, BF-014, BF-015, BF-026 (Enhanced detection)
+3. **Phase 3 (Medium)**: BF-007, BF-008, BF-010, BF-016, BF-017, BF-018, BF-027 (Stats & optimization)
+4. **Phase 4 (Testing)**: BF-031, BF-032, BF-033 (Validation & benchmarking)
+5. **Phase 5 (Polish)**: BF-019 to BF-024, BF-028 to BF-030, BF-034, BF-035 (Edge cases & docs)
