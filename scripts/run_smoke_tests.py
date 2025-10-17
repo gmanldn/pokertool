@@ -47,7 +47,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 SRC_DIR = PROJECT_ROOT / 'src'
 TESTS_DIR = PROJECT_ROOT / 'tests'
-LOGS_DIR = PROJECT_ROOT / 'test_logs'
+LOGS_DIR = PROJECT_ROOT / 'logs'
 
 # Ensure logs directory exists
 LOGS_DIR.mkdir(exist_ok=True)

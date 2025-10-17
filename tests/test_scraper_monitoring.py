@@ -12,7 +12,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('scraper_test.log', mode='w')
+        logging.FileHandler('logs/scraper_test.log', mode='w')
     ]
 )
 
