@@ -50,13 +50,31 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-17',
-    'release_name': 'macOS Dock & Process Management',
+    'release_name': 'Documentation & Feature Flags',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '88.1.0',
+        'date': '2025-10-17',
+        'name': 'Documentation & Feature Flags',
+        'description': 'Comprehensive documentation and feature flags system for controlled rollouts',
+        'highlights': [
+            'Environment Variables Documentation: Complete 400+ line reference for all environment variables',
+            'Documentation Coverage: Required/optional variables, development/production configs, feature flags',
+            'Security Best Practices: Secret management, rotation policies, access control guidelines',
+            'Troubleshooting Guide: 700+ line comprehensive troubleshooting documentation',
+            'Troubleshooting Coverage: Installation, startup, scraping, GUI, database, performance issues',
+            'Quick Diagnostics: Health checks, log analysis, verification commands',
+            'Feature Flags System: Robust feature flag management with environment-based toggles',
+            'Feature Control: User/environment restrictions, dependencies, runtime enable/disable',
+            'Testing: 34 comprehensive test cases covering all feature flag scenarios',
+            'Integration Ready: Gradual rollouts, A/B testing, decorator support, singleton pattern',
+        ],
+    },
     {
         'version': '88.0.0',
         'date': '2025-10-17',
