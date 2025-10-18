@@ -49,14 +49,26 @@ VERSION_INFO = {
     'major': VERSION_MAJOR,
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
-    'release_date': '2025-10-19',
-    'release_name': 'Strategy Docs & Architecture Refresh',
+    'release_date': '2025-10-22',
+    'release_name': 'Startup Optimisations & Detection Stream',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '88.5.0',
+        'date': '2025-10-22',
+        'name': 'Startup Optimisations & Detection Stream',
+        'description': 'Deferred heavyweight services to slash API boot time and hardened detection WebSocket broadcasting.',
+        'highlights': [
+            'Lazy Service Wiring: Deferred database, analytics, gamification, and community service initialisation until first use for a snappier API launch.',
+            'Detection Event Dispatcher: Added a queue-backed bridge so detections issued before FastAPI startup are preserved and flushed.',
+            'Scraper Broadcasting: Poker screen scraper now emits success and warning events through the dispatcher with smart throttling.',
+            'Automated Coverage: Added detection event unit tests to guarantee dispatcher behaviour and buffering.',
+        ],
+    },
     {
         'version': '88.4.0',
         'date': '2025-10-19',

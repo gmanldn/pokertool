@@ -55,6 +55,13 @@ except ImportError as e:
     mss = None
     cv2 = None
 
+# Detection event dispatcher (optional)
+try:
+    from ..detection_events import emit_detection_event
+except ImportError:  # pragma: no cover - fallback when API module unavailable
+    def emit_detection_event(*args, **kwargs):
+        return None
+
 # Check for Chrome DevTools Protocol (fast extraction)
 try:
     from .chrome_devtools_scraper import ChromeDevToolsScraper, CDP_AVAILABLE
@@ -1375,7 +1382,63 @@ class PokerScreenScraper:
         else:
             self.sct = None
 
+        # Detection event throttling
+        self._last_detection_event_time = 0.0
+        self._last_detection_success_snapshot: Optional[Dict[str, Any]] = None
+        self._last_no_detection_event_time = 0.0
+
         logger.info(f"🎯 PokerScreenScraper initialized (target: {site.value}, CDP: {use_cdp}, Learning: {enable_learning})")
+
+    def _emit_detection_success(self, detector: str, confidence: float, details: Dict[str, Any]) -> None:
+        """Broadcast a successful detection event with deduplication."""
+        now = time.time()
+        snapshot = {
+            'detector': detector,
+            'site': details.get('site', self.site.value if hasattr(self.site, 'value') else str(self.site)),
+            'confidence': round(confidence, 4),
+        }
+
+        if (
+            self._last_detection_success_snapshot == snapshot
+            and now - self._last_detection_event_time < 1.0
+        ):
+            return
+
+        self._last_detection_success_snapshot = snapshot
+        self._last_detection_event_time = now
+
+        emit_detection_event(
+            event_type='system',
+            severity='success',
+            message=f"Poker table detected by {detector} ({confidence:.1%})",
+            data={
+                **details,
+                'detector': detector,
+                'confidence': confidence,
+                'site': snapshot['site'],
+            },
+        )
+
+    def _emit_no_detection(self, betfair_conf: float, universal_conf: float, elapsed_ms: float) -> None:
+        """Broadcast a throttled warning when no poker table is detected."""
+        now = time.time()
+        if now - self._last_no_detection_event_time < 5.0:
+            return
+
+        self._last_no_detection_event_time = now
+        self._last_detection_success_snapshot = None  # Reset so next detection is emitted immediately
+
+        emit_detection_event(
+            event_type='system',
+            severity='warning',
+            message="No poker table detected",
+            data={
+                'site': self.site.value if hasattr(self.site, 'value') else str(self.site),
+                'betfair_confidence': betfair_conf,
+                'universal_confidence': universal_conf,
+                'time_ms': elapsed_ms,
+            },
+        )
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
         """
@@ -1430,12 +1493,14 @@ class PokerScreenScraper:
                         image, True, betfair_result.time_ms
                     )
 
-                return True, betfair_result.confidence, {
+                detection_payload = {
                     'site': 'betfair',
                     'detector': 'betfair_specialized',
                     **betfair_result.details,
                     'time_ms': betfair_result.time_ms
                 }
+                self._emit_detection_success('betfair_specialized', betfair_result.confidence, detection_payload)
+                return True, betfair_result.confidence, detection_payload
             else:
                 # Log why Betfair detection failed
                 logger.debug(f"[BETFAIR] ✗ Not detected (confidence: {betfair_result.confidence:.1%})")
@@ -1461,12 +1526,14 @@ class PokerScreenScraper:
                     image, True, universal_result.time_ms
                 )
 
-            return True, universal_result.confidence, {
+            detection_payload = {
                 'site': 'generic',
                 'detector': 'universal',
                 **universal_result.details,
                 'time_ms': universal_result.time_ms
             }
+            self._emit_detection_success('universal', universal_result.confidence, detection_payload)
+            return True, universal_result.confidence, detection_payload
 
         # No detection
         total_time = (time.time() - start_time) * 1000
@@ -1485,6 +1552,7 @@ class PokerScreenScraper:
             logger.info(f"   Detection time: {total_time:.1f}ms")
 
         betfair_conf = betfair_result.confidence if self.site == PokerSite.BETFAIR else 0.0
+        self._emit_no_detection(betfair_conf, universal_result.confidence, total_time)
 
         return False, 0.0, {
             'site': 'none',

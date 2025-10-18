@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.4.1
+version = 88.5.0
 release_date = 2025-10-22
 
 [release_notes]
-# v88.4.1 - Detection Telemetry & Reset Enhancements
-description = Polished detection streaming telemetry, bankroll resets, and statistical recording to keep live tracking aligned with learning systems.
-changes = Added financial history reset workflow, expanded hand recorder outcomes, enabled ante detection, and made detection WebSocket endpoints configurable.
+# v88.5.0 - Startup Optimisations & Detection Stream Hardening
+description = Accelerated backend startup by deferring heavyweight service bootstrapping and stabilised the detection event WebSocket pipeline.
+changes = Lazily initialise analytics/gamification/community services, queue detection events until the API loop is ready, wire scraper broadcasts into the dispatcher, and cover the new bridge with tests.
 status = stable
 
 [components]
