@@ -1000,10 +1000,19 @@ This API implements comprehensive security measures including:
         except ImportError:
             logger.warning("GZip middleware not available")
 
+        allowed_origins = os.getenv(
+            'POKERTOOL_ALLOWED_ORIGINS',
+            'http://localhost:3000,http://127.0.0.1:3000'
+        )
+        cors_origins = [origin.strip() for origin in allowed_origins.split(',') if origin.strip()]
+
+        allow_credentials_env = os.getenv('POKERTOOL_ALLOW_CREDENTIALS', 'false').lower()
+        cors_allow_credentials = allow_credentials_env in {'1', 'true', 'yes'}
+
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=['*'],  # In production, specify actual origins
-            allow_credentials=True,
+            allow_origins=cors_origins or ['*'],
+            allow_credentials=cors_allow_credentials,
             allow_methods=['*'],
             allow_headers=['*'],
         )
@@ -1692,49 +1701,6 @@ This API implements comprehensive security measures including:
                 }
             }
 
-        # WebSocket endpoint
-        @self.app.websocket('/ws/{user_id}')
-        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
-            # Verify token
-            user = self.services.auth_service.verify_token(token)
-            if not user or user.user_id != user_id:
-                await websocket.close(code=1008, reason='Invalid token')
-                return
-
-            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
-
-            try:
-                await self.services.connection_manager.connect(websocket, connection_id, user_id)
-
-                # Send welcome message
-                await self.services.connection_manager.send_personal_message({
-                    'type': 'welcome',
-                    'message': f'Connected as {user.username}',
-                    'connection_id': connection_id
-                }, connection_id)
-
-                # Keep connection alive
-                while True:
-                    try:
-                        # Wait for messages from client
-                        message = await websocket.receive_json()
-
-                        # Echo back for now (could handle commands)
-                        await self.services.connection_manager.send_personal_message({
-                            'type': 'echo',
-                            'data': message,
-                            'timestamp': datetime.utcnow().isoformat()
-                        }, connection_id)
-
-                    except WebSocketDisconnect:
-                        break
-                    except Exception as e:
-                        logger.error(f'WebSocket error: {e}')
-                        break
-
-            finally:
-                self.services.connection_manager.disconnect(connection_id, user_id)
-
         # Public WebSocket endpoint for detection events (no auth required)
         @self.app.websocket('/ws/detections')
         async def detections_websocket(websocket: WebSocket):
@@ -1742,6 +1708,7 @@ This API implements comprehensive security measures including:
             Public WebSocket endpoint for real-time poker table detection events.
             No authentication required - sends detection log messages.
             """
+            logger.info('Detection WebSocket handshake from %s', websocket.client)
             await websocket.accept()
             connection_id = f'det_{int(time.time() * 1000)}'
             detection_manager = get_detection_ws_manager()
@@ -1786,6 +1753,49 @@ This API implements comprehensive security measures including:
             finally:
                 # Unregister connection
                 await detection_manager.disconnect(connection_id)
+
+        # WebSocket endpoint
+        @self.app.websocket('/ws/{user_id}')
+        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
+            # Verify token
+            user = self.services.auth_service.verify_token(token)
+            if not user or user.user_id != user_id:
+                await websocket.close(code=1008, reason='Invalid token')
+                return
+
+            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
+
+            try:
+                await self.services.connection_manager.connect(websocket, connection_id, user_id)
+
+                # Send welcome message
+                await self.services.connection_manager.send_personal_message({
+                    'type': 'welcome',
+                    'message': f'Connected as {user.username}',
+                    'connection_id': connection_id
+                }, connection_id)
+
+                # Keep connection alive
+                while True:
+                    try:
+                        # Wait for messages from client
+                        message = await websocket.receive_json()
+
+                        # Echo back for now (could handle commands)
+                        await self.services.connection_manager.send_personal_message({
+                            'type': 'echo',
+                            'data': message,
+                            'timestamp': datetime.utcnow().isoformat()
+                        }, connection_id)
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'WebSocket error: {e}')
+                        break
+
+            finally:
+                self.services.connection_manager.disconnect(connection_id, user_id)
 
         # System Health WebSocket endpoint
         @self.app.websocket('/ws/system-health')
