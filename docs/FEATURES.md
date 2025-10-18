@@ -15,6 +15,7 @@ fixes:
 POKERTOOL-HEADER-END -->
 
 # PokerTool Complete Feature List
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Version**: v29.0.0  
 **Last Updated**: 2025-01-07  

@@ -1,4 +1,5 @@
 # Betfair Integration Challenges
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 ## Context
 - Betfair poker tables use a distinctive dark purple felt with high-contrast overlays.

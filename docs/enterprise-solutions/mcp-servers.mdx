@@ -7,6 +7,7 @@ title: "MCP Servers"
 ---
 
 ### Secure Architecture Fundamentals
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 MCP servers follow a client-server architecture where hosts (LLM applications like Cline) initiate connections through a transport layer to MCP servers. This architecture inherently provides security benefits as it maintains clear separation between components. Enterprise deployments should focus on the proper implementation of this architecture to ensure secure operations, particularly regarding the message exchange patterns and connection lifecycle management. For MCP architecture details, see [MCP Architecture](https://modelcontextprotocol.io/docs/concepts/architecture), and for latest specifications, see [MCP Specifications](https://spec.modelcontextprotocol.io/specification/2024-11-05/).
 

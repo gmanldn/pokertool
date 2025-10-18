@@ -1,4 +1,5 @@
 # PokerTool v60.0.0 - Scraping Excellence
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Release Date:** October 14, 2025
 **Release Name:** Scraping Excellence

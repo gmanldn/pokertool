@@ -14,6 +14,7 @@ fixes:
         ---
         POKERTOOL-HEADER-END -->
 # VectorCode Integration for PokerTool
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 This document describes the integration of VectorCode into the PokerTool codebase, providing intelligent code search and context retrieval capabilities.
 

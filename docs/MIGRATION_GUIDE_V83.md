@@ -1,4 +1,5 @@
 # Migration Guide: v82 to v83 - Web-Only Architecture
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Document Version:** 1.0  
 **Last Updated:** October 15, 2025  

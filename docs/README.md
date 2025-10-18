@@ -15,6 +15,8 @@ fixes:
         POKERTOOL-HEADER-END -->
 # PokerTool - Professional Poker Analysis Toolkit
 
+> Issue Register: Backlog entries are managed via `python new_task.py`, which appends GUID-tagged issues to `docs/TODO.md`. Avoid editing the register manually; archived items live in `docs/TODO_ARCHIVE.md`.
+
 ## Overview
 
 PokerTool is a comprehensive poker analysis toolkit featuring GUI interface, RESTful API, screen scraping capabilities, and secure database storage. The project is built with modularity, security, and scalability in mind.

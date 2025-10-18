@@ -90,6 +90,13 @@ Failures in scraper-related tests often mean no live Betfair table is available;
 
 Release notes live in `CHANGELOG.md`, and `VERSION` tracks the current build tag.
 
+## Issue Management
+
+- Use `python new_task.py` to append entries to `docs/TODO.md`; manual edits are not permitted.
+- Each entry captures a GUID, issue type, lifecycle status, duplicate-guard context, and paragraphs for both the problem summary and AI remediation plan.
+- The helper rejects underspecified descriptions so every task remains unambiguous for both humans and automated agents.
+- Historical backlog entries now reside in `docs/TODO_ARCHIVE.md` for read-only reference.
+
 ## Contributing
 
 Contributions are welcome. Review `CONTRIBUTING.md`, follow the coding standards, and run `python test.py` before opening a pull request. Issues and feature requests can be filed through the GitHub issue tracker.

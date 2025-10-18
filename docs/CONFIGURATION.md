@@ -1,4 +1,5 @@
 # PokerTool Configuration Guide
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 This document provides a comprehensive reference for all environment variables and configuration options available in PokerTool.
 

@@ -1,4 +1,5 @@
 # Poker Screen Scraper Improvements - Summary
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Date:** October 2, 2025  
 **Version:** v30.0.0

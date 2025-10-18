@@ -1,5 +1,7 @@
 # PokerTool Comprehensive Manual Outline
 
+> Operational Note: Track new work with `python new_task.py`, which records GUID-stamped issues inside `docs/TODO.md`. Manual backlog edits are prohibited; legacy tasks moved to `docs/TODO_ARCHIVE.md`.
+
 ## Overview and Introduction
 
 - Purpose and Scope: Begin with a clear introduction to PokerTool – a

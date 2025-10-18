@@ -1,4 +1,5 @@
 # 40 High-Impact UI Improvements for PokerTool Pro
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Purpose**: Enhance interface with useful information, superior detailing, polish, and purpose-driven design
 **Quality Level**: Super high - production-ready, enterprise-grade improvements

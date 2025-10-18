@@ -1,4 +1,5 @@
 # Portable Configuration System
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 The PokerTool frontend uses a flexible, portable configuration system that allows easy customization of API endpoints without requiring system-level changes or rebuilding the application.
 

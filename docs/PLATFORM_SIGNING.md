@@ -1,4 +1,5 @@
 # Platform Signing & Notarization Guide
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 This guide captures the release engineering steps required to ship signed PokerTool binaries on macOS and Windows. It pairs with the launcher asset bundle in `assets/launchers/`.
 

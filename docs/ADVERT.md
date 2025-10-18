@@ -1,4 +1,5 @@
 # PokerTool - Professional Poker Assistant Suite
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Version 40.0.0** | *The Ultimate Real-Time Poker Analysis Platform*
 

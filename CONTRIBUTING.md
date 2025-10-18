@@ -14,6 +14,12 @@ Thank you for your interest in contributing to PokerTool! This document provides
 - [Pull Request Process](#pull-request-process)
 - [Security](#security)
 
+## Issue Management
+
+- Create and update backlog entries via `python new_task.py`; direct edits to `docs/TODO.md` are not accepted.
+- Every task must include a GUID, typed classification, lifecycle status, duplicate-guard context, and rich paragraphs for both the problem summary and AI-oriented remediation plan.
+- Legacy backlog items were archived to `docs/TODO_ARCHIVE.md`; reference them for historical context only.
+
 ## Code of Conduct
 
 We are committed to providing a welcoming and inclusive environment. Please be respectful and constructive in all interactions.

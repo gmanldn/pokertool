@@ -1,4 +1,5 @@
 # Tkinter Removal & Web-Only Consolidation TODO
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Project**: PokerTool Architecture Refactoring
 **Version**: v81.0.0

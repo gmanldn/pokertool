@@ -1,4 +1,5 @@
 # PokerTool v69.0.0 - Reliability & Resilience Improvements
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 ## Release Date: 2025-10-14
 

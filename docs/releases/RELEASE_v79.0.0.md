@@ -1,4 +1,5 @@
 # PokerTool Release v79.0.0 - Bet Sizing & Hand Analysis Components
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Release Date**: October 15, 2025
 **Type**: Feature Release

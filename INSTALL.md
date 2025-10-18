@@ -2,6 +2,8 @@
 
 This document walks through installing PokerTool for local development or evaluation. If you only need a high-level overview, refer to `README.md`; the steps below provide the full workflow, platform-specific notes, and verification tips.
 
+> Issue Tracking Note: backlog updates now flow through `python new_task.py`, which appends GUID-stamped entries to `docs/TODO.md`. Consult that script before raising new installation-related tasks.
+
 ## Supported Platforms
 - macOS 12+ (Intel or Apple Silicon)
 - Ubuntu 20.04+ (or another recent Debian-based distribution)
@@ -101,4 +103,3 @@ If you prefer to manage dependencies manually, follow these steps instead of `st
 - If OpenCV or other native wheels fail to compile, install the platform build tools listed in the prerequisites.
 - On Windows, run PowerShell as Administrator the first time so Tesseract and Python can update the registry.
 - Use `scripts/monitor-errors.sh` for a consolidated view of backend warnings during development.
-

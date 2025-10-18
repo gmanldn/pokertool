@@ -1,4 +1,5 @@
 # Betfair Poker Setup Guide
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 This guide keeps the Betfair poker client in a configuration that matches the reference assets (`tests/BF_TEST.jpg`) and maximises OCR/CDP accuracy inside Pokertool.
 

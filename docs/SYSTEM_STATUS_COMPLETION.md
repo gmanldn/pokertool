@@ -1,4 +1,5 @@
 # System Status Monitor - Implementation Completion Report
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Date**: October 16, 2025
 **Version**: v86.0.0

@@ -1,4 +1,5 @@
 # PokerTool v64.0.0 - Win Rate & Accuracy Optimization Report
+> Issue Register: Use `python new_task.py` to append GUID-tagged entries to `docs/TODO.md`; manual edits are rejected and historical backlog lives in `docs/TODO_ARCHIVE.md`.
 
 **Release Date:** October 14, 2025
 **Version:** 64.0.0
