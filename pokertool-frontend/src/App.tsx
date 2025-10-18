@@ -16,6 +16,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme, CssBaseline, useMediaQuery, CircularProgress, Box } from '@mui/material';
 import { Provider } from 'react-redux';
 import { useWebSocket } from './hooks/useWebSocket';
+import { useBackendLifecycle } from './hooks/useBackendLifecycle';
 import { ThemeContext } from './contexts/ThemeContext';
 import { store, useAppSelector, RootState } from './store';
 import { setMobileLayout, SettingsState } from './store/slices/settingsSlice';
@@ -119,6 +120,7 @@ function AppContent() {
 
   // WebSocket connection for real-time updates
   const { connected, messages, sendMessage } = useWebSocket(buildWsUrl());
+  const { status: backendStatus } = useBackendLifecycle();
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
@@ -134,7 +136,7 @@ function AppContent() {
         <CssBaseline />
         <Router>
           <div className={`app ${mobileLayout ? 'mobile-layout' : ''}`}>
-            <Navigation connected={connected} />
+            <Navigation connected={connected} backendStatus={backendStatus} />
             <main className="app-main">
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
