@@ -1670,7 +1670,7 @@ All modules now have production-ready implementations with comprehensive test su
   - Known limitations
   - Priority: MEDIUM
 
-- [ ] **BF-035**: Create Betfair setup guide
+- [x] **BF-035**: Create Betfair setup guide (`docs/BETFAIR_SETUP_GUIDE.md`)
   - Optimal window size/position
   - Recommended table settings
   - Troubleshooting common issues
