@@ -169,7 +169,8 @@ export const useSystemHealth = (
       }
     } catch (err) {
       console.error('Failed to fetch health data:', err);
-      setError('Failed to connect to backend. Is the server running?');
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setError(`Waiting for backend API at http://localhost:5001/api/system/health - ${errorMsg}. Check that start.py is running.`);
       setLoading(false);
       setRefreshing(false);
 
