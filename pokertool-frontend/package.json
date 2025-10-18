@@ -28,9 +28,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "prestart": "node scripts/ensure-deps.js",
-    "prebuild": "node scripts/ensure-deps.js",
-    "pretest": "node scripts/ensure-deps.js",
+    "prestart": "node scripts/ensure-deps.js && node scripts/sync-version.js",
+    "prebuild": "node scripts/ensure-deps.js && node scripts/sync-version.js",
+    "pretest": "node scripts/ensure-deps.js && node scripts/sync-version.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

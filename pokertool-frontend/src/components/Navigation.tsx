@@ -57,6 +57,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import type { BackendStatus } from '../hooks/useBackendLifecycle';
+import { RELEASE_VERSION } from '../config/releaseVersion';
 
 interface NavigationProps {
   connected: boolean;
@@ -131,17 +132,16 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 2,
-        }}
-      >
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, gap: 1 }}>
         <Typography variant="h6" fontWeight="bold" color="primary">
           PokerTool Pro
         </Typography>
+        <Chip
+          label={RELEASE_VERSION}
+          color="primary"
+          size="small"
+          sx={{ fontWeight: 600 }}
+        />
       </Box>
       <Divider />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -224,10 +224,28 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
               <MenuIcon />
             </IconButton>
           )}
-          
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            {isMobile ? 'PokerTool' : 'PokerTool Pro'}
-          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexGrow: 1,
+              minWidth: 0,
+            }}
+          >
+            <Typography variant="h6" noWrap>
+              {isMobile ? 'PokerTool' : 'PokerTool Pro'}
+            </Typography>
+            <Chip
+              label={RELEASE_VERSION}
+              color="primary"
+              size={isMobile ? 'small' : 'medium'}
+              sx={{
+                fontWeight: 600,
+                letterSpacing: 0.5,
+              }}
+            />
+          </Box>
 
           {!isMobile && (
             <>
