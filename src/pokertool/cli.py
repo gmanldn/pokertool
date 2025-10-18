@@ -47,7 +47,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-
 def main(argv=None):
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(prog='pokertool', description='PokerTool CLI')
@@ -101,25 +100,7 @@ def main(argv=None):
             return 1
 
     elif args.cmd == 'gui':
-        try:
-            from .gui_bootstrap import bootstrap_enhanced_gui
-            report = bootstrap_enhanced_gui()
-            if report.optional_missing:
-                logger.warning(
-                    'Optional GUI dependencies missing: %s',
-                    ', '.join(sorted(set(report.optional_missing))),
-                )
-            # Import lazily so bootstrap runs before heavy GUI modules
-            from .enhanced_gui import main as gui_main  # noqa: WPS433
-            return gui_main()
-        except RuntimeError as e:
-            logger.error(str(e))
-            return 1
-        except Exception as e:
-            logger.error(f'Enhanced GUI launch failed: {e}')
-            import traceback
-            traceback.print_exc()
-            return 1
+        return _run_gui_command()
 
     elif args.cmd == 'test':
         return run_test_mode()
@@ -166,6 +147,48 @@ def run_test_mode():
     logger.info('Use "pokertool scrape" for headless screen scraping functionality.')
     
     return 0
+
+def _run_gui_command() -> int:
+    """Launch the enhanced GUI via the CLI with dependency checks and cleanup."""
+    try:
+        from .gui_bootstrap import bootstrap_enhanced_gui  # noqa: WPS433
+        report = bootstrap_enhanced_gui()
+        if report.optional_missing:
+            logger.warning(
+                'Optional GUI dependencies missing: %s',
+                ', '.join(sorted(set(report.optional_missing))),
+            )
+
+        # Import lazily so initialisation cost only occurs when requested
+        from .enhanced_gui import main as gui_main  # noqa: WPS433
+        exit_code = gui_main()
+        return exit_code
+    except RuntimeError as exc:
+        logger.error(str(exc))
+        return 1
+    except Exception as exc:
+        logger.error('Enhanced GUI launch failed: %s', exc)
+        import traceback
+        traceback.print_exc()
+        return 1
+    finally:
+        _shutdown_thread_pool()
+
+
+def _shutdown_thread_pool() -> None:
+    """Attempt to gracefully shutdown the shared thread manager."""
+    try:
+        from .thread_manager import shutdown_thread_manager  # noqa: WPS433
+    except Exception:  # pragma: no cover - import failure is non-critical
+        logger.debug('Thread manager module unavailable during shutdown', exc_info=True)
+        return
+
+    try:
+        shutdown_thread_manager(wait=True)
+        logger.info('Thread pool shutdown complete.')
+    except Exception:  # pragma: no cover - defensive logging
+        logger.debug('Thread pool shutdown encountered an issue', exc_info=True)
+
 
 if __name__ == '__main__':
     raise SystemExit(main())

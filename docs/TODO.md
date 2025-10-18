@@ -168,7 +168,7 @@ All modules now have production-ready implementations with comprehensive test su
 - [x] Normalize screen-capture scaling by reusing the `PokerScreenScraper` calibration pipeline to avoid duplicated display DPI logic between overlay and core scraper.
 
 ### Operations & Packaging
-- [ ] Publish a `pokertool gui` CLI entrypoint that runs dependency checks, launches the enhanced GUI, and gracefully shuts down the shared thread pool on exit.
+- [x] Publish a `pokertool gui` CLI entrypoint that runs dependency checks, launches the enhanced GUI, and gracefully shuts down the shared thread pool on exit. (`src/pokertool/cli.py`)
 - [ ] Bundle platform-specific launcher assets (icons, plist/desktop files) and document notarization/signing for macOS and Windows releases.
 - [ ] Add continuous delivery packaging step (PyInstaller or Briefcase) to produce signed binaries for the enhanced GUI preview builds.
 

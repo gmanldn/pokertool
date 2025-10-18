@@ -72,8 +72,17 @@ class ThreadManager:
         return self.thread_stats.copy()
     
     def shutdown(self, wait: bool = True, timeout: Optional[float] = None):
-        """Shutdown the thread pool."""
-        self.executor.shutdown(wait=wait, timeout=timeout)
+        """
+        Shutdown the thread pool.
+
+        Args:
+            wait: Block until all submitted tasks complete.
+            timeout: Present for API compatibility; the standard library executor
+                does not support timeouts directly so this parameter is ignored.
+        """
+        if timeout is not None:
+            logger.debug("ThreadManager.shutdown ignoring unsupported timeout=%s", timeout)
+        self.executor.shutdown(wait=wait)
 
 # Global thread manager instance
 _global_thread_manager: Optional[ThreadManager] = None
@@ -92,3 +101,16 @@ def submit_task(func: Callable, *args, **kwargs) -> Future:
 def start_thread(name: str, target: Callable, *args, **kwargs) -> threading.Thread:
     """Start a named thread using the global manager."""
     return get_thread_manager().start_thread(name, target, *args, **kwargs)
+
+
+def shutdown_thread_manager(wait: bool = True, timeout: Optional[float] = None) -> None:
+    """Shutdown and clear the global thread manager if it has been initialised."""
+    global _global_thread_manager
+    if _global_thread_manager is None:
+        return
+    try:
+        _global_thread_manager.shutdown(wait=wait, timeout=timeout)
+    except Exception as exc:  # pragma: no cover - defensive log path
+        logger.warning("Failed to shutdown thread manager cleanly: %s", exc)
+    finally:
+        _global_thread_manager = None
