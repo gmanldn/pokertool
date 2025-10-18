@@ -173,7 +173,7 @@ All modules now have production-ready implementations with comprehensive test su
 - [x] Add continuous delivery packaging step (PyInstaller or Briefcase) to produce signed binaries for the enhanced GUI preview builds. (`packaging/pyinstaller/pokertool_gui.spec`, `scripts/build_gui_preview.py`, `.github/workflows/ci-cd.yml`)
 
 ### Testing & QA
-- [ ] Create Tkinter smoke tests that launch `EnhancedPokerAssistantFrame` inside a virtual display to guard against regressions in layout and asset loading.
+- [x] Create Tkinter smoke tests that launch `EnhancedPokerAssistantFrame` inside a virtual display to guard against regressions in layout and asset loading. (`tests/gui/test_enhanced_gui_smoke.py`)
 - [ ] Backfill unit coverage for `src/pokertool/modules/poker_gui_enhanced.py` ensuring each legacy shim raises informative errors when dependencies are missing.
 - [ ] Add concurrency regression tests around the shared thread pool in `src/pokertool/threading.py` (race condition harness + leak detection).
 - [ ] Build integration tests that drive the HUD overlay atop prerecorded table screenshots to validate profile switching and real-time stat rendering.
