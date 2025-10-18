@@ -49,14 +49,25 @@ VERSION_INFO = {
     'major': VERSION_MAJOR,
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
-    'release_date': '2025-10-18',
-    'release_name': 'Stability & Test Hardenings',
+    'release_date': '2025-10-19',
+    'release_name': 'Installation Guide & Eval Hygiene',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '88.3.0',
+        'date': '2025-10-19',
+        'name': 'Installation Guide & Eval Hygiene',
+        'description': 'Installation guidance and evaluation workspace hygiene improvements',
+        'highlights': [
+            'Installation Guide: Added INSTALL.md with automated and manual setup instructions for macOS, Linux, and Windows',
+            'Self-Test Workflow: Documented how to invoke start.py diagnostics during setup',
+            'Evaluation Hygiene: Extended .gitignore to exclude evals/diff-edits working directories',
+        ],
+    },
     {
         'version': '88.2.0',
         'date': '2025-10-18',

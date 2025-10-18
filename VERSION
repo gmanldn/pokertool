@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.2.0
-release_date = 2025-10-18
+version = 88.3.0
+release_date = 2025-10-19
 
 [release_notes]
-# v88.2.0 - Stability & Test Hardenings
-description = Stabilized optional ML/Scipy dependencies, reimplemented card recognition, and converted scraper diagnostics into resilient smoke tests
-changes = Hardened optional dependency handling, rebuilt card recognition engine, added floating advice facade, modernized scraper logging test, pytesseract ndarray shim, setup script sandbox resilience
+# v88.3.0 - Installation Guide & Eval Hygiene
+description = Added a cross-platform installation guide and tightened git hygiene around evaluation workspaces
+changes = Added INSTALL.md with automated and manual setup instructions, extended .gitignore to exclude evals/diff-edits scratch directories
 status = stable
 
 [components]
