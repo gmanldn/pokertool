@@ -570,10 +570,15 @@ class MasterLogger:
         digest = hashlib.sha1(key_material).hexdigest()[:10].upper()
         task_id = f"LOG-{level.name[0]}-{digest}"
         today = datetime.now(timezone.utc).date().isoformat()
-        entry = (
-            f"- [ ] **{task_id}** ({today}) {level.name.title()} in {issue_context}: "
-            f"{sanitized_message}"
-        )
+        entry_lines = [
+            f"- [ ] **{task_id}** ({today}) {level.name.title()} in {issue_context}: {sanitized_message}",
+            "  ```prompt",
+            f"  You are assisting with PokerTool's logging stack. Investigate the {level.name.lower()} emitted from "
+            f"{issue_context} with message \"{sanitized_message}\". Identify the root cause, outline corrective steps, "
+            "and suggest code or documentation changes needed to prevent recurrence.",
+            "  ```",
+        ]
+        entry = "\n".join(entry_lines)
 
         with self._todo_lock:
             try:
@@ -584,7 +589,30 @@ class MasterLogger:
                     contents = "# PokerTool TODO List\n"
 
                 if task_id in contents:
-                    return
+                    lines = contents.splitlines()
+                    for idx, line in enumerate(lines):
+                        if f"**{task_id}**" in line:
+                            has_prompt = False
+                            scan_idx = idx + 1
+                            while scan_idx < len(lines):
+                                next_line = lines[scan_idx]
+                                if next_line.startswith("- [ ] **"):
+                                    break
+                                if next_line.strip() == "```prompt":
+                                    has_prompt = True
+                                    break
+                                if next_line.strip() == "```":
+                                    break
+                                scan_idx += 1
+
+                            if not has_prompt:
+                                insertion = entry_lines[1:]
+                                lines = lines[:idx + 1] + insertion + lines[idx + 1:]
+                                updated_contents = "\n".join(lines)
+                                if not updated_contents.endswith("\n"):
+                                    updated_contents += "\n"
+                                TODO_FILE.write_text(updated_contents, encoding="utf-8")
+                            return
 
                 lines = contents.splitlines()
                 header_index = None

@@ -1,7 +1,5 @@
 ## ⚠️ Automated Log Alerts
 
-- [ ] **LOG-W-41D2193ED0** (2025-10-18) Warning in __main__.<module>: Live progress plugin needs doc update
-
 # Backend-Frontend Integration and Feature Exposure TODO List
 
 ## 🎉 RECENT IMPROVEMENTS (v86.4.0 - October 2025)
