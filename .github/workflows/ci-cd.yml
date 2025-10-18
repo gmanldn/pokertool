@@ -189,6 +189,89 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64,linux/arm64
 
+  gui-preview:
+    name: Build GUI Preview Binaries
+    runs-on: ${{ matrix.os }}
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt
+        python -m pip install pyinstaller pillow
+      shell: bash
+
+    - name: Generate launcher assets
+      run: python scripts/generate_launcher_assets.py
+      shell: bash
+
+    - name: Build GUI preview bundle
+      run: python scripts/build_gui_preview.py --no-archive
+      shell: bash
+
+    - name: macOS codesign (optional)
+      if: matrix.os == 'macos-latest'
+      env:
+        SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        SIGNING_OPTIONS: ${{ secrets.MACOS_SIGNING_OPTIONS }}
+      run: |
+        if [ -n "$SIGNING_IDENTITY" ]; then
+          echo "Signing with identity: $SIGNING_IDENTITY"
+          codesign --deep --force --options runtime $SIGNING_OPTIONS \
+            --sign "$SIGNING_IDENTITY" dist/PokerToolGUI/PokerToolGUI.app || exit 1
+        else
+          echo "Skipping macOS signing; MACOS_SIGNING_IDENTITY not set."
+        fi
+      shell: bash
+
+    - name: Windows code signing (optional)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      env:
+        WINDOWS_PFX: ${{ secrets.WINDOWS_CODE_SIGNING_PFX }}
+        WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_CODE_SIGNING_PASSWORD }}
+      run: |
+        if (-not [string]::IsNullOrEmpty($env:WINDOWS_PFX)) {
+          $certPath = Join-Path $env:RUNNER_TEMP 'signing.pfx'
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_PFX))
+          signtool import /f $certPath /p $env:WINDOWS_PFX_PASSWORD /q
+          signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
+            /f $certPath /p $env:WINDOWS_PFX_PASSWORD dist\\PokerToolGUI\\PokerToolGUI.exe
+        } else {
+          Write-Host \"Skipping Windows signing; certificate secret not provided.\"
+        }
+
+    - name: Create GUI preview archive
+      run: python scripts/build_gui_preview.py --skip-build
+      shell: bash
+
+    - name: Prepare artifact
+      run: |
+        mkdir -p artifacts
+        mv artifacts/pokertool-gui-preview.zip artifacts/pokertool-gui-preview-${{ matrix.os }}.zip
+      shell: bash
+
+    - name: Upload GUI preview artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pokertool-gui-preview-${{ matrix.os }}
+        path: artifacts/pokertool-gui-preview-${{ matrix.os }}.zip
+
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest

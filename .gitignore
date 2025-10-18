@@ -301,6 +301,8 @@ core.*
 
 # Keep static assets
 !assets/**/*
+!.github
+!.github/**
 
 # Keep example/template configuration files
 !poker_config.example.json

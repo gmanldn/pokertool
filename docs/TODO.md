@@ -170,7 +170,7 @@ All modules now have production-ready implementations with comprehensive test su
 ### Operations & Packaging
 - [x] Publish a `pokertool gui` CLI entrypoint that runs dependency checks, launches the enhanced GUI, and gracefully shuts down the shared thread pool on exit. (`src/pokertool/cli.py`)
 - [x] Bundle platform-specific launcher assets (icons, plist/desktop files) and document notarization/signing for macOS and Windows releases. (`assets/launchers/`, `docs/PLATFORM_SIGNING.md`)
-- [ ] Add continuous delivery packaging step (PyInstaller or Briefcase) to produce signed binaries for the enhanced GUI preview builds.
+- [x] Add continuous delivery packaging step (PyInstaller or Briefcase) to produce signed binaries for the enhanced GUI preview builds. (`packaging/pyinstaller/pokertool_gui.spec`, `scripts/build_gui_preview.py`, `.github/workflows/ci-cd.yml`)
 
 ### Testing & QA
 - [ ] Create Tkinter smoke tests that launch `EnhancedPokerAssistantFrame` inside a virtual display to guard against regressions in layout and asset loading.
