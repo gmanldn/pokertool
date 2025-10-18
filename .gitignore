@@ -158,6 +158,12 @@ ocr_cache/
 *.pem
 *.env.local
 .env.*.local
+
+# Evaluation workspace artifacts
+evals/diff-edits/diff-apply/
+evals/diff-edits/parsing/
+evals/diff-edits/prompts/
+evals/diff-edits/dashboard/pages/
 api_keys.json
 secrets.json
 
