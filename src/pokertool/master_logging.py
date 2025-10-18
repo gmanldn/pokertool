@@ -57,6 +57,7 @@ import platform
 import inspect
 from dataclasses import dataclass, asdict
 from enum import Enum
+import hashlib
 
 # Optional dependencies
 try:
@@ -75,6 +76,9 @@ MASTER_LOG_FILE = MASTER_LOG_DIR / 'pokertool_master.log'  # 3-month rotation
 ERROR_LOG_FILE = MASTER_LOG_DIR / 'pokertool_errors.log'    # Permanent (feedback system)
 PERFORMANCE_LOG_FILE = MASTER_LOG_DIR / 'pokertool_performance.log'  # Permanent (feedback system)
 SECURITY_LOG_FILE = MASTER_LOG_DIR / 'pokertool_security.log'  # Permanent (feedback system)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+TODO_FILE = REPO_ROOT / 'docs' / 'TODO.md'
+TODO_SECTION_HEADER = "## ⚠️ Automated Log Alerts"
 
 # Log Retention Policy:
 # - MASTER_LOG: 3 months (90 days) - Daily rotation with automatic cleanup
@@ -181,6 +185,7 @@ class MasterLogger:
         self.error_cache: Dict[str, ErrorDetails] = {}
         self.performance_metrics: Dict[str, List[float]] = {}
         self.active_contexts: Dict[str, Dict[str, Any]] = {}
+        self._todo_lock = threading.Lock()
         
         # Initialize loggers
         self._setup_loggers()
@@ -506,6 +511,12 @@ class MasterLogger:
         
         if category == LogCategory.SECURITY or level == LogLevel.SECURITY:
             self.security_logger.handle(log_record)
+
+        if level.value >= LogLevel.WARNING.value:
+            try:
+                self._ensure_todo_entry(level, message, context)
+            except Exception as todo_error:
+                sys.stderr.write(f"[master_logging] Failed to append TODO entry: {todo_error}\n")
     
     def _process_exception(self, exception: Exception, context: LogContext, 
                           additional_data: Dict[str, Any]) -> ErrorDetails:
@@ -547,6 +558,84 @@ class MasterLogger:
         self.error_cache[error_hash_str] = error_details
         
         return error_details
+
+    def _ensure_todo_entry(self, level: LogLevel, message: str, context: LogContext) -> None:
+        """Ensure a TODO entry exists for warnings and errors."""
+        sanitized_message = " ".join(str(message).split())
+        if not sanitized_message:
+            return
+
+        issue_context = f"{context.module}.{context.function}"
+        key_material = f"{level.name}|{issue_context}|{sanitized_message}".encode("utf-8", errors="ignore")
+        digest = hashlib.sha1(key_material).hexdigest()[:10].upper()
+        task_id = f"LOG-{level.name[0]}-{digest}"
+        today = datetime.now(timezone.utc).date().isoformat()
+        entry_lines = [
+            f"- [ ] **{task_id}** ({today}) {level.name.title()} in {issue_context}: {sanitized_message}",
+            "  ```prompt",
+            f"  You are assisting with PokerTool's logging stack. Investigate the {level.name.lower()} emitted from "
+            f"{issue_context} with message \"{sanitized_message}\". Identify the root cause, outline corrective steps, "
+            "and suggest code or documentation changes needed to prevent recurrence.",
+            "  ```",
+        ]
+        entry = "\n".join(entry_lines)
+
+        with self._todo_lock:
+            try:
+                if TODO_FILE.exists():
+                    contents = TODO_FILE.read_text(encoding="utf-8")
+                else:
+                    TODO_FILE.parent.mkdir(parents=True, exist_ok=True)
+                    contents = "# PokerTool TODO List\n"
+
+                if task_id in contents:
+                    lines = contents.splitlines()
+                    for idx, line in enumerate(lines):
+                        if f"**{task_id}**" in line:
+                            has_prompt = False
+                            scan_idx = idx + 1
+                            while scan_idx < len(lines):
+                                next_line = lines[scan_idx]
+                                if next_line.startswith("- [ ] **"):
+                                    break
+                                if next_line.strip() == "```prompt":
+                                    has_prompt = True
+                                    break
+                                if next_line.strip() == "```":
+                                    break
+                                scan_idx += 1
+
+                            if not has_prompt:
+                                insertion = entry_lines[1:]
+                                lines = lines[:idx + 1] + insertion + lines[idx + 1:]
+                                updated_contents = "\n".join(lines)
+                                if not updated_contents.endswith("\n"):
+                                    updated_contents += "\n"
+                                TODO_FILE.write_text(updated_contents, encoding="utf-8")
+                            return
+
+                lines = contents.splitlines()
+                header_index = None
+                for idx, line in enumerate(lines):
+                    if line.strip() == TODO_SECTION_HEADER:
+                        header_index = idx
+                        break
+
+                if header_index is None:
+                    new_lines = [TODO_SECTION_HEADER, "", entry, ""]
+                    new_lines.extend(lines)
+                else:
+                    insert_pos = header_index + 1
+                    while insert_pos < len(lines) and lines[insert_pos].strip() == "":
+                        insert_pos += 1
+                    new_lines = lines[:insert_pos] + [entry] + lines[insert_pos:]
+
+                new_contents = "\n".join(new_lines)
+                if not new_contents.endswith("\n"):
+                    new_contents += "\n"
+                TODO_FILE.write_text(new_contents, encoding="utf-8")
+            except Exception:
+                raise
     
     def _assess_error_severity(self, exception: Exception, context: LogContext) -> str:
         """Assess the severity of an error based on type and context."""

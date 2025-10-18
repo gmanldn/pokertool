@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.5.1
-release_date = 2025-10-22
+version = 89.0.1
+release_date = 2025-10-18
 
 [release_notes]
-# v88.5.1 - Detection UI Coverage Expansion
-description = Added regression coverage to ensure detected cards and table state stay in sync across the detection log and table views.
-changes = Added focused frontend unit tests for TableView and DetectionLog components, mocked WebSocket/message flow to assert detected cards/tables render correctly, and registered the pytest asyncio marker so backend suites can execute without collection errors.
+# v89.0.1 - Release Banner & AI-Aware TODOs
+description = Surfaced the release version directly in the UI header and auto-capture log warnings/errors into TODOs with ready-to-run LLM prompts.
+changes = Navigation now renders the synced release chip beside PokerTool branding while master logging writes deduplicated TODO entries that embed guidance prompts for AI-assisted triage, keeping operational fixes actionable.
 status = stable
 
 [components]

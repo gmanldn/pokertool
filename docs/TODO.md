@@ -1,3 +1,5 @@
+## ⚠️ Automated Log Alerts
+
 # Backend-Frontend Integration and Feature Exposure TODO List
 
 ## 🎉 RECENT IMPROVEMENTS (v86.4.0 - October 2025)
