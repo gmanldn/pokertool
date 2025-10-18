@@ -731,6 +731,25 @@ def save_test_case(test_case: QaTestCase, output_dir: Path):
     logger.info(f"Saved test case: {test_case.id}")
 
 
+# Backwards compatible aliases expected by legacy tooling/tests
+TestCase = QaTestCase
+TestResult = QaTestResult
+
+__all__ = [
+    "ScrapeQAHarness",
+    "TestCase",
+    "GroundTruth",
+    "FieldType",
+    "ThemeType",
+    "FieldDiff",
+    "TestResult",
+    "SuiteReport",
+    "create_test_case_from_screenshot",
+    "save_test_case",
+    "CV2_AVAILABLE",
+]
+
+
 if __name__ == '__main__':
     # Demo usage
     print("=" * 70)

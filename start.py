@@ -202,16 +202,29 @@ def install_dependencies():
     
     # Upgrade pip
     log("Upgrading pip...")
-    subprocess.run([venv_python, '-m', 'pip', 'install', '--upgrade', 'pip'], 
-                   check=True, capture_output=True)
+    try:
+        subprocess.run(
+            [venv_python, '-m', 'pip', 'install', '--upgrade', 'pip'],
+            check=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.decode() if exc.stderr else str(exc)
+        log(f"Warning: pip upgrade skipped ({stderr.strip()})")
     
     # Install from requirements.txt
     requirements = ROOT / 'requirements.txt'
     if requirements.exists():
         log("Installing Python dependencies...")
-        subprocess.run([venv_python, '-m', 'pip', 'install', '-r', str(requirements)],
-                       check=True)
-        log("✓ Dependencies installed")
+        try:
+            subprocess.run(
+                [venv_python, '-m', 'pip', 'install', '-r', str(requirements)],
+                check=True,
+            )
+            log("✓ Dependencies installed")
+        except subprocess.CalledProcessError as exc:
+            stderr = exc.stderr.decode() if exc.stderr else str(exc)
+            log(f"Warning: requirements install skipped ({stderr.strip()})")
     
     # Install critical deps for enhanced GUI
     log("Ensuring enhanced GUI dependencies...")
@@ -223,10 +236,14 @@ def install_dependencies():
 
     for dep in critical:
         try:
-            subprocess.run([venv_python, '-m', 'pip', 'install', dep],
-                          check=True, capture_output=True, timeout=120)
-        except:
-            log(f"Warning: {dep} install had issues")
+            subprocess.run(
+                [venv_python, '-m', 'pip', 'install', dep],
+                check=True,
+                capture_output=True,
+                timeout=120,
+            )
+        except Exception as exc:
+            log(f"Warning: {dep} install had issues ({exc})")
 
 def run_tests() -> int:
     """Run comprehensive test suite."""

@@ -31,20 +31,27 @@ import {
   useMediaQuery,
   Alert,
   InputAdornment,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Fade,
+  Skeleton,
 } from '@mui/material';
-import {
-  Refresh,
-  GetApp,
-  Search,
-  ExpandMore,
-  ExpandLess,
-  CheckCircle,
-  Error as ErrorIcon,
-  Warning,
-  HelpOutline,
-} from '@mui/icons-material';
+import Refresh from '@mui/icons-material/Refresh';
+import GetApp from '@mui/icons-material/GetApp';
+import Search from '@mui/icons-material/Search';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import Warning from '@mui/icons-material/Warning';
+import HelpOutline from '@mui/icons-material/HelpOutline';
+import DescriptionIcon from '@mui/icons-material/Description';
+import TableViewIcon from '@mui/icons-material/TableView';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 import type { HealthStatus, HealthData } from '../hooks/useSystemHealth';
+import { ErrorBoundary } from './ErrorBoundary';
 
 type FilterType = 'all' | 'healthy' | 'failing' | 'degraded' | 'unknown';
 
@@ -75,6 +82,7 @@ export const SystemStatus: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
   const announcerRef = useRef<HTMLDivElement>(null);
 
   // Screen reader announcer function
@@ -90,23 +98,71 @@ export const SystemStatus: React.FC = () => {
     announceToScreenReader('System health data refreshed.');
   };
 
-  const handleExport = () => {
-    if (!healthData) return;
+  const downloadReport = (content: string, mimeType: string, filename: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
-    const exportData = {
-      exported_at: new Date().toISOString(),
-      ...healthData,
+  const createCsvContent = (data: HealthData, exportedAt: string) => {
+    const csvRows: string[][] = [
+      ['exported_at', exportedAt],
+      ['overall_status', data.overall_status],
+      ['failing_count', data.failing_count.toString()],
+      ['degraded_count', data.degraded_count.toString()],
+      [''],
+      ['category', 'feature_name', 'status', 'last_check', 'latency_ms', 'error_message', 'description'],
+    ];
+
+    Object.entries(data.categories).forEach(([categoryKey, categoryData]) => {
+      categoryData.checks.forEach((check) => {
+        csvRows.push([
+          getCategoryDisplayName(categoryKey),
+          check.feature_name,
+          check.status,
+          check.last_check,
+          check.latency_ms !== undefined ? check.latency_ms.toFixed(2) : '',
+          check.error_message ?? '',
+          check.description ?? '',
+        ]);
+      });
+    });
+
+    const escapeCsvValue = (value: string) => {
+      const stringValue = value ?? '';
+      const sanitized = stringValue.replace(/"/g, '""');
+      return `"${sanitized}"`;
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json'
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `system-health-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return csvRows
+      .map((row) => row.length ? row.map((value) => escapeCsvValue(value)).join(',') : '')
+      .join('\n');
+  };
+
+  const handleExport = (format: 'json' | 'csv') => {
+    if (!healthData) return;
+
+    const exportedAt = new Date().toISOString();
+    const baseFilename = `system-health-${Date.now()}`;
+
+    if (format === 'json') {
+      const exportData = {
+        exported_at: exportedAt,
+        ...healthData,
+      };
+      downloadReport(JSON.stringify(exportData, null, 2), 'application/json', `${baseFilename}.json`);
+      announceToScreenReader('System health report exported as JSON.');
+    } else {
+      const csvContent = createCsvContent(healthData, exportedAt);
+      downloadReport(csvContent, 'text/csv', `${baseFilename}.csv`);
+      announceToScreenReader('System health report exported as CSV.');
+    }
+
+    setExportAnchorEl(null);
   };
 
   const toggleCardExpanded = (featureName: string) => {
@@ -137,13 +193,13 @@ export const SystemStatus: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'healthy':
-        return <CheckCircle sx={{ color: getStatusColor(status) }} />;
+        return <CheckCircle sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
       case 'degraded':
-        return <Warning sx={{ color: getStatusColor(status) }} />;
+        return <Warning sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
       case 'failing':
-        return <ErrorIcon sx={{ color: getStatusColor(status) }} />;
+        return <ErrorIcon sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
       default:
-        return <HelpOutline sx={{ color: getStatusColor(status) }} />;
+        return <HelpOutline sx={{ color: getStatusColor(status), transition: 'color 0.3s ease' }} />;
     }
   };
 
@@ -210,6 +266,47 @@ export const SystemStatus: React.FC = () => {
     groupedChecks[check.category].push(check);
   });
 
+  if (loading && !healthData) {
+    return (
+      <Box sx={{ p: isMobile ? 2 : 3 }}>
+        <Skeleton variant="text" width={isMobile ? 220 : 320} height={isMobile ? 28 : 42} data-testid="system-status-skeleton-heading" />
+        <Skeleton variant="text" width={isMobile ? 180 : 260} height={isMobile ? 18 : 24} sx={{ mb: 2 }} />
+
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={3}>
+            {[...Array(4)].map((_, index) => (
+              <Grid item xs={12} sm={6} md={3} key={`summary-skeleton-${index}`}>
+                <Box textAlign="center">
+                  <Skeleton variant="circular" width={54} height={54} sx={{ mx: 'auto' }} />
+                  <Skeleton variant="text" width={80} sx={{ mx: 'auto', mt: 1 }} />
+                  <Skeleton variant="text" width={60} sx={{ mx: 'auto' }} />
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
+
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Skeleton variant="rectangular" height={isMobile ? 72 : 56} />
+        </Paper>
+
+        <Grid container spacing={2}>
+          {[...Array(isMobile ? 1 : 3)].map((_, index) => (
+            <Grid item xs={12} sm={6} md={4} key={`card-skeleton-${index}`}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent>
+                  <Skeleton variant="text" width="60%" />
+                  <Skeleton variant="text" width="40%" />
+                  <Skeleton variant="rectangular" height={80} sx={{ mt: 2, borderRadius: 2 }} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
+
   if (loading) {
     return (
       <Box
@@ -252,25 +349,58 @@ export const SystemStatus: React.FC = () => {
         </Box>
         <Box display="flex" gap={1}>
           <Tooltip title="Refresh all checks">
-            <IconButton
-              onClick={handleRefresh}
-              disabled={refreshing}
-              color="primary"
-              aria-label="Refresh all health checks"
-              aria-busy={refreshing}
-            >
-              {refreshing ? <CircularProgress size={24} /> : <Refresh />}
-            </IconButton>
+            <span style={{ display: 'inline-flex' }}>
+              <IconButton
+                onClick={handleRefresh}
+                disabled={refreshing}
+                color="primary"
+                aria-label="Refresh all health checks"
+                aria-busy={refreshing}
+              >
+                {refreshing ? <CircularProgress size={24} /> : <Refresh />}
+              </IconButton>
+            </span>
           </Tooltip>
           <Tooltip title="Export health report">
-            <IconButton
-              onClick={handleExport}
-              disabled={!healthData}
-              aria-label="Export health report as JSON"
-            >
-              <GetApp />
-            </IconButton>
+            <span style={{ display: 'inline-flex' }}>
+              <IconButton
+                onClick={(event) => setExportAnchorEl(event.currentTarget)}
+                disabled={!healthData}
+                aria-label="Open export menu"
+                aria-haspopup="menu"
+                aria-controls={exportAnchorEl ? 'export-menu' : undefined}
+                aria-expanded={exportAnchorEl ? true : undefined}
+              >
+                <GetApp />
+              </IconButton>
+            </span>
           </Tooltip>
+          <Menu
+            id="export-menu"
+            anchorEl={exportAnchorEl}
+            open={Boolean(exportAnchorEl)}
+            onClose={() => setExportAnchorEl(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            MenuListProps={{ 'aria-label': 'Export format options' }}
+          >
+            <MenuItem
+              onClick={() => handleExport('json')}
+            >
+              <ListItemIcon>
+                <DescriptionIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Export as JSON" />
+            </MenuItem>
+            <MenuItem
+              onClick={() => handleExport('csv')}
+            >
+              <ListItemIcon>
+                <TableViewIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Export as CSV" />
+            </MenuItem>
+          </Menu>
         </Box>
       </Box>
 
@@ -295,9 +425,11 @@ export const SystemStatus: React.FC = () => {
                 role="status"
                 aria-label={`Overall system status: ${healthData.overall_status}`}
               >
-                <Typography variant="h3" sx={{ color: getStatusColor(healthData.overall_status) }} aria-hidden="true">
-                  {getStatusIcon(healthData.overall_status)}
-                </Typography>
+                <Fade in timeout={300} key={`overall-${healthData.overall_status}`}>
+                  <Typography variant="h3" sx={{ color: getStatusColor(healthData.overall_status), transition: 'color 0.3s ease' }} aria-hidden="true">
+                    {getStatusIcon(healthData.overall_status)}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>
                   {healthData.overall_status.toUpperCase()}
                 </Typography>
@@ -308,12 +440,14 @@ export const SystemStatus: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box textAlign="center">
-                <Typography variant="h3" color="success.main">
-                  {Object.values(healthData.categories).reduce(
-                    (sum, cat) => sum + cat.checks.filter(c => c.status === 'healthy').length,
-                    0
-                  )}
-                </Typography>
+                <Fade in timeout={300} key={`count-healthy-${healthData.timestamp}`}>
+                  <Typography variant="h3" color="success.main">
+                    {Object.values(healthData.categories).reduce(
+                      (sum, cat) => sum + cat.checks.filter(c => c.status === 'healthy').length,
+                      0
+                    )}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>Healthy</Typography>
                 <Typography variant="caption" color="textSecondary">
                   Features
@@ -322,9 +456,11 @@ export const SystemStatus: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box textAlign="center">
-                <Typography variant="h3" color="warning.main">
-                  {healthData.degraded_count}
-                </Typography>
+                <Fade in timeout={300} key={`count-degraded-${healthData.degraded_count}`}>
+                  <Typography variant="h3" color="warning.main">
+                    {healthData.degraded_count}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>Degraded</Typography>
                 <Typography variant="caption" color="textSecondary">
                   Features
@@ -333,9 +469,11 @@ export const SystemStatus: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box textAlign="center">
-                <Typography variant="h3" color="error.main">
-                  {healthData.failing_count}
-                </Typography>
+                <Fade in timeout={300} key={`count-failing-${healthData.failing_count}`}>
+                  <Typography variant="h3" color="error.main">
+                    {healthData.failing_count}
+                  </Typography>
+                </Fade>
                 <Typography variant="h6" mt={1}>Failing</Typography>
                 <Typography variant="caption" color="textSecondary">
                   Features
@@ -413,8 +551,10 @@ export const SystemStatus: React.FC = () => {
                 <Card
                   sx={{
                     height: '100%',
-                    borderLeft: `4px solid ${getStatusColor(check.status)}`,
-                    transition: 'transform 0.2s',
+                    borderLeftWidth: 4,
+                    borderLeftStyle: 'solid',
+                    borderLeftColor: getStatusColor(check.status),
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-left-color 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-4px)',
                       boxShadow: 4,
@@ -430,7 +570,9 @@ export const SystemStatus: React.FC = () => {
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                       <Box display="flex" alignItems="center" gap={1}>
-                        <span aria-hidden="true">{getStatusIcon(check.status)}</span>
+                        <Fade in timeout={300} key={`icon-${check.status}`}>
+                          <span aria-hidden="true">{getStatusIcon(check.status)}</span>
+                        </Fade>
                         <Typography variant="subtitle1" fontWeight="bold">
                           {check.feature_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Typography>
@@ -452,18 +594,21 @@ export const SystemStatus: React.FC = () => {
                     </Typography>
 
                     <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                      <Chip
-                        label={check.status.toUpperCase()}
-                        size="small"
-                        role="status"
-                        aria-label={`Status: ${check.status}`}
-                        sx={{
-                          backgroundColor: getStatusColor(check.status),
-                          color: '#fff',
-                          fontWeight: 'bold',
-                          border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.3)' : 'none',
-                        }}
-                      />
+                      <Fade in timeout={200} key={`chip-${check.status}`}>
+                        <Chip
+                          label={check.status.toUpperCase()}
+                          size="small"
+                          role="status"
+                          aria-label={`Status: ${check.status}`}
+                          sx={{
+                            backgroundColor: getStatusColor(check.status),
+                            color: '#fff',
+                            fontWeight: 'bold',
+                            transition: 'background-color 0.3s ease, color 0.3s ease',
+                            border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.3)' : 'none',
+                          }}
+                        />
+                      </Fade>
                       <Typography variant="caption" color="textSecondary" aria-label={`Last checked ${getTimeAgo(check.last_check)}`}>
                         {getTimeAgo(check.last_check)}
                       </Typography>
@@ -477,7 +622,7 @@ export const SystemStatus: React.FC = () => {
 
                     {/* Error Details (Collapsible) */}
                     {check.error_message && (
-                      <Collapse in={expandedCards.has(check.feature_name)}>
+                      <Collapse in={expandedCards.has(check.feature_name)} unmountOnExit>
                         <Divider sx={{ my: 2 }} />
                         <Alert severity="error" sx={{ fontSize: '0.75rem' }}>
                           <Typography variant="caption" fontWeight="bold">
@@ -520,3 +665,11 @@ export const SystemStatus: React.FC = () => {
     </Box>
   );
 };
+
+export const SystemStatusWithBoundary: React.FC = () => (
+  <ErrorBoundary fallbackType="general">
+    <SystemStatus />
+  </ErrorBoundary>
+);
+
+export default SystemStatusWithBoundary;

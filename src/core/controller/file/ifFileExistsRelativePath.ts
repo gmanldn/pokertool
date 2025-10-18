@@ -12,6 +12,8 @@
 # POKERTOOL-HEADER-END
 import { workspaceResolver } from "@core/workspace"
 import { BooleanResponse, StringRequest } from "@shared/proto/cline/common"
+import { HostProvider } from "@/hosts/host-provider"
+import { ShowMessageType } from "@/shared/proto/host/window"
 import { getWorkspacePath } from "@utils/path"
 import * as fs from "fs"
 import { Controller } from ".."
@@ -26,8 +28,14 @@ export async function ifFileExistsRelativePath(_controller: Controller, request:
     const workspacePath = await getWorkspacePath()
 
     if (!workspacePath) {
-        // If no workspace is open, return false
-        console.error("Error in ifFileExistsRelativePath: No workspace path available") // TODO
+        const message =
+            "Workspace not detected. Open a folder in VS Code before using file checks, then try again."
+        console.error(`[ifFileExistsRelativePath] ${message}`)
+        // Notify the host so the user gets actionable feedback when they trigger the command
+        HostProvider.window.showMessage({
+            type: ShowMessageType.WARNING,
+            message,
+        })
         return BooleanResponse.create({ value: false })
     }
 
