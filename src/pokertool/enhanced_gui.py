@@ -43,46 +43,9 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Callable, Tuple
 from pathlib import Path
 import webbrowser
-
-# CRITICAL: Check and install screen scraper dependencies FIRST
 import sys
 import os
 import subprocess
-
-def _ensure_scraper_dependencies():
-    """Ensure screen scraper dependencies are installed before module imports."""
-    critical_deps = [
-        ('cv2', 'opencv-python'),
-        ('PIL', 'Pillow'),
-        ('pytesseract', 'pytesseract'),
-        ('mss', 'mss'),
-        ('numpy', 'numpy'),
-        ('requests', 'requests'),
-        ('websocket', 'websocket-client'),
-    ]
-
-    if sys.platform == 'darwin':
-        critical_deps.append(('Quartz', 'pyobjc-framework-Quartz'))
-    
-    missing = []
-    for module_name, package_name in critical_deps:
-        try:
-            __import__(module_name)
-        except ImportError:
-            missing.append(package_name)
-    
-    if missing:
-        print(f"\n{'='*60}")
-        print("📦 [enhanced_gui] Installing screen scraper dependencies...")
-        print(f"{'='*60}")
-        for package in missing:
-            print(f"Installing {package}...")
-            try:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
-            except subprocess.CalledProcessError as e:
-                print(f"⚠️  Failed to install {package}: {e}")
-                print(f"   Please run manually: pip install {package}")
-        print(f"{'='*60}\n")
 
 # Import all pokertool modules
 try:
@@ -178,6 +141,21 @@ from .enhanced_gui_components import (
     SettingsSection,
     CoachingSection,
 )
+from .gui_bootstrap import bootstrap_enhanced_gui
+
+try:
+    from .hud_overlay import update_hud_state, is_hud_running
+except ImportError:
+    update_hud_state = None
+
+    def is_hud_running() -> bool:
+        return False
+
+try:
+    from .realtime.table_updates import broadcast_table_update
+except ImportError:  # pragma: no cover - optional runtime dependency
+    def broadcast_table_update(_table_id: str, _state: Dict[str, Any]) -> None:
+        pass
 
 class IntegratedPokerAssistant(tk.Tk):
     """Integrated Poker Assistant with prominent Autopilot functionality."""
@@ -203,6 +181,8 @@ class IntegratedPokerAssistant(tk.Tk):
         self._enhanced_scraper_started = False
         self._screen_update_running = False
         self._screen_update_thread = None
+        self._table_event_listener_registered = False
+        self._table_state_bridge = None
 
         self.manual_section = None
         self.settings_section = None
@@ -241,6 +221,8 @@ class IntegratedPokerAssistant(tk.Tk):
                 self.opponent_modeler = get_opponent_modeling_system()
                 self.multi_table_manager = get_table_manager()
                 print("Core modules initialized")
+                self._attach_table_event_listeners()
+                self._register_table_manager_bridge()
 
             try:
                 if CoachingSystem:
@@ -330,6 +312,84 @@ class IntegratedPokerAssistant(tk.Tk):
 
         except Exception as e:
             print(f"Module initialization error: {e}")
+
+    def _attach_table_event_listeners(self) -> None:
+        """Register listeners to relay TableManager events to the GUI stack."""
+        if not self.multi_table_manager:
+            return
+        register = getattr(self.multi_table_manager, 'register_event_listener', None)
+        if not callable(register):
+            return
+        if self._table_event_listener_registered:
+            return
+
+        def _handle_event(payload: Dict[str, Any]) -> None:
+            table_id = str(payload.get('table_id') or payload.get('state', {}).get('table_id') or 'table-0')
+            state = payload.get('state') or {}
+            if not isinstance(state, dict):
+                try:
+                    state = dict(state)  # type: ignore[arg-type]
+                except Exception:
+                    state = {}
+            # Ensure GUI updates execute on the main thread
+            self.after(0, lambda tid=table_id, snapshot=dict(state): self._forward_table_state(tid, snapshot))
+
+        register('table_state', _handle_event)
+        self._table_event_listener_registered = True
+
+    def _register_table_manager_bridge(self) -> None:
+        """Connect scraper callbacks to the TableManager event pipeline."""
+        if not (self.multi_table_manager and ENHANCED_SCRAPER_LOADED):
+            return
+        if self._table_state_bridge is not None:
+            return
+        try:
+            from .scrape import register_table_state_callback
+        except ImportError:
+            return
+
+        def _bridge(state: Dict[str, Any]) -> None:
+            table_id = str(
+                state.get('table_id')
+                or state.get('tableId')
+                or state.get('table_name')
+                or state.get('window_title')
+                or 'scraper-table'
+            )
+            snapshot = dict(state) if isinstance(state, dict) else {'raw_state': state}
+            self.after(0, lambda tid=table_id, payload=snapshot: self._dispatch_table_state(tid, payload))
+
+        register_table_state_callback(_bridge)
+        self._table_state_bridge = _bridge
+
+    def _dispatch_table_state(self, table_id: str, state: Dict[str, Any]) -> None:
+        """Send scraper state through the TableManager or directly to listeners."""
+        if self.multi_table_manager:
+            notifier = getattr(self.multi_table_manager, 'notify_external_state', None)
+            if callable(notifier):
+                try:
+                    notifier(table_id, state)
+                    return
+                except Exception as exc:
+                    print(f"TableManager notification error: {exc}")
+        # Fallback directly to forwarder when manager integration unavailable
+        self._forward_table_state(table_id, state)
+
+    def _forward_table_state(self, table_id: str, state: Dict[str, Any]) -> None:
+        """Forward table state to HUD overlay and web dashboard."""
+        if not state:
+            return
+
+        if update_hud_state and is_hud_running():
+            try:
+                update_hud_state(state)
+            except Exception as exc:
+                print(f"HUD update error: {exc}")
+
+        try:
+            broadcast_table_update(table_id, state)
+        except Exception as exc:
+            print(f"Table update broadcast error: {exc}")
     
     def _setup_styles(self):
         """Configure ttk styles."""
@@ -1757,6 +1817,10 @@ class IntegratedPokerAssistant(tk.Tk):
 def main():
     """Launch the enhanced poker assistant."""
     try:
+        report = bootstrap_enhanced_gui()
+        if report.optional_missing:
+            missing = ', '.join(sorted(set(report.optional_missing)))
+            print(f"Optional GUI dependencies not available: {missing}")
         app = IntegratedPokerAssistant()
         app.mainloop()
         return 0

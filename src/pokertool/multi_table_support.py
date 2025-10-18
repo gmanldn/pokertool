@@ -236,7 +236,7 @@ class TableManager:
         # Hotkeys
         self.hotkeys: Dict[str, HotkeyAction] = {}
         self.global_hotkeys_enabled = True
-        
+
         # Settings - Initialize with defaults first
         self.settings = {
             'auto_tile': True,
@@ -252,6 +252,9 @@ class TableManager:
             'screen_margins': (20, 20, 20, 20),  # top, right, bottom, left
             'preserve_aspect_ratio': True
         }
+
+        # Event listeners keyed by event name
+        self._event_listeners: Dict[str, List[Callable[[Dict[str, Any]], None]]] = defaultdict(list)
         
         # Load configuration after settings are initialized
         self._load_config()
@@ -393,6 +396,31 @@ class TableManager:
         
         for hotkey in default_hotkeys:
             self.register_hotkey(hotkey)
+
+    # Event system -----------------------------------------------------
+    def register_event_listener(self, event: str, callback: Callable[[Dict[str, Any]], None]) -> None:
+        """Register a listener for TableManager events."""
+        if not callable(callback):
+            raise TypeError('callback must be callable')
+        listeners = self._event_listeners[event]
+        if callback not in listeners:
+            listeners.append(callback)
+
+    def unregister_event_listener(self, event: str, callback: Callable[[Dict[str, Any]], None]) -> None:
+        """Remove a previously registered listener."""
+        listeners = self._event_listeners.get(event)
+        if not listeners:
+            return
+        if callback in listeners:
+            listeners.remove(callback)
+
+    def _emit_event(self, event: str, payload: Dict[str, Any]) -> None:
+        """Internal helper to dispatch events to listeners."""
+        for callback in list(self._event_listeners.get(event, [])):
+            try:
+                callback(dict(payload))
+            except Exception as exc:  # pragma: no cover - runtime logging only
+                logger.error("TableManager event '%s' callback error: %s", event, exc)
     
     def start(self):
         """Start the table manager."""
@@ -491,7 +519,13 @@ class TableManager:
             self.tile_all_tables()
         
         logger.info(f"Added table: {table_id} ({table_name} at {site_name})")
-        
+
+        self._emit_event('table_added', {
+            'table_id': table_id,
+            'table': table,
+            'timestamp': time.time(),
+        })
+
         return table_id
     
     def remove_table(self, table_id: str):
@@ -513,6 +547,11 @@ class TableManager:
                 self.tile_all_tables()
             
             logger.info(f"Removed table: {table_id}")
+
+            self._emit_event('table_removed', {
+                'table_id': table_id,
+                'timestamp': time.time(),
+            })
     
     def _update_table(self, table_id: str):
         """Update a single table's state."""
@@ -521,29 +560,45 @@ class TableManager:
         
         table = self.tables[table_id]
         
+        scraped_snapshot: Dict[str, Any] = {}
+
         try:
             # Scrape table data
             if table.scraper:
-                scraped_data = table.scraper.scrape_table(table.window_handle)
-                
-                if scraped_data:
+                scraped = table.scraper.scrape_table(table.window_handle)
+
+                if scraped:
+                    scraped_snapshot = dict(scraped)
+
                     # Update table state
-                    table.pot_size = scraped_data.get('pot_size', 0)
-                    table.players = scraped_data.get('players', {})
-                    table.action_required = scraped_data.get('action_required', False)
-                    table.action_time_remaining = scraped_data.get('time_remaining', float('inf'))
-                    
+                    table.pot_size = scraped_snapshot.get('pot_size', table.pot_size)
+                    table.players = scraped_snapshot.get('players', table.players)
+                    table.action_required = scraped_snapshot.get('action_required', table.action_required)
+                    table.action_time_remaining = scraped_snapshot.get('time_remaining', table.action_time_remaining)
+
                     # Update HUD
                     if table.hud_overlay:
-                        table.hud_overlay.update_stats(scraped_data)
-            
+                        updater = getattr(table.hud_overlay, 'update_game_state', None)
+                        if callable(updater):
+                            updater(scraped_snapshot)
+                        else:  # pragma: no cover - legacy path
+                            legacy = getattr(table.hud_overlay, 'update_stats', None)
+                            if callable(legacy):
+                                legacy(scraped_snapshot)
+
             # Update statistics
             self._update_table_statistics(table)
-            
+
             table.last_update = time.time()
-            
+
         except Exception as e:
             logger.error(f"Failed to update table {table_id}: {e}")
+
+        self._emit_event('table_state', {
+            'table_id': table_id,
+            'state': scraped_snapshot,
+            'timestamp': time.time(),
+        })
     
     def _update_table_priorities(self):
         """Update priority levels for all tables."""
@@ -832,7 +887,7 @@ class TableManager:
     def _update_table_statistics(self, table: TableWindow):
         """Update statistics for a table."""
         stats = table.statistics
-        
+
         # Calculate session duration
         session_duration = (time.time() - stats['session_start']) / 3600  # hours
         
@@ -1042,7 +1097,7 @@ class TableManager:
         except Exception as e:
             logger.error(f"Failed to export hotkeys: {e}")
             return False
-    
+
     def import_hotkeys(self, filename: str) -> bool:
         """Import hotkey configuration from file."""
         try:
@@ -1067,6 +1122,26 @@ class TableManager:
         except Exception as e:
             logger.error(f"Failed to import hotkeys: {e}")
             return False
+
+    def notify_external_state(self, table_id: str, state: Dict[str, Any]) -> None:
+        """Inject an external table state update and notify listeners."""
+        snapshot = dict(state) if isinstance(state, dict) else {'raw_state': state}
+
+        table = self.tables.get(table_id)
+        if table:
+            table.last_update = time.time()
+            pot_value = snapshot.get('pot_size', snapshot.get('pot'))
+            try:
+                if pot_value is not None:
+                    table.pot_size = float(pot_value)
+            except (TypeError, ValueError):
+                logger.debug('Skipping pot size update for table %s', table_id)
+
+        self._emit_event('table_state', {
+            'table_id': table_id,
+            'state': snapshot,
+            'timestamp': time.time(),
+        })
 
 
 # Global table manager instance

@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 from pokertool.core import Card, Position, analyse_hand, parse_card
 from pokertool.coaching_system import RealTimeAdvice
 from pokertool.i18n import format_decimal, translate
+from pokertool.enhanced_gui_config import load_panel_config
 
 from .style import COLORS, FONTS
 
@@ -26,6 +27,7 @@ class CoachingSection:
         self.parent = parent
 
         self.coaching_system = host.coaching_system
+        self._config = load_panel_config('coaching_panel')
 
         # UI elements
         self.advice_text: Optional[tk.Text] = None
@@ -113,23 +115,32 @@ class CoachingSection:
         mistake_frame.pack(fill="both", expand=True, pady=(0, 12))
         self.host._register_widget_translation(mistake_frame, "coaching.sections.mistakes")
 
-        columns = ("category", "severity", "equity", "recommendation")
+        raw_columns = self._config.get('mistakeColumns', [])
+        column_defs = [
+            entry for entry in raw_columns
+            if isinstance(entry, dict) and entry.get('id')
+        ]
+        if not column_defs:
+            column_defs = [
+                {"id": "category", "translationKey": "coaching.mistakes.category", "width": 140},
+                {"id": "severity", "translationKey": "coaching.mistakes.severity", "width": 120},
+                {"id": "equity", "translationKey": "coaching.mistakes.equity", "width": 110},
+                {"id": "recommendation", "translationKey": "coaching.mistakes.recommendation", "width": 220},
+            ]
+
+        columns = tuple(col['id'] for col in column_defs)
         self.mistake_tree = ttk.Treeview(
             mistake_frame,
             columns=columns,
             show="headings",
             height=6,
         )
-        headings = {
-            "category": translate("coaching.mistakes.category"),
-            "severity": translate("coaching.mistakes.severity"),
-            "equity": translate("coaching.mistakes.equity"),
-            "recommendation": translate("coaching.mistakes.recommendation"),
-        }
-        widths = {"category": 140, "severity": 120, "equity": 110, "recommendation": 220}
-        for col in columns:
-            self.mistake_tree.heading(col, text=headings[col])
-            self.mistake_tree.column(col, width=widths[col], anchor="center")
+        for col in column_defs:
+            col_id = col['id']
+            translation_key = col.get('translationKey', f'coaching.mistakes.{col_id}')
+            width = int(col.get('width', 140))
+            self.mistake_tree.heading(col_id, text=translate(translation_key))
+            self.mistake_tree.column(col_id, width=width, anchor="center")
 
         mistake_scroll = ttk.Scrollbar(mistake_frame, orient="vertical", command=self.mistake_tree.yview)
         self.mistake_tree.configure(yscrollcommand=mistake_scroll.set)
@@ -167,34 +178,46 @@ class CoachingSection:
         progress_frame.pack(fill="x", pady=(0, 12))
         self.host._register_widget_translation(progress_frame, "coaching.sections.progress")
 
-        progress_defs = {
-            "hands": ("coaching.progress.hands", 0),
-            "accuracy": ("coaching.progress.accuracy", 1),
-            "streak": ("coaching.progress.streak", 2),
-            "scenarios": ("coaching.progress.scenarios", 3),
-        }
-        for key, (label_key, row) in progress_defs.items():
-            tk.Label(
+        raw_progress = self._config.get('progressMetrics', [])
+        progress_entries = [
+            entry for entry in raw_progress
+            if isinstance(entry, dict) and entry.get('key')
+        ]
+        if not progress_entries:
+            progress_entries = [
+                {'key': 'hands', 'translationKey': 'coaching.progress.hands'},
+                {'key': 'accuracy', 'translationKey': 'coaching.progress.accuracy'},
+                {'key': 'streak', 'translationKey': 'coaching.progress.streak'},
+                {'key': 'scenarios', 'translationKey': 'coaching.progress.scenarios'},
+            ]
+
+        for row, entry in enumerate(progress_entries):
+            key = str(entry['key'])
+            translation_key = entry.get('translationKey', f'coaching.progress.{key}')
+
+            label_widget = tk.Label(
                 progress_frame,
                 text="",
                 font=FONTS["body"],
                 bg=COLORS["bg_medium"],
                 fg=COLORS["text_primary"],
-            ).grid(row=row, column=0, sticky="w", padx=10, pady=4)
-            self.host._register_widget_translation(progress_frame.grid_slaves(row=row, column=0)[0], label_key)
+            )
+            label_widget.grid(row=row, column=0, sticky="w", padx=10, pady=4)
+            self.host._register_widget_translation(label_widget, translation_key)
 
             var = tk.StringVar(value="-")
             self.progress_vars[key] = var
-            tk.Label(
+            value_label = tk.Label(
                 progress_frame,
                 textvariable=var,
                 font=FONTS["body"],
                 bg=COLORS["bg_medium"],
                 fg=COLORS["accent_primary"],
-            ).grid(row=row, column=1, sticky="w", padx=10, pady=4)
+            )
+            value_label.grid(row=row, column=1, sticky="w", padx=10, pady=4)
 
         tip_frame = tk.Frame(progress_frame, bg=COLORS["bg_medium"])
-        tip_frame.grid(row=len(progress_defs), column=0, columnspan=2, sticky="ew", padx=10, pady=(8, 4))
+        tip_frame.grid(row=len(progress_entries), column=0, columnspan=2, sticky="ew", padx=10, pady=(8, 4))
 
         tk.Label(
             tip_frame,
@@ -514,18 +537,22 @@ class CoachingSection:
         if not self.coaching_system or not self.progress_vars:
             return
         snapshot = self.coaching_system.get_progress_snapshot()
-        self.progress_vars["hands"].set(format_decimal(snapshot.hands_reviewed, digits=0))
-        accuracy_value = format_decimal(snapshot.accuracy_score * 100, digits=0)
-        self.progress_vars["accuracy"].set(
-            translate("coaching.progress.accuracy_value", value=accuracy_value)
-        )
-        self.progress_vars["streak"].set(
-            translate(
-                "coaching.progress.streak_value",
-                days=format_decimal(snapshot.streak_days, digits=0),
+        if "hands" in self.progress_vars:
+            self.progress_vars["hands"].set(format_decimal(snapshot.hands_reviewed, digits=0))
+        if "accuracy" in self.progress_vars:
+            accuracy_value = format_decimal(snapshot.accuracy_score * 100, digits=0)
+            self.progress_vars["accuracy"].set(
+                translate("coaching.progress.accuracy_value", value=accuracy_value)
             )
-        )
-        self.progress_vars["scenarios"].set(format_decimal(snapshot.scenarios_completed, digits=0))
+        if "streak" in self.progress_vars:
+            self.progress_vars["streak"].set(
+                translate(
+                    "coaching.progress.streak_value",
+                    days=format_decimal(snapshot.streak_days, digits=0),
+                )
+            )
+        if "scenarios" in self.progress_vars:
+            self.progress_vars["scenarios"].set(format_decimal(snapshot.scenarios_completed, digits=0))
         if self.last_tip_var is not None:
             self.last_tip_var.set(snapshot.last_tip or translate("coaching.tips.empty"))
 

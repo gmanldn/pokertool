@@ -10,6 +10,7 @@ import tkinter as tk
 from typing import Any, Optional
 
 from pokertool.gui import EnhancedPokerAssistantFrame
+from pokertool.enhanced_gui_config import load_panel_config
 
 from .style import COLORS, FONTS
 
@@ -23,6 +24,7 @@ class ManualPlaySection:
         self._modules_loaded = modules_loaded
         self.manual_panel: Optional[EnhancedPokerAssistantFrame] = None
         self.status_label: Optional[tk.Label] = None
+        self._config = load_panel_config('manual_panel')
 
         self._build_ui()
         self.update_autopilot_status(host.autopilot_active)
@@ -42,9 +44,9 @@ class ManualPlaySection:
         manual_label.pack(anchor="w")
         self.host._register_widget_translation(manual_label, "manual.title")
 
-        helper_text = (
-            "Use the manual workspace below to select cards, adjust players, "
-            "and review live analysis without leaving the main window."
+        helper_text = self._config.get(
+            'helperText',
+            "Use the manual workspace below to select cards, adjust players, and review live analysis without leaving the main window.",
         )
         tk.Label(
             header_frame,
@@ -116,11 +118,15 @@ class ManualPlaySection:
         )
         tips_frame.pack(fill="both", padx=0, pady=(0, 10))
 
-        tips_text = (
-            "1. Click cards in the grid to assign hole cards and board streets.\n"
-            "2. Adjust stacks, blinds, and active seats from the control panel.\n"
-            "3. Use ANALYZE HAND to refresh insights inside the workspace."
-        )
+        tips_list = self._config.get('tips')
+        if isinstance(tips_list, list) and tips_list:
+            tips_text = "\n".join(f"{idx}. {tip}" for idx, tip in enumerate(tips_list, start=1))
+        else:
+            tips_text = (
+                "1. Click cards in the grid to assign hole cards and board streets.\n"
+                "2. Adjust stacks, blinds, and active seats from the control panel.\n"
+                "3. Use ANALYZE HAND to refresh insights inside the workspace."
+            )
         tk.Label(
             tips_frame,
             text=tips_text,
@@ -160,9 +166,14 @@ class ManualPlaySection:
         self.status_label.pack(anchor="w", padx=12, pady=(0, 12))
         self.host._register_widget_translation(self.status_label, "autopilot.status.inactive")
 
+        sync_message = self._config.get(
+            'syncMessage',
+            "Switch tabs at any time — the manual workspace stays in sync with live updates.",
+        )
+
         tk.Label(
             sync_frame,
-            text="Switch tabs at any time — the manual workspace stays in sync with live updates.",
+            text=sync_message,
             font=FONTS["body"],
             justify="left",
             wraplength=320,

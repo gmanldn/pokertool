@@ -55,6 +55,7 @@ def main(argv=None):
 
     sub.add_parser('web', help='Launch the web interface (default)')
     sub.add_parser('scrape', help='Run the screen scraper (headless)')
+    sub.add_parser('gui', help='Launch the enhanced desktop GUI')
     sub.add_parser('test', help='Run basic functionality tests')
 
     args = parser.parse_args(argv)
@@ -97,6 +98,27 @@ def main(argv=None):
             return 0
         except Exception as e:
             logger.error(f'Scraper failed: {e}')
+            return 1
+
+    elif args.cmd == 'gui':
+        try:
+            from .gui_bootstrap import bootstrap_enhanced_gui
+            report = bootstrap_enhanced_gui()
+            if report.optional_missing:
+                logger.warning(
+                    'Optional GUI dependencies missing: %s',
+                    ', '.join(sorted(set(report.optional_missing))),
+                )
+            # Import lazily so bootstrap runs before heavy GUI modules
+            from .enhanced_gui import main as gui_main  # noqa: WPS433
+            return gui_main()
+        except RuntimeError as e:
+            logger.error(str(e))
+            return 1
+        except Exception as e:
+            logger.error(f'Enhanced GUI launch failed: {e}')
+            import traceback
+            traceback.print_exc()
             return 1
 
     elif args.cmd == 'test':

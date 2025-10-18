@@ -752,6 +752,14 @@ def run_screen_scraper(site: str = 'GENERIC', continuous: bool = False, interval
             'ocr_enabled': _scraper_manager.ocr_engine is not None
         }
 
+
+def register_table_state_callback(callback: Callable[[Dict[str, Any]], None]) -> None:
+    """Register a callback for enhanced scraper table state updates."""
+    global _scraper_manager
+
+    _scraper_manager.register_callback(callback)
+
+
 def stop_screen_scraper() -> Dict[str, Any]:
     """Stop the continuous screen scraper."""
     global _scraper_manager
