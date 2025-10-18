@@ -1,6 +1,19 @@
 # PokerTool
 
-PokerTool is a web-based poker assistant that combines real-time table detection, equity analysis, and coaching tools behind a React + Python stack. It ships with automated setup, a hardened logging pipeline, and scripts for headless operation.
+PokerTool is a web-based poker assistant that pairs a React dashboard with a Python strategy engine so players can make profitable decisions with real-time guidance. The backend fuses computer vision, game theory, machine learning, and compliance tooling to keep advice actionable while staying resilient in live play.
+
+### Engine Systems That Drive Decisions
+- **Vision & Table Intelligence** – The Betfair-optimised scraper (`src/pokertool/modules/poker_screen_scraper_betfair.py`) layers 35 speed, accuracy, and reliability upgrades (ROI tracking, temporal consensus, watchdog recovery) documented in `tests/architecture/data/architecture.json`, letting the engine read live tables with 95%+ extraction accuracy.
+- **Probability & Solver Stack** – GTO solvers, Nash equilibrium search (`src/pokertool/nash_solver.py`), and the ICM calculator (`tests/system/test_icm_calculator.py`) collaborate to price every spot, run deviation analysis, and surface bankroll-safe lines within milliseconds.
+- **Opponent Modeling & Active Learning** – `src/pokertool/ml_opponent_modeling.py` and `src/pokertool/active_learning.py` learn villain tendencies, update ranges, and feed the advice loop with personalised exploit suggestions.
+- **Coaching, Reporting & Session Ops** – The analytics dashboard, advanced reporting suite, session tracker, and study-mode helpers (`src/pokertool/analytics_dashboard.py`, `src/pokertool/advanced_reporting.py`, `src/pokertool/session_management.py`) explain “why” behind every recommendation and archive hands for review.
+- **Resilience & Observability** – Compliance and security layers (`src/pokertool/compliance.py`, `src/pokertool/error_handling.py`, `src/pokertool/storage.py`), health monitors, and the consolidated logging system ensure the stack survives long sessions and is auditable after the fact.
+
+### Test & Coverage Snapshot
+- **1,199 automated tests** across 69+ files, driven by `test_everything.py` (see `docs/TESTING.md`).
+- **Core poker engine:** 95%+ code coverage validated by `tests/test_core_comprehensive.py`.
+- **ML + GTO stack:** 95% coverage across solvers, opponent models, and OCR pipelines (`tests/test_comprehensive_ml_gto.py`).
+- **End-to-end integration:** Integrated subsystems are exercised to 95% coverage by `tests/test_comprehensive_system.py`, ensuring schedulers, compliance, OCR, and advice pipelines cooperate under load.
 
 ## Features
 

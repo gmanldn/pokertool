@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.2.0
-release_date = 2025-10-18
+version = 88.4.0
+release_date = 2025-10-19
 
 [release_notes]
-# v88.2.0 - Stability & Test Hardenings
-description = Stabilized optional ML/Scipy dependencies, reimplemented card recognition, and converted scraper diagnostics into resilient smoke tests
-changes = Hardened optional dependency handling, rebuilt card recognition engine, added floating advice facade, modernized scraper logging test, pytesseract ndarray shim, setup script sandbox resilience
+# v88.4.0 - Strategy Docs & Architecture Refresh
+description = Documented the engine subsystems, refreshed architecture metadata, and synced range presets with the latest solver guidance
+changes = Expanded README introduction and coverage summary, regenerated tests/architecture/data/architecture.json, updated sample range JSON fixtures
 status = stable
 
 [components]

@@ -3,17 +3,17 @@
   "hands": [
     "KQs",
     "TT",
-    "AQs",
-    "99",
-    "AJs",
-    "88",
-    "JJ",
     "AKs",
-    "AKo",
+    "AQs",
+    "88",
+    "AJs",
+    "KK",
+    "JJ",
+    "99",
     "AQo",
-    "QQ",
     "AA",
-    "KK"
+    "AKo",
+    "QQ"
   ],
   "description": "My opening range",
   "color": "#4CAF50"
