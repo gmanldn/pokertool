@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.4.0
-release_date = 2025-10-19
+version = 88.4.1
+release_date = 2025-10-22
 
 [release_notes]
-# v88.4.0 - Strategy Docs & Architecture Refresh
-description = Documented the engine subsystems, refreshed architecture metadata, and synced range presets with the latest solver guidance
-changes = Expanded README introduction and coverage summary, regenerated tests/architecture/data/architecture.json, updated sample range JSON fixtures
+# v88.4.1 - Detection Telemetry & Reset Enhancements
+description = Polished detection streaming telemetry, bankroll resets, and statistical recording to keep live tracking aligned with learning systems.
+changes = Added financial history reset workflow, expanded hand recorder outcomes, enabled ante detection, and made detection WebSocket endpoints configurable.
 status = stable
 
 [components]
