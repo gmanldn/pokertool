@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.5.1
-release_date = 2025-10-22
+version = 89.0.0
+release_date = 2025-10-18
 
 [release_notes]
-# v88.5.1 - Detection UI Coverage Expansion
-description = Added regression coverage to ensure detected cards and table state stay in sync across the detection log and table views.
-changes = Added focused frontend unit tests for TableView and DetectionLog components, mocked WebSocket/message flow to assert detected cards/tables render correctly, and registered the pytest asyncio marker so backend suites can execute without collection errors.
+# v89.0.0 - Live Test Progress Telemetry
+description = Real-time pytest streaming now shows colorized start/finish updates with running pass, fail, and remaining test counters.
+changes = Introduced a live progress plugin in tests/conftest.py that tracks collection totals, emits green PASS lines, red FAIL alerts, and keeps a rolling tally of completed versus outstanding tests so long suites never appear stalled.
 status = stable
 
 [components]

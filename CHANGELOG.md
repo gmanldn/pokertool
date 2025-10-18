@@ -2,6 +2,11 @@
 
 All notable changes to this project are tracked in this file. The structure follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [89.0.0] - 2025-10-18
+
+### Added
+- Real-time pytest progress streaming with color-coded PASS/FAIL status lines and live counters for completed versus remaining tests (`tests/conftest.py`).
+
 ## [88.4.0] - 2025-10-19
 
 ### Added
