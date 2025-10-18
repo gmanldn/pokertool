@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 89.0.0
+version = 89.0.1
 release_date = 2025-10-18
 
 [release_notes]
-# v89.0.0 - Live Test Progress Telemetry
-description = Real-time pytest streaming now shows colorized start/finish updates with running pass, fail, and remaining test counters.
-changes = Introduced a live progress plugin in tests/conftest.py that tracks collection totals, emits green PASS lines, red FAIL alerts, and keeps a rolling tally of completed versus outstanding tests so long suites never appear stalled.
+# v89.0.1 - Release Banner & AI-Aware TODOs
+description = Surfaced the release version directly in the UI header and auto-capture log warnings/errors into TODOs with ready-to-run LLM prompts.
+changes = Navigation now renders the synced release chip beside PokerTool branding while master logging writes deduplicated TODO entries that embed guidance prompts for AI-assisted triage, keeping operational fixes actionable.
 status = stable
 
 [components]

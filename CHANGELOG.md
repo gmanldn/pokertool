@@ -2,6 +2,12 @@
 
 All notable changes to this project are tracked in this file. The structure follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [89.0.1] - 2025-10-18
+
+### Added
+- Displayed the synced release version chip alongside the PokerTool navigation title and drawer branding (`pokertool-frontend/src/components/Navigation.tsx`).
+- Auto-generated TODO log alerts now include LLM-friendly prompts so AI agents can immediately investigate warnings and errors (`src/pokertool/master_logging.py`, `docs/TODO.md`).
+
 ## [89.0.0] - 2025-10-18
 
 ### Added
