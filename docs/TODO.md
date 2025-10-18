@@ -1664,7 +1664,7 @@ All modules now have production-ready implementations with comprehensive test su
 
 #### 15. Betfair Integration Documentation
 **Tasks:**
-- [ ] **BF-034**: Document Betfair-specific challenges
+- [x] **BF-034**: Document Betfair-specific challenges (`docs/BETFAIR_INTEGRATION_CHALLENGES.md`)
   - UI layout differences
   - Text formatting quirks
   - Known limitations
