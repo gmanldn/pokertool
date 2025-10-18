@@ -17,6 +17,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { TableView } from './TableView';
 import { useWebSocket, ConnectionStatus } from '../hooks/useWebSocket';
+import { WebSocketMessageData } from '../types/common';
 
 jest.mock('@mui/material', () => {
   // Preserve all of MUI while overriding useMediaQuery to avoid relying on matchMedia
@@ -115,7 +116,7 @@ it('renders detected table and card data when websocket updates arrive', async (
     messages: [
       {
         type: 'table_update',
-        data: detectedTable as unknown as Record<string, unknown>,
+        data: detectedTable as unknown as WebSocketMessageData,
         timestamp: Date.now(),
       },
     ],
