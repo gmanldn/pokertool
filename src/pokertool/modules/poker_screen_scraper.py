@@ -234,6 +234,17 @@ class PokerScreenScraper:
         if hasattr(self._scraper, 'get_performance_stats'):
             return self._scraper.get_performance_stats()
         return {}
+
+    def get_display_metrics(self) -> Dict[str, Any]:
+        """Return display scaling metrics if available."""
+        if hasattr(self._scraper, 'get_display_metrics'):
+            try:
+                metrics = self._scraper.get_display_metrics()
+                if isinstance(metrics, dict):
+                    return metrics
+            except Exception as exc:  # pragma: no cover - depends on environment
+                logger.debug('Display metrics retrieval failed: %s', exc)
+        return {'scale_x': 1.0, 'scale_y': 1.0}
     
     def save_debug_image(self, image: np.ndarray, filename: str):
         """Save debug image with detection overlay."""

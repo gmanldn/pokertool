@@ -163,9 +163,9 @@ All modules now have production-ready implementations with comprehensive test su
 - [x] Replace the runtime `pip install` flow in `src/pokertool/enhanced_gui.py` with an idempotent bootstrap routine invoked from the CLI so GUI start-up never mutates the environment unexpectedly.
 - [x] Wire the enhanced HUD overlay to the existing `TableManager` events so on-table updates broadcast to both the desktop GUI and web dashboard simultaneously.
 - [x] Extract configuration for autopilot/coaching/manual panels into JSON schema files and load them dynamically for easier customization by partners.
-- [ ] Persist HUD profile definitions via `get_secure_db()` so layouts survive restarts and can sync across devices.
-- [ ] Expose a lightweight event bus that bridges scraper callbacks to Tkinter safely (queue + `after` loop) and deprecate ad-hoc `threading.Thread` usage inside the GUI modules.
-- [ ] Normalize screen-capture scaling by reusing the `PokerScreenScraper` calibration pipeline to avoid duplicated display DPI logic between overlay and core scraper.
+- [x] Persist HUD profile definitions via `get_secure_db()` so layouts survive restarts and can sync across devices.
+- [x] Expose a lightweight event bus that bridges scraper callbacks to Tkinter safely (queue + `after` loop) and deprecate ad-hoc `threading.Thread` usage inside the GUI modules.
+- [x] Normalize screen-capture scaling by reusing the `PokerScreenScraper` calibration pipeline to avoid duplicated display DPI logic between overlay and core scraper.
 
 ### Operations & Packaging
 - [ ] Publish a `pokertool gui` CLI entrypoint that runs dependency checks, launches the enhanced GUI, and gracefully shuts down the shared thread pool on exit.

@@ -142,6 +142,7 @@ from .enhanced_gui_components import (
     CoachingSection,
 )
 from .gui_bootstrap import bootstrap_enhanced_gui
+from .gui_event_bus import get_gui_event_bus
 
 try:
     from .hud_overlay import update_hud_state, is_hud_running
@@ -162,6 +163,10 @@ class IntegratedPokerAssistant(tk.Tk):
     
     def __init__(self):
         super().__init__()
+
+        self.event_bus = get_gui_event_bus()
+        self.event_bus.attach(self)
+        self.event_bus.subscribe('table_state', self._handle_table_state_event)
         
         self.title(translate('app.title'))
         self.geometry('1600x1000')
@@ -323,18 +328,7 @@ class IntegratedPokerAssistant(tk.Tk):
         if self._table_event_listener_registered:
             return
 
-        def _handle_event(payload: Dict[str, Any]) -> None:
-            table_id = str(payload.get('table_id') or payload.get('state', {}).get('table_id') or 'table-0')
-            state = payload.get('state') or {}
-            if not isinstance(state, dict):
-                try:
-                    state = dict(state)  # type: ignore[arg-type]
-                except Exception:
-                    state = {}
-            # Ensure GUI updates execute on the main thread
-            self.after(0, lambda tid=table_id, snapshot=dict(state): self._forward_table_state(tid, snapshot))
-
-        register('table_state', _handle_event)
+        register('table_state', lambda payload: self.event_bus.emit('table_state', payload))
         self._table_event_listener_registered = True
 
     def _register_table_manager_bridge(self) -> None:
@@ -357,10 +351,20 @@ class IntegratedPokerAssistant(tk.Tk):
                 or 'scraper-table'
             )
             snapshot = dict(state) if isinstance(state, dict) else {'raw_state': state}
-            self.after(0, lambda tid=table_id, payload=snapshot: self._dispatch_table_state(tid, payload))
+            self.event_bus.emit('table_state', {'table_id': table_id, 'state': snapshot})
 
         register_table_state_callback(_bridge)
         self._table_state_bridge = _bridge
+
+    def _handle_table_state_event(self, payload: Dict[str, Any]) -> None:
+        table_id = str(payload.get('table_id', 'scraper-table'))
+        state = payload.get('state') or {}
+        if not isinstance(state, dict):
+            try:
+                state = dict(state)
+            except Exception:
+                state = {}
+        self._dispatch_table_state(table_id, state)
 
     def _dispatch_table_state(self, table_id: str, state: Dict[str, Any]) -> None:
         """Send scraper state through the TableManager or directly to listeners."""
@@ -1810,6 +1814,9 @@ class IntegratedPokerAssistant(tk.Tk):
             if self._locale_listener_token is not None:
                 unregister_locale_listener(self._locale_listener_token)
                 self._locale_listener_token = None
+            if hasattr(self, 'event_bus') and self.event_bus is not None:
+                self.event_bus.unsubscribe('table_state', self._handle_table_state_event)
+                self.event_bus.detach(self)
             self.destroy()
 
 

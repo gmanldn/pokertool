@@ -230,6 +230,7 @@ class EnhancedScraperManager:
         self._current_site: Optional[str] = None
         self._ocr_requested = False
         self._last_signature: Optional[tuple] = None
+        self._display_metrics: Dict[str, Any] = {'scale_x': 1.0, 'scale_y': 1.0}
 
     def initialize(self, site: str = 'GENERIC', enable_ocr: bool = True) -> bool:
         """Initialize the enhanced screen scraper with OCR support."""
@@ -247,6 +248,7 @@ class EnhancedScraperManager:
                 self._ocr_requested = requested_ocr
                 self._recognition_stats = RecognitionStats()
                 self._last_signature = None
+                self._refresh_display_metrics()
             return True
 
         # Reinitialise underlying scraper state
@@ -271,6 +273,8 @@ class EnhancedScraperManager:
             self.bridge = bridge_cls(self.scraper)
             self.bridge.register_callback(self._on_table_update)
 
+            self._refresh_display_metrics()
+
             self._configure_ocr(enable_ocr)
             self._recognition_stats = RecognitionStats()
             self._current_site = normalized_site
@@ -289,6 +293,10 @@ class EnhancedScraperManager:
         """Register a callback for table state updates."""
         if callback not in self.callbacks:
             self.callbacks.append(callback)
+
+    def get_display_metrics(self) -> Dict[str, Any]:
+        """Return the current display scaling metrics."""
+        return dict(self._display_metrics)
 
     def _configure_ocr(self, enable_ocr: bool) -> None:
         """Initialise or disable OCR resources and pre-compute region groups."""
@@ -329,6 +337,23 @@ class EnhancedScraperManager:
         except Exception as exc:
             logger.warning('Failed to initialize OCR: %s', exc)
             self.ocr_engine = None
+
+    def _refresh_display_metrics(self) -> None:
+        metrics: Dict[str, Any] = {'scale_x': 1.0, 'scale_y': 1.0}
+        if self.scraper and hasattr(self.scraper, 'get_display_metrics'):
+            try:
+                raw_metrics = self.scraper.get_display_metrics()
+                if isinstance(raw_metrics, dict):
+                    metrics.update({
+                        'scale_x': float(raw_metrics.get('scale_x', 1.0) or 1.0),
+                        'scale_y': float(raw_metrics.get('scale_y', raw_metrics.get('scale_x', 1.0)) or 1.0),
+                        'width': raw_metrics.get('width'),
+                        'height': raw_metrics.get('height'),
+                    })
+            except Exception as exc:  # pragma: no cover - depends on environment
+                logger.debug('Display metrics retrieval failed: %s', exc)
+
+        self._display_metrics = metrics
 
     def _strip_table_image(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Return a shallow copy of *state* without the raw table image payload."""
@@ -414,6 +439,7 @@ class EnhancedScraperManager:
             self.last_state = normalized_state
             return
 
+        normalized_state.setdefault('display_metrics', dict(self._display_metrics))
         self.last_state = normalized_state
 
         # Update HUD overlay if running
@@ -783,8 +809,16 @@ def get_scraper_status() -> Dict[str, Any]:
         'ocr_available': OCR_AVAILABLE,
         'ocr_enabled': _scraper_manager.ocr_engine is not None,
         'last_state': _scraper_manager.last_state,
-        'recognition_stats': _scraper_manager.get_recognition_stats()
+        'recognition_stats': _scraper_manager.get_recognition_stats(),
+        'display_metrics': _scraper_manager.get_display_metrics()
     }
+
+
+def get_display_metrics() -> Dict[str, Any]:
+    """Expose current display scaling metrics."""
+    global _scraper_manager
+
+    return _scraper_manager.get_display_metrics()
 
 # Desktop-Independent Scraper Functions ----------------------------------
 

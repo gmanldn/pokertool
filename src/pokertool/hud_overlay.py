@@ -32,6 +32,7 @@ __maintainer__ = 'George Ridout'
 __status__ = 'Production'
 
 import logging
+import math
 from typing import Dict, Any, Optional, List, Tuple, Callable
 from dataclasses import dataclass, field, asdict
 from threading import Thread, Event
@@ -128,6 +129,9 @@ class HUDOverlay:
             raise RuntimeError("GUI dependencies not available. Install tkinter.")
         
         self.config = config or HUDConfig()
+        self._display_metrics: Dict[str, Any] = {'scale_x': 1.0, 'scale_y': 1.0}
+        self._design_size: Tuple[int, int] = tuple(self.config.size)
+        self._design_position: Tuple[int, int] = tuple(self.config.position)
         self.root = None
         self.running = False
         self.update_thread = None
@@ -149,17 +153,62 @@ class HUDOverlay:
         self.profile_combo = None
         self._opponent_line_map: List[Tuple[int, str, Dict[str, Any]]] = []
         self._popup_window = None
-        
+
         # Callbacks for table updates
         self.state_callbacks: List[Callable] = []
+
+        self._on_config_updated()
+
+    def _on_config_updated(self) -> None:
+        """Handle config updates and recompute design dimensions."""
+        self._design_size = tuple(self.config.size)
+        self._design_position = tuple(self.config.position)
+        self._apply_display_scaling()
+
+    def _apply_display_scaling(self) -> None:
+        """Apply display scaling to the HUD geometry."""
+        scale_x = float(self._display_metrics.get('scale_x', 1.0) or 1.0)
+        scale_y = float(self._display_metrics.get('scale_y', scale_x) or 1.0)
+
+        base_width, base_height = self._design_size
+        base_pos_x, base_pos_y = self._design_position
+
+        new_width = max(200, int(base_width * scale_x))
+        new_height = max(150, int(base_height * scale_y))
+        pos_x = int(base_pos_x * scale_x)
+        pos_y = int(base_pos_y * scale_y)
+
+        self.config.size = (new_width, new_height)
+        self.config.position = (pos_x, pos_y)
+
+        if self.root:
+            self.root.geometry(f"{new_width}x{new_height}+{pos_x}+{pos_y}")
+
+    def _update_display_metrics(self, metrics: Dict[str, Any]) -> None:
+        """Update scaling metrics if they changed."""
+        scale_x = float(metrics.get('scale_x') or 1.0)
+        scale_y = float(metrics.get('scale_y') or scale_x)
+        current_x = self._display_metrics.get('scale_x', 1.0)
+        current_y = self._display_metrics.get('scale_y', 1.0)
+
+        if math.isclose(scale_x, current_x, rel_tol=1e-2) and math.isclose(scale_y, current_y, rel_tol=1e-2):
+            return
+
+        self._display_metrics = {
+            'scale_x': scale_x,
+            'scale_y': scale_y,
+            'width': metrics.get('width'),
+            'height': metrics.get('height'),
+        }
+        self._apply_display_scaling()
         
     def initialize(self) -> bool:
         """Initialize the HUD overlay window."""
         try:
             self.root = tk.Tk()
+            self._apply_display_scaling()
             self.root.title("Poker HUD")
-            self.root.geometry(f"{self.config.size[0]}x{self.config.size[1]}+{self.config.position[0]}+{self.config.position[1]}")
-            
+
             # Configure window properties
             self.root.attributes('-alpha', self.config.opacity)
             if self.config.always_on_top:
@@ -345,6 +394,7 @@ class HUDOverlay:
         self.profile_combo = None
         self._configure_theme()
         self._create_widgets()
+        self._apply_display_scaling()
 
     def start(self) -> bool:
         """Start the HUD overlay."""
@@ -733,6 +783,7 @@ class HUDOverlay:
         merged.update(loaded)
         merged['profile_name'] = profile_name
         self.config = HUDConfig.from_dict(merged)
+        self._on_config_updated()
         self._rebuild_widgets()
 
     def _open_designer(self):
@@ -740,6 +791,7 @@ class HUDOverlay:
         updated = designer.show()
         if updated:
             self.config = updated
+            self._on_config_updated()
             self.profile_var.set(self.config.profile_name)
             if self.profile_combo:
                 existing = list(self.profile_combo['values'])
@@ -752,7 +804,10 @@ class HUDOverlay:
     def _save_current_profile(self):
         profile_name = self.profile_var.get().strip() or self.config.profile_name
         self.config.profile_name = profile_name
-        path = save_hud_profile(profile_name, self.config.to_dict())
+        payload = self.config.to_dict()
+        payload['size'] = list(self._design_size)
+        payload['position'] = list(self._design_position)
+        path = save_hud_profile(profile_name, payload)
         if self.profile_combo:
             existing = list(self.profile_combo['values'])
             if profile_name not in existing:
@@ -762,8 +817,12 @@ class HUDOverlay:
 
     def update_game_state(self, state: Dict[str, Any]):
         """Update the current game state for HUD display."""
+        metrics = state.get('display_metrics')
+        if isinstance(metrics, dict):
+            self._update_display_metrics(metrics)
+
         self.current_state = state.copy()
-        
+
         # Notify any registered callbacks
         for callback in self.state_callbacks:
             try:

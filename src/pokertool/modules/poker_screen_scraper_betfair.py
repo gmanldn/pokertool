@@ -2938,7 +2938,31 @@ class PokerScreenScraper:
             'betfair_stats': betfair_stats,
             'avg_detection_time_ms': np.mean(self.detection_times) if self.detection_times else 0.0,
         }
-    
+
+    def get_display_metrics(self) -> Dict[str, Any]:
+        """Return monitor resolution and derived scaling factors."""
+        metrics: Dict[str, Any] = {'scale_x': 1.0, 'scale_y': 1.0}
+
+        try:
+            if self.sct:
+                monitors = self.sct.monitors
+                monitor = monitors[1] if len(monitors) > 1 else monitors[0]
+                width = monitor.get('width')
+                height = monitor.get('height')
+                if width and height:
+                    scale_x = width / 1920.0
+                    scale_y = height / 1080.0
+                    metrics.update({
+                        'width': width,
+                        'height': height,
+                        'scale_x': scale_x,
+                        'scale_y': scale_y,
+                    })
+        except Exception as exc:  # pragma: no cover - environment specific
+            logger.debug('Failed to compute display metrics: %s', exc)
+
+        return metrics
+
     def save_debug_image(self, image: np.ndarray, filename: str):
         """Save debug image with detection overlay."""
         try:
