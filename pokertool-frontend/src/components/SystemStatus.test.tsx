@@ -383,7 +383,7 @@ describe('SystemStatus Component', () => {
       global.URL.revokeObjectURL = jest.fn();
 
       const originalCreateElement = Document.prototype.createElement;
-      jest.spyOn(document, 'createElement').mockImplementation(<K extends keyof HTMLElementTagNameMap>(tagName: K, options?: ElementCreationOptions) => {
+      jest.spyOn(document, 'createElement').mockImplementation(((tagName: string, options?: ElementCreationOptions) => {
         const element = originalCreateElement.call(document, tagName, options);
         if (tagName.toLowerCase() === 'a') {
           const anchor = element as HTMLAnchorElement;
@@ -391,7 +391,7 @@ describe('SystemStatus Component', () => {
           createdAnchors.push(anchor);
         }
         return element;
-      });
+      }) as typeof document.createElement);
     });
 
     afterEach(() => {
