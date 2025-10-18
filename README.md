@@ -47,13 +47,26 @@ Additional commands:
 
 ## Logging
 
-Centralized logs live in `logs/`:
+Centralized logs live in `logs/` and rotate automatically:
 
-- `logs/errors-and-warnings.log` — aggregated errors and warnings (refresh with `./scripts/monitor-errors.sh`).
-- `logs/pokertool_errors.log` — JSON error records with stack traces and runtime state.
-- `logs/pokertool_master.log` — rolling backend activity stream.
+- `logs/errors-and-warnings.log` — consolidated errors + warnings; regenerate with `./scripts/monitor-errors.sh`.
+- `logs/pokertool_master.log` — primary backend activity stream (INFO/DEBUG/ERROR).
+- `logs/pokertool_errors.log` — structured JSON traces with execution context.
+- `logs/pokertool_performance.log` — latency and resource metrics.
+- `logs/pokertool_security.log` — authentication and security events.
+- `logs/app-run.log` / `startup.log` — latest runtime bootstrap output.
 
-Use `./scripts/error-summary.sh` to generate grouped error reports. See `logs/README.md` for the full troubleshooting workflow and retention policy.
+Use `./scripts/error-summary.sh` for grouped issue reports and `tail -f logs/errors-and-warnings.log` for real-time monitoring. Additional retention policies and troubleshooting tips live in `logs/README.md`.
+
+## Testing Process
+
+- `python test.py` — full pipeline: architecture graph refresh, architecture validation suite, then unit/integration tests.
+- `python test.py --quick` — skips slow markers for rapid feedback.
+- `python test.py --no-graph` — reuses existing architecture graph data.
+- `python test.py --coverage` — generates HTML + terminal coverage reports.
+- `pytest tests/ -k <pattern>` — targeted debugging; architecture graph lives in `tests/architecture/data/`.
+
+Failures in scraper-related tests often mean no live Betfair table is available; rerun with `pytest -m "not scraper"` if you need to bypass them locally.
 
 ## Documentation
 
@@ -71,4 +84,3 @@ Contributions are welcome. Review `CONTRIBUTING.md`, follow the coding standards
 ## License
 
 PokerTool is released under the Apache License 2.0. See `LICENSE` for details.
-
