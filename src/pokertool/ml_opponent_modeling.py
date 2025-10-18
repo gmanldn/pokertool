@@ -75,9 +75,14 @@ try:
     from sklearn.pipeline import Pipeline
     import joblib
     ML_SKLEARN_AVAILABLE = True
-except ImportError:
+except Exception as exc:  # pragma: no cover - dependency issues in minimal envs
     ML_SKLEARN_AVAILABLE = False
     pd = None
+    logging.getLogger(__name__).warning(
+        "Machine learning dependencies unavailable: %s. "
+        "ML opponent modelling features will be disabled.",
+        exc,
+    )
 
 # Try to import deep learning dependencies
 try:
@@ -89,10 +94,15 @@ try:
     import torch.optim as optim
     from torch.utils.data import Dataset, DataLoader
     ML_DEEP_AVAILABLE = True
-except ImportError:
+except Exception as exc:  # pragma: no cover - optional dependency guard
     ML_DEEP_AVAILABLE = False
     tf = None
     torch = None
+    logging.getLogger(__name__).warning(
+        "Deep learning backends unavailable: %s. "
+        "Falling back to statistical modelling only.",
+        exc,
+    )
 
 try:
     from .core import Card, parse_card, analyse_hand
