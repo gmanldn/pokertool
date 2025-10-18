@@ -55,8 +55,12 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
       timestamp: new Date().toISOString(),
       type: 'system',
       severity: 'info',
-      message: 'Detection system ready - waiting for poker table...',
-      data: { version: '84.0.0' },
+      message: 'Detection system initializing - connecting to backend...',
+      data: {
+        version: '84.0.0',
+        endpoint: 'ws://localhost:5001/ws/detections',
+        status: 'Attempting to connect...'
+      },
     },
   ]);
 
@@ -102,8 +106,8 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
               timestamp: new Date().toISOString(),
               type: 'system' as const,
               severity: 'success' as const,
-              message: 'Connected to detection stream',
-              data: {},
+              message: 'Connected to backend API (ws://localhost:5001)',
+              data: { endpoint: '/ws/detections' },
             },
           ].slice(-100));
         };
@@ -128,10 +132,17 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
               ...prev,
               {
                 timestamp: new Date().toISOString(),
-                type: 'error' as const,
+                type: 'system' as const,
                 severity: 'warning' as const,
-                message: 'Backend not available - will retry in 10 seconds',
-                data: {},
+                message: 'Waiting for backend API at ws://localhost:5001/ws/detections',
+                data: {
+                  status: 'Retrying in 10 seconds...',
+                  possibleCauses: [
+                    'Backend is still starting up',
+                    'Check that start.py is running',
+                    'Port 5001 may be in use by another process'
+                  ]
+                },
               },
             ].slice(-100));
           }
@@ -152,10 +163,18 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
             ...prev,
             {
               timestamp: new Date().toISOString(),
-              type: 'error' as const,
+              type: 'system' as const,
               severity: 'warning' as const,
-              message: 'Backend not available - will retry in 10 seconds',
-              data: {},
+              message: 'Waiting for backend API at ws://localhost:5001/ws/detections',
+              data: {
+                status: 'Retrying in 10 seconds...',
+                error: String(error),
+                possibleCauses: [
+                  'Backend is still starting up',
+                  'Check that start.py is running',
+                  'Port 5001 may be in use by another process'
+                ]
+              },
             },
           ].slice(-100));
           reconnectTimeout = setTimeout(connect, 10000);
