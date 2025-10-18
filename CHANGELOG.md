@@ -2,6 +2,15 @@
 
 All notable changes to this project are tracked in this file. The structure follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [88.4.0] - 2025-10-19
+
+### Added
+- Expanded the README introduction to document the full decision stack—vision, solver, ML, coaching, and resilience systems—and highlighted current automated test coverage.
+
+### Changed
+- Refreshed the architecture knowledge base (`tests/architecture/data/architecture.json`) with the latest module metadata.
+- Updated sample range presets to match the new solver baselines (`ranges/import_test.json`, `ranges/my_range.json`).
+
 ## [88.3.0] - 2025-10-19
 
 ### Added

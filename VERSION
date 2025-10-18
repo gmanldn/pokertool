@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.3.0
+version = 88.4.0
 release_date = 2025-10-19
 
 [release_notes]
-# v88.3.0 - Installation Guide & Eval Hygiene
-description = Added a cross-platform installation guide and tightened git hygiene around evaluation workspaces
-changes = Added INSTALL.md with automated and manual setup instructions, extended .gitignore to exclude evals/diff-edits scratch directories
+# v88.4.0 - Strategy Docs & Architecture Refresh
+description = Documented the engine subsystems, refreshed architecture metadata, and synced range presets with the latest solver guidance
+changes = Expanded README introduction and coverage summary, regenerated tests/architecture/data/architecture.json, updated sample range JSON fixtures
 status = stable
 
 [components]
