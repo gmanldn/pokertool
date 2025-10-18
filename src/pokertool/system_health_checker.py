@@ -34,13 +34,50 @@ Features:
 from __future__ import annotations
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import Dict, List, Optional, Callable, Any, Awaitable
+from typing import Dict, List, Optional, Callable, Any, Awaitable, Tuple
 import asyncio
 import time
 import logging
+import os
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+_DEFAULT_BACKEND_HOST = os.getenv('POKERTOOL_HOST', '127.0.0.1')
+_DEFAULT_BACKEND_PORT = os.getenv('POKERTOOL_PORT', '8000')
+_BACKEND_BASE_URL = os.getenv('POKERTOOL_BACKEND_URL', f'http://{_DEFAULT_BACKEND_HOST}:{_DEFAULT_BACKEND_PORT}')
+_FRONTEND_BASE_URL = os.getenv('POKERTOOL_FRONTEND_URL', 'http://localhost:3000')
+
+
+def _join_url(base: str, path: str) -> str:
+    return f"{base.rstrip('/')}{path}"
+
+
+_BACKEND_HEALTH_URL = _join_url(_BACKEND_BASE_URL, '/health')
+
+
+async def _http_get_status(url: str, timeout: float = 2.0) -> Tuple[int, str]:
+    """
+    Perform an HTTP GET request and return status code and body text.
+
+    Tries to use aiohttp when available, otherwise falls back to requests
+    executed in a thread to avoid blocking the event loop.
+    """
+    try:
+        import aiohttp  # type: ignore
+    except ImportError:
+        import requests  # type: ignore
+
+        def _sync_request() -> Tuple[int, str]:
+            response = requests.get(url, timeout=timeout)
+            return response.status_code, response.text
+
+        return await asyncio.to_thread(_sync_request)
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, timeout=timeout) as response:
+            body = await response.text()
+            return response.status, body
 
 
 @dataclass
@@ -338,26 +375,25 @@ def get_health_checker(check_interval: int = 30) -> SystemHealthChecker:
 async def check_api_server_health() -> HealthStatus:
     """Check if API server is responding."""
     try:
-        import aiohttp
-        async with aiohttp.ClientSession() as session:
-            async with session.get('http://localhost:5001/health', timeout=2) as response:
-                if response.status == 200:
-                    return HealthStatus(
-                        feature_name='api_server',
-                        category='backend',
-                        status='healthy',
-                        last_check=datetime.utcnow().isoformat(),
-                        description='FastAPI server responding to health checks'
-                    )
-                else:
-                    return HealthStatus(
-                        feature_name='api_server',
-                        category='backend',
-                        status='degraded',
-                        last_check=datetime.utcnow().isoformat(),
-                        error_message=f'API returned status {response.status}',
-                        description='FastAPI server responding to health checks'
-                    )
+        status_code, body = await _http_get_status(_BACKEND_HEALTH_URL, timeout=2.0)
+        if status_code == 200:
+            return HealthStatus(
+                feature_name='api_server',
+                category='backend',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='FastAPI server responding to health checks',
+                metadata={'status_code': status_code}
+            )
+        return HealthStatus(
+            feature_name='api_server',
+            category='backend',
+            status='degraded',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=f'API returned status {status_code}',
+            description='FastAPI server responding to health checks',
+            metadata={'status_code': status_code, 'body': body[:200]}
+        )
     except Exception as e:
         return HealthStatus(
             feature_name='api_server',
@@ -372,8 +408,8 @@ async def check_api_server_health() -> HealthStatus:
 async def check_database_health() -> HealthStatus:
     """Check database connectivity."""
     try:
-        from pokertool.database import get_database
-        db = get_database()
+        from pokertool.database import get_production_db
+        db = get_production_db()
         # Simple test query
         stats = db.get_database_stats()
         if stats:
@@ -489,17 +525,24 @@ async def check_model_calibration_health() -> HealthStatus:
 async def check_frontend_health() -> HealthStatus:
     """Check frontend server availability."""
     try:
-        import aiohttp
-        async with aiohttp.ClientSession() as session:
-            async with session.get('http://localhost:3000', timeout=2) as response:
-                if response.status == 200:
-                    return HealthStatus(
-                        feature_name='frontend_server',
-                        category='gui',
-                        status='healthy',
-                        last_check=datetime.utcnow().isoformat(),
-                        description='React frontend server availability'
-                    )
+        status_code, _ = await _http_get_status(_FRONTEND_BASE_URL, timeout=2.0)
+        if status_code == 200:
+            return HealthStatus(
+                feature_name='frontend_server',
+                category='gui',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='React frontend server availability',
+                metadata={'status_code': status_code}
+            )
+        return HealthStatus(
+            feature_name='frontend_server',
+            category='gui',
+            status='degraded',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=f'Frontend returned status {status_code}',
+            description='React frontend server availability'
+        )
     except Exception as e:
         return HealthStatus(
             feature_name='frontend_server',
@@ -700,8 +743,10 @@ async def check_scraping_accuracy_health() -> HealthStatus:
 async def check_roi_tracking_health() -> HealthStatus:
     """Check ROI tracking system."""
     try:
-        from pokertool.database import get_database
-        db = get_database()
+        from pokertool.database import get_production_db
+        db = get_production_db()
+        # Verify database access
+        db.get_database_stats()
         # Just check that database is available
         return HealthStatus(
             feature_name='roi_tracking',
@@ -770,9 +815,22 @@ async def check_multi_table_support_health() -> HealthStatus:
 async def check_hand_history_database_health() -> HealthStatus:
     """Check hand history database."""
     try:
-        from pokertool.database import get_database
-        db = get_database()
-        # Just check that database module is available
+        from pokertool.database import get_production_db
+        import sqlite3
+
+        db = get_production_db()
+        try:
+            db.get_recent_hands(limit=1)
+        except sqlite3.OperationalError as exc:
+            return HealthStatus(
+                feature_name='hand_history_database',
+                category='advanced',
+                status='degraded',
+                last_check=datetime.utcnow().isoformat(),
+                error_message=str(exc),
+                description='Hand history storage and retrieval'
+            )
+
         return HealthStatus(
             feature_name='hand_history_database',
             category='advanced',
@@ -794,19 +852,24 @@ async def check_hand_history_database_health() -> HealthStatus:
 async def check_websocket_server_health() -> HealthStatus:
     """Check WebSocket server."""
     try:
-        # Check if WebSocket endpoint is accessible (without actually connecting)
-        import aiohttp
-        async with aiohttp.ClientSession() as session:
-            # Just check if server is running, don't actually connect to WebSocket
-            async with session.get('http://localhost:5001/health', timeout=2) as response:
-                if response.status == 200:
-                    return HealthStatus(
-                        feature_name='websocket_server',
-                        category='backend',
-                        status='healthy',
-                        last_check=datetime.utcnow().isoformat(),
-                        description='WebSocket server for real-time updates'
-                    )
+        status_code, _ = await _http_get_status(_BACKEND_HEALTH_URL, timeout=2.0)
+        if status_code == 200:
+            return HealthStatus(
+                feature_name='websocket_server',
+                category='backend',
+                status='healthy',
+                last_check=datetime.utcnow().isoformat(),
+                description='WebSocket server for real-time updates',
+                metadata={'status_code': status_code}
+            )
+        return HealthStatus(
+            feature_name='websocket_server',
+            category='backend',
+            status='degraded',
+            last_check=datetime.utcnow().isoformat(),
+            error_message=f'Health endpoint returned status {status_code}',
+            description='WebSocket server for real-time updates'
+        )
     except Exception as e:
         return HealthStatus(
             feature_name='websocket_server',

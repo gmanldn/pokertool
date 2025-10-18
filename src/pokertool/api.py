@@ -1833,27 +1833,65 @@ def create_app() -> FastAPI:
 # CLI runner
 def run_api_server(host: str = '127.0.0.1', port: int = 8000, reload: bool = False):
     """Run the API server."""
+    if not FASTAPI_AVAILABLE:
+        message = 'FastAPI dependencies not available. Install with: pip install -r requirements.txt'
+        logger.error(message)
+        raise RuntimeError(message)
+
     try:
         import uvicorn
-        app = create_app()
-
-        logger.info(f'Starting PokerTool API server on {host}:{port}')
-        uvicorn.run('src.pokertool.api:create_app', host=host, port=port, reload=reload, factory=True)
-
-    except ImportError:
+    except ImportError as exc:
         logger.error("uvicorn not available. Install with: pip install uvicorn")
         raise
 
-if __name__ == '__main__':
-    import sys
+    log_level = os.getenv('POKERTOOL_LOG_LEVEL', 'info')
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'server':
-        run_api_server(reload=True)
+    if reload:
+        app_target: Union[str, Callable[..., Any]] = 'pokertool.api:create_app'
+        factory = True
     else:
-        # Test basic functionality
-        if FASTAPI_AVAILABLE:
-            api = get_api()
-            print(f"API created with {len(api.auth_service.users)} users")
-            print('Default admin token available for testing')
-        else:
-            print('FastAPI dependencies not available')
+        app_target = create_app()
+        factory = False
+
+    logger.info(
+        'Starting PokerTool API server on %s:%s (reload=%s, log_level=%s)',
+        host,
+        port,
+        reload,
+        log_level,
+    )
+
+    config = uvicorn.Config(
+        app=app_target,
+        host=host,
+        port=port,
+        reload=reload,
+        factory=factory,
+        log_level=log_level,
+    )
+    server = uvicorn.Server(config)
+    return server.run()
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Entry point used by the CLI to start the API server."""
+    host = os.getenv('POKERTOOL_HOST', '127.0.0.1')
+    port = int(os.getenv('POKERTOOL_PORT', '8000'))
+    reload_flag = os.getenv('POKERTOOL_RELOAD', '').lower() in {'1', 'true', 'yes'}
+
+    try:
+        run_api_server(host=host, port=port, reload=reload_flag)
+    except RuntimeError:
+        return 1
+    except Exception:  # pragma: no cover - defensive guard for CLI usage
+        logger.exception('PokerTool API server crashed during startup')
+        return 1
+
+    return 0
+
+
+# Backwards compatibility alias for older CLI integrations
+run = main
+
+if __name__ == '__main__':
+    raise SystemExit(main())

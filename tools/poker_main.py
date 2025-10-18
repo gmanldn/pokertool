@@ -18,8 +18,8 @@ Legacy launcher kept for compatibility. Prefer: `pokertool` or `pokertool gui`.
 from pokertool.cli import main as _cli_main  # type: ignore
 
 def main() -> int:
-    """TODO: Add docstring."""
-    return _cli_main(['gui'])
+    """Launch the GUI via the legacy CLI shim to preserve backwards compatibility."""
+    return _cli_main(["gui"])
 
 if __name__ == '__main__':
     raise SystemExit(main())

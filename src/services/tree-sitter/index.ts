@@ -17,7 +17,77 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import { LanguageParser, loadRequiredLanguageParsers } from "./languageParser"
 
-// TODO: implement caching behavior to avoid having to keep analyzing project for new tasks.
+const CACHE_TTL_MS = 60_000
+
+interface ParserCacheEntry {
+    result: string
+    timestamp: number
+    fileList: string[]
+    fileSignatures: Record<string, number>
+}
+
+const parserResultCache = new Map<string, ParserCacheEntry>()
+
+function buildCacheKey(dirPath: string, clineIgnoreController?: ClineIgnoreController): string {
+    const ignoreSignature = clineIgnoreController?.clineIgnoreContent ?? "__NO_IGNORE__"
+    return `${path.resolve(dirPath)}::${ignoreSignature}`
+}
+
+function normalizeFileList(filePaths: string[]): string[] {
+    return filePaths.map((file) => path.resolve(file)).sort()
+}
+
+function areArraysEqual(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) {
+        return false
+    }
+    return a.every((value, index) => value === b[index])
+}
+
+async function tryGetCachedResult(cacheKey: string, normalizedFileList: string[]): Promise<string | null> {
+    const entry = parserResultCache.get(cacheKey)
+    if (!entry) {
+        return null
+    }
+
+    if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+        parserResultCache.delete(cacheKey)
+        return null
+    }
+
+    if (!areArraysEqual(entry.fileList, normalizedFileList)) {
+        return null
+    }
+
+    for (const filePath of normalizedFileList) {
+        try {
+            const stat = await fs.stat(filePath)
+            if (entry.fileSignatures[filePath] !== stat.mtimeMs) {
+                return null
+            }
+        } catch {
+            return null
+        }
+    }
+
+    return entry.result
+}
+
+function updateCacheEntry(
+    cacheKey: string,
+    normalizedFileList: string[],
+    fileSignatures: Record<string, number>,
+    result: string,
+): void {
+    parserResultCache.set(cacheKey, {
+        result,
+        timestamp: Date.now(),
+        fileList: normalizedFileList,
+        fileSignatures,
+    })
+}
+
+// Caches recent parse results to avoid repeatedly reanalyzing unchanged projects.
 export async function parseSourceCodeForDefinitionsTopLevel(
     dirPath: string,
     clineIgnoreController?: ClineIgnoreController,
@@ -31,10 +101,17 @@ export async function parseSourceCodeForDefinitionsTopLevel(
     // Get all files at top level (not gitignored)
     const [allFiles, _] = await listFiles(dirPath, false, 200)
 
-    let result = ""
-
     // Separate files to parse and remaining files
     const { filesToParse, remainingFiles } = separateFiles(allFiles)
+
+    const allowedFilesToParse = clineIgnoreController ? clineIgnoreController.filterPaths(filesToParse) : filesToParse
+    const normalizedFileList = normalizeFileList(allowedFilesToParse)
+    const cacheKey = buildCacheKey(dirPath, clineIgnoreController)
+
+    const cachedResult = await tryGetCachedResult(cacheKey, normalizedFileList)
+    if (cachedResult !== null) {
+        return cachedResult
+    }
 
     const languageParsers = await loadRequiredLanguageParsers(filesToParse)
 
@@ -42,9 +119,20 @@ export async function parseSourceCodeForDefinitionsTopLevel(
     // const filesWithoutDefinitions: string[] = []
 
     // Filter filepaths for access if controller is provided
-    const allowedFilesToParse = clineIgnoreController ? clineIgnoreController.filterPaths(filesToParse) : filesToParse
+    let result = ""
+    const fileSignatures: Record<string, number> = {}
+    let canCache = true
 
     for (const filePath of allowedFilesToParse) {
+        try {
+            const stat = await fs.stat(filePath)
+            fileSignatures[path.resolve(filePath)] = stat.mtimeMs
+        } catch {
+            // If we cannot stat the file, skip caching for this entry so we refresh next time
+            canCache = false
+            continue
+        }
+
         const definitions = await parseFile(filePath, languageParsers, clineIgnoreController)
         if (definitions) {
             result += `${path.relative(dirPath, filePath).toPosix()}\n${definitions}\n`
@@ -67,7 +155,12 @@ export async function parseSourceCodeForDefinitionsTopLevel(
     //         result += `${path.relative(dirPath, file)}\n`
     //     })
 
-    return result ? result : "No source code definitions found."
+    const finalResult = result ? result : "No source code definitions found."
+    if (canCache) {
+        updateCacheEntry(cacheKey, normalizedFileList, fileSignatures, finalResult)
+    }
+
+    return finalResult
 }
 
 function separateFiles(allFiles: string[]): {

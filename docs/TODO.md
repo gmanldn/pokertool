@@ -157,6 +157,34 @@ All modules now have production-ready implementations with comprehensive test su
 - Type safety (MyPy strict mode, TypeScript strict mode)
 - Performance optimization (code splitting, caching, compression)
 
+## 🧠 Enhanced GUI & HUD Backlog (February 2026)
+
+### Integration & Architecture
+- [ ] Replace the runtime `pip install` flow in `src/pokertool/enhanced_gui.py` with an idempotent bootstrap routine invoked from the CLI so GUI start-up never mutates the environment unexpectedly.
+- [ ] Wire the enhanced HUD overlay to the existing `TableManager` events so on-table updates broadcast to both the desktop GUI and web dashboard simultaneously.
+- [ ] Extract configuration for autopilot/coaching/manual panels into JSON schema files and load them dynamically for easier customization by partners.
+- [ ] Persist HUD profile definitions via `get_secure_db()` so layouts survive restarts and can sync across devices.
+- [ ] Expose a lightweight event bus that bridges scraper callbacks to Tkinter safely (queue + `after` loop) and deprecate ad-hoc `threading.Thread` usage inside the GUI modules.
+- [ ] Normalize screen-capture scaling by reusing the `PokerScreenScraper` calibration pipeline to avoid duplicated display DPI logic between overlay and core scraper.
+
+### Operations & Packaging
+- [ ] Publish a `pokertool gui` CLI entrypoint that runs dependency checks, launches the enhanced GUI, and gracefully shuts down the shared thread pool on exit.
+- [ ] Bundle platform-specific launcher assets (icons, plist/desktop files) and document notarization/signing for macOS and Windows releases.
+- [ ] Add continuous delivery packaging step (PyInstaller or Briefcase) to produce signed binaries for the enhanced GUI preview builds.
+
+### Testing & QA
+- [ ] Create Tkinter smoke tests that launch `EnhancedPokerAssistantFrame` inside a virtual display to guard against regressions in layout and asset loading.
+- [ ] Backfill unit coverage for `src/pokertool/modules/poker_gui_enhanced.py` ensuring each legacy shim raises informative errors when dependencies are missing.
+- [ ] Add concurrency regression tests around the shared thread pool in `src/pokertool/threading.py` (race condition harness + leak detection).
+- [ ] Build integration tests that drive the HUD overlay atop prerecorded table screenshots to validate profile switching and real-time stat rendering.
+- [ ] Instrument long-running GUI sessions with tracemalloc profiling to catch widget leaks and uncollected background threads.
+
+### Documentation & Developer Experience
+- [ ] Author a developer guide for the HUD Designer workflow (recording, saving, applying profiles) and link it from `docs/advanced/hud.md`.
+- [ ] Document the new GUI module dependency matrix and expected macOS/Linux packages in `docs/installation/gui.md`.
+- [ ] Produce a quick-start tutorial video script and storyboard illustrating enhanced GUI setup, overlay attachment, and coaching flows.
+- [ ] Create sample HUD profile JSON templates (cash, MTT, fast-fold) and surface them in `assets/hud_profiles/` with inline comments.
+
 ---
 
 ## 🔴 CRITICAL PRIORITY: System Status Monitor (Real-Time Health Dashboard)
