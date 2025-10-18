@@ -49,14 +49,29 @@ VERSION_INFO = {
     'major': VERSION_MAJOR,
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
-    'release_date': '2025-10-17',
-    'release_name': 'Documentation & Feature Flags',
+    'release_date': '2025-10-18',
+    'release_name': 'Stability & Test Hardenings',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '88.2.0',
+        'date': '2025-10-18',
+        'name': 'Stability & Test Hardenings',
+        'description': 'Stabilized optional dependencies, rebuilt card recognition, and modernized scraper smoke tests',
+        'highlights': [
+            'Card Recognition Engine: Reimplemented OpenCV-backed matcher with defensive error handling',
+            'ML Dependency Guards: Optional SciPy/Sklearn/TensorFlow imports now degrade gracefully',
+            'Floating Advice Facade: Added headless-friendly UI controller with throttled updates',
+            'Scraper Logging Smoke Test: Converted legacy script into pytest-aware test with skips',
+            'Pytesseract Shim: Added ndarray compatibility layer for OpenCV frames during tests',
+            'Startup Hardening: start.py now tolerates sandboxed pip failures without aborting',
+            'Test Filtering: Headless mode skips heavyweight Betfair diagnostics automatically',
+        ],
+    },
     {
         'version': '88.1.0',
         'date': '2025-10-17',
