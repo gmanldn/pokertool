@@ -160,21 +160,21 @@ All modules now have production-ready implementations with comprehensive test su
 ## 🧠 Enhanced GUI & HUD Backlog (February 2026)
 
 ### Integration & Architecture
-- [ ] Replace the runtime `pip install` flow in `src/pokertool/enhanced_gui.py` with an idempotent bootstrap routine invoked from the CLI so GUI start-up never mutates the environment unexpectedly.
-- [ ] Wire the enhanced HUD overlay to the existing `TableManager` events so on-table updates broadcast to both the desktop GUI and web dashboard simultaneously.
-- [ ] Extract configuration for autopilot/coaching/manual panels into JSON schema files and load them dynamically for easier customization by partners.
-- [ ] Persist HUD profile definitions via `get_secure_db()` so layouts survive restarts and can sync across devices.
-- [ ] Expose a lightweight event bus that bridges scraper callbacks to Tkinter safely (queue + `after` loop) and deprecate ad-hoc `threading.Thread` usage inside the GUI modules.
-- [ ] Normalize screen-capture scaling by reusing the `PokerScreenScraper` calibration pipeline to avoid duplicated display DPI logic between overlay and core scraper.
+- [x] Replace the runtime `pip install` flow in `src/pokertool/enhanced_gui.py` with an idempotent bootstrap routine invoked from the CLI so GUI start-up never mutates the environment unexpectedly.
+- [x] Wire the enhanced HUD overlay to the existing `TableManager` events so on-table updates broadcast to both the desktop GUI and web dashboard simultaneously.
+- [x] Extract configuration for autopilot/coaching/manual panels into JSON schema files and load them dynamically for easier customization by partners.
+- [x] Persist HUD profile definitions via `get_secure_db()` so layouts survive restarts and can sync across devices.
+- [x] Expose a lightweight event bus that bridges scraper callbacks to Tkinter safely (queue + `after` loop) and deprecate ad-hoc `threading.Thread` usage inside the GUI modules.
+- [x] Normalize screen-capture scaling by reusing the `PokerScreenScraper` calibration pipeline to avoid duplicated display DPI logic between overlay and core scraper.
 
 ### Operations & Packaging
-- [ ] Publish a `pokertool gui` CLI entrypoint that runs dependency checks, launches the enhanced GUI, and gracefully shuts down the shared thread pool on exit.
-- [ ] Bundle platform-specific launcher assets (icons, plist/desktop files) and document notarization/signing for macOS and Windows releases.
-- [ ] Add continuous delivery packaging step (PyInstaller or Briefcase) to produce signed binaries for the enhanced GUI preview builds.
+- [x] Publish a `pokertool gui` CLI entrypoint that runs dependency checks, launches the enhanced GUI, and gracefully shuts down the shared thread pool on exit. (`src/pokertool/cli.py`)
+- [x] Bundle platform-specific launcher assets (icons, plist/desktop files) and document notarization/signing for macOS and Windows releases. (`assets/launchers/`, `docs/PLATFORM_SIGNING.md`)
+- [x] Add continuous delivery packaging step (PyInstaller or Briefcase) to produce signed binaries for the enhanced GUI preview builds. (`packaging/pyinstaller/pokertool_gui.spec`, `scripts/build_gui_preview.py`, `.github/workflows/ci-cd.yml`)
 
 ### Testing & QA
-- [ ] Create Tkinter smoke tests that launch `EnhancedPokerAssistantFrame` inside a virtual display to guard against regressions in layout and asset loading.
-- [ ] Backfill unit coverage for `src/pokertool/modules/poker_gui_enhanced.py` ensuring each legacy shim raises informative errors when dependencies are missing.
+- [x] Create Tkinter smoke tests that launch `EnhancedPokerAssistantFrame` inside a virtual display to guard against regressions in layout and asset loading. (`tests/gui/test_enhanced_gui_smoke.py`)
+- [x] Backfill unit coverage for `src/pokertool/modules/poker_gui_enhanced.py` ensuring each legacy shim raises informative errors when dependencies are missing. (`tests/modules/test_poker_gui_enhanced_shims.py`)
 - [ ] Add concurrency regression tests around the shared thread pool in `src/pokertool/threading.py` (race condition harness + leak detection).
 - [ ] Build integration tests that drive the HUD overlay atop prerecorded table screenshots to validate profile switching and real-time stat rendering.
 - [ ] Instrument long-running GUI sessions with tracemalloc profiling to catch widget leaks and uncollected background threads.
@@ -1664,13 +1664,13 @@ All modules now have production-ready implementations with comprehensive test su
 
 #### 15. Betfair Integration Documentation
 **Tasks:**
-- [ ] **BF-034**: Document Betfair-specific challenges
+- [x] **BF-034**: Document Betfair-specific challenges (`docs/BETFAIR_INTEGRATION_CHALLENGES.md`)
   - UI layout differences
   - Text formatting quirks
   - Known limitations
   - Priority: MEDIUM
 
-- [ ] **BF-035**: Create Betfair setup guide
+- [x] **BF-035**: Create Betfair setup guide (`docs/BETFAIR_SETUP_GUIDE.md`)
   - Optimal window size/position
   - Recommended table settings
   - Troubleshooting common issues

@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -32,7 +32,6 @@ import {
   useMediaQuery,
   Tooltip,
   Chip,
-  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -49,7 +48,6 @@ import {
   History,
   Circle,
   Article,
-  PlayArrow,
   SettingsApplications,
   TrendingUp,
   People,
@@ -58,20 +56,20 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
-import { buildApiUrl } from '../config/api';
+import type { BackendStatus } from '../hooks/useBackendLifecycle';
 
 interface NavigationProps {
   connected: boolean;
+  backendStatus: BackendStatus;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
+export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus }) => {
   const theme = useTheme();
   const { darkMode, toggleDarkMode } = useCustomTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [startingBackend, setStartingBackend] = useState(false);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -96,26 +94,34 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
     setDrawerOpen(false);
   };
 
-  const handleStartBackend = async () => {
-    setStartingBackend(true);
-    try {
-      // Call the backend start API endpoint
-      const response = await fetch(buildApiUrl('/api/start-backend'), {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        console.log('Backend start request sent successfully');
-      } else {
-        console.error('Failed to start backend');
-      }
-    } catch (error) {
-      console.error('Error starting backend:', error);
-    } finally {
-      // Reset button state after 3 seconds
-      setTimeout(() => setStartingBackend(false), 3000);
+  const backendStatusMeta = useMemo(() => {
+    switch (backendStatus.state) {
+      case 'online':
+        return {
+          label: 'Backend: Online',
+          color: 'success' as const,
+          tooltip: backendStatus.message || 'Backend API reachable.',
+        };
+      case 'starting':
+        return {
+          label: 'Backend: Starting…',
+          color: 'warning' as const,
+          tooltip: backendStatus.message || 'Attempting to start backend API.',
+        };
+      case 'checking':
+        return {
+          label: 'Backend: Checking…',
+          color: 'info' as const,
+          tooltip: backendStatus.message || 'Verifying backend health.',
+        };
+      default:
+        return {
+          label: 'Backend: Offline',
+          color: 'error' as const,
+          tooltip: backendStatus.error || backendStatus.message || 'Backend health check failed. See logs for details.',
+        };
     }
-  };
+  }, [backendStatus]);
 
   const drawer = (
     <Box
@@ -250,21 +256,35 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
             </>
           )}
 
-          {!connected && (
-            <Tooltip title="Start the backend server">
-              <Button
-                variant="contained"
-                color="primary"
+          <Tooltip title={backendStatusMeta.tooltip}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 1.5,
+                py: 0.75,
+                borderRadius: 2,
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.background.default
+                    : theme.palette.grey[100],
+                mr: 2,
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Critical Service
+              </Typography>
+              <Chip
+                icon={<Circle sx={{ fontSize: 8 }} />}
+                label={backendStatusMeta.label}
                 size="small"
-                startIcon={<PlayArrow />}
-                onClick={handleStartBackend}
-                disabled={startingBackend}
-                sx={{ mr: 2 }}
-              >
-                {startingBackend ? 'Starting...' : 'Start Backend'}
-              </Button>
-            </Tooltip>
-          )}
+                color={backendStatusMeta.color}
+                variant="outlined"
+              />
+            </Box>
+          </Tooltip>
 
           <Badge
             color={connected ? 'success' : 'error'}
@@ -272,7 +292,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected }) => {
             sx={{ mr: 2 }}
           >
             <Chip
-              label={connected ? 'Online' : 'Offline'}
+              label={connected ? 'Realtime Online' : 'Realtime Offline'}
               size="small"
               color={connected ? 'success' : 'default'}
               variant={connected ? 'filled' : 'outlined'}

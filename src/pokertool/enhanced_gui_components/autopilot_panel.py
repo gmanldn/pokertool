@@ -26,6 +26,8 @@ from pokertool.i18n import (
     unregister_locale_listener,
 )
 
+from pokertool.enhanced_gui_config import load_panel_config
+
 from .style import COLORS, FONTS
 
 
@@ -57,6 +59,8 @@ class AutopilotControlPanel(tk.Frame):
         on_settings_changed=None,
     ) -> None:
         super().__init__(parent, bg=COLORS["bg_medium"], relief=tk.RAISED, bd=3)
+
+        self._config_data = load_panel_config('autopilot_panel')
 
         self.on_toggle_autopilot = on_toggle_autopilot
         self.on_settings_changed = on_settings_changed
@@ -214,11 +218,22 @@ class AutopilotControlPanel(tk.Frame):
         site_label.pack(side="left")
         self._register_translation(site_label, "autopilot.settings.site")
 
+        site_options = self._config_data.get('siteOptions')
+        if not isinstance(site_options, list) or not site_options:
+            site_options = [
+                "GENERIC",
+                "POKERSTARS",
+                "PARTYPOKER",
+                "IGNITION",
+                "BOVADA",
+                "CHROME",
+            ]
+
         self.site_var = tk.StringVar(value=self.state.site)
         site_combo = ttk.Combobox(
             site_frame,
             textvariable=self.site_var,
-            values=["GENERIC", "POKERSTARS", "PARTYPOKER", "IGNITION", "BOVADA", "CHROME"],
+            values=site_options,
             state="readonly",
             width=15,
         )
@@ -239,67 +254,60 @@ class AutopilotControlPanel(tk.Frame):
         strategy_label.pack(side="left")
         self._register_translation(strategy_label, "autopilot.settings.strategy")
 
-        self.strategy_var = tk.StringVar(value="GTO")
+        strategy_options = self._config_data.get('strategyOptions')
+        if not isinstance(strategy_options, list) or not strategy_options:
+            strategy_options = ["GTO", "Aggressive", "Conservative", "Exploitative"]
+
+        self.strategy_var = tk.StringVar(value=strategy_options[0])
         strategy_combo = ttk.Combobox(
             strategy_frame,
             textvariable=self.strategy_var,
-            values=["GTO", "Aggressive", "Conservative", "Exploitative"],
+            values=strategy_options,
             state="readonly",
             width=15,
         )
         strategy_combo.pack(side="right")
 
-        self.auto_detect_var = tk.BooleanVar(value=True)
-        auto_detect_cb = tk.Checkbutton(
-            settings_frame,
-            text=translate("autopilot.settings.auto_detect"),
-            variable=self.auto_detect_var,
-            font=FONTS["body"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-            selectcolor=COLORS["bg_light"],
-        )
-        auto_detect_cb.pack(anchor="w", padx=10, pady=2)
-        self._register_translation(auto_detect_cb, "autopilot.settings.auto_detect")
+        toggle_defaults = {
+            'auto_detect': True,
+            'auto_scraper': True,
+            'continuous_updates': True,
+            'auto_gto': False,
+        }
+        toggle_definitions = [
+            ('auto_detect', 'auto_detect_var'),
+            ('auto_scraper', 'auto_scraper_var'),
+            ('continuous_updates', 'continuous_update_var'),
+            ('auto_gto', 'auto_gto_var'),
+        ]
+        raw_toggle_config = self._config_data.get('toggles', [])
+        toggle_config = {
+            entry.get('key'): entry
+            for entry in raw_toggle_config
+            if isinstance(entry, dict) and entry.get('key')
+        }
+        self.toggle_vars: Dict[str, tk.BooleanVar] = {}
 
-        self.auto_scraper_var = tk.BooleanVar(value=True)
-        auto_scraper_cb = tk.Checkbutton(
-            settings_frame,
-            text=translate("autopilot.settings.auto_scraper"),
-            variable=self.auto_scraper_var,
-            font=FONTS["body"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-            selectcolor=COLORS["bg_light"],
-        )
-        auto_scraper_cb.pack(anchor="w", padx=10, pady=2)
-        self._register_translation(auto_scraper_cb, "autopilot.settings.auto_scraper")
+        for key, attr_name in toggle_definitions:
+            cfg = toggle_config.get(key, {})
+            default_value = bool(cfg.get('default', toggle_defaults.get(key, False)))
+            translation_key = cfg.get('translationKey', f'autopilot.settings.{key}')
 
-        self.continuous_update_var = tk.BooleanVar(value=True)
-        continuous_update_cb = tk.Checkbutton(
-            settings_frame,
-            text=translate("autopilot.settings.continuous_updates"),
-            variable=self.continuous_update_var,
-            font=FONTS["body"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-            selectcolor=COLORS["bg_light"],
-        )
-        continuous_update_cb.pack(anchor="w", padx=10, pady=2)
-        self._register_translation(continuous_update_cb, "autopilot.settings.continuous_updates")
+            var = tk.BooleanVar(value=default_value)
+            setattr(self, attr_name, var)
+            self.toggle_vars[key] = var
 
-        self.auto_gto_var = tk.BooleanVar(value=False)
-        auto_gto_cb = tk.Checkbutton(
-            settings_frame,
-            text=translate("autopilot.settings.auto_gto"),
-            variable=self.auto_gto_var,
-            font=FONTS["body"],
-            bg=COLORS["bg_medium"],
-            fg=COLORS["text_primary"],
-            selectcolor=COLORS["bg_light"],
-        )
-        auto_gto_cb.pack(anchor="w", padx=10, pady=2)
-        self._register_translation(auto_gto_cb, "autopilot.settings.auto_gto")
+            checkbox = tk.Checkbutton(
+                settings_frame,
+                text=translate(translation_key),
+                variable=var,
+                font=FONTS["body"],
+                bg=COLORS["bg_medium"],
+                fg=COLORS["text_primary"],
+                selectcolor=COLORS["bg_light"],
+            )
+            checkbox.pack(anchor="w", padx=10, pady=2)
+            self._register_translation(checkbox, translation_key)
 
         stats_frame = tk.LabelFrame(
             self,

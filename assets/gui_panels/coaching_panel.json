@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoachingPanelConfig",
+  "progressMetrics": [
+    { "key": "hands", "translationKey": "coaching.progress.hands" },
+    { "key": "accuracy", "translationKey": "coaching.progress.accuracy" },
+    { "key": "streak", "translationKey": "coaching.progress.streak" },
+    { "key": "scenarios", "translationKey": "coaching.progress.scenarios" }
+  ],
+  "mistakeColumns": [
+    { "id": "category", "translationKey": "coaching.mistakes.category", "width": 140 },
+    { "id": "severity", "translationKey": "coaching.mistakes.severity", "width": 120 },
+    { "id": "equity", "translationKey": "coaching.mistakes.equity", "width": 110 },
+    { "id": "recommendation", "translationKey": "coaching.mistakes.recommendation", "width": 220 }
+  ]
+}

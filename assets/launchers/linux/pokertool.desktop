@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PokerTool
+Comment=Launch the PokerTool enhanced desktop GUI
+Exec=pokertool gui
+Icon=pokertool
+Terminal=false
+Categories=Game;Utility;

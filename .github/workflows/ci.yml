@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -37,16 +37,16 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          pip install pytest pytest-cov mypy bandit safety
+          pip install pytest pytest-cov mypy bandit 'safety==2.3.5'
 
       - name: Run tests with coverage
         run: |
           pytest --cov=src/pokertool --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           flags: backend
           name: codecov-backend
 
@@ -61,12 +61,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install black isort flake8 mypy bandit safety
+          pip install black isort flake8 mypy bandit 'safety==2.3.5'
 
       - name: Run Black formatter check
         run: black --check --line-length=100 src/
@@ -121,9 +121,9 @@ jobs:
         run: npm run build
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
-          file: ./pokertool-frontend/coverage/coverage-final.json
+          files: ./pokertool-frontend/coverage/coverage-final.json
           flags: frontend
           name: codecov-frontend
 
@@ -139,7 +139,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.11'
 
       - name: Install backend dependencies
         run: |
@@ -160,7 +160,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.22.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -168,6 +168,6 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'

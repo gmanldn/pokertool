@@ -57,8 +57,9 @@ import time
 import hashlib
 import secrets
 import logging
+import threading
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Union, Callable, TYPE_CHECKING
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 import asyncio
@@ -106,10 +107,15 @@ except ImportError:
     bcrypt = None
     FASTAPI_AVAILABLE = False
 
-from .production_database import get_production_db, ProductionDatabase, DatabaseConfig, initialize_production_db
+from .production_database import get_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
 from .thread_utils import get_thread_pool, TaskPriority
 from .error_handling import SecurityError, retry_on_failure
+
+if TYPE_CHECKING:  # pragma: no cover - for type hints only
+    from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
+    from .gamification import GamificationEngine, Achievement, Badge, ProgressState
+    from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle
 
 # Optional HUD overlay - not yet implemented
 try:
@@ -124,10 +130,6 @@ except ImportError:
         pass
     def is_hud_running():
         return False
-
-from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
-from .gamification import GamificationEngine, Achievement, Badge, ProgressState
-from .community_features import CommunityPlatform, ForumPost, Challenge, CommunityTournament, KnowledgeArticle
 
 logger = logging.getLogger(__name__)
 
@@ -561,11 +563,37 @@ class APIServices:
     def __init__(self):
         self.auth_service = AuthenticationService()
         self.connection_manager = ConnectionManager()
+        self.thread_pool = get_thread_pool()
+
+        # Lazy-initialised components to keep startup snappy
+        self._db = None
+        self._db_lock = threading.Lock()
+
+        self._analytics_dashboard = None
+        self._gamification_engine = None
+        self._community_platform = None
+
+        self._limiter = None
+        self._limiter_lock = threading.Lock()
+        
+        # Cache for frequently accessed data
+        self._user_cache = {}
+        self._cache_ttl = 300  # 5 minutes
+
+    @property
+    def db(self):
+        """Lazy database accessor."""
+        if self._db is None:
+            with self._db_lock:
+                if self._db is None:
+                    self._db = self._initialize_database()
+        return self._db
+
+    def _initialize_database(self):
+        """Initialise primary database with SQLite fallback."""
         try:
-            self.db = get_production_db()
+            return get_production_db()
         except RuntimeError:
-            # Fall back to the SQLite-backed development database if the
-            # production database has not been initialised.
             try:
                 from .database import (
                     ProductionDatabase as FallbackDatabase,
@@ -578,62 +606,90 @@ class APIServices:
                     db_type=DatabaseType.SQLITE,
                     db_path=fallback_path,
                 )
-                self.db = FallbackDatabase(fallback_config)
+                fallback_db = FallbackDatabase(fallback_config)
 
                 # Update production_database module so subsequent lookups reuse the fallback.
                 try:
                     from . import production_database as prod_db
 
-                    prod_db._production_db = self.db  # type: ignore[attr-defined]
+                    prod_db._production_db = fallback_db  # type: ignore[attr-defined]
                     logger.info(
                         "Using SQLite fallback production database at %s", fallback_path
                     )
                 except Exception:
                     pass
+
+                return fallback_db
             except Exception as exc:
                 logger.error("Failed to initialize fallback database: %s", exc)
                 raise
-        self.thread_pool = get_thread_pool()
-        self.analytics_dashboard = AnalyticsDashboard()
-        self.gamification_engine = GamificationEngine()
-        self.community_platform = CommunityPlatform()
 
-        # Setup rate limiter with fallback
-        try:
-            self.limiter = Limiter(key_func=get_remote_address, storage_url=RATE_LIMIT_STORAGE_URL)
-        except Exception:
-            self.limiter = Limiter(key_func=get_remote_address)
-        
-        # Cache for frequently accessed data
-        self._user_cache = {}
-        self._cache_ttl = 300  # 5 minutes
+    @property
+    def analytics_dashboard(self):
+        """Lazy initialisation for analytics dashboard."""
+        if self._analytics_dashboard is None:
+            from .analytics_dashboard import AnalyticsDashboard  # Local import to avoid startup hit
+            self._analytics_dashboard = AnalyticsDashboard()
+        return self._analytics_dashboard
 
-        # Seed default gamification content if missing
-        if 'volume_grinder' not in self.gamification_engine.achievements:
-            self.gamification_engine.register_achievement(Achievement(
-                achievement_id='volume_grinder',
-                title='Volume Grinder',
-                description='Play 100 hands in a day',
-                points=200,
-                condition={'hands_played': 100}
-            ))
-        if 'marathon' not in self.gamification_engine.badges:
-            self.gamification_engine.register_badge(Badge(
-                badge_id='marathon',
-                title='Marathon',
-                description='Maintain a seven day activity streak',
-                tier='gold'
-            ))
+    @property
+    def gamification_engine(self):
+        """Lazy initialisation for gamification engine with default seed."""
+        if self._gamification_engine is None:
+            from .gamification import GamificationEngine, Achievement, Badge  # Local import for speed
 
-        # Seed a default community post if empty
-        if not self.community_platform.posts:
-            self.community_platform.create_post(ForumPost(
-                post_id='welcome',
-                author='coach',
-                title='Welcome to the PokerTool community',
-                content='Introduce yourself and share what you are working on this week.',
-                tags=['announcement']
-            ))
+            engine = GamificationEngine()
+
+            if 'volume_grinder' not in engine.achievements:
+                engine.register_achievement(Achievement(
+                    achievement_id='volume_grinder',
+                    title='Volume Grinder',
+                    description='Play 100 hands in a day',
+                    points=200,
+                    condition={'hands_played': 100}
+                ))
+            if 'marathon' not in engine.badges:
+                engine.register_badge(Badge(
+                    badge_id='marathon',
+                    title='Marathon',
+                    description='Maintain a seven day activity streak',
+                    tier='gold'
+                ))
+
+            self._gamification_engine = engine
+        return self._gamification_engine
+
+    @property
+    def community_platform(self):
+        """Lazy initialisation for community platform with welcome post."""
+        if self._community_platform is None:
+            from .community_features import CommunityPlatform, ForumPost  # Local import for speed
+
+            platform = CommunityPlatform()
+            if not platform.posts:
+                platform.create_post(ForumPost(
+                    post_id='welcome',
+                    author='coach',
+                    title='Welcome to the PokerTool community',
+                    content='Introduce yourself and share what you are working on this week.',
+                    tags=['announcement']
+                ))
+
+            self._community_platform = platform
+        return self._community_platform
+
+    @property
+    def limiter(self):
+        """Lazy initialisation for rate limiter."""
+        if self._limiter is None:
+            with self._limiter_lock:
+                if self._limiter is None:
+                    try:
+                        limiter = Limiter(key_func=get_remote_address, storage_url=RATE_LIMIT_STORAGE_URL)
+                    except Exception:
+                        limiter = Limiter(key_func=get_remote_address)
+                    self._limiter = limiter
+        return self._limiter
 
     def get_cached_user(self, token: str) -> Optional[APIUser]:
         """Get user with caching to reduce database lookups."""
@@ -762,6 +818,18 @@ This API implements comprehensive security measures including:
             # Startup
             logger.info("Starting PokerTool API background tasks...")
 
+            loop = asyncio.get_running_loop()
+            try:
+                from pokertool.detection_events import (
+                    clear_detection_event_loop,
+                    register_detection_event_loop,
+                )
+            except ImportError:
+                register_detection_event_loop = None  # type: ignore
+                clear_detection_event_loop = None  # type: ignore
+            else:
+                register_detection_event_loop(loop)
+
             # Initialize and start health checker
             from pokertool.system_health_checker import get_health_checker, register_all_health_checks
             health_checker = get_health_checker(check_interval=30)
@@ -787,6 +855,9 @@ This API implements comprehensive security measures including:
                 await cleanup_task
             except asyncio.CancelledError:
                 pass
+
+            if clear_detection_event_loop:
+                clear_detection_event_loop()
 
         self.app.router.lifespan_context = lifespan
 
@@ -929,10 +1000,19 @@ This API implements comprehensive security measures including:
         except ImportError:
             logger.warning("GZip middleware not available")
 
+        allowed_origins = os.getenv(
+            'POKERTOOL_ALLOWED_ORIGINS',
+            'http://localhost:3000,http://127.0.0.1:3000'
+        )
+        cors_origins = [origin.strip() for origin in allowed_origins.split(',') if origin.strip()]
+
+        allow_credentials_env = os.getenv('POKERTOOL_ALLOW_CREDENTIALS', 'false').lower()
+        cors_allow_credentials = allow_credentials_env in {'1', 'true', 'yes'}
+
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=['*'],  # In production, specify actual origins
-            allow_credentials=True,
+            allow_origins=cors_origins or ['*'],
+            allow_credentials=cors_allow_credentials,
             allow_methods=['*'],
             allow_headers=['*'],
         )
@@ -1474,6 +1554,8 @@ This API implements comprehensive security measures including:
         # Analytics endpoints
         @self.app.post('/analytics/events')
         async def record_analytics_event(event: AnalyticsEventRequest, user: APIUser = Depends(get_current_user)):
+            from .analytics_dashboard import UsageEvent  # Local import to avoid startup cost
+
             event_user = event.user_id or user.user_id
             usage_event = UsageEvent(
                 event_id=event.event_id,
@@ -1524,6 +1606,8 @@ This API implements comprehensive security measures including:
 
         @self.app.get('/gamification/progress/{player_id}')
         async def gamification_progress(player_id: str, user: APIUser = Depends(get_current_user)):
+            from .gamification import ProgressState  # Local import to avoid startup cost
+
             state = self.services.gamification_engine.progress.get(player_id)
             if not state:
                 state = self.services.gamification_engine.progress.setdefault(player_id, ProgressState(player_id=player_id))
@@ -1543,6 +1627,8 @@ This API implements comprehensive security measures including:
 
         @self.app.post('/community/posts')
         async def create_post(request, post: CommunityPostRequest, user: APIUser = Depends(get_current_user)):
+            from .community_features import ForumPost  # Local import to avoid startup cost
+
             post_id = f'post_{int(time.time()*1000)}'
             forum_post = ForumPost(
                 post_id=post_id,
@@ -1615,49 +1701,6 @@ This API implements comprehensive security measures including:
                 }
             }
 
-        # WebSocket endpoint
-        @self.app.websocket('/ws/{user_id}')
-        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
-            # Verify token
-            user = self.services.auth_service.verify_token(token)
-            if not user or user.user_id != user_id:
-                await websocket.close(code=1008, reason='Invalid token')
-                return
-
-            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
-
-            try:
-                await self.services.connection_manager.connect(websocket, connection_id, user_id)
-
-                # Send welcome message
-                await self.services.connection_manager.send_personal_message({
-                    'type': 'welcome',
-                    'message': f'Connected as {user.username}',
-                    'connection_id': connection_id
-                }, connection_id)
-
-                # Keep connection alive
-                while True:
-                    try:
-                        # Wait for messages from client
-                        message = await websocket.receive_json()
-
-                        # Echo back for now (could handle commands)
-                        await self.services.connection_manager.send_personal_message({
-                            'type': 'echo',
-                            'data': message,
-                            'timestamp': datetime.utcnow().isoformat()
-                        }, connection_id)
-
-                    except WebSocketDisconnect:
-                        break
-                    except Exception as e:
-                        logger.error(f'WebSocket error: {e}')
-                        break
-
-            finally:
-                self.services.connection_manager.disconnect(connection_id, user_id)
-
         # Public WebSocket endpoint for detection events (no auth required)
         @self.app.websocket('/ws/detections')
         async def detections_websocket(websocket: WebSocket):
@@ -1665,6 +1708,7 @@ This API implements comprehensive security measures including:
             Public WebSocket endpoint for real-time poker table detection events.
             No authentication required - sends detection log messages.
             """
+            logger.info('Detection WebSocket handshake from %s', websocket.client)
             await websocket.accept()
             connection_id = f'det_{int(time.time() * 1000)}'
             detection_manager = get_detection_ws_manager()
@@ -1709,6 +1753,49 @@ This API implements comprehensive security measures including:
             finally:
                 # Unregister connection
                 await detection_manager.disconnect(connection_id)
+
+        # WebSocket endpoint
+        @self.app.websocket('/ws/{user_id}')
+        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
+            # Verify token
+            user = self.services.auth_service.verify_token(token)
+            if not user or user.user_id != user_id:
+                await websocket.close(code=1008, reason='Invalid token')
+                return
+
+            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
+
+            try:
+                await self.services.connection_manager.connect(websocket, connection_id, user_id)
+
+                # Send welcome message
+                await self.services.connection_manager.send_personal_message({
+                    'type': 'welcome',
+                    'message': f'Connected as {user.username}',
+                    'connection_id': connection_id
+                }, connection_id)
+
+                # Keep connection alive
+                while True:
+                    try:
+                        # Wait for messages from client
+                        message = await websocket.receive_json()
+
+                        # Echo back for now (could handle commands)
+                        await self.services.connection_manager.send_personal_message({
+                            'type': 'echo',
+                            'data': message,
+                            'timestamp': datetime.utcnow().isoformat()
+                        }, connection_id)
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'WebSocket error: {e}')
+                        break
+
+            finally:
+                self.services.connection_manager.disconnect(connection_id, user_id)
 
         # System Health WebSocket endpoint
         @self.app.websocket('/ws/system-health')

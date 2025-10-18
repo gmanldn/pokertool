@@ -54,6 +54,7 @@ import os
 import pathlib
 import hashlib
 import time
+import json
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Iterator
 from .error_handling import db_guard, log, sanitize_input, retry_on_failure
@@ -110,6 +111,12 @@ class SecureDatabase:
             event_type TEXT NOT NULL, 
             details TEXT, 
             severity INTEGER DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS hud_profiles (
+            profile_name TEXT PRIMARY KEY,
+            config_json TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE INDEX IF NOT EXISTS idx_hands_timestamp ON poker_hands(timestamp);
@@ -348,6 +355,68 @@ class SecureDatabase:
 
                 self._log_security_event('data_cleanup', f'Deleted {deleted_count} old records')
                 return deleted_count
+
+    def list_hud_profiles(self) -> List[str]:
+        """List available HUD profile names stored in the secure database."""
+        self._rate_limit_check('list_hud_profiles', 200)
+
+        with db_guard('listing hud profiles'):
+            with self._get_connection() as conn:
+                cursor = conn.execute(
+                    "SELECT profile_name FROM hud_profiles ORDER BY profile_name ASC"
+                )
+                profiles = [row[0] for row in cursor.fetchall()]
+
+        if 'Default' not in profiles:
+            profiles.append('Default')
+
+        return sorted(set(profiles))
+
+    def load_hud_profile(self, profile_name: str) -> Dict[str, Any]:
+        """Load the HUD profile configuration."""
+        sanitized_name = sanitize_input(profile_name, max_length=64)
+        self._rate_limit_check('load_hud_profile', 300)
+
+        with db_guard('loading hud profile'):
+            with self._get_connection() as conn:
+                cursor = conn.execute(
+                    "SELECT config_json FROM hud_profiles WHERE profile_name = ?",
+                    (sanitized_name,)
+                )
+                row = cursor.fetchone()
+                if not row:
+                    return {}
+
+        try:
+            data = json.loads(row[0])
+            return data if isinstance(data, dict) else {}
+        except Exception as exc:
+            log.error('Failed to decode HUD profile %s: %s', sanitized_name, exc)
+            return {}
+
+    def save_hud_profile(self, profile_name: str, config_dict: Dict[str, Any]) -> None:
+        """Persist a HUD profile configuration."""
+        sanitized_name = sanitize_input(profile_name, max_length=64)
+        self._rate_limit_check('save_hud_profile', 200)
+
+        try:
+            payload = json.dumps(config_dict or {}, ensure_ascii=False)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f'Invalid HUD profile configuration: {exc}') from exc
+
+        with db_guard('saving hud profile'):
+            with self._get_connection() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO hud_profiles (profile_name, config_json, updated_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(profile_name)
+                    DO UPDATE SET config_json = excluded.config_json,
+                                  updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (sanitized_name, payload)
+                )
+                conn.commit()
 
 
 # Global instance for backward compatibility

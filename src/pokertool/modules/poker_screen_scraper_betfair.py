@@ -55,6 +55,13 @@ except ImportError as e:
     mss = None
     cv2 = None
 
+# Detection event dispatcher (optional)
+try:
+    from ..detection_events import emit_detection_event
+except ImportError:  # pragma: no cover - fallback when API module unavailable
+    def emit_detection_event(*args, **kwargs):
+        return None
+
 # Check for Chrome DevTools Protocol (fast extraction)
 try:
     from .chrome_devtools_scraper import ChromeDevToolsScraper, CDP_AVAILABLE
@@ -1375,7 +1382,63 @@ class PokerScreenScraper:
         else:
             self.sct = None
 
+        # Detection event throttling
+        self._last_detection_event_time = 0.0
+        self._last_detection_success_snapshot: Optional[Dict[str, Any]] = None
+        self._last_no_detection_event_time = 0.0
+
         logger.info(f"🎯 PokerScreenScraper initialized (target: {site.value}, CDP: {use_cdp}, Learning: {enable_learning})")
+
+    def _emit_detection_success(self, detector: str, confidence: float, details: Dict[str, Any]) -> None:
+        """Broadcast a successful detection event with deduplication."""
+        now = time.time()
+        snapshot = {
+            'detector': detector,
+            'site': details.get('site', self.site.value if hasattr(self.site, 'value') else str(self.site)),
+            'confidence': round(confidence, 4),
+        }
+
+        if (
+            self._last_detection_success_snapshot == snapshot
+            and now - self._last_detection_event_time < 1.0
+        ):
+            return
+
+        self._last_detection_success_snapshot = snapshot
+        self._last_detection_event_time = now
+
+        emit_detection_event(
+            event_type='system',
+            severity='success',
+            message=f"Poker table detected by {detector} ({confidence:.1%})",
+            data={
+                **details,
+                'detector': detector,
+                'confidence': confidence,
+                'site': snapshot['site'],
+            },
+        )
+
+    def _emit_no_detection(self, betfair_conf: float, universal_conf: float, elapsed_ms: float) -> None:
+        """Broadcast a throttled warning when no poker table is detected."""
+        now = time.time()
+        if now - self._last_no_detection_event_time < 5.0:
+            return
+
+        self._last_no_detection_event_time = now
+        self._last_detection_success_snapshot = None  # Reset so next detection is emitted immediately
+
+        emit_detection_event(
+            event_type='system',
+            severity='warning',
+            message="No poker table detected",
+            data={
+                'site': self.site.value if hasattr(self.site, 'value') else str(self.site),
+                'betfair_confidence': betfair_conf,
+                'universal_confidence': universal_conf,
+                'time_ms': elapsed_ms,
+            },
+        )
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
         """
@@ -1430,12 +1493,14 @@ class PokerScreenScraper:
                         image, True, betfair_result.time_ms
                     )
 
-                return True, betfair_result.confidence, {
+                detection_payload = {
                     'site': 'betfair',
                     'detector': 'betfair_specialized',
                     **betfair_result.details,
                     'time_ms': betfair_result.time_ms
                 }
+                self._emit_detection_success('betfair_specialized', betfair_result.confidence, detection_payload)
+                return True, betfair_result.confidence, detection_payload
             else:
                 # Log why Betfair detection failed
                 logger.debug(f"[BETFAIR] ✗ Not detected (confidence: {betfair_result.confidence:.1%})")
@@ -1461,12 +1526,14 @@ class PokerScreenScraper:
                     image, True, universal_result.time_ms
                 )
 
-            return True, universal_result.confidence, {
+            detection_payload = {
                 'site': 'generic',
                 'detector': 'universal',
                 **universal_result.details,
                 'time_ms': universal_result.time_ms
             }
+            self._emit_detection_success('universal', universal_result.confidence, detection_payload)
+            return True, universal_result.confidence, detection_payload
 
         # No detection
         total_time = (time.time() - start_time) * 1000
@@ -1485,6 +1552,7 @@ class PokerScreenScraper:
             logger.info(f"   Detection time: {total_time:.1f}ms")
 
         betfair_conf = betfair_result.confidence if self.site == PokerSite.BETFAIR else 0.0
+        self._emit_no_detection(betfair_conf, universal_result.confidence, total_time)
 
         return False, 0.0, {
             'site': 'none',
@@ -2862,30 +2930,14 @@ class PokerScreenScraper:
                 # Try OCR with focus on numbers and currency
                 text = pytesseract.image_to_string(gray, config='--psm 6')  # type: ignore
 
-                # Look for blind patterns like:
-                # - "$0.05/$0.10"
-                # - "£0.05/£0.10"
-                # - "0.05/0.10"
-                # - "Blinds: 0.05/0.10"
-                blind_patterns = [
-                    r'[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # 0.05/0.10 or $0.05/$0.10
-                    r'blinds?\s*:?\s*[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # Blinds: 0.05/0.10
-                    r'sb\s*[£$€]?(\d+\.?\d*)\s*bb\s*[£$€]?(\d+\.?\d*)',  # SB 0.05 BB 0.10
-                ]
-
-                for pattern in blind_patterns:
-                    match = re.search(pattern, text, re.IGNORECASE)
-                    if match:
-                        try:
-                            sb = float(match.group(1))
-                            bb = float(match.group(2))
-
-                            # Sanity check: BB should be ~2x SB, both should be reasonable poker values
-                            if 0.01 <= sb <= 1000 and 0.01 <= bb <= 2000 and 1.5 <= (bb / sb) <= 3:
-                                logger.info(f"✓ Blinds detected from OCR: ${sb:.2f}/${bb:.2f}")
-                                return (sb, bb, 0.0)  # Ante detection TODO
-                        except (ValueError, ZeroDivisionError):
-                            continue
+                parsed = self._parse_blinds_from_text(text)
+                if parsed:
+                    sb, bb, ante = parsed
+                    if ante > 0:
+                        logger.info(f"✓ Blinds detected from OCR: ${sb:.2f}/${bb:.2f} (Ante {ante:.2f})")
+                    else:
+                        logger.info(f"✓ Blinds detected from OCR: ${sb:.2f}/${bb:.2f}")
+                    return (sb, bb, ante)
 
             # If OCR fails, use heuristics based on pot size
             # Small stakes typically have standard blind structures
@@ -2898,6 +2950,95 @@ class PokerScreenScraper:
         except Exception as e:
             logger.debug(f"Blind extraction error: {e}")
             return (0.0, 0.0, 0.0)
+
+    @staticmethod
+    def _parse_blinds_from_text(text: str) -> Optional[Tuple[float, float, float]]:
+        """Parse small/big blind (and optional ante) values from OCR text output."""
+        normalized = " ".join(text.split())
+
+        # Pattern that already includes an ante value (e.g. 0.05/0.10/0.02)
+        triple_pattern = re.search(
+            r'[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',
+            normalized,
+            re.IGNORECASE,
+        )
+        if triple_pattern:
+            try:
+                sb = float(triple_pattern.group(1))
+                bb = float(triple_pattern.group(2))
+                ante = float(triple_pattern.group(3))
+                if PokerScreenScraper._validate_blind_values(sb, bb):
+                    return sb, bb, PokerScreenScraper._clamp_ante(ante, bb)
+            except (ValueError, ZeroDivisionError):
+                pass
+
+        # Fallback patterns that omit ante or place it elsewhere in the text body
+        blind_patterns = [
+            r'[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # 0.05/0.10 or $0.05/$0.10
+            r'blinds?\s*:?\s*[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # Blinds: 0.05/0.10
+            r'sb\s*[£$€]?(\d+\.?\d*)\s*bb\s*[£$€]?(\d+\.?\d*)',  # SB 0.05 BB 0.10
+        ]
+
+        for pattern in blind_patterns:
+            match = re.search(pattern, normalized, re.IGNORECASE)
+            if not match:
+                continue
+            try:
+                sb = float(match.group(1))
+                bb = float(match.group(2))
+                if not PokerScreenScraper._validate_blind_values(sb, bb):
+                    continue
+
+                ante = PokerScreenScraper._infer_ante(normalized, sb, bb)
+                return sb, bb, ante
+            except (ValueError, ZeroDivisionError):
+                continue
+
+        return None
+
+    @staticmethod
+    def _validate_blind_values(sb: float, bb: float) -> bool:
+        """Validate that blind values look reasonable."""
+        try:
+            ratio = bb / sb
+        except ZeroDivisionError:
+            return False
+        return 0.01 <= sb <= 1000 and 0.01 <= bb <= 2000 and 1.5 <= ratio <= 3
+
+    @staticmethod
+    def _infer_ante(text: str, sb: float, bb: float) -> float:
+        """Infer ante amount from OCR text (if present)."""
+        ante_keyword = re.search(r'(?:ante|antes)\s*[£$€]?(\d+\.?\d*)', text, re.IGNORECASE)
+        if ante_keyword:
+            try:
+                ante = float(ante_keyword.group(1))
+                return PokerScreenScraper._clamp_ante(ante, bb)
+            except ValueError:
+                pass
+
+        # Look for any extra numeric value that is not the blinds (handles formats like 0.05/0.10/0.02 without keywords)
+        numeric_values = [
+            float(match.group(1))
+            for match in re.finditer(r'[£$€]?(\d+\.?\d*)', text)
+            if match.group(1)
+        ]
+
+        for value in numeric_values:
+            if abs(value - sb) <= 1e-6 or abs(value - bb) <= 1e-6:
+                continue
+            if 0 <= value <= bb:
+                return PokerScreenScraper._clamp_ante(value, bb)
+
+        return 0.0
+
+    @staticmethod
+    def _clamp_ante(ante: float, bb: float) -> float:
+        """Clamp ante within a sensible range relative to the big blind."""
+        if ante < 0:
+            return 0.0
+        if ante > bb:
+            return bb
+        return round(ante, 2)
     
     def calibrate(self, test_image: Optional[np.ndarray] = None) -> bool:
         """Calibrate the scraper for current conditions."""
@@ -2938,7 +3079,31 @@ class PokerScreenScraper:
             'betfair_stats': betfair_stats,
             'avg_detection_time_ms': np.mean(self.detection_times) if self.detection_times else 0.0,
         }
-    
+
+    def get_display_metrics(self) -> Dict[str, Any]:
+        """Return monitor resolution and derived scaling factors."""
+        metrics: Dict[str, Any] = {'scale_x': 1.0, 'scale_y': 1.0}
+
+        try:
+            if self.sct:
+                monitors = self.sct.monitors
+                monitor = monitors[1] if len(monitors) > 1 else monitors[0]
+                width = monitor.get('width')
+                height = monitor.get('height')
+                if width and height:
+                    scale_x = width / 1920.0
+                    scale_y = height / 1080.0
+                    metrics.update({
+                        'width': width,
+                        'height': height,
+                        'scale_x': scale_x,
+                        'scale_y': scale_y,
+                    })
+        except Exception as exc:  # pragma: no cover - environment specific
+            logger.debug('Failed to compute display metrics: %s', exc)
+
+        return metrics
+
     def save_debug_image(self, image: np.ndarray, filename: str):
         """Save debug image with detection overlay."""
         try:
