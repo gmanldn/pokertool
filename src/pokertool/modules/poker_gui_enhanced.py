@@ -9,7 +9,14 @@ from __future__ import annotations
 
 import queue
 import sys
-import tkinter as tk
+
+try:
+    import tkinter as tk
+except ImportError as exc:  # pragma: no cover - executed in headless envs
+    raise ImportError(
+        "Tkinter is required for pokertool.modules.poker_gui_enhanced; "
+        "install python3-tk or use a Python build with Tk support."
+    ) from exc
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
