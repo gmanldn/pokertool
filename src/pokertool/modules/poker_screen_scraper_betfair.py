@@ -2862,30 +2862,14 @@ class PokerScreenScraper:
                 # Try OCR with focus on numbers and currency
                 text = pytesseract.image_to_string(gray, config='--psm 6')  # type: ignore
 
-                # Look for blind patterns like:
-                # - "$0.05/$0.10"
-                # - "£0.05/£0.10"
-                # - "0.05/0.10"
-                # - "Blinds: 0.05/0.10"
-                blind_patterns = [
-                    r'[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # 0.05/0.10 or $0.05/$0.10
-                    r'blinds?\s*:?\s*[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # Blinds: 0.05/0.10
-                    r'sb\s*[£$€]?(\d+\.?\d*)\s*bb\s*[£$€]?(\d+\.?\d*)',  # SB 0.05 BB 0.10
-                ]
-
-                for pattern in blind_patterns:
-                    match = re.search(pattern, text, re.IGNORECASE)
-                    if match:
-                        try:
-                            sb = float(match.group(1))
-                            bb = float(match.group(2))
-
-                            # Sanity check: BB should be ~2x SB, both should be reasonable poker values
-                            if 0.01 <= sb <= 1000 and 0.01 <= bb <= 2000 and 1.5 <= (bb / sb) <= 3:
-                                logger.info(f"✓ Blinds detected from OCR: ${sb:.2f}/${bb:.2f}")
-                                return (sb, bb, 0.0)  # Ante detection TODO
-                        except (ValueError, ZeroDivisionError):
-                            continue
+                parsed = self._parse_blinds_from_text(text)
+                if parsed:
+                    sb, bb, ante = parsed
+                    if ante > 0:
+                        logger.info(f"✓ Blinds detected from OCR: ${sb:.2f}/${bb:.2f} (Ante {ante:.2f})")
+                    else:
+                        logger.info(f"✓ Blinds detected from OCR: ${sb:.2f}/${bb:.2f}")
+                    return (sb, bb, ante)
 
             # If OCR fails, use heuristics based on pot size
             # Small stakes typically have standard blind structures
@@ -2898,6 +2882,95 @@ class PokerScreenScraper:
         except Exception as e:
             logger.debug(f"Blind extraction error: {e}")
             return (0.0, 0.0, 0.0)
+
+    @staticmethod
+    def _parse_blinds_from_text(text: str) -> Optional[Tuple[float, float, float]]:
+        """Parse small/big blind (and optional ante) values from OCR text output."""
+        normalized = " ".join(text.split())
+
+        # Pattern that already includes an ante value (e.g. 0.05/0.10/0.02)
+        triple_pattern = re.search(
+            r'[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',
+            normalized,
+            re.IGNORECASE,
+        )
+        if triple_pattern:
+            try:
+                sb = float(triple_pattern.group(1))
+                bb = float(triple_pattern.group(2))
+                ante = float(triple_pattern.group(3))
+                if PokerScreenScraper._validate_blind_values(sb, bb):
+                    return sb, bb, PokerScreenScraper._clamp_ante(ante, bb)
+            except (ValueError, ZeroDivisionError):
+                pass
+
+        # Fallback patterns that omit ante or place it elsewhere in the text body
+        blind_patterns = [
+            r'[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # 0.05/0.10 or $0.05/$0.10
+            r'blinds?\s*:?\s*[£$€]?(\d+\.?\d*)\s*/\s*[£$€]?(\d+\.?\d*)',  # Blinds: 0.05/0.10
+            r'sb\s*[£$€]?(\d+\.?\d*)\s*bb\s*[£$€]?(\d+\.?\d*)',  # SB 0.05 BB 0.10
+        ]
+
+        for pattern in blind_patterns:
+            match = re.search(pattern, normalized, re.IGNORECASE)
+            if not match:
+                continue
+            try:
+                sb = float(match.group(1))
+                bb = float(match.group(2))
+                if not PokerScreenScraper._validate_blind_values(sb, bb):
+                    continue
+
+                ante = PokerScreenScraper._infer_ante(normalized, sb, bb)
+                return sb, bb, ante
+            except (ValueError, ZeroDivisionError):
+                continue
+
+        return None
+
+    @staticmethod
+    def _validate_blind_values(sb: float, bb: float) -> bool:
+        """Validate that blind values look reasonable."""
+        try:
+            ratio = bb / sb
+        except ZeroDivisionError:
+            return False
+        return 0.01 <= sb <= 1000 and 0.01 <= bb <= 2000 and 1.5 <= ratio <= 3
+
+    @staticmethod
+    def _infer_ante(text: str, sb: float, bb: float) -> float:
+        """Infer ante amount from OCR text (if present)."""
+        ante_keyword = re.search(r'(?:ante|antes)\s*[£$€]?(\d+\.?\d*)', text, re.IGNORECASE)
+        if ante_keyword:
+            try:
+                ante = float(ante_keyword.group(1))
+                return PokerScreenScraper._clamp_ante(ante, bb)
+            except ValueError:
+                pass
+
+        # Look for any extra numeric value that is not the blinds (handles formats like 0.05/0.10/0.02 without keywords)
+        numeric_values = [
+            float(match.group(1))
+            for match in re.finditer(r'[£$€]?(\d+\.?\d*)', text)
+            if match.group(1)
+        ]
+
+        for value in numeric_values:
+            if abs(value - sb) <= 1e-6 or abs(value - bb) <= 1e-6:
+                continue
+            if 0 <= value <= bb:
+                return PokerScreenScraper._clamp_ante(value, bb)
+
+        return 0.0
+
+    @staticmethod
+    def _clamp_ante(ante: float, bb: float) -> float:
+        """Clamp ante within a sensible range relative to the big blind."""
+        if ante < 0:
+            return 0.0
+        if ante > bb:
+            return bb
+        return round(ante, 2)
     
     def calibrate(self, test_image: Optional[np.ndarray] = None) -> bool:
         """Calibrate the scraper for current conditions."""
