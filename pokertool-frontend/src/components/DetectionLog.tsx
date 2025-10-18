@@ -32,6 +32,7 @@ import {
   FilterList,
 } from '@mui/icons-material';
 import { DetectionMessage, DetectionLogData } from '../types/common';
+import { buildApiUrl, httpToWs } from '../config/api';
 
 interface DetectionLogProps {
   messages?: DetectionMessage[];
@@ -50,6 +51,8 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const logContainerRef = useRef<HTMLDivElement>(null);
 
+  const detectionEndpoint = React.useMemo(() => httpToWs(buildApiUrl('/ws/detections')), []);
+
   const [logs, setLogs] = useState<LogEntry[]>([
     {
       timestamp: new Date().toISOString(),
@@ -58,7 +61,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
       message: 'Detection system initializing - connecting to backend...',
       data: {
         version: '84.0.0',
-        endpoint: 'ws://localhost:5001/ws/detections',
+        endpoint: detectionEndpoint,
         status: 'Attempting to connect...'
       },
     },
@@ -95,7 +98,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
       if (isCleaningUp) return;
 
       try {
-        ws = new WebSocket('ws://localhost:5001/ws/detections');
+        ws = new WebSocket(detectionEndpoint);
 
         ws.onopen = () => {
           console.log('Detection WebSocket connected');
@@ -106,8 +109,8 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
               timestamp: new Date().toISOString(),
               type: 'system' as const,
               severity: 'success' as const,
-              message: 'Connected to backend API (ws://localhost:5001)',
-              data: { endpoint: '/ws/detections' },
+              message: 'Connected to detection backend',
+              data: { endpoint: detectionEndpoint },
             },
           ].slice(-100));
         };
@@ -134,7 +137,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
                 timestamp: new Date().toISOString(),
                 type: 'system' as const,
                 severity: 'warning' as const,
-                message: 'Waiting for backend API at ws://localhost:5001/ws/detections',
+                message: `Waiting for backend API at ${detectionEndpoint}`,
                 data: {
                   status: 'Retrying in 10 seconds...',
                   possibleCauses: [
@@ -165,7 +168,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
               timestamp: new Date().toISOString(),
               type: 'system' as const,
               severity: 'warning' as const,
-              message: 'Waiting for backend API at ws://localhost:5001/ws/detections',
+              message: `Waiting for backend API at ${detectionEndpoint}`,
               data: {
                 status: 'Retrying in 10 seconds...',
                 error: String(error),
@@ -193,7 +196,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
         ws.close();
       }
     };
-  }, [isPaused]);
+  }, [isPaused, detectionEndpoint]);
 
   const handleClearLogs = () => {
     setLogs([
