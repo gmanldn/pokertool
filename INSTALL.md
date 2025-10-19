@@ -102,3 +102,7 @@ If you prefer to manage dependencies manually, follow these steps instead of `st
 - On Windows, run PowerShell as Administrator the first time so Tesseract and Python can update the registry.
 - Use `scripts/monitor-errors.sh` for a consolidated view of backend warnings during development.
 
+## Documentation
+- Manual: docs/MANUAL.md
+- Quick Reference: docs/QUICK_REFERENCE.md
+- HUD Designer Guide: docs/advanced/hud.md

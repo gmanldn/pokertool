@@ -43,6 +43,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   const detectionEndpoint = React.useMemo(() => httpToWs(buildApiUrl('/ws/detections')), []);
   const fallbackEndpoint = React.useMemo(() => {
@@ -100,6 +101,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
 
         ws.onopen = () => {
           console.log('Detection WebSocket connected');
+          setIsConnected(true);
           hasShownError = false;
           setLogs((prev) => [
             ...prev,
@@ -126,6 +128,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
         };
 
         ws.onerror = (error) => {
+          setIsConnected(false);
           console.error('Detection WebSocket error:', error);
           if (!attemptedFallback && fallbackEndpoint && endpoint !== fallbackEndpoint) {
             attemptedFallback = true;
@@ -173,6 +176,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
 
         ws.onclose = () => {
           console.log('Detection WebSocket closed');
+          setIsConnected(false);
           if (!isCleaningUp) {
             // Reconnect after 10 seconds
             reconnectTimeout = setTimeout(() => connect(endpoint), 10000);
@@ -270,6 +274,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
   };
 
   const filteredLogs = logs.filter((log) => filters[log.type]);
+  const isPaused = !isConnected;
 
   return (
     <Box sx={{ p: isMobile ? 2 : 3 }}>

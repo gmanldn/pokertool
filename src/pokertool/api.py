@@ -67,7 +67,7 @@ from functools import wraps
 
 # Try to import FastAPI dependencies
 try:
-    from fastapi import FastAPI, HTTPException, Depends, Security, WebSocket, WebSocketDisconnect, BackgroundTasks
+    from fastapi import FastAPI, HTTPException, Depends, Security, WebSocket, WebSocketDisconnect, BackgroundTasks, Request
     from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -1079,6 +1079,11 @@ This API implements comprehensive security measures including:
             return user
 
         # Health check
+        # Simple in-memory cache for system health endpoint
+        self._health_cache_data = None
+        self._health_cache_at = 0.0
+        self._health_cache_ttl = float(os.getenv('SYSTEM_HEALTH_TTL_SECONDS', '5'))
+
         @self.app.get('/health', tags=['health'], summary='Health Check')
         async def health_check():
             """
@@ -1128,14 +1133,22 @@ This API implements comprehensive security measures including:
 
         # System Health Monitoring Endpoints
         @self.app.get('/api/system/health', tags=['system'], summary='Get System Health')
-        async def get_system_health():
+        @self.services.limiter.limit('60/minute')
+        async def get_system_health(request: Request):
             """
             Get comprehensive system health status for all features.
             Returns health data for all monitored components.
             """
+            # Cache results for a short TTL to reduce load
+            now = time.time()
+            if self._health_cache_data and (now - self._health_cache_at) < self._health_cache_ttl:
+                return self._health_cache_data
+
             from pokertool.system_health_checker import get_health_checker
             checker = get_health_checker()
             summary = checker.get_summary()
+            self._health_cache_data = summary
+            self._health_cache_at = now
             return summary
 
         @self.app.get('/api/system/health/{category}')
@@ -1182,6 +1195,7 @@ This API implements comprehensive security measures including:
             }
         
         @self.app.get('/api/system/health/history', tags=['system'], summary='Get Health History')
+        @self.services.limiter.limit('12/minute')
         async def get_health_history(hours: int = 24):
             """
             Get historical health check data for the specified time period.
@@ -1209,6 +1223,7 @@ This API implements comprehensive security measures including:
             }
         
         @self.app.get('/api/system/health/trends', tags=['system'], summary='Get Health Trends')
+        @self.services.limiter.limit('12/minute')
         async def get_health_trends(hours: int = 24):
             """
             Get health trend analysis over the specified time period.
@@ -1466,7 +1481,7 @@ This API implements comprehensive security measures including:
         # Authentication endpoints
         @self.app.post('/auth/token', response_model=Token, tags=['auth'], summary='Login')
         @self.services.limiter.limit('10/minute')
-        async def login(request, username: str, password: str):
+        async def login(request: Request, username: str, password: str):
             user = self.services.auth_service.get_user_by_credentials(username, password)
             if not user:
                 raise HTTPException(status_code=401, detail='Invalid credentials')

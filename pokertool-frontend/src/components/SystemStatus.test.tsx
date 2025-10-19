@@ -30,7 +30,10 @@ class MockWebSocket {
   onerror: ((error: Event) => void) | null = null;
   onclose: (() => void) | null = null;
 
+  static instances: MockWebSocket[] = [];
+
   constructor(public url: string) {
+    MockWebSocket.instances.push(this);
     setTimeout(() => {
       if (this.onopen) this.onopen();
     }, 0);
@@ -47,13 +50,120 @@ global.WebSocket = MockWebSocket as any;
 // Mock fetch
 global.fetch = jest.fn();
 
-const createFetchResponse = (data = mockHealthData) => ({
+const mockTrendsResponse = {
+  success: true,
+  timestamp: '2025-10-16T12:00:00Z',
+  trends: {
+    period_hours: 24,
+    data_points: 4,
+    start_time: '2025-10-15T12:00:00Z',
+    end_time: '2025-10-16T12:00:00Z',
+    summary: 'Analyzed 4 data points over 24 hours',
+    feature_trends: {
+      ocr_engine: {
+        healthy: 1,
+        degraded: 2,
+        failing: 1,
+        unknown: 0,
+        healthy_pct: 25,
+        degraded_pct: 50,
+        failing_pct: 25,
+        avg_latency_ms: 45.8,
+      },
+      neural_evaluator: {
+        healthy: 0,
+        degraded: 1,
+        failing: 3,
+        unknown: 0,
+        healthy_pct: 0,
+        degraded_pct: 25,
+        failing_pct: 75,
+        avg_latency_ms: null,
+      },
+    },
+  },
+};
+
+const mockHistoryResponse = {
+  success: true,
+  timestamp: '2025-10-16T12:05:00Z',
+  period_hours: 24,
+  data_points: 2,
+  history: [
+    {
+      timestamp: '2025-10-16T12:00:00Z',
+      results: {
+        ocr_engine: {
+          feature_name: 'ocr_engine',
+          category: 'scraping',
+          status: 'degraded' as const,
+          last_check: '2025-10-16T12:00:00Z',
+        },
+        neural_evaluator: {
+          feature_name: 'neural_evaluator',
+          category: 'ml',
+          status: 'failing' as const,
+          last_check: '2025-10-16T12:00:00Z',
+        },
+        model_calibration: {
+          feature_name: 'model_calibration',
+          category: 'backend',
+          status: 'healthy' as const,
+          last_check: '2025-10-16T12:00:00Z',
+        },
+      },
+    },
+    {
+      timestamp: '2025-10-16T11:30:00Z',
+      results: {
+        ocr_engine: {
+          feature_name: 'ocr_engine',
+          category: 'scraping',
+          status: 'healthy' as const,
+          last_check: '2025-10-16T11:30:00Z',
+        },
+        neural_evaluator: {
+          feature_name: 'neural_evaluator',
+          category: 'ml',
+          status: 'degraded' as const,
+          last_check: '2025-10-16T11:30:00Z',
+        },
+      },
+    },
+  ],
+};
+
+const createFetchResponse = (data: any) => ({
   ok: true,
   json: async () => data,
 });
 
-const mockSuccessfulFetch = (data = mockHealthData) => {
-  (global.fetch as jest.Mock).mockResolvedValue(createFetchResponse(data));
+const mockSuccessfulFetch = (overrides?: {
+  health?: typeof mockHealthData;
+  trends?: typeof mockTrendsResponse;
+  history?: typeof mockHistoryResponse;
+}) => {
+  const healthPayload = overrides?.health ?? mockHealthData;
+  const trendPayload = overrides?.trends ?? mockTrendsResponse;
+  const historyPayload = overrides?.history ?? mockHistoryResponse;
+
+  (global.fetch as jest.Mock).mockImplementation((input: RequestInfo) => {
+    const url = typeof input === 'string' ? input : input.url;
+
+    if (url.includes('/api/system/health/trends')) {
+      return Promise.resolve(createFetchResponse(trendPayload));
+    }
+
+    if (url.includes('/api/system/health/history')) {
+      return Promise.resolve(createFetchResponse(historyPayload));
+    }
+
+    if (url.includes('/api/system/health')) {
+      return Promise.resolve(createFetchResponse(healthPayload));
+    }
+
+    return Promise.resolve(createFetchResponse({}));
+  });
 };
 
 const findChipButton = (label: RegExp | string): HTMLButtonElement => {
@@ -131,6 +241,7 @@ describe('SystemStatus Component', () => {
     (buildApiUrl as jest.Mock).mockImplementation((path: string) => `http://localhost:5001${path}`);
     jest.clearAllTimers();
     localStorage.clear();
+    MockWebSocket.instances = [];
   });
 
   describe('Initial Render and Data Fetching', () => {
@@ -148,8 +259,15 @@ describe('SystemStatus Component', () => {
       render(<SystemStatus />);
 
       await screen.findByText('System Status Monitor');
-      expect((global.fetch as jest.Mock).mock.calls[0][0]).toBe('http://localhost:5001/api/system/health');
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      const calledUrls = (global.fetch as jest.Mock).mock.calls.map(([url]) =>
+        typeof url === 'string' ? url : (url as Request).url
+      );
+      expect(calledUrls).toEqual(expect.arrayContaining([
+        'http://localhost:5001/api/system/health',
+        'http://localhost:5001/api/system/health/trends?hours=24',
+        'http://localhost:5001/api/system/health/history?hours=24',
+      ]));
+      expect(global.fetch).toHaveBeenCalledTimes(3);
     });
 
     it('should display health data after successful fetch', async () => {
@@ -326,15 +444,22 @@ describe('SystemStatus Component', () => {
 
   describe('Refresh Functionality', () => {
     it('should refetch data when refresh button is clicked', async () => {
-      (global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockHealthData,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ ...mockHealthData, overall_status: 'degraded' }),
-        });
+      const responses = [
+        createFetchResponse(mockHealthData),
+        createFetchResponse(mockTrendsResponse),
+        createFetchResponse(mockHistoryResponse),
+        createFetchResponse({ ...mockHealthData, overall_status: 'degraded' }),
+        createFetchResponse(mockTrendsResponse),
+        createFetchResponse(mockHistoryResponse),
+      ];
+
+      (global.fetch as jest.Mock).mockImplementation(() => {
+        const next = responses.shift();
+        if (!next) {
+          return Promise.resolve(createFetchResponse({}));
+        }
+        return Promise.resolve(next);
+      });
 
       render(<SystemStatus />);
 
@@ -344,17 +469,32 @@ describe('SystemStatus Component', () => {
       fireEvent.click(refreshButton);
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(2);
+        expect(global.fetch).toHaveBeenCalledTimes(6);
+        expect(screen.getByText('DEGRADED')).toBeInTheDocument();
       });
     });
 
     it('should show refreshing state while fetching', async () => {
-      (global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockHealthData,
-        })
-        .mockImplementationOnce(() => new Promise(() => {}));
+      const pending = new Promise(() => {});
+      const responses: Array<any> = [
+        createFetchResponse(mockHealthData),
+        createFetchResponse(mockTrendsResponse),
+        createFetchResponse(mockHistoryResponse),
+        pending,
+        createFetchResponse(mockTrendsResponse),
+        createFetchResponse(mockHistoryResponse),
+      ];
+
+      (global.fetch as jest.Mock).mockImplementation(() => {
+        const next = responses.shift();
+        if (!next) {
+          return Promise.resolve(createFetchResponse({}));
+        }
+        if (typeof (next as any).then === 'function') {
+          return next as Promise<any>;
+        }
+        return Promise.resolve(next);
+      });
 
       render(<SystemStatus />);
 
@@ -367,6 +507,68 @@ describe('SystemStatus Component', () => {
       await waitFor(() => {
         const buttons = screen.getAllByRole('button', { name: /refresh all health checks/i });
         expect(buttons[0]).toBeDisabled();
+      });
+    });
+  });
+
+  describe('Trend Analytics', () => {
+    beforeEach(() => {
+      mockSuccessfulFetch();
+    });
+
+    it('should display watchlist and recent samples', async () => {
+      render(<SystemStatus />);
+
+      await screen.findByText('Health Trends');
+      expect(screen.getByText(/Watchlist \(Top 6 by failure rate\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Healthy uptime: 25\.0%/i)).toBeInTheDocument();
+      expect(screen.getByText(/Recent samples/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Healthy:/i)[0]).toHaveTextContent(/Healthy: 1/i);
+    });
+
+    it('should refetch trends when changing window', async () => {
+      render(<SystemStatus />);
+
+      await screen.findByText('Health Trends');
+
+      const windowSelect = screen.getByLabelText(/select health trend window/i);
+      fireEvent.change(windowSelect, { target: { value: '48' } });
+
+      await waitFor(() => {
+        const calls = (global.fetch as jest.Mock).mock.calls.map(([url]) =>
+          typeof url === 'string' ? url : (url as Request).url
+        );
+        expect(calls).toContain('http://localhost:5001/api/system/health/trends?hours=48');
+        expect(calls).toContain('http://localhost:5001/api/system/health/history?hours=48');
+      });
+    });
+  });
+
+  describe('Real-time updates', () => {
+    beforeEach(() => {
+      mockSuccessfulFetch();
+    });
+
+    it('should update status when websocket pushes new data', async () => {
+      render(<SystemStatus />);
+
+      await screen.findByText('System Status Monitor');
+      const socket = MockWebSocket.instances[MockWebSocket.instances.length - 1];
+      expect(socket).toBeDefined();
+
+      const failingUpdate = {
+        ...mockHealthData,
+        timestamp: '2025-10-16T12:05:00Z',
+        overall_status: 'failing' as const,
+        failing_count: 2,
+        degraded_count: 1,
+      };
+
+      socket?.onmessage?.({ data: JSON.stringify(failingUpdate) } as MessageEvent);
+
+      await waitFor(() => {
+        expect(screen.getByText('FAILING')).toBeInTheDocument();
+        expect(screen.getByLabelText('Overall system status: failing')).toBeInTheDocument();
       });
     });
   });

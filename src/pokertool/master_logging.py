@@ -231,11 +231,7 @@ class MasterLogger:
             delay=False,
             utc=False
         )
-        master_formatter = logging.Formatter(
-            '%(asctime)s | %(levelname)8s | %(name)s | %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        master_handler.setFormatter(master_formatter)
+        master_handler.setFormatter(self._get_json_formatter())
         self.master_logger.addHandler(master_handler)
 
         # Add a note about log rotation to the log
@@ -243,11 +239,15 @@ class MasterLogger:
         
         # Console handler for immediate feedback
         console_handler = logging.StreamHandler(sys.stdout)
-        console_formatter = logging.Formatter(
-            '%(asctime)s %(levelname)s [%(name)s] %(message)s',
-            datefmt='%H:%M:%S'
-        )
-        console_handler.setFormatter(console_formatter)
+        use_json_console = os.getenv('POKERTOOL_LOG_CONSOLE_JSON', '1') != '0'
+        if use_json_console:
+            console_handler.setFormatter(self._get_json_formatter())
+        else:
+            console_formatter = logging.Formatter(
+                '%(asctime)s %(levelname)s [%(name)s] %(message)s',
+                datefmt='%H:%M:%S'
+            )
+            console_handler.setFormatter(console_formatter)
         console_handler.setLevel(logging.INFO)
         self.master_logger.addHandler(console_handler)
         
@@ -340,28 +340,61 @@ class MasterLogger:
     
     def _get_json_formatter(self):
         """Create a JSON formatter for structured logging."""
+        session_id = self.session_id
+        environment = os.getenv('POKERTOOL_ENV', 'development')
+        hostname = platform.node()
+
         class JsonFormatter(logging.Formatter):
-            def format(self, record):
+            def format(self_inner, record):
                 log_obj = {
-                    'timestamp': self.formatTime(record),
+                    'timestamp': self_inner.formatTime(record),
                     'level': record.levelname,
                     'logger': record.name,
-                    'message': record.getMessage(),
                     'module': record.module,
                     'function': record.funcName,
                     'line': record.lineno,
                     'thread': record.thread,
                     'process': record.process,
+                    'session_id': session_id,
+                    'environment': environment,
+                    'hostname': hostname,
+                    'application': 'pokertool',
                 }
-                
+
+                # Include category when available (logger names use dot notation)
+                if record.name.startswith('pokertool.'):
+                    log_obj['category'] = record.name.split('.', 1)[-1]
+
+                # Include correlation/request identifiers if present
+                correlation_id = getattr(record, 'correlation_id', None)
+                request_id = getattr(record, 'request_id', None)
+                if correlation_id:
+                    log_obj['correlation_id'] = correlation_id
+                if request_id:
+                    log_obj['request_id'] = request_id
+
+                # Attempt to parse structured payloads
+                message = record.getMessage()
+                log_obj['message'] = message or ''
+
+                # Merge structured payload emitted via log_record.context
+                context_payload = getattr(record, 'context', None)
+                if isinstance(context_payload, dict):
+                    log_obj.update({k: v for k, v in context_payload.items() if k != 'additional_data'})
+                    additional_data = context_payload.get('additional_data') or {}
+                    if isinstance(additional_data, dict):
+                        log_obj.update(additional_data)
+                        if 'correlation_id' not in log_obj and 'correlation_id' in additional_data:
+                            log_obj['correlation_id'] = additional_data['correlation_id']
+
                 # Add exception info if present
                 if record.exc_info:
-                    log_obj['exception'] = self.formatException(record.exc_info)
-                
+                    log_obj['exception'] = self_inner.formatException(record.exc_info)
+
                 # Add extra context if available
                 if hasattr(record, 'context'):
                     log_obj['context'] = record.context
-                
+
                 return json.dumps(log_obj, default=str)
         
         return JsonFormatter()

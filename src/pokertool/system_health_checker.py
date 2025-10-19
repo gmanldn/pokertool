@@ -42,6 +42,7 @@ import os
 import json
 from pathlib import Path
 from collections import deque
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +150,10 @@ class SystemHealthChecker:
         self.health_history: deque = deque(maxlen=max_history_entries)
         
         # Result caching (5s TTL)
-        self._cache: Optional[Dict[str, Any]] = None
-        self._cache_timestamp: float = 0.0
         self._cache_ttl: float = 5.0
+        self._history_cache: Dict[int, Tuple[float, List[Dict[str, Any]]]] = {}
+        self._trends_cache: Dict[int, Tuple[float, Dict[str, Any]]] = {}
+        self._cache_lock = threading.Lock()
 
         # Load existing history from disk
         self._load_history()
@@ -220,10 +222,55 @@ class SystemHealthChecker:
         
         self.health_history.append(entry)
         self._persist_history_entry(entry)
+        self._invalidate_caches()
         
         # Trim old entries from disk file if needed
         if len(self.health_history) >= self.max_history_entries:
             self._trim_history_file()
+
+    def _invalidate_caches(self) -> None:
+        """Invalidate cached history and trend results."""
+        with self._cache_lock:
+            self._history_cache.clear()
+            self._trends_cache.clear()
+
+    def _set_history_cache(self, hours: int, data: List[Dict[str, Any]]) -> None:
+        """Cache history data for the requested time window."""
+        with self._cache_lock:
+            self._history_cache[int(hours)] = (time.time(), data)
+
+    def _get_history_cache(self, hours: int) -> Optional[List[Dict[str, Any]]]:
+        """Return cached history data when available and not expired."""
+        key = int(hours)
+        with self._cache_lock:
+            cached = self._history_cache.get(key)
+            if not cached:
+                return None
+            timestamp, data = cached
+        if time.time() - timestamp <= self._cache_ttl:
+            return data
+        with self._cache_lock:
+            self._history_cache.pop(key, None)
+        return None
+
+    def _set_trends_cache(self, hours: int, data: Dict[str, Any]) -> None:
+        """Cache trend analysis for the requested time window."""
+        with self._cache_lock:
+            self._trends_cache[int(hours)] = (time.time(), data)
+
+    def _get_trends_cache(self, hours: int) -> Optional[Dict[str, Any]]:
+        """Return cached trend analysis when available and valid."""
+        key = int(hours)
+        with self._cache_lock:
+            cached = self._trends_cache.get(key)
+            if not cached:
+                return None
+            timestamp, data = cached
+        if time.time() - timestamp <= self._cache_ttl:
+            return data
+        with self._cache_lock:
+            self._trends_cache.pop(key, None)
+        return None
     
     def _trim_history_file(self) -> None:
         """Trim old entries from history file."""
@@ -439,6 +486,11 @@ class SystemHealthChecker:
         Returns:
             List of historical health check results
         """
+        cached = self._get_history_cache(hours)
+        if cached is not None:
+            logger.debug(f"Returning cached health history for {hours}h window")
+            return cached
+
         cutoff_time = datetime.utcnow().timestamp() - (hours * 3600)
         
         filtered_history = []
@@ -449,6 +501,8 @@ class SystemHealthChecker:
                     filtered_history.append(entry)
             except Exception:
                 continue
+        
+        self._set_history_cache(hours, filtered_history)
         
         return filtered_history
     
@@ -462,6 +516,11 @@ class SystemHealthChecker:
         Returns:
             Dictionary containing trend analysis
         """
+        cached = self._get_trends_cache(hours)
+        if cached is not None:
+            logger.debug(f"Returning cached health trends for {hours}h window")
+            return cached
+
         history = self.get_history(hours)
         
         if not history:
@@ -507,7 +566,7 @@ class SystemHealthChecker:
             else:
                 trend_data['avg_latency_ms'] = None
         
-        return {
+        trends = {
             'period_hours': hours,
             'data_points': len(history),
             'start_time': history[0]['timestamp'] if history else None,
@@ -515,6 +574,9 @@ class SystemHealthChecker:
             'feature_trends': feature_trends,
             'summary': f"Analyzed {len(history)} data points over {hours} hours"
         }
+        
+        self._set_trends_cache(hours, trends)
+        return trends
 
 
 # Global singleton instance

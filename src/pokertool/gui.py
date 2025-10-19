@@ -55,6 +55,7 @@ __status__ = 'Production'
 import tkinter as tk
 from tkinter import ttk, messagebox, font
 import json
+import os
 import sqlite3
 from datetime import datetime
 from typing import List, Optional, Dict, Set, Tuple
@@ -78,6 +79,7 @@ except ImportError:
 # Try to import poker modules
 try:
     from .core import analyse_hand, Card, Suit, Position, HandAnalysisResult
+    from .gui_memory_profiler import GuiMemoryProfiler
     MODULES_LOADED = True
 except ImportError as e:
     print(f'Warning: Some modules not loaded: {e}')
@@ -108,6 +110,17 @@ except ImportError as e:
         def __init__(self, rank: str, suit: Suit):
             self.rank = rank
             self.suit = suit.value if hasattr(suit, 'value') else suit
+
+    class GuiMemoryProfiler:  # type: ignore
+        """Fallback no-op profiler when dependencies are missing."""
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def start(self):
+            return None
+
+        def stop(self):
+            return None
 
         def __str__(self):
             return f'{self.rank}{self.suit}'
@@ -910,13 +923,46 @@ class EnhancedPokerAssistant(tk.Tk):
 
 SecureGUI = EnhancedPokerAssistant
 
+
+def _start_memory_profiler_from_env() -> Optional[GuiMemoryProfiler]:
+    """Start GUI memory profiler when environment flag is set."""
+    flag = os.getenv('POKERTOOL_ENABLE_MEMORY_PROFILING', '').strip().lower()
+    if flag not in {'1', 'true', 'yes', 'on'}:
+        return None
+
+    try:
+        interval = float(os.getenv('POKERTOOL_MEMORY_INTERVAL', '60'))
+        report_limit = int(os.getenv('POKERTOOL_MEMORY_REPORT_LIMIT', '15'))
+    except ValueError as exc:
+        log(f"⚠️ Invalid memory profiling configuration: {exc}")
+        return None
+
+    try:
+        profiler = GuiMemoryProfiler(sample_interval=interval, report_limit=report_limit)
+        profiler.start()
+        log(f"🧠 GUI memory profiler enabled (interval={interval}s, top={report_limit})")
+        return profiler
+    except Exception as exc:  # pragma: no cover - defensive guard
+        log(f"⚠️ Memory profiler failed to start: {exc}")
+        return None
+
+
 def main() -> int:
     """Main GUI entry point."""
+    profiler: Optional[GuiMemoryProfiler] = None
+
     def create_and_run_gui():
         """Create and run the GUI."""
-        gui = EnhancedPokerAssistant()
-        gui.mainloop()
-        return 0
+        nonlocal profiler
+        profiler = _start_memory_profiler_from_env()
+        try:
+            gui = EnhancedPokerAssistant()
+            gui.mainloop()
+            return 0
+        finally:
+            if profiler:
+                profiler.stop()
+                profiler = None
 
     return run_safely(create_and_run_gui)
 
