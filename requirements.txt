@@ -14,8 +14,9 @@
 # Install with: pip install -r requirements.txt
 
 # Core dependencies
-# NOTE: NumPy 1.x is required for compatibility with pytesseract and pandas
-numpy==1.26.4
+# NOTE: NumPy 2.x is required for opencv-python 4.12+ compatibility
+# pytesseract and pandas are compatible with numpy 2.x
+numpy>=2.0.0,<2.3.0
 Pillow>=10.0.0
 
 # Machine Learning dependencies
@@ -30,8 +31,8 @@ joblib>=1.3.0
 
 # Screen scraping and computer vision
 # NOTE: opencv-python-headless is more compatible with macOS (no GUI dependencies)
-# opencv-python 4.9.x is compatible with NumPy 1.x
-opencv-python-headless>=4.8.0,<4.10.0
+# opencv-python 4.12+ requires numpy>=2.0
+opencv-python-headless>=4.8.0
 pytesseract>=0.3.10
 mss>=9.0.0
 requests>=2.32.0
