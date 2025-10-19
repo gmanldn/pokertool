@@ -1419,7 +1419,13 @@ class PokerScreenScraper:
             },
         )
 
-    def _emit_no_detection(self, betfair_conf: float, universal_conf: float, elapsed_ms: float) -> None:
+    def _emit_no_detection(
+        self,
+        betfair_conf: float,
+        universal_conf: float,
+        elapsed_ms: float,
+        reason: Optional[str] = None,
+    ) -> None:
         """Broadcast a throttled warning when no poker table is detected."""
         now = time.time()
         if now - self._last_no_detection_event_time < 5.0:
@@ -1428,16 +1434,20 @@ class PokerScreenScraper:
         self._last_no_detection_event_time = now
         self._last_detection_success_snapshot = None  # Reset so next detection is emitted immediately
 
+        data = {
+            'site': self.site.value if hasattr(self.site, 'value') else str(self.site),
+            'betfair_confidence': betfair_conf,
+            'universal_confidence': universal_conf,
+            'time_ms': elapsed_ms,
+        }
+        if reason:
+            data['reason'] = reason
+
         emit_detection_event(
             event_type='system',
             severity='warning',
             message="No poker table detected",
-            data={
-                'site': self.site.value if hasattr(self.site, 'value') else str(self.site),
-                'betfair_confidence': betfair_conf,
-                'universal_confidence': universal_conf,
-                'time_ms': elapsed_ms,
-            },
+            data=data,
         )
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
@@ -1467,7 +1477,13 @@ class PokerScreenScraper:
 
         if image is None or image.size == 0:
             logger.warning("[DETECTION] No image to analyze")
-            return False, 0.0, {'error': 'No image'}
+            self._emit_no_detection(
+                betfair_conf=0.0,
+                universal_conf=0.0,
+                elapsed_ms=0.0,
+                reason='No screen capture available',
+            )
+            return False, 0.0, {'error': 'No image', 'reason': 'capture_unavailable'}
 
         # Get environment-specific parameters from learning system
         detection_threshold = DETECTION_THRESHOLD
