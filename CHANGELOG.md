@@ -2,6 +2,22 @@
 
 All notable changes to this project are tracked in this file. The structure follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [88.6.0] - 2025-10-19
+
+### Added
+- Integrated Sentry error tracking on the frontend with browser tracing, replay, and correlation-ID tags.
+- Added dedicated WebSocket end-to-end tests covering system-health refresh, ping/pong, and reconnect flows.
+- Documented developer onboarding, workflows, advanced HUD usage, and refreshed the TODO backlog into a focused priority view.
+
+### Changed
+- Reordered backend WebSocket routes to guarantee `/ws/system-health` connections bypass dynamic user routing.
+- Hardened the system-health checker broadcast pipeline and tightened master logging around optional Sentry setup.
+- Simplified the environment variable reference and troubleshooting guide to highlight current defaults and remediation steps.
+
+### Fixed
+- Resolved TableView test typings by importing shared WebSocket message types.
+- Ensured Sentry `beforeSend` typing matches browser SDK expectations to keep TypeScript builds clean.
+
 ## [88.4.0] - 2025-10-19
 
 ### Added
