@@ -115,7 +115,7 @@ it('renders detected table and card data when websocket updates arrive', async (
     messages: [
       {
         type: 'table_update',
-        data: detectedTable as unknown as Record<string, unknown>,
+        data: detectedTable as unknown as WebSocketMessageData,
         timestamp: Date.now(),
       },
     ],

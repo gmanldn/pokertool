@@ -44,7 +44,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 _DEFAULT_BACKEND_HOST = os.getenv('POKERTOOL_HOST', '127.0.0.1')
-_DEFAULT_BACKEND_PORT = os.getenv('POKERTOOL_PORT', '8000')
+_DEFAULT_BACKEND_PORT = os.getenv('POKERTOOL_PORT', '5001')
 _BACKEND_BASE_URL = os.getenv('POKERTOOL_BACKEND_URL', f'http://{_DEFAULT_BACKEND_HOST}:{_DEFAULT_BACKEND_PORT}')
 _FRONTEND_BASE_URL = os.getenv('POKERTOOL_FRONTEND_URL', 'http://localhost:3000')
 
