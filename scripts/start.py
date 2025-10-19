@@ -261,7 +261,37 @@ def cleanup_old_processes():
         log(f"⚠️  Cleanup warning: {e}")
         pass
 
-def launch_web_app() -> int:
+def ensure_chrome_remote_debugging(port: int = 9222, poker_url: Optional[str] = None) -> bool:
+    """Ensure Chrome is running with remote debugging for CDP-based detection."""
+    log(f"Ensuring Chrome remote debugging (port {port})...")
+    try:
+        from pokertool.modules.chrome_devtools_scraper import ChromeDevToolsScraper
+    except Exception as exc:
+        log(f"⚠️ Unable to import Chrome DevTools scraper: {exc}")
+        log(f"   Launch Chrome manually with: chrome --remote-debugging-port={port}")
+        return False
+
+    kwargs: Dict[str, Any] = {'port': port, 'auto_launch': True}
+    if poker_url:
+        kwargs['poker_url'] = poker_url
+
+    scraper = ChromeDevToolsScraper(**kwargs)
+    try:
+        ready = scraper.ensure_remote_debugging(ensure_poker_tab=True)
+        if ready:
+            log(f"✓ Chrome remote debugging ready on port {port}")
+        else:
+            target_url = poker_url or scraper.poker_url
+            log("⚠️ Unable to automatically prepare Chrome for remote debugging.")
+            log(f"   Please launch manually: chrome --remote-debugging-port={port} {target_url}")
+        return ready
+    finally:
+        try:
+            scraper.disconnect(close_chrome=False)
+        except Exception:
+            pass
+
+def launch_web_app(skip_chrome: bool = False, chrome_port: int = 9222, poker_url: Optional[str] = None) -> int:
     """Launch the web-only application: Backend API + React frontend."""
     venv_python = get_venv_python()
 
@@ -305,6 +335,12 @@ def launch_web_app() -> int:
         except subprocess.CalledProcessError:
             log("❌ Failed to install frontend dependencies")
             return 1
+
+    # Ensure Chrome remote debugging is available for reliable detection
+    if skip_chrome:
+        log("Skipping Chrome remote debugging auto-launch (--skip-chrome)")
+    else:
+        ensure_chrome_remote_debugging(chrome_port, poker_url)
 
     # Start backend API server
     log("")
@@ -380,6 +416,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description='PokerTool Web Application Launcher')
     parser.add_argument('--setup-only', action='store_true', help='Setup dependencies without launching')
     parser.add_argument('--self-test', action='store_true', help='Run comprehensive tests')
+    parser.add_argument('--skip-chrome', action='store_true', help='Skip automatic Chrome remote debugging launch')
+    parser.add_argument('--chrome-port', type=int, default=9222, help='Chrome remote debugging port (default: 9222)')
+    parser.add_argument('--poker-url', type=str, help='Override poker site URL when launching Chrome')
 
     args = parser.parse_args()
 
@@ -407,7 +446,11 @@ def main() -> int:
             return 0
 
         # Launch the web application
-        return launch_web_app()
+        return launch_web_app(
+            skip_chrome=args.skip_chrome,
+            chrome_port=args.chrome_port,
+            poker_url=args.poker_url,
+        )
 
     except KeyboardInterrupt:
         log("Interrupted by user")

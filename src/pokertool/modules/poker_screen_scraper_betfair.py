@@ -1287,6 +1287,8 @@ class PokerScreenScraper:
         # Initialize Chrome DevTools Protocol scraper (if available and enabled)
         self.cdp_scraper = None
         self.cdp_connected = False
+        self._cdp_last_connect_attempt = 0.0
+        self._cdp_connect_backoff = 5.0  # seconds between retries
         if CDP_SCRAPER_AVAILABLE and use_cdp:
             try:
                 self.cdp_scraper = ChromeDevToolsScraper()
@@ -1638,6 +1640,29 @@ class PokerScreenScraper:
         extraction_start = start_time
 
         try:
+            # Opportunistically auto-connect to Chrome DevTools when available
+            if (
+                self.cdp_scraper
+                and self.use_cdp
+                and not self.cdp_connected
+            ):
+                now = time.time()
+                if now - self._cdp_last_connect_attempt >= self._cdp_connect_backoff:
+                    self._cdp_last_connect_attempt = now
+                    try:
+                        self.cdp_scraper.ensure_remote_debugging(ensure_poker_tab=False)
+                    except Exception as exc:
+                        logger.debug(f"[CDP] Remote debugging preparation failed: {exc}")
+
+                    tab_filter = getattr(self.site, 'value', str(self.site)).lower()
+                    if tab_filter == 'generic':
+                        tab_filter = 'poker'
+
+                    if self.connect_to_chrome(tab_filter=tab_filter):
+                        self._cdp_connect_backoff = 5.0
+                    else:
+                        self._cdp_connect_backoff = min(self._cdp_connect_backoff * 1.5, 60.0)
+
             # FAST PATH: Try CDP extraction first (if connected)
             if self.cdp_connected and self.cdp_scraper:
                 try:
