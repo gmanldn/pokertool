@@ -88,6 +88,37 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     return backendOnline && debouncedConnected && healthOk;
   }, [backendStatus.state, debouncedConnected, healthData]);
 
+  const fullyLoadedTooltip = useMemo(() => {
+    const reasons: string[] = [];
+
+    if (backendStatus.state !== 'online') {
+      reasons.push(`Backend status: ${backendStatus.state}`);
+    }
+    if (!debouncedConnected) {
+      reasons.push('Realtime WebSocket not connected');
+    }
+
+    if (healthData) {
+      const affectedCategories = Object.entries(healthData.categories || {})
+        .filter(([, value]) => value.status !== 'healthy')
+        .map(([name, value]) => `${name.charAt(0).toUpperCase() + name.slice(1)}: ${value.status}`);
+
+      reasons.push(...affectedCategories);
+
+      if (!affectedCategories.length && (healthData.overall_status || 'unknown') !== 'healthy') {
+        reasons.push(`Health status: ${healthData.overall_status}`);
+      }
+    } else {
+      reasons.push('Awaiting health data');
+    }
+
+    if (!reasons.length) {
+      return 'All core systems healthy';
+    }
+
+    return reasons.join(' • ');
+  }, [backendStatus.state, debouncedConnected, healthData]);
+
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
@@ -325,7 +356,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
           </Badge>
 
           {/* FullyLoaded indicator */}
-          <Tooltip title={fullyLoaded ? 'All core systems healthy' : 'Waiting for all systems to be healthy'}>
+          <Tooltip title={fullyLoadedTooltip}>
             <Chip
               icon={<Circle sx={{ fontSize: 8 }} />}
               label={fullyLoaded ? 'FullyLoaded' : 'Loading…'}
