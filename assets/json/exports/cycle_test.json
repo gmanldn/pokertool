@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "exported_at": "2025-10-19T00:38:23.961024",
+  "frame_count": 2,
+  "frames": [
+    {
+      "frame_id": 0,
+      "street": "preflop",
+      "pot_size": 0.0,
+      "board_cards": [],
+      "player_stacks": {
+        "Player1": 1000.0
+      },
+      "action": null,
+      "description": ""
+    },
+    {
+      "frame_id": 1,
+      "street": "flop",
+      "pot_size": 20.0,
+      "board_cards": [
+        "As",
+        "Kh",
+        "Qd"
+      ],
+      "player_stacks": {
+        "Player1": 990.0
+      },
+      "action": null,
+      "description": ""
+    }
+  ],
+  "annotations": {
+    "1": [
+      {
+        "annotation_id": "1_0",
+        "frame_id": 1,
+        "text": "Test annotation",
+        "author": "Tester",
+        "position": [
+          0.0,
+          0.0
+        ],
+        "color": "#FFFF00",
+        "created_at": "2025-10-19T00:38:23.960865"
+      }
+    ]
+  }
+}

@@ -11,8 +11,11 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from pokertool.modules.poker_screen_scraper_betfair import PokerScreenScraper
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+ASSET_JSON_DIR = REPO_ROOT / "assets" / "json"
+
 # Load ground truth
-with open("GROUND_TRUTH_BF_TEST.json") as f:
+with open(ASSET_JSON_DIR / "tests" / "GROUND_TRUTH_BF_TEST.json") as f:
     ground_truth = json.load(f)
 
 # Load test image

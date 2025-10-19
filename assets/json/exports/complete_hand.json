@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "exported_at": "2025-10-19T00:38:23.970567",
+  "frame_count": 2,
+  "frames": [
+    {
+      "frame_id": 0,
+      "street": "preflop",
+      "pot_size": 10.0,
+      "board_cards": [],
+      "player_stacks": {
+        "BTN": 990.0,
+        "BB": 1000.0
+      },
+      "action": {
+        "player_name": "BTN",
+        "action_type": "raise",
+        "amount": 10.0,
+        "timestamp": "2025-10-19T00:38:23.969745",
+        "position": "BTN"
+      },
+      "description": "BTN raises to $10"
+    },
+    {
+      "frame_id": 1,
+      "street": "flop",
+      "pot_size": 20.0,
+      "board_cards": [
+        "As",
+        "Kh",
+        "7d"
+      ],
+      "player_stacks": {
+        "BTN": 990.0,
+        "BB": 990.0
+      },
+      "action": {
+        "player_name": "BB",
+        "action_type": "call",
+        "amount": 10.0,
+        "timestamp": "2025-10-19T00:38:23.969922",
+        "position": "BB"
+      },
+      "description": "BB calls"
+    }
+  ],
+  "annotations": {
+    "1": [
+      {
+        "annotation_id": "1_0",
+        "frame_id": 1,
+        "text": "Strong flop for AK",
+        "author": "Coach",
+        "position": [
+          0.0,
+          0.0
+        ],
+        "color": "#FFFF00",
+        "created_at": "2025-10-19T00:38:23.970094"
+      }
+    ]
+  }
+}
