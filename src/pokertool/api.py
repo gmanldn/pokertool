@@ -107,6 +107,18 @@ except ImportError:
     bcrypt = None
     FASTAPI_AVAILABLE = False
 
+# Try to import Sentry for error tracking
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    sentry_sdk = None
+    SentryAsgiMiddleware = None
+    FastApiIntegration = None
+    SENTRY_AVAILABLE = False
+
 from .production_database import get_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
 from .thread_utils import get_thread_pool, TaskPriority
@@ -802,11 +814,36 @@ This API implements comprehensive security measures including:
             }
         )
 
+        self._setup_sentry()
         self._setup_middleware()
         self._setup_routes()
         self._setup_background_tasks()
 
         logger.info('PokerTool API initialized with optimized architecture')
+    
+    def _setup_sentry(self):
+        """Initialize Sentry error tracking for API."""
+        if not SENTRY_AVAILABLE:
+            logger.info("Sentry not available for API error tracking")
+            return
+        
+        sentry_dsn = os.getenv('SENTRY_DSN')
+        if not sentry_dsn:
+            logger.info("SENTRY_DSN not configured for API")
+            return
+        
+        try:
+            sentry_sdk.init(
+                dsn=sentry_dsn,
+                integrations=[FastApiIntegration()],
+                traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
+                profiles_sample_rate=float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0.1')),
+                environment=os.getenv('POKERTOOL_ENV', 'development'),
+                release=os.getenv('POKERTOOL_VERSION', 'unknown'),
+            )
+            logger.info("Sentry initialized for API error tracking")
+        except Exception as e:
+            logger.error(f"Failed to initialize Sentry for API: {e}")
 
     def _setup_background_tasks(self):
         """Setup background cleanup tasks."""
@@ -1140,6 +1177,60 @@ This API implements comprehensive security measures including:
                 'status': 'started',
                 'message': 'Health checks initiated',
                 'timestamp': datetime.utcnow().isoformat()
+            }
+        
+        @self.app.get('/api/system/health/history', tags=['system'], summary='Get Health History')
+        async def get_health_history(hours: int = 24):
+            """
+            Get historical health check data for the specified time period.
+            
+            Args:
+                hours: Number of hours of history to retrieve (default: 24)
+            
+            Returns:
+                List of historical health check results with timestamps
+            """
+            from pokertool.system_health_checker import get_health_checker
+            
+            if hours < 1 or hours > 168:  # Max 1 week
+                raise HTTPException(status_code=400, detail='Hours must be between 1 and 168')
+            
+            checker = get_health_checker()
+            history = checker.get_history(hours=hours)
+            
+            return {
+                'success': True,
+                'timestamp': datetime.utcnow().isoformat(),
+                'period_hours': hours,
+                'data_points': len(history),
+                'history': history
+            }
+        
+        @self.app.get('/api/system/health/trends', tags=['system'], summary='Get Health Trends')
+        async def get_health_trends(hours: int = 24):
+            """
+            Get health trend analysis over the specified time period.
+            
+            Analyzes patterns, failure rates, and average latencies per feature.
+            
+            Args:
+                hours: Number of hours to analyze (default: 24)
+            
+            Returns:
+                Trend analysis including uptime percentages and latency stats
+            """
+            from pokertool.system_health_checker import get_health_checker
+            
+            if hours < 1 or hours > 168:  # Max 1 week
+                raise HTTPException(status_code=400, detail='Hours must be between 1 and 168')
+            
+            checker = get_health_checker()
+            trends = checker.get_trends(hours=hours)
+            
+            return {
+                'success': True,
+                'timestamp': datetime.utcnow().isoformat(),
+                'trends': trends
             }
 
         # Model Calibration Endpoints
@@ -1754,50 +1845,7 @@ This API implements comprehensive security measures including:
                 # Unregister connection
                 await detection_manager.disconnect(connection_id)
 
-        # WebSocket endpoint
-        @self.app.websocket('/ws/{user_id}')
-        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
-            # Verify token
-            user = self.services.auth_service.verify_token(token)
-            if not user or user.user_id != user_id:
-                await websocket.close(code=1008, reason='Invalid token')
-                return
-
-            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
-
-            try:
-                await self.services.connection_manager.connect(websocket, connection_id, user_id)
-
-                # Send welcome message
-                await self.services.connection_manager.send_personal_message({
-                    'type': 'welcome',
-                    'message': f'Connected as {user.username}',
-                    'connection_id': connection_id
-                }, connection_id)
-
-                # Keep connection alive
-                while True:
-                    try:
-                        # Wait for messages from client
-                        message = await websocket.receive_json()
-
-                        # Echo back for now (could handle commands)
-                        await self.services.connection_manager.send_personal_message({
-                            'type': 'echo',
-                            'data': message,
-                            'timestamp': datetime.utcnow().isoformat()
-                        }, connection_id)
-
-                    except WebSocketDisconnect:
-                        break
-                    except Exception as e:
-                        logger.error(f'WebSocket error: {e}')
-                        break
-
-            finally:
-                self.services.connection_manager.disconnect(connection_id, user_id)
-
-        # System Health WebSocket endpoint
+        # System Health WebSocket endpoint (register before dynamic '/ws/{user_id}' route)
         @self.app.websocket('/ws/system-health')
         async def system_health_websocket(websocket: WebSocket):
             """
@@ -1869,6 +1917,52 @@ This API implements comprehensive security measures including:
                 # Unregister connection
                 if connection_id in self._health_ws_connections:
                     del self._health_ws_connections[connection_id]
+
+        # WebSocket endpoint
+        @self.app.websocket('/ws/{user_id}')
+        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
+            # Verify token
+            user = self.services.auth_service.verify_token(token)
+            if not user or user.user_id != user_id:
+                await websocket.close(code=1008, reason='Invalid token')
+                return
+
+            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
+
+            try:
+                await self.services.connection_manager.connect(websocket, connection_id, user_id)
+
+                # Send welcome message
+                await self.services.connection_manager.send_personal_message({
+                    'type': 'welcome',
+                    'message': f'Connected as {user.username}',
+                    'connection_id': connection_id
+                }, connection_id)
+
+                # Keep connection alive
+                while True:
+                    try:
+                        # Wait for messages from client
+                        message = await websocket.receive_json()
+
+                        # Echo back for now (could handle commands)
+                        await self.services.connection_manager.send_personal_message({
+                            'type': 'echo',
+                            'data': message,
+                            'timestamp': datetime.utcnow().isoformat()
+                        }, connection_id)
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'WebSocket error: {e}')
+                        break
+
+            finally:
+                self.services.connection_manager.disconnect(connection_id, user_id)
+
+        # (moved) System Health WebSocket endpoint is registered earlier to avoid
+        # path conflicts with the dynamic '/ws/{user_id}' route.
 
         # Setup health checker broadcast callback
         async def broadcast_health_update(health_data: Dict):

@@ -66,6 +66,15 @@ except ImportError:
     psutil = None
     PSUTIL_AVAILABLE = False
 
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    sentry_sdk = None
+    LoggingIntegration = None
+    SENTRY_AVAILABLE = False
+
 __version__ = '28.1.0'
 __author__ = 'PokerTool Development Team'
 
@@ -185,6 +194,9 @@ class MasterLogger:
         # Initialize loggers
         self._setup_loggers()
         
+        # Initialize Sentry if available
+        self._setup_sentry()
+        
         # Start background monitoring
         self._start_monitoring()
         
@@ -274,6 +286,57 @@ class MasterLogger:
         
         # Redirect existing loggers to master system
         self._redirect_existing_loggers()
+    
+    def _setup_sentry(self):
+        """Configure Sentry error tracking if available."""
+        if not SENTRY_AVAILABLE:
+            self.master_logger.info("Sentry SDK not available - error tracking disabled")
+            return
+        
+        # Get Sentry DSN from environment
+        sentry_dsn = os.getenv('SENTRY_DSN')
+        if not sentry_dsn:
+            self.master_logger.info("SENTRY_DSN not configured - error tracking disabled")
+            return
+        
+        try:
+            # Configure Sentry with logging integration
+            sentry_logging = LoggingIntegration(
+                level=logging.INFO,  # Capture info and above as breadcrumbs
+                event_level=logging.ERROR  # Send errors and above as events
+            )
+            
+            sentry_sdk.init(
+                dsn=sentry_dsn,
+                integrations=[sentry_logging],
+                # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring
+                traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
+                # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions
+                profiles_sample_rate=float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0.1')),
+                environment=os.getenv('POKERTOOL_ENV', 'development'),
+                release=os.getenv('POKERTOOL_VERSION', 'unknown'),
+                # Add custom tags
+                before_send=self._sentry_before_send,
+            )
+            
+            self.master_logger.info("Sentry error tracking initialized successfully")
+        except Exception as e:
+            self.master_logger.error(f"Failed to initialize Sentry: {e}")
+    
+    def _sentry_before_send(self, event, hint):
+        """Process events before sending to Sentry."""
+        # Add session ID to all events
+        event.setdefault('tags', {})['session_id'] = self.session_id
+        
+        # Add correlation ID if available in context
+        if 'exc_info' in hint:
+            exc_info = hint['exc_info']
+            if len(exc_info) > 1 and hasattr(exc_info[1], '__dict__'):
+                correlation_id = getattr(exc_info[1], 'correlation_id', None)
+                if correlation_id:
+                    event['tags']['correlation_id'] = correlation_id
+        
+        return event
     
     def _get_json_formatter(self):
         """Create a JSON formatter for structured logging."""
@@ -507,13 +570,34 @@ class MasterLogger:
         if category == LogCategory.SECURITY or level == LogLevel.SECURITY:
             self.security_logger.handle(log_record)
     
-    def _process_exception(self, exception: Exception, context: LogContext, 
+    def _process_exception(self, exception: Exception, context: LogContext,
                           additional_data: Dict[str, Any]) -> ErrorDetails:
         """Process and enhance exception information."""
         
         # Generate error hash for deduplication
         error_hash = hash(f"{type(exception).__name__}:{str(exception)}:{context.module}:{context.function}")
         error_hash_str = f"err_{abs(error_hash):x}"
+        
+        # Send to Sentry if available
+        if SENTRY_AVAILABLE and sentry_sdk:
+            with sentry_sdk.push_scope() as scope:
+                # Add context to Sentry
+                scope.set_tag('error_hash', error_hash_str)
+                scope.set_tag('module', context.module)
+                scope.set_tag('function', context.function)
+                scope.set_tag('category', context.category)
+                scope.set_context('system_state', {
+                    'memory_usage': context.memory_usage,
+                    'cpu_usage': context.cpu_usage,
+                    'active_sessions': context.active_sessions,
+                })
+                if context.request_id:
+                    scope.set_tag('correlation_id', context.request_id)
+                if additional_data:
+                    scope.set_context('additional_data', additional_data)
+                
+                # Capture exception
+                sentry_sdk.capture_exception(exception)
         
         # Check if we've seen this error before
         if error_hash_str in self.error_cache:

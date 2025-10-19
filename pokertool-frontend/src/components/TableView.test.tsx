@@ -17,6 +17,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { TableView } from './TableView';
 import { useWebSocket, ConnectionStatus } from '../hooks/useWebSocket';
+import { WebSocketMessageData } from '../types/common';
 
 jest.mock('@mui/material', () => {
   // Preserve all of MUI while overriding useMediaQuery to avoid relying on matchMedia

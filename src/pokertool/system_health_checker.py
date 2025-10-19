@@ -39,9 +39,16 @@ import asyncio
 import time
 import logging
 import os
+import json
 from pathlib import Path
+from collections import deque
 
 logger = logging.getLogger(__name__)
+
+# Health history storage
+HEALTH_HISTORY_DIR = Path.cwd() / 'logs' / 'health_history'
+HEALTH_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+HEALTH_HISTORY_FILE = HEALTH_HISTORY_DIR / 'health_history.jsonl'
 
 _DEFAULT_BACKEND_HOST = os.getenv('POKERTOOL_HOST', '127.0.0.1')
 _DEFAULT_BACKEND_PORT = os.getenv('POKERTOOL_PORT', '5001')
@@ -122,12 +129,13 @@ class SystemHealthChecker:
     and provides periodic background checking with WebSocket broadcasting.
     """
 
-    def __init__(self, check_interval: int = 30):
+    def __init__(self, check_interval: int = 30, max_history_entries: int = 2880):
         """
         Initialize health checker.
 
         Args:
             check_interval: Seconds between automatic health checks
+            max_history_entries: Maximum history entries to keep (default: 2880 = 24h at 30s intervals)
         """
         self.checks: Dict[str, HealthCheck] = {}
         self.last_results: Dict[str, HealthStatus] = {}
@@ -135,6 +143,18 @@ class SystemHealthChecker:
         self._periodic_task: Optional[asyncio.Task] = None
         self._running = False
         self._broadcast_callback: Optional[Callable] = None
+        
+        # Health history tracking (in-memory circular buffer)
+        self.max_history_entries = max_history_entries
+        self.health_history: deque = deque(maxlen=max_history_entries)
+        
+        # Result caching (5s TTL)
+        self._cache: Optional[Dict[str, Any]] = None
+        self._cache_timestamp: float = 0.0
+        self._cache_ttl: float = 5.0
+
+        # Load existing history from disk
+        self._load_history()
 
         logger.info(f"SystemHealthChecker initialized with {check_interval}s interval")
 
@@ -163,6 +183,57 @@ class SystemHealthChecker:
     def set_broadcast_callback(self, callback: Callable) -> None:
         """Set callback function for broadcasting health updates via WebSocket."""
         self._broadcast_callback = callback
+    
+    def _load_history(self) -> None:
+        """Load health history from disk."""
+        if not HEALTH_HISTORY_FILE.exists():
+            return
+        
+        try:
+            with open(HEALTH_HISTORY_FILE, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        entry = json.loads(line)
+                        self.health_history.append(entry)
+            
+            logger.info(f"Loaded {len(self.health_history)} health history entries")
+        except Exception as e:
+            logger.error(f"Failed to load health history: {e}")
+    
+    def _persist_history_entry(self, entry: Dict[str, Any]) -> None:
+        """Persist a single health history entry to disk."""
+        try:
+            with open(HEALTH_HISTORY_FILE, 'a') as f:
+                f.write(json.dumps(entry, default=str) + '\n')
+        except Exception as e:
+            logger.error(f"Failed to persist health history entry: {e}")
+    
+    def _add_to_history(self, results: Dict[str, HealthStatus]) -> None:
+        """Add health check results to history."""
+        entry = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'results': {
+                name: status.to_dict()
+                for name, status in results.items()
+            }
+        }
+        
+        self.health_history.append(entry)
+        self._persist_history_entry(entry)
+        
+        # Trim old entries from disk file if needed
+        if len(self.health_history) >= self.max_history_entries:
+            self._trim_history_file()
+    
+    def _trim_history_file(self) -> None:
+        """Trim old entries from history file."""
+        try:
+            # Rewrite file with current in-memory history
+            with open(HEALTH_HISTORY_FILE, 'w') as f:
+                for entry in self.health_history:
+                    f.write(json.dumps(entry, default=str) + '\n')
+        except Exception as e:
+            logger.error(f"Failed to trim health history file: {e}")
 
     async def run_check(self, feature_name: str) -> HealthStatus:
         """
@@ -254,6 +325,9 @@ class SystemHealthChecker:
         failing = sum(1 for s in results if s.status == 'failing')
 
         logger.info(f"Health check complete: {healthy} healthy, {degraded} degraded, {failing} failing")
+        
+        # Add to history
+        self._add_to_history(results_dict)
 
         # Broadcast updates if callback is set
         if self._broadcast_callback:
@@ -353,6 +427,93 @@ class SystemHealthChecker:
             'categories': categories,
             'failing_count': failing_count,
             'degraded_count': degraded_count,
+        }
+    
+    def get_history(self, hours: int = 24) -> List[Dict[str, Any]]:
+        """
+        Get health check history for the specified time period.
+
+        Args:
+            hours: Number of hours of history to return (default: 24)
+
+        Returns:
+            List of historical health check results
+        """
+        cutoff_time = datetime.utcnow().timestamp() - (hours * 3600)
+        
+        filtered_history = []
+        for entry in self.health_history:
+            try:
+                entry_time = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00')).timestamp()
+                if entry_time >= cutoff_time:
+                    filtered_history.append(entry)
+            except Exception:
+                continue
+        
+        return filtered_history
+    
+    def get_trends(self, hours: int = 24) -> Dict[str, Any]:
+        """
+        Calculate health trends over the specified time period.
+
+        Args:
+            hours: Number of hours to analyze (default: 24)
+
+        Returns:
+            Dictionary containing trend analysis
+        """
+        history = self.get_history(hours)
+        
+        if not history:
+            return {
+                'period_hours': hours,
+                'data_points': 0,
+                'trends': {},
+                'summary': 'Insufficient data'
+            }
+        
+        # Analyze trends per feature
+        feature_trends = {}
+        
+        for entry in history:
+            for feature_name, status_dict in entry.get('results', {}).items():
+                if feature_name not in feature_trends:
+                    feature_trends[feature_name] = {
+                        'healthy': 0,
+                        'degraded': 0,
+                        'failing': 0,
+                        'unknown': 0,
+                        'avg_latency': []
+                    }
+                
+                status = status_dict.get('status', 'unknown')
+                feature_trends[feature_name][status] = feature_trends[feature_name].get(status, 0) + 1
+                
+                if status_dict.get('latency_ms'):
+                    feature_trends[feature_name]['avg_latency'].append(status_dict['latency_ms'])
+        
+        # Calculate percentages and averages
+        for feature_name, trend_data in feature_trends.items():
+            total = sum(trend_data[status] for status in ['healthy', 'degraded', 'failing', 'unknown'])
+            
+            if total > 0:
+                trend_data['healthy_pct'] = (trend_data['healthy'] / total) * 100
+                trend_data['degraded_pct'] = (trend_data['degraded'] / total) * 100
+                trend_data['failing_pct'] = (trend_data['failing'] / total) * 100
+            
+            if trend_data['avg_latency']:
+                trend_data['avg_latency_ms'] = sum(trend_data['avg_latency']) / len(trend_data['avg_latency'])
+                del trend_data['avg_latency']
+            else:
+                trend_data['avg_latency_ms'] = None
+        
+        return {
+            'period_hours': hours,
+            'data_points': len(history),
+            'start_time': history[0]['timestamp'] if history else None,
+            'end_time': history[-1]['timestamp'] if history else None,
+            'feature_trends': feature_trends,
+            'summary': f"Analyzed {len(history)} data points over {hours} hours"
         }
 
 
