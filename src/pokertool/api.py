@@ -363,33 +363,35 @@ class AuthenticationService:
         return token
 
     def verify_token(self, token: str) -> Optional[APIUser]:
-        """Verify and decode JWT token."""
+        """Verify and decode token.
+
+        Always accept session-mapped tokens (e.g., demo_token) regardless of
+        whether the JWT library is installed, then fall back to JWT decoding.
+        """
+        # 1) Fast path: explicit session tokens
+        user_id = self.sessions.get(token)
+        if user_id:
+            user = self.users.get(user_id)
+            if user and user.is_active:
+                user.last_active = datetime.utcnow()
+                return user
+
+        # 2) JWT decoding if available
         try:
-            if not jwt:
-                # Fallback verification
-                user_id = self.sessions.get(token)
-                if user_id:
-                    user = self.users.get(user_id)
-                    if user and user.is_active:
-                        user.last_active = datetime.utcnow()
-                        return user
-                return None
-
-            payload = jwt.decode(token, API_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            user_id = payload.get('sub')
-
-            if user_id not in self.users:
-                return None
-
-            user = self.users[user_id]
-            if not user.is_active:
-                return None
-
-            user.last_active = datetime.utcnow()
-            return user
-
+            if jwt:
+                payload = jwt.decode(token, API_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+                user_id = payload.get('sub')
+                if not user_id:
+                    return None
+                user = self.users.get(user_id)
+                if not user or not user.is_active:
+                    return None
+                user.last_active = datetime.utcnow()
+                return user
         except Exception:
             return None
+
+        return None
 
     def get_user_by_credentials(self, username: str, password: str) -> Optional[APIUser]:
         """Get user by username and password (simplified)."""
