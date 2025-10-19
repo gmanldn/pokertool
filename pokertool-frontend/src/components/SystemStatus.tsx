@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -66,7 +66,6 @@ export const SystemStatus: React.FC = () => {
     error,
     refreshing,
     fetchHealthData,
-    isConnected,
   } = useSystemHealth({
     enableWebSocket: true,
     enableCache: true,

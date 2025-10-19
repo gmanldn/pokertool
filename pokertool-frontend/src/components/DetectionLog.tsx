@@ -22,7 +22,6 @@ import {
   FormControlLabel,
   useTheme,
   useMediaQuery,
-  Divider,
 } from '@mui/material';
 import {
   Clear,

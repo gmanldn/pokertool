@@ -33,7 +33,6 @@ import {
   Fullscreen,
   Casino,
   FiberManualRecord,
-  Album,
   Star,
 } from '@mui/icons-material';
 import { AdvicePanel } from './AdvicePanel';
@@ -263,12 +262,11 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
   }, [messages]);
 
   const [selectedTable, setSelectedTable] = useState<string>('table-1');
-  const [_detectionActive, _setDetectionActive] = useState(true);
-  const [playerDetection, _setPlayerDetection] = useState(true);
-  const [cardDetection, _setCardDetection] = useState(true);
-  const [potDetection, _setPotDetection] = useState(true);
-  const [dealerPosition, _setDealerPosition] = useState<number>(0); // Dealer seat number
-  const [bigBlindAmount, _setBigBlindAmount] = useState<number>(2); // For BB calculation
+  const [playerDetection] = useState(true);
+  const [cardDetection] = useState(true);
+  const [potDetection] = useState(true);
+  const [dealerPosition] = useState<number>(0); // Dealer seat number
+  const [bigBlindAmount] = useState<number>(2); // For BB calculation
 
   // Auto-start tracking on mount
   React.useEffect(() => {
