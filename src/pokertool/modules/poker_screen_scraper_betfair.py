@@ -1678,6 +1678,12 @@ class PokerScreenScraper:
 
             if image is None:
                 logger.debug("[TABLE DETECTION] No image captured")
+                self._emit_no_detection(
+                    betfair_conf=0.0,
+                    universal_conf=0.0,
+                    elapsed_ms=(time.time() - start_time) * 1000,
+                    reason='capture_unavailable',
+                )
                 return TableState()
 
             # PERFORMANCE: Incremental update detection
