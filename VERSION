@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.5.1
-release_date = 2025-10-22
+version = 88.6.0
+release_date = 2025-10-19
 
 [release_notes]
-# v88.5.1 - Detection UI Coverage Expansion
-description = Added regression coverage to ensure detected cards and table state stay in sync across the detection log and table views.
-changes = Added focused frontend unit tests for TableView and DetectionLog components, mocked WebSocket/message flow to assert detected cards/tables render correctly, and registered the pytest asyncio marker so backend suites can execute without collection errors.
+# v88.6.0 - Frontend Error Tracking & System Health Hardening
+description = Added frontend Sentry instrumentation with correlation IDs and tightened WebSocket health coverage across the stack.
+changes = Integrated Sentry browser tracing/replay helpers, refreshed TableView tests to assert WebSocket payload rendering, and hardened backend system-health broadcasting logic with dedicated pytest coverage.
 status = stable
 
 [components]
