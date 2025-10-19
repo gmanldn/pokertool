@@ -23,13 +23,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import {
-  Clear,
-  PauseCircle,
-  PlayCircle,
-  GetApp,
-  FilterList,
-} from '@mui/icons-material';
+import { Clear, GetApp, FilterList } from '@mui/icons-material';
 import { DetectionMessage, DetectionLogData } from '../types/common';
 import { buildApiUrl, httpToWs } from '../config/api';
 
@@ -72,7 +66,6 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
     },
   ]);
 
-  const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [filters, setFilters] = useState({
     player: true,
@@ -92,7 +85,6 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
 
   // Connect to WebSocket for real detection events with retry logic
   useEffect(() => {
-    if (isPaused) return;
 
     let ws: WebSocket | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
@@ -181,7 +173,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
 
         ws.onclose = () => {
           console.log('Detection WebSocket closed');
-          if (!isCleaningUp && !isPaused) {
+          if (!isCleaningUp) {
             // Reconnect after 10 seconds
             reconnectTimeout = setTimeout(() => connect(endpoint), 10000);
           }
@@ -224,7 +216,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
         ws.close();
       }
     };
-  }, [isPaused, detectionEndpoint, fallbackEndpoint]);
+  }, [detectionEndpoint, fallbackEndpoint]);
 
   const handleClearLogs = () => {
     setLogs([
@@ -296,13 +288,6 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
             }
             label={<Typography variant="caption">Auto-scroll</Typography>}
           />
-          <IconButton
-            onClick={() => setIsPaused(!isPaused)}
-            color={isPaused ? 'warning' : 'success'}
-            size="small"
-          >
-            {isPaused ? <PlayCircle /> : <PauseCircle />}
-          </IconButton>
           <IconButton onClick={handleExportLogs} size="small">
             <GetApp />
           </IconButton>
