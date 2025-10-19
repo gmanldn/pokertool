@@ -360,7 +360,8 @@ def launch_web_app(skip_chrome: bool = False, chrome_port: int = 9222, poker_url
     # Start React frontend
     log("Starting React frontend...")
     frontend_env = os.environ.copy()
-    frontend_env['REACT_APP_API_URL'] = f'http://localhost:{backend_port}'
+    frontend_env['REACT_APP_API_URL'] = f'http://127.0.0.1:{backend_port}'
+    frontend_env['REACT_APP_WS_URL'] = f'ws://127.0.0.1:{backend_port}'
 
     frontend_process = subprocess.Popen(
         ['npm', 'start'],
