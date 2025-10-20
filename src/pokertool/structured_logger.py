@@ -64,6 +64,14 @@ class JSONFormatter(logging.Formatter):
             "process": record.process,
         }
 
+        # Add correlation_id if present (for distributed tracing)
+        if hasattr(record, "correlation_id"):
+            log_data["correlation_id"] = record.correlation_id
+
+        # Add request_id if present (for API request tracking)
+        if hasattr(record, "request_id"):
+            log_data["request_id"] = record.request_id
+
         # Add extra fields if present
         if hasattr(record, "extra_fields"):
             log_data.update(record.extra_fields)

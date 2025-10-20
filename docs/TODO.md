@@ -34,7 +34,7 @@ Conventions
 
 - [ ] [P2][M] Visual regression snapshots for key UI components (HUD, SystemStatus) in light/dark themes.
 - [ ] [P2][M] Load testing of critical APIs (Locust/k6) with alert thresholds.
-- [ ] [P2][S] Structured JSON logging everywhere; consistent fields and log rotation. (Added correlation_id and request_id fields to JSON formatter)
+- [x] [P2][S] Structured JSON logging everywhere; consistent fields and log rotation. ✅ Complete: comprehensive JSON logging system with correlation_id and request_id fields, automatic log rotation (master: daily rotation, 90-day retention; error/performance/security: size-based rotation with 5-20MB limits), multiple log categories (general, error, performance, security), structured context data, and Sentry integration. Files: `src/pokertool/master_logging.py` (1107 lines), `src/pokertool/structured_logger.py` (239 lines). Log directory: `logs/`.
 - [ ] [P3][M] Internationalization of core UI strings; verify number/date formats.
 - [x] [P3][L] Real User Monitoring (RUM) for frontend performance and Core Web Vitals. (docs/development/frontend-rum.md, src/pokertool/rum_metrics.py, pokertool-frontend/src/services/rum.ts)
 - [x] [P3][L] Platform compatibility matrix and adaptations for target poker sites. (docs/development/platform-compatibility.md, src/pokertool/platform_compatibility.py)
