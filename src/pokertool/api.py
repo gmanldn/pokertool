@@ -2139,6 +2139,9 @@ def create_app() -> FastAPI:
     api = get_api()
     return api.app
 
+# Export app for uvicorn
+app = create_app() if FASTAPI_AVAILABLE else None
+
 # CLI runner
 def run_api_server(host: str = '127.0.0.1', port: int = 8000, reload: bool = False):
     """Run the API server."""
