@@ -59,6 +59,7 @@ import secrets
 import logging
 import threading
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable, TYPE_CHECKING
 from dataclasses import dataclass, field, asdict
 from enum import Enum
@@ -197,6 +198,35 @@ if FASTAPI_AVAILABLE:
         recommendation: Optional[str] = None
         metadata: Dict[str, Any] = Field(default_factory=dict)
         timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    class RUMMetricPayload(BaseModel):
+        """Payload describing a single frontend performance metric."""
+
+        metric: str = Field(..., description="Metric identifier (e.g., LCP, CLS).", max_length=32)
+        value: float = Field(..., ge=0.0, description="Measured value in milliseconds or unit-specific scale.")
+        delta: Optional[float] = Field(None, description="Delta from previous value in milliseconds.")
+        rating: Optional[str] = Field(
+            None,
+            description="Web Vitals rating (good / needs-improvement / poor).",
+            max_length=32,
+        )
+        session_id: Optional[str] = Field(None, max_length=64)
+        navigation_type: Optional[str] = Field(None, max_length=32)
+        page: Optional[str] = Field(None, max_length=256)
+        client_timestamp: Optional[str] = Field(None, max_length=64)
+        app_version: Optional[str] = Field(None, max_length=32)
+        environment: Dict[str, Any] = Field(default_factory=dict)
+        attribution: Dict[str, Any] = Field(default_factory=dict)
+        trace_id: Optional[str] = Field(None, max_length=64)
+        span_id: Optional[str] = Field(None, max_length=64)
+
+        def to_store_record(self, *, user_agent: Optional[str], client_ip: Optional[str], correlation_id: Optional[str]) -> Dict[str, Any]:
+            record = self.dict()
+            record["user_agent"] = user_agent
+            record["client_ip"] = client_ip
+            if correlation_id and not record.get("trace_id"):
+                record["trace_id"] = correlation_id
+            return record
 
     class UserCreate(BaseModel):
         """User creation model."""
@@ -586,6 +616,8 @@ class APIServices:
         self._analytics_dashboard = None
         self._gamification_engine = None
         self._community_platform = None
+        self._rum_metrics = None
+        self._rum_lock = threading.Lock()
 
         self._limiter = None
         self._limiter_lock = threading.Lock()
@@ -691,6 +723,18 @@ class APIServices:
 
             self._community_platform = platform
         return self._community_platform
+
+    @property
+    def rum_metrics(self):
+        """Lazy initialisation for RUM metrics store."""
+        if self._rum_metrics is None:
+            with self._rum_lock:
+                if self._rum_metrics is None:
+                    from .rum_metrics import RUMMetricsStore  # Local import to avoid import cost when unused
+                    storage_override = os.getenv("POKERTOOL_RUM_DIR")
+                    store = RUMMetricsStore(Path(storage_override)) if storage_override else RUMMetricsStore()
+                    self._rum_metrics = store
+        return self._rum_metrics
 
     @property
     def limiter(self):
@@ -1690,6 +1734,36 @@ This API implements comprehensive security measures including:
                 'most_common_actions': metrics.most_common_actions,
                 'avg_session_length_minutes': metrics.avg_session_length_minutes,
             }
+
+        @self.app.post('/api/rum/metrics', tags=['analytics'], summary='Ingest frontend performance metric')
+        @self.services.limiter.limit('180/minute')
+        async def ingest_rum_metric(
+            payload: RUMMetricPayload,
+            request: Request,
+            background_tasks: BackgroundTasks,
+        ):
+            correlation_id = request.headers.get('x-correlation-id')
+            client_ip = request.client.host if request.client else None
+            user_agent = request.headers.get('user-agent')
+
+            record = payload.to_store_record(
+                user_agent=user_agent,
+                client_ip=client_ip,
+                correlation_id=correlation_id,
+            )
+
+            background_tasks.add_task(self.services.rum_metrics.record_metric, record)
+            return JSONResponse(status_code=202, content={'status': 'accepted'})
+
+        @self.app.get('/api/rum/summary', tags=['analytics'], summary='Summarise frontend RUM metrics')
+        @self.services.limiter.limit('30/minute')
+        async def rum_summary(hours: int = 24, user: APIUser = Depends(get_current_user)):
+            try:
+                summary = self.services.rum_metrics.summarise(hours)
+                return summary
+            except Exception as exc:
+                logger.error(f'Failed to summarise RUM metrics: {exc}')
+                raise HTTPException(status_code=500, detail='Unable to summarise RUM metrics')
 
         # Gamification endpoints
         @self.app.post('/gamification/activity')
