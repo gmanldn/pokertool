@@ -1240,13 +1240,14 @@ This API implements comprehensive security measures including:
         
         @self.app.get('/api/system/health/history', tags=['system'], summary='Get Health History')
         @self.services.limiter.limit('12/minute')
-        async def get_health_history(hours: int = 24):
+        async def get_health_history(request: Request, hours: int = 24):
             """
             Get historical health check data for the specified time period.
-            
+
             Args:
+                request: FastAPI request object (required for rate limiting)
                 hours: Number of hours of history to retrieve (default: 24)
-            
+
             Returns:
                 List of historical health check results with timestamps
             """
@@ -1268,13 +1269,14 @@ This API implements comprehensive security measures including:
         
         @self.app.get('/api/system/health/trends', tags=['system'], summary='Get Health Trends')
         @self.services.limiter.limit('12/minute')
-        async def get_health_trends(hours: int = 24):
+        async def get_health_trends(request: Request, hours: int = 24):
             """
             Get health trend analysis over the specified time period.
-            
+
             Analyzes patterns, failure rates, and average latencies per feature.
-            
+
             Args:
+                request: FastAPI request object (required for rate limiting)
                 hours: Number of hours to analyze (default: 24)
             
             Returns:
@@ -1738,8 +1740,8 @@ This API implements comprehensive security measures including:
         @self.app.post('/api/rum/metrics', tags=['analytics'], summary='Ingest frontend performance metric')
         @self.services.limiter.limit('180/minute')
         async def ingest_rum_metric(
-            payload: RUMMetricPayload,
             request: Request,
+            payload: RUMMetricPayload,
             background_tasks: BackgroundTasks,
         ):
             correlation_id = request.headers.get('x-correlation-id')
@@ -1757,7 +1759,7 @@ This API implements comprehensive security measures including:
 
         @self.app.get('/api/rum/summary', tags=['analytics'], summary='Summarise frontend RUM metrics')
         @self.services.limiter.limit('30/minute')
-        async def rum_summary(hours: int = 24, user: APIUser = Depends(get_current_user)):
+        async def rum_summary(request: Request, hours: int = 24, user: APIUser = Depends(get_current_user)):
             try:
                 summary = self.services.rum_metrics.summarise(hours)
                 return summary
