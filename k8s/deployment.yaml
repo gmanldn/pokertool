@@ -1,0 +1,110 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: k8s/deployment.yaml
+# version: v28.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pokertool-app
+  namespace: pokertool
+  labels:
+    app: pokertool
+    component: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pokertool
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: pokertool
+        component: backend
+    spec:
+      containers:
+      - name: pokertool
+        image: pokertool:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: pokertool-secrets
+              key: database-url
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: pokertool-secrets
+              key: secret-key
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: pokertool-config
+              key: redis-url
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: pokertool-config
+      imagePullSecrets:
+      - name: pokertool-registry-secret
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pokertool-config
+  namespace: pokertool
+data:
+  redis-url: "redis://pokertool-redis:6379"
+  log-level: "INFO"
+  max-workers: "4"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pokertool-secrets
+  namespace: pokertool
+type: Opaque
+stringData:
+  database-url: "postgresql://user:password@pokertool-postgres:5432/pokertool"
+  secret-key: "your-secret-key-here"
+  jwt-secret: "your-jwt-secret-here"

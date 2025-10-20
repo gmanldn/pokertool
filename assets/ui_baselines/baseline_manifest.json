@@ -1,0 +1,40 @@
+{
+  "generated_at": "2025-10-07T21:25:21.689409+00:00",
+  "baseline_count": 2,
+  "baselines": [
+    {
+      "baseline_id": "betfair_1920x1080_7c98e202",
+      "site_name": "betfair",
+      "resolution": "1920x1080",
+      "theme": "default",
+      "file_name": "betfair_1920x1080_7c98e202.png",
+      "created_at": 1759872253.2071612,
+      "metadata": {
+        "capture_tool": "synthetic",
+        "source_file": "betfair_1920x1080_classic.png",
+        "ingested_at": 1759872167
+      }
+    },
+    {
+      "baseline_id": "betfair_1920x1080_02081301",
+      "site_name": "betfair",
+      "resolution": "1920x1080",
+      "theme": "default",
+      "file_name": "betfair_1920x1080_02081301.png",
+      "created_at": 1759872253.27889,
+      "metadata": {
+        "capture_tool": "synthetic",
+        "source_file": "betfair_1920x1080_dark.png",
+        "ingested_at": 1759872167
+      }
+    }
+  ],
+  "sites": {
+    "betfair": {
+      "1920x1080": [
+        "betfair_1920x1080_7c98e202",
+        "betfair_1920x1080_02081301"
+      ]
+    }
+  }
+}

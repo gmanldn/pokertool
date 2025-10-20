@@ -1,0 +1,49 @@
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: webview-ui/.gitignore
+# version: v28.0.0
+# last_commit: '2025-09-23T08:41:38+01:00'
+# fixes:
+# - date: '2025-09-25'
+#   summary: Enhanced enterprise documentation and comprehensive unit tests added
+# ---
+# POKERTOOL-HEADER-END
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+build
+*.local
+coverage
+.vite-port
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Storybook
+*storybook.log
+storybook-static

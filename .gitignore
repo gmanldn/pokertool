@@ -1,0 +1,308 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*__*
+
+# Specific Python files to ignore
+__init__.py
+__main__.py
+!pokertool/modules/__init__.py
+!src/__init__.py
+!torch/__init__.py
+
+# Distribution / build
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.*
+
+# VectorCode directory (third-party tool)
+VectorCode/
+.vectorcode/
+
+# Archive directory (old backups and cruft)
+archive/
+
+# Project-specific legacy
+poker.db
+pokertool.db
+poker_decisions.db
+
+
+# ==============================================================================
+# STATE DATA - All Runtime and User Data Files
+# ==============================================================================
+
+# Video processing temporary files
+video_frames/
+frame_*.png
+
+# Debug artifacts
+debug_screenshots/
+structure_backup/
+
+# PokerHeader metadata files
+*.pokerheader.yml
+.pokerheader.yml
+
+# User configuration files (use templates instead)
+poker_config.json
+
+# Database files - All SQLite databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Specific database files
+poker_decisions.db
+opponent_profiles.db
+poker_config.db
+poker_analytics.db
+poker_sessions.db
+
+# Database backups
+*.db.backup*
+*.db.bak
+*.sql.backup*
+backups/
+
+# Log files - All application logs
+*.log
+*.log.*
+logs/
+*master_log.txt
+poker_log.txt
+scraper_log.txt
+api_log.txt
+error_log.txt
+
+# Session and cache data
+sessions/
+cache/
+.cache/
+tmp/
+temp/
+*.tmp
+*.cache
+
+# User configuration and preferences
+user_config.json
+user_preferences.json
+local_settings.json
+.user_settings
+.pokertool_config.json
+
+# Machine learning model state
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.pb
+models/weights/
+models/checkpoints/
+ml_models/
+
+# GTO solver cache
+gto_cache/
+*.gto_cache
+solver_cache/
+
+# Screen scraper data
+screenshots/
+captures/
+scraper_data/
+table_images/
+ocr_cache/
+
+# API tokens and secrets
+.secrets
+*.key
+*.pem
+*.env.local
+.env.*.local
+
+# Evaluation workspace artifacts
+evals/diff-edits/diff-apply/
+evals/diff-edits/parsing/
+evals/diff-edits/prompts/
+evals/diff-edits/dashboard/pages/
+api_keys.json
+secrets.json
+
+# User data and profiles
+profiles/
+user_data/
+player_notes/
+hand_histories/
+replays/
+
+# Analytics and statistics
+analytics/
+stats/
+reports/
+*.csv
+*.xlsx
+*.xls
+exports/
+
+# Backup files
+*.backup
+*.bak
+*.old
+*~
+
+# Temporary processing files
+processing/
+queue/
+pending/
+
+# Node modules (if any frontend work)
+node_modules/
+package-lock.json.backup
+
+# Build artifacts
+*.pyc
+*.pyo
+*.so
+*.dll
+*.dylib
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS specific
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows specific
+Desktop.ini
+ehthumbs.db
+ehthumbs_vista.db
+
+# Linux specific
+.directory
+.Trash-*
+
+# Application state
+state/
+app_state/
+*.state
+*.state.json
+
+# Test data (keep test fixtures, ignore test results)
+test_results/
+test_outputs/
+test_data/generated/
+test_logs/
+
+# Performance profiling
+*.prof
+*.profile
+profiling_results/
+
+# Documentation builds (keep source, ignore builds)
+docs/_build/
+docs/.doctrees/
+site/
+
+# Lock files for databases
+*.lock
+.lock
+
+# Core dumps
+core.*
+*.core
+
+# Memory dumps
+*.dmp
+*.dump
+
+# Process ID files
+*.pid
+
+# Editor backup files
+*.bak
+*.gho
+*.ori
+*.orig
+*.tmp
+
+# Compressed files (if generated)
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ==============================================================================
+# EXCEPTIONS - Files that SHOULD be tracked despite patterns above
+# ==============================================================================
+
+# Keep example/template files
+!example.db
+!template.json
+!sample_config.json
+
+# Keep test fixtures
+!tests/fixtures/*.db
+!tests/fixtures/*.json
+!tests/fixtures/*.csv
+
+# Keep documentation
+!docs/**/*.md
+!docs/**/*.rst
+
+# Keep static assets
+!assets/**/*
+!.github
+!.github/**
+
+# Keep example/template configuration files
+!poker_config.example.json

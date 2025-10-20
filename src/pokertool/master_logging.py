@@ -1,0 +1,905 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# POKERTOOL-HEADER-START
+# ---
+# schema: pokerheader.v1
+# project: pokertool
+# file: src/pokertool/master_logging.py
+# version: v28.1.0
+# last_commit: '2025-01-10T17:10:00+00:00'
+# fixes:
+# - date: '2025-01-10'
+#   summary: Master logging system with comprehensive error capture and data collection
+# ---
+# POKERTOOL-HEADER-END
+
+"""
+PokerTool Master Logging System
+===============================
+
+Centralized logging and error handling system that captures all errors
+and routes them to a master log with comprehensive data collection.
+
+Features:
+- Unified logging across all components
+- Structured error data collection
+- Context-aware error capture
+- Performance monitoring
+- Security event logging
+- Multiple output formats (JSON, text)
+- Automatic log rotation
+- Real-time error streaming
+- Integration with existing systems
+
+Module: pokertool.master_logging
+Version: 28.1.0
+Author: PokerTool Development Team
+License: MIT
+"""
+
+from __future__ import annotations
+
+import logging
+import logging.handlers
+import json
+import sys
+import os
+import traceback
+import time
+import threading
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Callable
+from contextlib import contextmanager
+from functools import wraps
+import platform
+import inspect
+from dataclasses import dataclass, asdict
+from enum import Enum
+import hashlib
+
+# Optional dependencies
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    psutil = None
+    PSUTIL_AVAILABLE = False
+
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    sentry_sdk = None
+    LoggingIntegration = None
+    SENTRY_AVAILABLE = False
+
+__version__ = '28.1.0'
+__author__ = 'PokerTool Development Team'
+
+# Global configuration
+MASTER_LOG_DIR = Path.cwd() / 'logs'
+MASTER_LOG_FILE = MASTER_LOG_DIR / 'pokertool_master.log'  # 3-month rotation
+ERROR_LOG_FILE = MASTER_LOG_DIR / 'pokertool_errors.log'    # Permanent (feedback system)
+PERFORMANCE_LOG_FILE = MASTER_LOG_DIR / 'pokertool_performance.log'  # Permanent (feedback system)
+SECURITY_LOG_FILE = MASTER_LOG_DIR / 'pokertool_security.log'  # Permanent (feedback system)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+TODO_FILE = REPO_ROOT / 'docs' / 'TODO.md'
+TODO_SECTION_HEADER = "## ⚠️ Automated Log Alerts"
+
+# Log Retention Policy:
+# - MASTER_LOG: 3 months (90 days) - Daily rotation with automatic cleanup
+# - ERROR_LOG: Permanent - Kept for feedback and analysis systems
+# - PERFORMANCE_LOG: Permanent - Kept for feedback and analysis systems
+# - SECURITY_LOG: Permanent - Kept for audit trail and security analysis
+
+# Create logs directory
+MASTER_LOG_DIR.mkdir(exist_ok=True)
+
+class LogLevel(Enum):
+    """Enhanced log levels with priorities."""
+    TRACE = 5
+    DEBUG = 10
+    INFO = 20
+    WARNING = 30
+    ERROR = 40
+    CRITICAL = 50
+    SECURITY = 60
+
+class LogCategory(Enum):
+    """Categories for different types of log entries."""
+    GENERAL = "general"
+    ERROR = "error"
+    PERFORMANCE = "performance"
+    SECURITY = "security"
+    DATABASE = "database"
+    NETWORK = "network"
+    GUI = "gui"
+    ANALYSIS = "analysis"
+    SOLVER = "solver"
+    SCRAPER = "scraper"
+    API = "api"
+
+@dataclass
+class LogContext:
+    """Enhanced context information for log entries."""
+    timestamp: str
+    level: str
+    category: str
+    module: str
+    function: str
+    line_number: int
+    thread_id: str
+    process_id: int
+    session_id: str
+    user_id: Optional[str] = None
+    request_id: Optional[str] = None
+    
+    # System information
+    memory_usage: float = 0.0
+    cpu_usage: float = 0.0
+    disk_usage: float = 0.0
+    
+    # Application context
+    table_count: int = 0
+    active_sessions: int = 0
+    current_hand: Optional[str] = None
+    current_board: Optional[str] = None
+    
+    # Performance metrics
+    execution_time: Optional[float] = None
+    database_queries: int = 0
+    api_calls: int = 0
+
+@dataclass
+class ErrorDetails:
+    """Enhanced error information."""
+    error_type: str
+    error_message: str
+    stack_trace: str
+    error_hash: str  # For deduplication
+    first_occurrence: str
+    occurrence_count: int = 1
+    
+    # Context when error occurred
+    input_data: Optional[Dict[str, Any]] = None
+    system_state: Optional[Dict[str, Any]] = None
+    recovery_attempted: bool = False
+    recovery_successful: bool = False
+    
+    # Impact assessment
+    severity: str = "medium"
+    affects_core_functionality: bool = False
+    user_facing: bool = False
+
+class MasterLogger:
+    """
+    Centralized master logging system for PokerTool.
+    
+    This class provides unified logging across all components with
+    enhanced error capture, structured data collection, and multiple
+    output formats.
+    """
+    
+    _instance: Optional['MasterLogger'] = None
+    _lock = threading.Lock()
+    
+    def __init__(self):
+        if MasterLogger._instance is not None:
+            raise RuntimeError("Use MasterLogger.get_instance()")
+        
+        self.session_id = self._generate_session_id()
+        self.error_cache: Dict[str, ErrorDetails] = {}
+        self.performance_metrics: Dict[str, List[float]] = {}
+        self.active_contexts: Dict[str, Dict[str, Any]] = {}
+        self._todo_lock = threading.Lock()
+        
+        # Initialize loggers
+        self._setup_loggers()
+        
+        # Initialize Sentry if available
+        self._setup_sentry()
+        
+        # Start background monitoring
+        self._start_monitoring()
+        
+        # Log system startup
+        self.info("Master logging system initialized", category=LogCategory.GENERAL)
+    
+    @classmethod
+    def get_instance(cls) -> 'MasterLogger':
+        """Get or create the singleton master logger instance."""
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = cls()
+        return cls._instance
+    
+    def _setup_loggers(self):
+        """Configure all logging handlers and formatters."""
+        
+        # Master logger (everything)
+        self.master_logger = logging.getLogger('pokertool_master')
+        self.master_logger.setLevel(logging.DEBUG)
+        self.master_logger.handlers.clear()
+        
+        # Time-based rotating file handler for master log (keeps 3 months / 90 days)
+        # Rotates daily and keeps 90 backup files = 90 days = ~3 months
+        master_handler = logging.handlers.TimedRotatingFileHandler(
+            MASTER_LOG_FILE,
+            when='midnight',  # Rotate at midnight
+            interval=1,       # Every 1 day
+            backupCount=90,   # Keep 90 days = 3 months
+            encoding='utf-8',
+            delay=False,
+            utc=False
+        )
+        master_handler.setFormatter(self._get_json_formatter())
+        self.master_logger.addHandler(master_handler)
+
+        # Add a note about log rotation to the log
+        self.master_logger.info("Master log rotation configured: Daily rotation, 90 days retention (3 months)")
+        
+        # Console handler for immediate feedback
+        console_handler = logging.StreamHandler(sys.stdout)
+        use_json_console = os.getenv('POKERTOOL_LOG_CONSOLE_JSON', '1') != '0'
+        if use_json_console:
+            console_handler.setFormatter(self._get_json_formatter())
+        else:
+            console_formatter = logging.Formatter(
+                '%(asctime)s %(levelname)s [%(name)s] %(message)s',
+                datefmt='%H:%M:%S'
+            )
+            console_handler.setFormatter(console_formatter)
+        console_handler.setLevel(logging.INFO)
+        self.master_logger.addHandler(console_handler)
+        
+        # Error-specific logger
+        self.error_logger = logging.getLogger('pokertool_errors')
+        self.error_logger.setLevel(logging.ERROR)
+        self.error_logger.handlers.clear()
+        
+        error_handler = logging.handlers.RotatingFileHandler(
+            ERROR_LOG_FILE, maxBytes=20*1024*1024, backupCount=5
+        )
+        error_handler.setFormatter(self._get_json_formatter())
+        self.error_logger.addHandler(error_handler)
+        
+        # Performance logger
+        self.performance_logger = logging.getLogger('pokertool_performance')
+        self.performance_logger.setLevel(logging.DEBUG)
+        self.performance_logger.handlers.clear()
+        
+        perf_handler = logging.handlers.RotatingFileHandler(
+            PERFORMANCE_LOG_FILE, maxBytes=10*1024*1024, backupCount=3
+        )
+        perf_handler.setFormatter(self._get_json_formatter())
+        self.performance_logger.addHandler(perf_handler)
+        
+        # Security logger
+        self.security_logger = logging.getLogger('pokertool_security')
+        self.security_logger.setLevel(logging.WARNING)
+        self.security_logger.handlers.clear()
+        
+        security_handler = logging.handlers.RotatingFileHandler(
+            SECURITY_LOG_FILE, maxBytes=10*1024*1024, backupCount=5
+        )
+        security_handler.setFormatter(self._get_json_formatter())
+        self.security_logger.addHandler(security_handler)
+        
+        # Redirect existing loggers to master system
+        self._redirect_existing_loggers()
+    
+    def _setup_sentry(self):
+        """Configure Sentry error tracking if available."""
+        if not SENTRY_AVAILABLE:
+            self.master_logger.info("Sentry SDK not available - error tracking disabled")
+            return
+        
+        # Get Sentry DSN from environment
+        sentry_dsn = os.getenv('SENTRY_DSN')
+        if not sentry_dsn:
+            self.master_logger.info("SENTRY_DSN not configured - error tracking disabled")
+            return
+        
+        try:
+            # Configure Sentry with logging integration
+            sentry_logging = LoggingIntegration(
+                level=logging.INFO,  # Capture info and above as breadcrumbs
+                event_level=logging.ERROR  # Send errors and above as events
+            )
+            
+            sentry_sdk.init(
+                dsn=sentry_dsn,
+                integrations=[sentry_logging],
+                # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring
+                traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
+                # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions
+                profiles_sample_rate=float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0.1')),
+                environment=os.getenv('POKERTOOL_ENV', 'development'),
+                release=os.getenv('POKERTOOL_VERSION', 'unknown'),
+                # Add custom tags
+                before_send=self._sentry_before_send,
+            )
+            
+            self.master_logger.info("Sentry error tracking initialized successfully")
+        except Exception as e:
+            self.master_logger.error(f"Failed to initialize Sentry: {e}")
+    
+    def _sentry_before_send(self, event, hint):
+        """Process events before sending to Sentry."""
+        # Add session ID to all events
+        event.setdefault('tags', {})['session_id'] = self.session_id
+        
+        # Add correlation ID if available in context
+        if 'exc_info' in hint:
+            exc_info = hint['exc_info']
+            if len(exc_info) > 1 and hasattr(exc_info[1], '__dict__'):
+                correlation_id = getattr(exc_info[1], 'correlation_id', None)
+                if correlation_id:
+                    event['tags']['correlation_id'] = correlation_id
+        
+        return event
+    
+    def _get_json_formatter(self):
+        """Create a JSON formatter for structured logging."""
+        session_id = self.session_id
+        environment = os.getenv('POKERTOOL_ENV', 'development')
+        hostname = platform.node()
+
+        class JsonFormatter(logging.Formatter):
+            def format(self_inner, record):
+                log_obj = {
+                    'timestamp': self_inner.formatTime(record),
+                    'level': record.levelname,
+                    'logger': record.name,
+                    'module': record.module,
+                    'function': record.funcName,
+                    'line': record.lineno,
+                    'thread': record.thread,
+                    'process': record.process,
+                    'session_id': session_id,
+                    'environment': environment,
+                    'hostname': hostname,
+                    'application': 'pokertool',
+                }
+
+                # Include category when available (logger names use dot notation)
+                if record.name.startswith('pokertool.'):
+                    log_obj['category'] = record.name.split('.', 1)[-1]
+
+                # Include correlation/request identifiers if present
+                correlation_id = getattr(record, 'correlation_id', None)
+                request_id = getattr(record, 'request_id', None)
+                if correlation_id:
+                    log_obj['correlation_id'] = correlation_id
+                if request_id:
+                    log_obj['request_id'] = request_id
+
+                # Attempt to parse structured payloads
+                message = record.getMessage()
+                log_obj['message'] = message or ''
+
+                # Merge structured payload emitted via log_record.context
+                context_payload = getattr(record, 'context', None)
+                if isinstance(context_payload, dict):
+                    log_obj.update({k: v for k, v in context_payload.items() if k != 'additional_data'})
+                    additional_data = context_payload.get('additional_data') or {}
+                    if isinstance(additional_data, dict):
+                        log_obj.update(additional_data)
+                        if 'correlation_id' not in log_obj and 'correlation_id' in additional_data:
+                            log_obj['correlation_id'] = additional_data['correlation_id']
+
+                # Add exception info if present
+                if record.exc_info:
+                    log_obj['exception'] = self_inner.formatException(record.exc_info)
+
+                # Add extra context if available
+                if hasattr(record, 'context'):
+                    log_obj['context'] = record.context
+
+                return json.dumps(log_obj, default=str)
+        
+        return JsonFormatter()
+    
+    def _redirect_existing_loggers(self):
+        """Redirect existing loggers to use the master system."""
+        # Get all existing loggers
+        existing_loggers = [
+            logging.getLogger('pokertool'),
+            logging.getLogger('pokertool.error_handling'),
+            logging.getLogger('pokertool.scrape'),
+            logging.getLogger('pokertool.ocr_recognition'),
+            logging.getLogger('pokertool.hud_overlay'),
+            logging.getLogger('pokertool.api'),
+            logging.getLogger('pokertool.concurrency'),
+            logging.getLogger('pokertool.multi_table_support'),
+            logging.getLogger('pokertool.production_database'),
+            logging.getLogger('pokertool.game_selection'),
+            logging.getLogger('pokertool.tournament_support'),
+            logging.getLogger('pokertool.variance_calculator'),
+        ]
+        
+        for logger in existing_loggers:
+            # Clear existing handlers
+            logger.handlers.clear()
+            # Set parent to master logger
+            logger.parent = self.master_logger
+            logger.setLevel(logging.DEBUG)
+    
+    def _generate_session_id(self) -> str:
+        """Generate a unique session ID."""
+        return f"pokertool_{int(time.time())}_{os.getpid()}"
+    
+    def _get_context(self, category: LogCategory = LogCategory.GENERAL) -> LogContext:
+        """Generate comprehensive context information."""
+        frame = inspect.currentframe()
+        try:
+            # Go up the stack to find the actual caller
+            caller_frame = frame
+            for _ in range(3):  # Adjust based on call stack depth
+                caller_frame = caller_frame.f_back
+                if caller_frame is None:
+                    break
+            
+            if caller_frame:
+                module_name = caller_frame.f_globals.get('__name__', 'unknown')
+                function_name = caller_frame.f_code.co_name
+                line_number = caller_frame.f_lineno
+            else:
+                module_name = 'unknown'
+                function_name = 'unknown'
+                line_number = 0
+        finally:
+            del frame
+        
+        # Get system metrics
+        if PSUTIL_AVAILABLE:
+            try:
+                process = psutil.Process()
+                memory_usage = process.memory_info().rss / 1024 / 1024  # MB
+                cpu_usage = process.cpu_percent()
+                disk_usage = psutil.disk_usage('/').percent
+            except:
+                memory_usage = cpu_usage = disk_usage = 0.0
+        else:
+            memory_usage = cpu_usage = disk_usage = 0.0
+        
+        return LogContext(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            level="",  # Will be set by specific log methods
+            category=category.value,
+            module=module_name,
+            function=function_name,
+            line_number=line_number,
+            thread_id=str(threading.current_thread().ident),
+            process_id=os.getpid(),
+            session_id=self.session_id,
+            memory_usage=memory_usage,
+            cpu_usage=cpu_usage,
+            disk_usage=disk_usage,
+            table_count=len(self.active_contexts),
+            active_sessions=len([c for c in self.active_contexts.values() if c.get('active', False)]),
+        )
+    
+    def _start_monitoring(self):
+        """Start background system monitoring."""
+        def monitor_loop():
+            while True:
+                try:
+                    self._log_system_metrics()
+                    time.sleep(60)  # Log metrics every minute
+                except Exception as e:
+                    self.error(f"System monitoring error: {e}", category=LogCategory.PERFORMANCE)
+        
+        monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
+        monitor_thread.start()
+    
+    def _log_system_metrics(self):
+        """Log periodic system metrics."""
+        try:
+            metrics = {
+                'active_threads': threading.active_count(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+            }
+            
+            if PSUTIL_AVAILABLE:
+                try:
+                    metrics.update({
+                        'memory_usage_mb': psutil.virtual_memory().used / 1024 / 1024,
+                        'memory_percent': psutil.virtual_memory().percent,
+                        'cpu_percent': psutil.cpu_percent(interval=1),
+                        'disk_usage_percent': psutil.disk_usage('/').percent,
+                        'open_file_descriptors': len(psutil.Process().open_files()),
+                    })
+                except Exception as psutil_error:
+                    metrics['psutil_error'] = str(psutil_error)
+            else:
+                metrics['psutil_available'] = False
+            
+            self.performance_logger.info(
+                json.dumps({
+                    'event': 'system_metrics',
+                    'timestamp': datetime.now(timezone.utc).isoformat(),
+                    'metrics': metrics
+                })
+            )
+        except Exception as e:
+            self.error(f"Failed to log system metrics: {e}")
+    
+    def trace(self, message: str, category: LogCategory = LogCategory.GENERAL, **kwargs):
+        """Log trace level message."""
+        self._log(LogLevel.TRACE, message, category, **kwargs)
+    
+    def debug(self, message: str, category: LogCategory = LogCategory.GENERAL, **kwargs):
+        """Log debug level message."""
+        self._log(LogLevel.DEBUG, message, category, **kwargs)
+    
+    def info(self, message: str, category: LogCategory = LogCategory.GENERAL, **kwargs):
+        """Log info level message."""
+        self._log(LogLevel.INFO, message, category, **kwargs)
+    
+    def warning(self, message: str, category: LogCategory = LogCategory.GENERAL, **kwargs):
+        """Log warning level message."""
+        self._log(LogLevel.WARNING, message, category, **kwargs)
+    
+    def error(self, message: str, category: LogCategory = LogCategory.ERROR, 
+              exception: Optional[Exception] = None, **kwargs):
+        """Log error level message with enhanced error tracking."""
+        self._log(LogLevel.ERROR, message, category, exception=exception, **kwargs)
+    
+    def critical(self, message: str, category: LogCategory = LogCategory.ERROR, 
+                 exception: Optional[Exception] = None, **kwargs):
+        """Log critical level message."""
+        self._log(LogLevel.CRITICAL, message, category, exception=exception, **kwargs)
+    
+    def security(self, message: str, **kwargs):
+        """Log security-related events."""
+        self._log(LogLevel.SECURITY, message, LogCategory.SECURITY, **kwargs)
+    
+    def _log(self, level: LogLevel, message: str, category: LogCategory, 
+             exception: Optional[Exception] = None, **kwargs):
+        """Internal logging method with full context capture."""
+        
+        context = self._get_context(category)
+        context.level = level.name
+        
+        # Add any additional context from kwargs
+        for key, value in kwargs.items():
+            if hasattr(context, key):
+                setattr(context, key, value)
+        
+        # Create structured log entry
+        log_entry = {
+            'message': message,
+            'context': asdict(context),
+            'additional_data': {k: v for k, v in kwargs.items() if not hasattr(context, k)}
+        }
+        
+        # Handle exceptions
+        if exception:
+            error_details = self._process_exception(exception, context, kwargs)
+            log_entry['error_details'] = asdict(error_details)
+        
+        # Log to appropriate loggers
+        log_record = logging.LogRecord(
+            name=f"pokertool.{category.value}",
+            level=level.value,
+            pathname="",
+            lineno=context.line_number,
+            msg=message,
+            args=(),
+            exc_info=None
+        )
+        log_record.context = log_entry
+        
+        # Master logger gets everything
+        self.master_logger.handle(log_record)
+        
+        # Route to specialized loggers
+        if level.value >= LogLevel.ERROR.value:
+            self.error_logger.handle(log_record)
+        
+        if category == LogCategory.PERFORMANCE:
+            self.performance_logger.handle(log_record)
+        
+        if category == LogCategory.SECURITY or level == LogLevel.SECURITY:
+            self.security_logger.handle(log_record)
+
+        if level.value >= LogLevel.WARNING.value:
+            try:
+                self._ensure_todo_entry(level, message, context)
+            except Exception as todo_error:
+                sys.stderr.write(f"[master_logging] Failed to append TODO entry: {todo_error}\n")
+    
+    def _process_exception(self, exception: Exception, context: LogContext,
+                          additional_data: Dict[str, Any]) -> ErrorDetails:
+        """Process and enhance exception information."""
+        
+        # Generate error hash for deduplication
+        error_hash = hash(f"{type(exception).__name__}:{str(exception)}:{context.module}:{context.function}")
+        error_hash_str = f"err_{abs(error_hash):x}"
+        
+        # Send to Sentry if available
+        if SENTRY_AVAILABLE and sentry_sdk:
+            with sentry_sdk.push_scope() as scope:
+                # Add context to Sentry
+                scope.set_tag('error_hash', error_hash_str)
+                scope.set_tag('module', context.module)
+                scope.set_tag('function', context.function)
+                scope.set_tag('category', context.category)
+                scope.set_context('system_state', {
+                    'memory_usage': context.memory_usage,
+                    'cpu_usage': context.cpu_usage,
+                    'active_sessions': context.active_sessions,
+                })
+                if context.request_id:
+                    scope.set_tag('correlation_id', context.request_id)
+                if additional_data:
+                    scope.set_context('additional_data', additional_data)
+                
+                # Capture exception
+                sentry_sdk.capture_exception(exception)
+        
+        # Check if we've seen this error before
+        if error_hash_str in self.error_cache:
+            cached_error = self.error_cache[error_hash_str]
+            cached_error.occurrence_count += 1
+            return cached_error
+        
+        # Create new error details
+        error_details = ErrorDetails(
+            error_type=type(exception).__name__,
+            error_message=str(exception),
+            stack_trace=traceback.format_exc(),
+            error_hash=error_hash_str,
+            first_occurrence=context.timestamp,
+            input_data=additional_data,
+            system_state={
+                'memory_usage': context.memory_usage,
+                'cpu_usage': context.cpu_usage,
+                'active_sessions': context.active_sessions,
+                'current_hand': context.current_hand,
+                'current_board': context.current_board,
+            }
+        )
+        
+        # Assess error severity
+        error_details.severity = self._assess_error_severity(exception, context)
+        error_details.affects_core_functionality = self._affects_core_functionality(exception, context)
+        error_details.user_facing = self._is_user_facing_error(exception, context)
+        
+        # Cache the error
+        self.error_cache[error_hash_str] = error_details
+        
+        return error_details
+
+    def _ensure_todo_entry(self, level: LogLevel, message: str, context: LogContext) -> None:
+        """Ensure a TODO entry exists for warnings and errors."""
+        sanitized_message = " ".join(str(message).split())
+        if not sanitized_message:
+            return
+
+        issue_context = f"{context.module}.{context.function}"
+        key_material = f"{level.name}|{issue_context}|{sanitized_message}".encode("utf-8", errors="ignore")
+        digest = hashlib.sha1(key_material).hexdigest()[:10].upper()
+        task_id = f"LOG-{level.name[0]}-{digest}"
+        today = datetime.now(timezone.utc).date().isoformat()
+        entry_lines = [
+            f"- [ ] **{task_id}** ({today}) {level.name.title()} in {issue_context}: {sanitized_message}",
+            "  ```prompt",
+            f"  You are assisting with PokerTool's logging stack. Investigate the {level.name.lower()} emitted from "
+            f"{issue_context} with message \"{sanitized_message}\". Identify the root cause, outline corrective steps, "
+            "and suggest code or documentation changes needed to prevent recurrence.",
+            "  ```",
+        ]
+        entry = "\n".join(entry_lines)
+
+        with self._todo_lock:
+            try:
+                if TODO_FILE.exists():
+                    contents = TODO_FILE.read_text(encoding="utf-8")
+                else:
+                    TODO_FILE.parent.mkdir(parents=True, exist_ok=True)
+                    contents = "# PokerTool TODO List\n"
+
+                if task_id in contents:
+                    lines = contents.splitlines()
+                    for idx, line in enumerate(lines):
+                        if f"**{task_id}**" in line:
+                            has_prompt = False
+                            scan_idx = idx + 1
+                            while scan_idx < len(lines):
+                                next_line = lines[scan_idx]
+                                if next_line.startswith("- [ ] **"):
+                                    break
+                                if next_line.strip() == "```prompt":
+                                    has_prompt = True
+                                    break
+                                if next_line.strip() == "```":
+                                    break
+                                scan_idx += 1
+
+                            if not has_prompt:
+                                insertion = entry_lines[1:]
+                                lines = lines[:idx + 1] + insertion + lines[idx + 1:]
+                                updated_contents = "\n".join(lines)
+                                if not updated_contents.endswith("\n"):
+                                    updated_contents += "\n"
+                                TODO_FILE.write_text(updated_contents, encoding="utf-8")
+                            return
+
+                lines = contents.splitlines()
+                header_index = None
+                for idx, line in enumerate(lines):
+                    if line.strip() == TODO_SECTION_HEADER:
+                        header_index = idx
+                        break
+
+                if header_index is None:
+                    new_lines = [TODO_SECTION_HEADER, "", entry, ""]
+                    new_lines.extend(lines)
+                else:
+                    insert_pos = header_index + 1
+                    while insert_pos < len(lines) and lines[insert_pos].strip() == "":
+                        insert_pos += 1
+                    new_lines = lines[:insert_pos] + [entry] + lines[insert_pos:]
+
+                new_contents = "\n".join(new_lines)
+                if not new_contents.endswith("\n"):
+                    new_contents += "\n"
+                TODO_FILE.write_text(new_contents, encoding="utf-8")
+            except Exception:
+                raise
+    
+    def _assess_error_severity(self, exception: Exception, context: LogContext) -> str:
+        """Assess the severity of an error based on type and context."""
+        if isinstance(exception, (SystemExit, KeyboardInterrupt)):
+            return "low"
+        elif isinstance(exception, (MemoryError, OSError)):
+            return "critical"
+        elif isinstance(exception, (ValueError, TypeError, AttributeError)):
+            return "medium"
+        elif "database" in context.module.lower() or "storage" in context.module.lower():
+            return "high"
+        else:
+            return "medium"
+    
+    def _affects_core_functionality(self, exception: Exception, context: LogContext) -> bool:
+        """Determine if error affects core poker functionality."""
+        core_modules = ['solver', 'analysis', 'gto', 'core', 'database', 'storage']
+        return any(module in context.module.lower() for module in core_modules)
+    
+    def _is_user_facing_error(self, exception: Exception, context: LogContext) -> bool:
+        """Determine if error is user-facing."""
+        ui_modules = ['gui', 'api', 'hud', 'cli']
+        return any(module in context.module.lower() for module in ui_modules)
+    
+    @contextmanager
+    def operation_context(self, operation_name: str, **context_data):
+        """Context manager for tracking operations with timing and error handling."""
+        operation_id = f"{operation_name}_{int(time.time() * 1000)}"
+        start_time = time.time()
+        
+        self.debug(f"Starting operation: {operation_name}", 
+                  category=LogCategory.PERFORMANCE,
+                  operation_id=operation_id,
+                  **context_data)
+        
+        try:
+            yield operation_id
+            execution_time = time.time() - start_time
+            self.info(f"Completed operation: {operation_name}",
+                     category=LogCategory.PERFORMANCE,
+                     operation_id=operation_id,
+                     execution_time=execution_time,
+                     **context_data)
+        except Exception as e:
+            execution_time = time.time() - start_time
+            self.error(f"Failed operation: {operation_name}",
+                      category=LogCategory.ERROR,
+                      exception=e,
+                      operation_id=operation_id,
+                      execution_time=execution_time,
+                      **context_data)
+            raise
+    
+    def performance_timer(self, operation_name: str):
+        """Decorator for timing function execution."""
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                with self.operation_context(operation_name, function=func.__name__):
+                    return func(*args, **kwargs)
+            return wrapper
+        return decorator
+    
+    def get_error_summary(self) -> Dict[str, Any]:
+        """Get summary of all captured errors."""
+        return {
+            'total_unique_errors': len(self.error_cache),
+            'total_error_occurrences': sum(e.occurrence_count for e in self.error_cache.values()),
+            'critical_errors': len([e for e in self.error_cache.values() if e.severity == 'critical']),
+            'high_severity_errors': len([e for e in self.error_cache.values() if e.severity == 'high']),
+            'core_functionality_errors': len([e for e in self.error_cache.values() if e.affects_core_functionality]),
+            'user_facing_errors': len([e for e in self.error_cache.values() if e.user_facing]),
+            'recent_errors': [
+                {
+                    'hash': e.error_hash,
+                    'type': e.error_type,
+                    'message': e.error_message[:100],
+                    'count': e.occurrence_count,
+                    'severity': e.severity
+                }
+                for e in sorted(self.error_cache.values(), 
+                              key=lambda x: x.first_occurrence, reverse=True)[:10]
+            ]
+        }
+    
+    def flush_logs(self):
+        """Force flush all log handlers."""
+        for logger in [self.master_logger, self.error_logger, 
+                      self.performance_logger, self.security_logger]:
+            for handler in logger.handlers:
+                handler.flush()
+
+# Global instance
+_master_logger = None
+
+def get_master_logger() -> MasterLogger:
+    """Get the global master logger instance."""
+    global _master_logger
+    if _master_logger is None:
+        _master_logger = MasterLogger.get_instance()
+    return _master_logger
+
+# Convenience functions
+def log_info(message: str, category: LogCategory = LogCategory.GENERAL, **kwargs):
+    """Convenience function for info logging."""
+    get_master_logger().info(message, category, **kwargs)
+
+def log_error(message: str, exception: Optional[Exception] = None, 
+              category: LogCategory = LogCategory.ERROR, **kwargs):
+    """Convenience function for error logging."""
+    get_master_logger().error(message, category, exception=exception, **kwargs)
+
+def log_warning(message: str, category: LogCategory = LogCategory.GENERAL, **kwargs):
+    """Convenience function for warning logging."""
+    get_master_logger().warning(message, category, **kwargs)
+
+def log_performance(operation: str, execution_time: float, **kwargs):
+    """Convenience function for performance logging."""
+    get_master_logger().info(f"Performance: {operation}",
+                            category=LogCategory.PERFORMANCE,
+                            execution_time=execution_time,
+                            **kwargs)
+
+def log_security_event(event: str, **kwargs):
+    """Convenience function for security event logging."""
+    get_master_logger().security(f"Security event: {event}", **kwargs)
+
+# Decorator for automatic error logging
+def auto_log_errors(category: LogCategory = LogCategory.GENERAL):
+    """Decorator that automatically logs errors from functions."""
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                log_error(f"Error in {func.__name__}: {str(e)}", 
+                         exception=e, category=category,
+                         function_args=args, function_kwargs=kwargs)
+                raise
+        return wrapper
+    return decorator
+
+# Initialize the master logger when module is imported
+try:
+    get_master_logger()
+except Exception as e:
+    print(f"Warning: Failed to initialize master logger: {e}")
+    # Fallback to basic logging
+    logging.basicConfig(level=logging.INFO)

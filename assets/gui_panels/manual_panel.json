@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ManualPanelConfig",
+  "helperText": "Use the manual workspace below to select cards, adjust players, and review live analysis without leaving the main window.",
+  "tips": [
+    "Click cards in the grid to assign hole cards and board streets.",
+    "Adjust stacks, blinds, and active seats from the control panel.",
+    "Use ANALYZE HAND to refresh insights inside the workspace."
+  ],
+  "syncMessage": "Switch tabs at any time — the manual workspace stays in sync with live updates."
+}

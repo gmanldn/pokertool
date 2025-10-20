@@ -1,0 +1,253 @@
+{
+  "schema": "pokermodules.v1",
+  "module": "poker_modules.py",
+  "generated_at": "2025-09-15T02:21:07.942084+00:00",
+  "hash": "42a741bfaef60f9a785fa56c4b9e19d3309ac9318afe07278df25640b2e65829",
+  "enums": [
+    {
+      "name": "Rank",
+      "bases": [
+        "Enum"
+      ],
+      "summary": null,
+      "methods": [
+        {
+          "name": "sym",
+          "summary": null,
+          "returns": "str",
+          "params": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null,
+              "kind": "pos"
+            }
+          ],
+          "decorators": [
+            "property"
+          ],
+          "lineno": 30
+        },
+        {
+          "name": "val",
+          "summary": null,
+          "returns": "int",
+          "params": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null,
+              "kind": "pos"
+            }
+          ],
+          "decorators": [
+            "property"
+          ],
+          "lineno": 37
+        }
+      ],
+      "is_enum": true,
+      "members": [
+        "TWO",
+        "THREE",
+        "FOUR",
+        "FIVE",
+        "SIX",
+        "SEVEN",
+        "EIGHT",
+        "NINE",
+        "TEN",
+        "JACK",
+        "QUEEN",
+        "KING",
+        "ACE"
+      ]
+    },
+    {
+      "name": "Suit",
+      "bases": [
+        "Enum"
+      ],
+      "summary": null,
+      "methods": [
+        {
+          "name": "glyph",
+          "summary": null,
+          "returns": "str",
+          "params": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null,
+              "kind": "pos"
+            }
+          ],
+          "decorators": [
+            "property"
+          ],
+          "lineno": 43
+        }
+      ],
+      "is_enum": true,
+      "members": [
+        "SPADES",
+        "HEARTS",
+        "DIAMONDS",
+        "CLUBS"
+      ]
+    },
+    {
+      "name": "Position",
+      "bases": [
+        "Enum"
+      ],
+      "summary": null,
+      "methods": [
+        {
+          "name": "category",
+          "summary": null,
+          "returns": "str",
+          "params": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null,
+              "kind": "pos"
+            }
+          ],
+          "decorators": [
+            "property"
+          ],
+          "lineno": 49
+        },
+        {
+          "name": "is_late",
+          "summary": null,
+          "returns": "bool",
+          "params": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null,
+              "kind": "pos"
+            }
+          ],
+          "decorators": [],
+          "lineno": 56
+        }
+      ],
+      "is_enum": true,
+      "members": [
+        "EARLY",
+        "MIDDLE",
+        "LATE",
+        "BLINDS"
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "name": "Card",
+      "bases": [],
+      "summary": null,
+      "methods": [
+        {
+          "name": "__str__",
+          "summary": null,
+          "returns": "str",
+          "params": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null,
+              "kind": "pos"
+            }
+          ],
+          "decorators": [],
+          "lineno": 63
+        },
+        {
+          "name": "__repr__",
+          "summary": null,
+          "returns": "str",
+          "params": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null,
+              "kind": "pos"
+            }
+          ],
+          "decorators": [],
+          "lineno": 64
+        }
+      ],
+      "is_enum": false
+    },
+    {
+      "name": "HandAnalysisResult",
+      "bases": [],
+      "summary": null,
+      "methods": [],
+      "is_enum": false
+    }
+  ],
+  "functions": [
+    {
+      "name": "parse_card",
+      "summary": null,
+      "returns": "Card",
+      "params": [
+        {
+          "name": "s",
+          "annotation": "str",
+          "default": null,
+          "kind": "pos"
+        }
+      ],
+      "decorators": [],
+      "lineno": 66
+    },
+    {
+      "name": "analyse_hand",
+      "summary": null,
+      "returns": "HandAnalysisResult",
+      "params": [
+        {
+          "name": "hole_cards",
+          "annotation": "Iterable[Card]",
+          "default": null,
+          "kind": "pos"
+        },
+        {
+          "name": "board_cards",
+          "annotation": "Optional[Iterable[Card]]",
+          "default": "None",
+          "kind": "pos"
+        },
+        {
+          "name": "position",
+          "annotation": "Optional[Position]",
+          "default": "None",
+          "kind": "pos"
+        },
+        {
+          "name": "pot",
+          "annotation": "Optional[float]",
+          "default": "None",
+          "kind": "pos"
+        },
+        {
+          "name": "to_call",
+          "annotation": "Optional[float]",
+          "default": "None",
+          "kind": "pos"
+        }
+      ],
+      "decorators": [],
+      "lineno": 84
+    }
+  ],
+  "constants": [],
+  "errors": null
+}

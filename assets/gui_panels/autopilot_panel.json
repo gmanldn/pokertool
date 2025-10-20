@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AutopilotPanelConfig",
+  "siteOptions": [
+    "GENERIC",
+    "POKERSTARS",
+    "PARTYPOKER",
+    "IGNITION",
+    "BOVADA",
+    "CHROME"
+  ],
+  "strategyOptions": [
+    "GTO",
+    "Aggressive",
+    "Conservative",
+    "Exploitative"
+  ],
+  "toggles": [
+    {
+      "key": "auto_detect",
+      "default": true,
+      "translationKey": "autopilot.settings.auto_detect"
+    },
+    {
+      "key": "auto_scraper",
+      "default": true,
+      "translationKey": "autopilot.settings.auto_scraper"
+    },
+    {
+      "key": "continuous_updates",
+      "default": true,
+      "translationKey": "autopilot.settings.continuous_updates"
+    },
+    {
+      "key": "auto_gto",
+      "default": false,
+      "translationKey": "autopilot.settings.auto_gto"
+    }
+  ]
+}

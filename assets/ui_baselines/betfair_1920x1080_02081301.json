@@ -1,0 +1,18 @@
+{
+  "baseline_id": "betfair_1920x1080_02081301",
+  "site_name": "betfair",
+  "resolution": "1920x1080",
+  "theme": "default",
+  "file_path": "/Users/georgeridout/Documents/github/pokertool/assets/ui_baselines/betfair_1920x1080_02081301.png",
+  "created_at": 1759872253.27889,
+  "metadata": {
+    "capture_tool": "synthetic",
+    "source_file": "betfair_1920x1080_dark.png",
+    "ingested_at": 1759872167
+  },
+  "hashes": {
+    "average": "0000000000000000000110000011110000111100000110000000000000000000",
+    "difference": "0000000000000000011100000111000001111000011100000000000000000000",
+    "perceptual": "1001101101100100011001001001101110011011011001000110010010011011"
+  }
+}
