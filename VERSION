@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 90.0.0
+version = 91.0.0
 release_date = 2025-10-20
 
 [release_notes]
-# v90.0.0 - Backend Infrastructure & Testing Suite
-description = Major backend infrastructure improvements including OpenTelemetry distributed tracing, ML model lazy loading with caching, GUI memory profiling for leak detection, comprehensive structured JSON logging, and end-to-end dashboard health monitoring tests.
-changes = Implemented OpenTelemetry tracing with FastAPI auto-instrumentation and correlation ID propagation (293 lines), added ModelCache for lazy loading ML models with weak references and warmup support (315 lines), enhanced GuiMemoryProfiler with tracemalloc-based sampling for thread/widget leak detection (7 comprehensive tests), completed structured JSON logging with correlation_id and request_id fields plus automatic log rotation, implemented end-to-end dashboard WebSocket health monitoring test suite (9 tests: 6 passing, 3 skipped).
+# v91.0.0 - API Dependencies & Import Fixes
+description = Critical fixes for API module dependencies and import errors, ensuring FastAPI and uvicorn are properly specified in requirements and the API module exports the app variable for direct uvicorn usage.
+changes = Added fastapi>=0.100.0 and uvicorn>=0.23.0 to requirements.txt, exported app variable at module level in pokertool.api for direct uvicorn import (pokertool.api:app now works), verified all dependencies install correctly, confirmed tests pass (dashboard health monitoring test passes), fixed "No module named uvicorn" error, fixed import error preventing API server startup.
 status = stable
 
 [components]
