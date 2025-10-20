@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.7.0
+version = 89.0.0
 release_date = 2025-10-20
 
 [release_notes]
-# v88.7.0 - Chrome Flickering Fix & System Stability
-description = Fixed critical Chrome flickering issue caused by VS Code ScreenCaptureKit and Google Updater interference. Resolved merge conflict in RUM metrics tests. Disabled file mode tracking to prevent spurious permission changes.
-changes = Disabled Chrome GPU VSync for Retina displays, stopped Google Updater background processes, configured git to ignore file mode changes, fixed merge conflict in test_rum_metrics.py.
+# v89.0.0 - UI Status Consolidation & Security Audit
+description = Major UI improvements with unified status indicator, complete TypeScript strict mode compliance, comprehensive RBAC security audit, and prominent version display on Dashboard.
+changes = Consolidated 3 status indicators into single unified System Status indicator with debouncing, eliminated all TypeScript 'any' types, completed comprehensive RBAC security audit with full report, fixed admin endpoint tests, added prominent version badge to Dashboard, installed httpx test dependency.
 status = stable
 
 [components]
