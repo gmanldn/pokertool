@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 95.0.0
+version = 95.0.1
 release_date = 2025-10-21
 
 [release_notes]
-# v95.0.0 - Dashboard Version Display & Comprehensive Documentation Release
-description = Enhanced dashboard to display current git-tracked version at all times, plus comprehensive documentation of all previously undocumented features from v92-v95.
-changes = Updated Dashboard component to use RELEASE_VERSION constant from config/releaseVersion.ts (auto-synced from VERSION file via scripts/sync-version.js) instead of environment variable for robust version display. Enhanced version chip styling with gradient background and responsive sizing. Created comprehensive documentation in FEATURES.md covering v92.0.0 (Session Management), v93.0.0 (Frontend Compilation Fixes), v94.0.0 (Trouble Feed System), and v95.0.0 (Dashboard Version & Documentation). Documentation includes technical implementation details, file changes, API endpoints, and feature benefits. Dashboard version chip now consistently shows accurate git-tracked version with visual polish.
+# v95.0.1 - Complete Documentation Update
+description = Documentation patch release completing comprehensive documentation of all features from v89-v95, including error analysis workflow and full technical details.
+changes = Added comprehensive documentation for v89-v91 releases in FEATURES.md. v91: FastAPI/Uvicorn API infrastructure. v90: OpenTelemetry distributed tracing, structured JSON logging with correlation IDs, ML model lazy loading and caching. v89: UI status consolidation, RBAC security audit, TypeScript strict mode. Added complete error analysis and staged fixing workflow to README documenting Trouble Feed system. All releases from v89 through v95 now have complete feature documentation with technical implementation details.
 status = stable
+
+# v95.0.0 - Dashboard Version Display & Comprehensive Documentation Release
+# description = Enhanced dashboard to display current git-tracked version at all times, plus comprehensive documentation of all previously undocumented features from v92-v95.
+# changes = Updated Dashboard component to use RELEASE_VERSION constant from config/releaseVersion.ts (auto-synced from VERSION file via scripts/sync-version.js) instead of environment variable for robust version display. Enhanced version chip styling with gradient background and responsive sizing. Created comprehensive documentation in FEATURES.md covering v92.0.0 (Session Management), v93.0.0 (Frontend Compilation Fixes), v94.0.0 (Trouble Feed System), and v95.0.0 (Dashboard Version & Documentation). Documentation includes technical implementation details, file changes, API endpoints, and feature benefits. Dashboard version chip now consistently shows accurate git-tracked version with visual polish.
+# status = stable
 
 # v94.0.0 - Trouble Feed System Release
 # description = Comprehensive AI-optimized error aggregation and trouble feed system at /logs/trouble_feed.txt that captures all errors and warnings from across the entire application with maximum detail for intelligent debugging and decision-making.
