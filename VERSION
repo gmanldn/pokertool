@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 89.0.1
-release_date = 2025-10-18
+version = 88.6.0
+release_date = 2025-10-19
 
 [release_notes]
-# v89.0.1 - Release Banner & AI-Aware TODOs
-description = Surfaced the release version directly in the UI header and auto-capture log warnings/errors into TODOs with ready-to-run LLM prompts.
-changes = Navigation now renders the synced release chip beside PokerTool branding while master logging writes deduplicated TODO entries that embed guidance prompts for AI-assisted triage, keeping operational fixes actionable.
+# v88.6.0 - Frontend Error Tracking & System Health Hardening
+description = Added frontend Sentry instrumentation with correlation IDs and tightened WebSocket health coverage across the stack.
+changes = Integrated Sentry browser tracing/replay helpers, refreshed TableView tests to assert WebSocket payload rendering, and hardened backend system-health broadcasting logic with dedicated pytest coverage.
 status = stable
 
 [components]

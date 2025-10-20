@@ -102,6 +102,14 @@ class PokerSiteCompliance:
                 'restricted_features': ['real_time_advice', 'automated_play'],
                 'last_updated': '2024-01-01'
             },
+            'betfair': {
+                'allows_hud': True,
+                'allows_tracking': True,
+                'allows_notes': True,
+                'max_tables': 12,
+                'restricted_features': ['automated_play', 'real_time_advice'],
+                'last_updated': '2024-11-01'
+            },
             '888poker': {
                 'allows_hud': False,
                 'allows_tracking': True, 
@@ -117,6 +125,30 @@ class PokerSiteCompliance:
                 'max_tables': 12,
                 'restricted_features': ['automated_play'],
                 'last_updated': '2024-01-01'
+            },
+            'ggpoker': {
+                'allows_hud': False,
+                'allows_tracking': False,
+                'allows_notes': True,
+                'max_tables': 4,
+                'restricted_features': ['hud_overlay', 'real_time_advice', 'automated_play', 'screen_scraping'],
+                'last_updated': '2024-10-01'
+            },
+            'winamax': {
+                'allows_hud': True,
+                'allows_tracking': True,
+                'allows_notes': True,
+                'max_tables': 8,
+                'restricted_features': ['automated_play', 'real_time_advice'],
+                'last_updated': '2024-09-15'
+            },
+            'acr': {
+                'allows_hud': True,
+                'allows_tracking': True,
+                'allows_notes': True,
+                'max_tables': 24,
+                'restricted_features': ['automated_play'],
+                'last_updated': '2024-08-20'
             },
             'generic': {
                 'allows_hud': True,

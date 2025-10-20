@@ -1,0 +1,28 @@
+[
+  {
+    "name": "preflop_premium",
+    "hole_cards_ocr": [
+      "Ah",
+      "Ad"
+    ],
+    "board_cards_ocr": [],
+    "position": "BTN",
+    "pot": 30,
+    "to_call": 10
+  },
+  {
+    "name": "flop_top_pair",
+    "hole_cards_ocr": [
+      "As",
+      "Kh"
+    ],
+    "board_cards_ocr": [
+      "Ah",
+      "9d",
+      "2c"
+    ],
+    "position": "BTN",
+    "pot": 150,
+    "to_call": 40
+  }
+]

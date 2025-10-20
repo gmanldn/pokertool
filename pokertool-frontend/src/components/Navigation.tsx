@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -57,7 +57,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import type { BackendStatus } from '../hooks/useBackendLifecycle';
-import { RELEASE_VERSION } from '../config/releaseVersion';
+import { useSystemHealth } from '../hooks/useSystemHealth';
 
 interface NavigationProps {
   connected: boolean;
@@ -71,6 +71,53 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [debouncedConnected, setDebouncedConnected] = useState(connected);
+  const appVersion = (process.env.REACT_APP_VERSION || '').trim();
+
+  // Debounce realtime indicator to reduce flicker on transient disconnects
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedConnected(connected), 400);
+    return () => clearTimeout(t);
+  }, [connected]);
+
+  // System health (used for FullyLoaded indicator)
+  const { healthData } = useSystemHealth({ enableWebSocket: true, autoFetch: true, enableCache: true });
+  const fullyLoaded = useMemo(() => {
+    const backendOnline = backendStatus.state === 'online';
+    const healthOk = (healthData?.overall_status || 'unknown') === 'healthy';
+    return backendOnline && debouncedConnected && healthOk;
+  }, [backendStatus.state, debouncedConnected, healthData]);
+
+  const fullyLoadedTooltip = useMemo(() => {
+    const reasons: string[] = [];
+
+    if (backendStatus.state !== 'online') {
+      reasons.push(`Backend status: ${backendStatus.state}`);
+    }
+    if (!debouncedConnected) {
+      reasons.push('Realtime WebSocket not connected');
+    }
+
+    if (healthData) {
+      const affectedCategories = Object.entries(healthData.categories || {})
+        .filter(([, value]) => value.status !== 'healthy')
+        .map(([name, value]) => `${name.charAt(0).toUpperCase() + name.slice(1)}: ${value.status}`);
+
+      reasons.push(...affectedCategories);
+
+      if (!affectedCategories.length && (healthData.overall_status || 'unknown') !== 'healthy') {
+        reasons.push(`Health status: ${healthData.overall_status}`);
+      }
+    } else {
+      reasons.push('Awaiting health data');
+    }
+
+    if (!reasons.length) {
+      return 'All core systems healthy';
+    }
+
+    return reasons.join(' • ');
+  }, [backendStatus.state, debouncedConnected, healthData]);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -132,16 +179,17 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, gap: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
         <Typography variant="h6" fontWeight="bold" color="primary">
           PokerTool Pro
         </Typography>
-        <Chip
-          label={RELEASE_VERSION}
-          color="primary"
-          size="small"
-          sx={{ fontWeight: 600 }}
-        />
       </Box>
       <Divider />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -224,28 +272,18 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
               <MenuIcon />
             </IconButton>
           )}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              flexGrow: 1,
-              minWidth: 0,
-            }}
-          >
-            <Typography variant="h6" noWrap>
-              {isMobile ? 'PokerTool' : 'PokerTool Pro'}
-            </Typography>
-            <Chip
-              label={RELEASE_VERSION}
-              color="primary"
-              size={isMobile ? 'small' : 'medium'}
-              sx={{
-                fontWeight: 600,
-                letterSpacing: 0.5,
-              }}
-            />
-          </Box>
+          
+          <Typography variant="h6" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            {isMobile ? 'PokerTool' : 'PokerTool Pro'}
+            {!!appVersion && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label={appVersion.startsWith('v') ? appVersion : `v${appVersion}`}
+                sx={{ ml: 1 }}
+              />
+            )}
+          </Typography>
 
           {!isMobile && (
             <>
@@ -305,17 +343,29 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
           </Tooltip>
 
           <Badge
-            color={connected ? 'success' : 'error'}
+            color={debouncedConnected ? 'success' : 'error'}
             variant="dot"
             sx={{ mr: 2 }}
           >
             <Chip
-              label={connected ? 'Realtime Online' : 'Realtime Offline'}
+              label={debouncedConnected ? 'Realtime Online' : 'Realtime Offline'}
               size="small"
-              color={connected ? 'success' : 'default'}
-              variant={connected ? 'filled' : 'outlined'}
+              color={debouncedConnected ? 'success' : 'default'}
+              variant={debouncedConnected ? 'filled' : 'outlined'}
             />
           </Badge>
+
+          {/* FullyLoaded indicator */}
+          <Tooltip title={fullyLoadedTooltip}>
+            <Chip
+              icon={<Circle sx={{ fontSize: 8 }} />}
+              label={fullyLoaded ? 'FullyLoaded' : 'Loading…'}
+              size="small"
+              color={fullyLoaded ? 'success' : 'default'}
+              variant={fullyLoaded ? 'filled' : 'outlined'}
+              sx={{ mr: 1 }}
+            />
+          </Tooltip>
 
           {!isMobile && (
             <IconButton onClick={toggleDarkMode} color="inherit">

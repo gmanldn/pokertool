@@ -31,7 +31,6 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
-  TrendingUp,
   TrendingDown,
 } from '@mui/icons-material';
 import { Bar } from 'react-chartjs-2';

@@ -67,6 +67,15 @@ except ImportError:
     psutil = None
     PSUTIL_AVAILABLE = False
 
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    sentry_sdk = None
+    LoggingIntegration = None
+    SENTRY_AVAILABLE = False
+
 __version__ = '28.1.0'
 __author__ = 'PokerTool Development Team'
 
@@ -190,6 +199,9 @@ class MasterLogger:
         # Initialize loggers
         self._setup_loggers()
         
+        # Initialize Sentry if available
+        self._setup_sentry()
+        
         # Start background monitoring
         self._start_monitoring()
         
@@ -224,11 +236,7 @@ class MasterLogger:
             delay=False,
             utc=False
         )
-        master_formatter = logging.Formatter(
-            '%(asctime)s | %(levelname)8s | %(name)s | %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        master_handler.setFormatter(master_formatter)
+        master_handler.setFormatter(self._get_json_formatter())
         self.master_logger.addHandler(master_handler)
 
         # Add a note about log rotation to the log
@@ -236,11 +244,15 @@ class MasterLogger:
         
         # Console handler for immediate feedback
         console_handler = logging.StreamHandler(sys.stdout)
-        console_formatter = logging.Formatter(
-            '%(asctime)s %(levelname)s [%(name)s] %(message)s',
-            datefmt='%H:%M:%S'
-        )
-        console_handler.setFormatter(console_formatter)
+        use_json_console = os.getenv('POKERTOOL_LOG_CONSOLE_JSON', '1') != '0'
+        if use_json_console:
+            console_handler.setFormatter(self._get_json_formatter())
+        else:
+            console_formatter = logging.Formatter(
+                '%(asctime)s %(levelname)s [%(name)s] %(message)s',
+                datefmt='%H:%M:%S'
+            )
+            console_handler.setFormatter(console_formatter)
         console_handler.setLevel(logging.INFO)
         self.master_logger.addHandler(console_handler)
         
@@ -280,30 +292,114 @@ class MasterLogger:
         # Redirect existing loggers to master system
         self._redirect_existing_loggers()
     
+    def _setup_sentry(self):
+        """Configure Sentry error tracking if available."""
+        if not SENTRY_AVAILABLE:
+            self.master_logger.info("Sentry SDK not available - error tracking disabled")
+            return
+        
+        # Get Sentry DSN from environment
+        sentry_dsn = os.getenv('SENTRY_DSN')
+        if not sentry_dsn:
+            self.master_logger.info("SENTRY_DSN not configured - error tracking disabled")
+            return
+        
+        try:
+            # Configure Sentry with logging integration
+            sentry_logging = LoggingIntegration(
+                level=logging.INFO,  # Capture info and above as breadcrumbs
+                event_level=logging.ERROR  # Send errors and above as events
+            )
+            
+            sentry_sdk.init(
+                dsn=sentry_dsn,
+                integrations=[sentry_logging],
+                # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring
+                traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
+                # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions
+                profiles_sample_rate=float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0.1')),
+                environment=os.getenv('POKERTOOL_ENV', 'development'),
+                release=os.getenv('POKERTOOL_VERSION', 'unknown'),
+                # Add custom tags
+                before_send=self._sentry_before_send,
+            )
+            
+            self.master_logger.info("Sentry error tracking initialized successfully")
+        except Exception as e:
+            self.master_logger.error(f"Failed to initialize Sentry: {e}")
+    
+    def _sentry_before_send(self, event, hint):
+        """Process events before sending to Sentry."""
+        # Add session ID to all events
+        event.setdefault('tags', {})['session_id'] = self.session_id
+        
+        # Add correlation ID if available in context
+        if 'exc_info' in hint:
+            exc_info = hint['exc_info']
+            if len(exc_info) > 1 and hasattr(exc_info[1], '__dict__'):
+                correlation_id = getattr(exc_info[1], 'correlation_id', None)
+                if correlation_id:
+                    event['tags']['correlation_id'] = correlation_id
+        
+        return event
+    
     def _get_json_formatter(self):
         """Create a JSON formatter for structured logging."""
+        session_id = self.session_id
+        environment = os.getenv('POKERTOOL_ENV', 'development')
+        hostname = platform.node()
+
         class JsonFormatter(logging.Formatter):
-            def format(self, record):
+            def format(self_inner, record):
                 log_obj = {
-                    'timestamp': self.formatTime(record),
+                    'timestamp': self_inner.formatTime(record),
                     'level': record.levelname,
                     'logger': record.name,
-                    'message': record.getMessage(),
                     'module': record.module,
                     'function': record.funcName,
                     'line': record.lineno,
                     'thread': record.thread,
                     'process': record.process,
+                    'session_id': session_id,
+                    'environment': environment,
+                    'hostname': hostname,
+                    'application': 'pokertool',
                 }
-                
+
+                # Include category when available (logger names use dot notation)
+                if record.name.startswith('pokertool.'):
+                    log_obj['category'] = record.name.split('.', 1)[-1]
+
+                # Include correlation/request identifiers if present
+                correlation_id = getattr(record, 'correlation_id', None)
+                request_id = getattr(record, 'request_id', None)
+                if correlation_id:
+                    log_obj['correlation_id'] = correlation_id
+                if request_id:
+                    log_obj['request_id'] = request_id
+
+                # Attempt to parse structured payloads
+                message = record.getMessage()
+                log_obj['message'] = message or ''
+
+                # Merge structured payload emitted via log_record.context
+                context_payload = getattr(record, 'context', None)
+                if isinstance(context_payload, dict):
+                    log_obj.update({k: v for k, v in context_payload.items() if k != 'additional_data'})
+                    additional_data = context_payload.get('additional_data') or {}
+                    if isinstance(additional_data, dict):
+                        log_obj.update(additional_data)
+                        if 'correlation_id' not in log_obj and 'correlation_id' in additional_data:
+                            log_obj['correlation_id'] = additional_data['correlation_id']
+
                 # Add exception info if present
                 if record.exc_info:
-                    log_obj['exception'] = self.formatException(record.exc_info)
-                
+                    log_obj['exception'] = self_inner.formatException(record.exc_info)
+
                 # Add extra context if available
                 if hasattr(record, 'context'):
                     log_obj['context'] = record.context
-                
+
                 return json.dumps(log_obj, default=str)
         
         return JsonFormatter()
@@ -518,13 +614,34 @@ class MasterLogger:
             except Exception as todo_error:
                 sys.stderr.write(f"[master_logging] Failed to append TODO entry: {todo_error}\n")
     
-    def _process_exception(self, exception: Exception, context: LogContext, 
+    def _process_exception(self, exception: Exception, context: LogContext,
                           additional_data: Dict[str, Any]) -> ErrorDetails:
         """Process and enhance exception information."""
         
         # Generate error hash for deduplication
         error_hash = hash(f"{type(exception).__name__}:{str(exception)}:{context.module}:{context.function}")
         error_hash_str = f"err_{abs(error_hash):x}"
+        
+        # Send to Sentry if available
+        if SENTRY_AVAILABLE and sentry_sdk:
+            with sentry_sdk.push_scope() as scope:
+                # Add context to Sentry
+                scope.set_tag('error_hash', error_hash_str)
+                scope.set_tag('module', context.module)
+                scope.set_tag('function', context.function)
+                scope.set_tag('category', context.category)
+                scope.set_context('system_state', {
+                    'memory_usage': context.memory_usage,
+                    'cpu_usage': context.cpu_usage,
+                    'active_sessions': context.active_sessions,
+                })
+                if context.request_id:
+                    scope.set_tag('correlation_id', context.request_id)
+                if additional_data:
+                    scope.set_context('additional_data', additional_data)
+                
+                # Capture exception
+                sentry_sdk.capture_exception(exception)
         
         # Check if we've seen this error before
         if error_hash_str in self.error_cache:

@@ -30,7 +30,6 @@ import {
 import {
   Refresh,
   Person,
-  Timeline,
   TrendingUp,
 } from '@mui/icons-material';
 import { buildApiUrl } from '../config/api';

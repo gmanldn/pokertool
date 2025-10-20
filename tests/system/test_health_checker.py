@@ -8,8 +8,12 @@ Tests all health check functions to ensure modules load correctly
 and health status is returned properly.
 """
 
-import pytest
 import asyncio
+import time
+from datetime import datetime
+
+import pytest
+
 from pokertool.system_health_checker import (
     SystemHealthChecker,
     HealthStatus,
@@ -176,6 +180,58 @@ class TestSystemHealthChecker:
         assert summary['degraded_count'] == 0
         assert 'ml' in summary['categories']
         assert 'backend' in summary['categories']
+
+    def test_history_cache_invalidation(self):
+        """History cache should return same reference within TTL and invalidate on new data."""
+        checker = SystemHealthChecker()
+        checker._cache_ttl = 5.0  # ensure ample window for testing
+        checker.health_history.clear()
+        checker._persist_history_entry = lambda entry: None  # type: ignore[assignment]
+
+        status = HealthStatus(
+            feature_name='api_server',
+            category='backend',
+            status='healthy',
+            last_check=datetime.utcnow().isoformat()
+        )
+
+        checker._add_to_history({'api_server': status})
+        history_first = checker.get_history(hours=1)
+        history_second = checker.get_history(hours=1)
+
+        assert history_first is history_second
+        assert len(history_first) == 1
+
+        checker._add_to_history({'api_server': status})
+        history_third = checker.get_history(hours=1)
+
+        assert len(history_third) == 2
+        assert history_third is not history_second
+
+    def test_trend_cache_ttl_expiry(self):
+        """Trend cache should expire after TTL and recompute."""
+        checker = SystemHealthChecker()
+        checker._cache_ttl = 0.1
+        checker.health_history.clear()
+        checker._persist_history_entry = lambda entry: None  # type: ignore[assignment]
+
+        status = HealthStatus(
+            feature_name='api_server',
+            category='backend',
+            status='healthy',
+            last_check=datetime.utcnow().isoformat()
+        )
+
+        checker._add_to_history({'api_server': status})
+        trends_initial = checker.get_trends(hours=1)
+        trends_cached = checker.get_trends(hours=1)
+
+        assert trends_initial is trends_cached
+
+        time.sleep(0.12)
+        trends_after_expiry = checker.get_trends(hours=1)
+
+        assert trends_after_expiry is not trends_cached
 
 
 class TestModuleHealthChecks:

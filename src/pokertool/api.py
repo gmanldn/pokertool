@@ -59,6 +59,7 @@ import secrets
 import logging
 import threading
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable, TYPE_CHECKING
 from dataclasses import dataclass, field, asdict
 from enum import Enum
@@ -67,7 +68,7 @@ from functools import wraps
 
 # Try to import FastAPI dependencies
 try:
-    from fastapi import FastAPI, HTTPException, Depends, Security, WebSocket, WebSocketDisconnect, BackgroundTasks
+    from fastapi import FastAPI, HTTPException, Depends, Security, WebSocket, WebSocketDisconnect, BackgroundTasks, Request
     from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -106,6 +107,18 @@ except ImportError:
     jwt = None
     bcrypt = None
     FASTAPI_AVAILABLE = False
+
+# Try to import Sentry for error tracking
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    sentry_sdk = None
+    SentryAsgiMiddleware = None
+    FastApiIntegration = None
+    SENTRY_AVAILABLE = False
 
 from .production_database import get_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
@@ -185,6 +198,35 @@ if FASTAPI_AVAILABLE:
         recommendation: Optional[str] = None
         metadata: Dict[str, Any] = Field(default_factory=dict)
         timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    class RUMMetricPayload(BaseModel):
+        """Payload describing a single frontend performance metric."""
+
+        metric: str = Field(..., description="Metric identifier (e.g., LCP, CLS).", max_length=32)
+        value: float = Field(..., ge=0.0, description="Measured value in milliseconds or unit-specific scale.")
+        delta: Optional[float] = Field(None, description="Delta from previous value in milliseconds.")
+        rating: Optional[str] = Field(
+            None,
+            description="Web Vitals rating (good / needs-improvement / poor).",
+            max_length=32,
+        )
+        session_id: Optional[str] = Field(None, max_length=64)
+        navigation_type: Optional[str] = Field(None, max_length=32)
+        page: Optional[str] = Field(None, max_length=256)
+        client_timestamp: Optional[str] = Field(None, max_length=64)
+        app_version: Optional[str] = Field(None, max_length=32)
+        environment: Dict[str, Any] = Field(default_factory=dict)
+        attribution: Dict[str, Any] = Field(default_factory=dict)
+        trace_id: Optional[str] = Field(None, max_length=64)
+        span_id: Optional[str] = Field(None, max_length=64)
+
+        def to_store_record(self, *, user_agent: Optional[str], client_ip: Optional[str], correlation_id: Optional[str]) -> Dict[str, Any]:
+            record = self.dict()
+            record["user_agent"] = user_agent
+            record["client_ip"] = client_ip
+            if correlation_id and not record.get("trace_id"):
+                record["trace_id"] = correlation_id
+            return record
 
     class UserCreate(BaseModel):
         """User creation model."""
@@ -351,33 +393,35 @@ class AuthenticationService:
         return token
 
     def verify_token(self, token: str) -> Optional[APIUser]:
-        """Verify and decode JWT token."""
+        """Verify and decode token.
+
+        Always accept session-mapped tokens (e.g., demo_token) regardless of
+        whether the JWT library is installed, then fall back to JWT decoding.
+        """
+        # 1) Fast path: explicit session tokens
+        user_id = self.sessions.get(token)
+        if user_id:
+            user = self.users.get(user_id)
+            if user and user.is_active:
+                user.last_active = datetime.utcnow()
+                return user
+
+        # 2) JWT decoding if available
         try:
-            if not jwt:
-                # Fallback verification
-                user_id = self.sessions.get(token)
-                if user_id:
-                    user = self.users.get(user_id)
-                    if user and user.is_active:
-                        user.last_active = datetime.utcnow()
-                        return user
-                return None
-
-            payload = jwt.decode(token, API_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            user_id = payload.get('sub')
-
-            if user_id not in self.users:
-                return None
-
-            user = self.users[user_id]
-            if not user.is_active:
-                return None
-
-            user.last_active = datetime.utcnow()
-            return user
-
+            if jwt:
+                payload = jwt.decode(token, API_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+                user_id = payload.get('sub')
+                if not user_id:
+                    return None
+                user = self.users.get(user_id)
+                if not user or not user.is_active:
+                    return None
+                user.last_active = datetime.utcnow()
+                return user
         except Exception:
             return None
+
+        return None
 
     def get_user_by_credentials(self, username: str, password: str) -> Optional[APIUser]:
         """Get user by username and password (simplified)."""
@@ -572,6 +616,8 @@ class APIServices:
         self._analytics_dashboard = None
         self._gamification_engine = None
         self._community_platform = None
+        self._rum_metrics = None
+        self._rum_lock = threading.Lock()
 
         self._limiter = None
         self._limiter_lock = threading.Lock()
@@ -677,6 +723,18 @@ class APIServices:
 
             self._community_platform = platform
         return self._community_platform
+
+    @property
+    def rum_metrics(self):
+        """Lazy initialisation for RUM metrics store."""
+        if self._rum_metrics is None:
+            with self._rum_lock:
+                if self._rum_metrics is None:
+                    from .rum_metrics import RUMMetricsStore  # Local import to avoid import cost when unused
+                    storage_override = os.getenv("POKERTOOL_RUM_DIR")
+                    store = RUMMetricsStore(Path(storage_override)) if storage_override else RUMMetricsStore()
+                    self._rum_metrics = store
+        return self._rum_metrics
 
     @property
     def limiter(self):
@@ -802,11 +860,36 @@ This API implements comprehensive security measures including:
             }
         )
 
+        self._setup_sentry()
         self._setup_middleware()
         self._setup_routes()
         self._setup_background_tasks()
 
         logger.info('PokerTool API initialized with optimized architecture')
+    
+    def _setup_sentry(self):
+        """Initialize Sentry error tracking for API."""
+        if not SENTRY_AVAILABLE:
+            logger.info("Sentry not available for API error tracking")
+            return
+        
+        sentry_dsn = os.getenv('SENTRY_DSN')
+        if not sentry_dsn:
+            logger.info("SENTRY_DSN not configured for API")
+            return
+        
+        try:
+            sentry_sdk.init(
+                dsn=sentry_dsn,
+                integrations=[FastApiIntegration()],
+                traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
+                profiles_sample_rate=float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0.1')),
+                environment=os.getenv('POKERTOOL_ENV', 'development'),
+                release=os.getenv('POKERTOOL_VERSION', 'unknown'),
+            )
+            logger.info("Sentry initialized for API error tracking")
+        except Exception as e:
+            logger.error(f"Failed to initialize Sentry for API: {e}")
 
     def _setup_background_tasks(self):
         """Setup background cleanup tasks."""
@@ -1040,6 +1123,11 @@ This API implements comprehensive security measures including:
             return user
 
         # Health check
+        # Simple in-memory cache for system health endpoint
+        self._health_cache_data = None
+        self._health_cache_at = 0.0
+        self._health_cache_ttl = float(os.getenv('SYSTEM_HEALTH_TTL_SECONDS', '5'))
+
         @self.app.get('/health', tags=['health'], summary='Health Check')
         async def health_check():
             """
@@ -1089,14 +1177,22 @@ This API implements comprehensive security measures including:
 
         # System Health Monitoring Endpoints
         @self.app.get('/api/system/health', tags=['system'], summary='Get System Health')
-        async def get_system_health():
+        @self.services.limiter.limit('60/minute')
+        async def get_system_health(request: Request):
             """
             Get comprehensive system health status for all features.
             Returns health data for all monitored components.
             """
+            # Cache results for a short TTL to reduce load
+            now = time.time()
+            if self._health_cache_data and (now - self._health_cache_at) < self._health_cache_ttl:
+                return self._health_cache_data
+
             from pokertool.system_health_checker import get_health_checker
             checker = get_health_checker()
             summary = checker.get_summary()
+            self._health_cache_data = summary
+            self._health_cache_at = now
             return summary
 
         @self.app.get('/api/system/health/{category}')
@@ -1140,6 +1236,62 @@ This API implements comprehensive security measures including:
                 'status': 'started',
                 'message': 'Health checks initiated',
                 'timestamp': datetime.utcnow().isoformat()
+            }
+        
+        @self.app.get('/api/system/health/history', tags=['system'], summary='Get Health History')
+        @self.services.limiter.limit('12/minute')
+        async def get_health_history(hours: int = 24):
+            """
+            Get historical health check data for the specified time period.
+            
+            Args:
+                hours: Number of hours of history to retrieve (default: 24)
+            
+            Returns:
+                List of historical health check results with timestamps
+            """
+            from pokertool.system_health_checker import get_health_checker
+            
+            if hours < 1 or hours > 168:  # Max 1 week
+                raise HTTPException(status_code=400, detail='Hours must be between 1 and 168')
+            
+            checker = get_health_checker()
+            history = checker.get_history(hours=hours)
+            
+            return {
+                'success': True,
+                'timestamp': datetime.utcnow().isoformat(),
+                'period_hours': hours,
+                'data_points': len(history),
+                'history': history
+            }
+        
+        @self.app.get('/api/system/health/trends', tags=['system'], summary='Get Health Trends')
+        @self.services.limiter.limit('12/minute')
+        async def get_health_trends(hours: int = 24):
+            """
+            Get health trend analysis over the specified time period.
+            
+            Analyzes patterns, failure rates, and average latencies per feature.
+            
+            Args:
+                hours: Number of hours to analyze (default: 24)
+            
+            Returns:
+                Trend analysis including uptime percentages and latency stats
+            """
+            from pokertool.system_health_checker import get_health_checker
+            
+            if hours < 1 or hours > 168:  # Max 1 week
+                raise HTTPException(status_code=400, detail='Hours must be between 1 and 168')
+            
+            checker = get_health_checker()
+            trends = checker.get_trends(hours=hours)
+            
+            return {
+                'success': True,
+                'timestamp': datetime.utcnow().isoformat(),
+                'trends': trends
             }
 
         # Model Calibration Endpoints
@@ -1373,7 +1525,7 @@ This API implements comprehensive security measures including:
         # Authentication endpoints
         @self.app.post('/auth/token', response_model=Token, tags=['auth'], summary='Login')
         @self.services.limiter.limit('10/minute')
-        async def login(request, username: str, password: str):
+        async def login(request: Request, username: str, password: str):
             user = self.services.auth_service.get_user_by_credentials(username, password)
             if not user:
                 raise HTTPException(status_code=401, detail='Invalid credentials')
@@ -1583,6 +1735,36 @@ This API implements comprehensive security measures including:
                 'avg_session_length_minutes': metrics.avg_session_length_minutes,
             }
 
+        @self.app.post('/api/rum/metrics', tags=['analytics'], summary='Ingest frontend performance metric')
+        @self.services.limiter.limit('180/minute')
+        async def ingest_rum_metric(
+            payload: RUMMetricPayload,
+            request: Request,
+            background_tasks: BackgroundTasks,
+        ):
+            correlation_id = request.headers.get('x-correlation-id')
+            client_ip = request.client.host if request.client else None
+            user_agent = request.headers.get('user-agent')
+
+            record = payload.to_store_record(
+                user_agent=user_agent,
+                client_ip=client_ip,
+                correlation_id=correlation_id,
+            )
+
+            background_tasks.add_task(self.services.rum_metrics.record_metric, record)
+            return JSONResponse(status_code=202, content={'status': 'accepted'})
+
+        @self.app.get('/api/rum/summary', tags=['analytics'], summary='Summarise frontend RUM metrics')
+        @self.services.limiter.limit('30/minute')
+        async def rum_summary(hours: int = 24, user: APIUser = Depends(get_current_user)):
+            try:
+                summary = self.services.rum_metrics.summarise(hours)
+                return summary
+            except Exception as exc:
+                logger.error(f'Failed to summarise RUM metrics: {exc}')
+                raise HTTPException(status_code=500, detail='Unable to summarise RUM metrics')
+
         # Gamification endpoints
         @self.app.post('/gamification/activity')
         async def gamification_activity(activity: GamificationActivityRequest, user: APIUser = Depends(get_current_user)):
@@ -1754,50 +1936,7 @@ This API implements comprehensive security measures including:
                 # Unregister connection
                 await detection_manager.disconnect(connection_id)
 
-        # WebSocket endpoint
-        @self.app.websocket('/ws/{user_id}')
-        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
-            # Verify token
-            user = self.services.auth_service.verify_token(token)
-            if not user or user.user_id != user_id:
-                await websocket.close(code=1008, reason='Invalid token')
-                return
-
-            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
-
-            try:
-                await self.services.connection_manager.connect(websocket, connection_id, user_id)
-
-                # Send welcome message
-                await self.services.connection_manager.send_personal_message({
-                    'type': 'welcome',
-                    'message': f'Connected as {user.username}',
-                    'connection_id': connection_id
-                }, connection_id)
-
-                # Keep connection alive
-                while True:
-                    try:
-                        # Wait for messages from client
-                        message = await websocket.receive_json()
-
-                        # Echo back for now (could handle commands)
-                        await self.services.connection_manager.send_personal_message({
-                            'type': 'echo',
-                            'data': message,
-                            'timestamp': datetime.utcnow().isoformat()
-                        }, connection_id)
-
-                    except WebSocketDisconnect:
-                        break
-                    except Exception as e:
-                        logger.error(f'WebSocket error: {e}')
-                        break
-
-            finally:
-                self.services.connection_manager.disconnect(connection_id, user_id)
-
-        # System Health WebSocket endpoint
+        # System Health WebSocket endpoint (register before dynamic '/ws/{user_id}' route)
         @self.app.websocket('/ws/system-health')
         async def system_health_websocket(websocket: WebSocket):
             """
@@ -1869,6 +2008,52 @@ This API implements comprehensive security measures including:
                 # Unregister connection
                 if connection_id in self._health_ws_connections:
                     del self._health_ws_connections[connection_id]
+
+        # WebSocket endpoint
+        @self.app.websocket('/ws/{user_id}')
+        async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
+            # Verify token
+            user = self.services.auth_service.verify_token(token)
+            if not user or user.user_id != user_id:
+                await websocket.close(code=1008, reason='Invalid token')
+                return
+
+            connection_id = f'ws_{user_id}_{int(time.time() * 1000)}'
+
+            try:
+                await self.services.connection_manager.connect(websocket, connection_id, user_id)
+
+                # Send welcome message
+                await self.services.connection_manager.send_personal_message({
+                    'type': 'welcome',
+                    'message': f'Connected as {user.username}',
+                    'connection_id': connection_id
+                }, connection_id)
+
+                # Keep connection alive
+                while True:
+                    try:
+                        # Wait for messages from client
+                        message = await websocket.receive_json()
+
+                        # Echo back for now (could handle commands)
+                        await self.services.connection_manager.send_personal_message({
+                            'type': 'echo',
+                            'data': message,
+                            'timestamp': datetime.utcnow().isoformat()
+                        }, connection_id)
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'WebSocket error: {e}')
+                        break
+
+            finally:
+                self.services.connection_manager.disconnect(connection_id, user_id)
+
+        # (moved) System Health WebSocket endpoint is registered earlier to avoid
+        # path conflicts with the dynamic '/ws/{user_id}' route.
 
         # Setup health checker broadcast callback
         async def broadcast_health_update(health_data: Dict):

@@ -246,7 +246,7 @@ export const useSystemHealth = (
     if (autoFetch) {
       fetchHealthData();
     }
-  }, [autoFetch]); // Only run once on mount
+  }, [autoFetch, fetchHealthData]);
 
   return {
     healthData,

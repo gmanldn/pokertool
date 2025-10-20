@@ -1287,6 +1287,8 @@ class PokerScreenScraper:
         # Initialize Chrome DevTools Protocol scraper (if available and enabled)
         self.cdp_scraper = None
         self.cdp_connected = False
+        self._cdp_last_connect_attempt = 0.0
+        self._cdp_connect_backoff = 5.0  # seconds between retries
         if CDP_SCRAPER_AVAILABLE and use_cdp:
             try:
                 self.cdp_scraper = ChromeDevToolsScraper()
@@ -1419,7 +1421,13 @@ class PokerScreenScraper:
             },
         )
 
-    def _emit_no_detection(self, betfair_conf: float, universal_conf: float, elapsed_ms: float) -> None:
+    def _emit_no_detection(
+        self,
+        betfair_conf: float,
+        universal_conf: float,
+        elapsed_ms: float,
+        reason: Optional[str] = None,
+    ) -> None:
         """Broadcast a throttled warning when no poker table is detected."""
         now = time.time()
         if now - self._last_no_detection_event_time < 5.0:
@@ -1428,16 +1436,20 @@ class PokerScreenScraper:
         self._last_no_detection_event_time = now
         self._last_detection_success_snapshot = None  # Reset so next detection is emitted immediately
 
+        data = {
+            'site': self.site.value if hasattr(self.site, 'value') else str(self.site),
+            'betfair_confidence': betfair_conf,
+            'universal_confidence': universal_conf,
+            'time_ms': elapsed_ms,
+        }
+        if reason:
+            data['reason'] = reason
+
         emit_detection_event(
             event_type='system',
             severity='warning',
             message="No poker table detected",
-            data={
-                'site': self.site.value if hasattr(self.site, 'value') else str(self.site),
-                'betfair_confidence': betfair_conf,
-                'universal_confidence': universal_conf,
-                'time_ms': elapsed_ms,
-            },
+            data=data,
         )
     
     def detect_poker_table(self, image: Optional[np.ndarray] = None) -> Tuple[bool, float, Dict[str, Any]]:
@@ -1467,7 +1479,13 @@ class PokerScreenScraper:
 
         if image is None or image.size == 0:
             logger.warning("[DETECTION] No image to analyze")
-            return False, 0.0, {'error': 'No image'}
+            self._emit_no_detection(
+                betfair_conf=0.0,
+                universal_conf=0.0,
+                elapsed_ms=0.0,
+                reason='No screen capture available',
+            )
+            return False, 0.0, {'error': 'No image', 'reason': 'capture_unavailable'}
 
         # Get environment-specific parameters from learning system
         detection_threshold = DETECTION_THRESHOLD
@@ -1622,6 +1640,29 @@ class PokerScreenScraper:
         extraction_start = start_time
 
         try:
+            # Opportunistically auto-connect to Chrome DevTools when available
+            if (
+                self.cdp_scraper
+                and self.use_cdp
+                and not self.cdp_connected
+            ):
+                now = time.time()
+                if now - self._cdp_last_connect_attempt >= self._cdp_connect_backoff:
+                    self._cdp_last_connect_attempt = now
+                    try:
+                        self.cdp_scraper.ensure_remote_debugging(ensure_poker_tab=False)
+                    except Exception as exc:
+                        logger.debug(f"[CDP] Remote debugging preparation failed: {exc}")
+
+                    tab_filter = getattr(self.site, 'value', str(self.site)).lower()
+                    if tab_filter == 'generic':
+                        tab_filter = 'poker'
+
+                    if self.connect_to_chrome(tab_filter=tab_filter):
+                        self._cdp_connect_backoff = 5.0
+                    else:
+                        self._cdp_connect_backoff = min(self._cdp_connect_backoff * 1.5, 60.0)
+
             # FAST PATH: Try CDP extraction first (if connected)
             if self.cdp_connected and self.cdp_scraper:
                 try:
@@ -1662,6 +1703,12 @@ class PokerScreenScraper:
 
             if image is None:
                 logger.debug("[TABLE DETECTION] No image captured")
+                self._emit_no_detection(
+                    betfair_conf=0.0,
+                    universal_conf=0.0,
+                    elapsed_ms=(time.time() - start_time) * 1000,
+                    reason='capture_unavailable',
+                )
                 return TableState()
 
             # PERFORMANCE: Incremental update detection

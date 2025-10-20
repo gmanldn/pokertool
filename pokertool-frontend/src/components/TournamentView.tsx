@@ -41,16 +41,13 @@ import {
   Tab,
   useTheme,
   useMediaQuery,
-  Divider,
 } from '@mui/material';
 import {
   EmojiEvents,
   Add,
   Delete,
-  Edit,
   PlayArrow,
   CheckCircle,
-  Cancel,
   FilterList,
   TrendingUp,
   TrendingDown,
@@ -73,11 +70,7 @@ import {
   registerTournament,
   startTournament,
   completeTournament,
-  cancelTournament,
-  updateTournamentInvestment,
-  updateTournamentNotes,
   deleteTournament,
-  setStatusFilter,
   setStructureFilter,
   selectFilteredTournaments,
   Tournament,
@@ -109,7 +102,6 @@ export const TournamentView: React.FC = () => {
 
   const [registerDialog, setRegisterDialog] = useState(false);
   const [completeDialog, setCompleteDialog] = useState(false);
-  const [_detailsDialog, _setDetailsDialog] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [tabValue, setTabValue] = useState(0);
 

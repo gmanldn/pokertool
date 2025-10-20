@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -50,6 +50,7 @@ import HelpOutline from '@mui/icons-material/HelpOutline';
 import DescriptionIcon from '@mui/icons-material/Description';
 import TableViewIcon from '@mui/icons-material/TableView';
 import { useSystemHealth } from '../hooks/useSystemHealth';
+import { useSystemHealthTrends, type HealthHistoryEntry } from '../hooks/useSystemHealthTrends';
 import type { HealthStatus, HealthData } from '../hooks/useSystemHealth';
 import { ErrorBoundary } from './ErrorBoundary';
 
@@ -66,7 +67,6 @@ export const SystemStatus: React.FC = () => {
     error,
     refreshing,
     fetchHealthData,
-    isConnected,
   } = useSystemHealth({
     enableWebSocket: true,
     enableCache: true,
@@ -78,6 +78,16 @@ export const SystemStatus: React.FC = () => {
       );
     },
   });
+
+  const [trendHours, setTrendHours] = useState<number>(24);
+  const {
+    trends,
+    history,
+    loading: trendsLoading,
+    refreshing: trendsRefreshing,
+    error: trendsError,
+    refresh: refreshTrends,
+  } = useSystemHealthTrends(trendHours, { autoFetch: true });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
@@ -94,7 +104,7 @@ export const SystemStatus: React.FC = () => {
 
   const handleRefresh = async () => {
     announceToScreenReader('Refreshing system health data...');
-    await fetchHealthData();
+    await Promise.all([fetchHealthData(), refreshTrends()]);
     announceToScreenReader('System health data refreshed.');
   };
 
@@ -223,6 +233,53 @@ export const SystemStatus: React.FC = () => {
       advanced: 'Advanced Features',
     };
     return names[category] || category;
+  };
+
+  const formatFeatureName = (name: string) =>
+    name
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const formatPercentage = (value?: number) =>
+    value === undefined || value === null ? '—' : `${value.toFixed(1)}%`;
+
+  const summarizeHistoryEntry = (entry: HealthHistoryEntry) => {
+    const counts: Record<'healthy' | 'degraded' | 'failing' | 'unknown', number> = {
+      healthy: 0,
+      degraded: 0,
+      failing: 0,
+      unknown: 0,
+    };
+
+    Object.values(entry.results || {}).forEach((result) => {
+      counts[result.status] = (counts[result.status] ?? 0) + 1;
+    });
+
+    return counts;
+  };
+
+  const trendWindowOptions = [6, 12, 24, 48, 168];
+
+  const trendFeatureEntries = useMemo(() => {
+    if (!trends) {
+      return [];
+    }
+
+    return Object.entries(trends.feature_trends)
+      .sort(([, a], [, b]) => (b.failing_pct ?? 0) - (a.failing_pct ?? 0))
+      .slice(0, 6);
+  }, [trends]);
+
+  const recentHistory = useMemo(() => {
+    if (!history.length) {
+      return [];
+    }
+
+    return [...history].slice(-5).reverse();
+  }, [history]);
+
+  const handleTrendHoursChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTrendHours(Number(event.target.value));
   };
 
   // Filter health checks
@@ -483,6 +540,151 @@ export const SystemStatus: React.FC = () => {
           </Grid>
         </Paper>
       )}
+
+      {/* Health Trends */}
+      <Paper
+        sx={{ p: 3, mb: 3 }}
+        role="region"
+        aria-label={`System health trends for last ${trendHours} hours`}
+      >
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+          <Box>
+            <Typography variant="h6">Health Trends</Typography>
+            {trends && (
+              <Typography variant="body2" color="textSecondary">
+                {`${trends.summary}. ${trends.data_points} samples collected.`}
+              </Typography>
+            )}
+          </Box>
+          <Box display="flex" alignItems="center" gap={2}>
+            <TextField
+              select
+              size="small"
+              label="Window"
+              value={trendHours}
+              onChange={handleTrendHoursChange}
+              sx={{ minWidth: 120 }}
+              inputProps={{ 'aria-label': 'Select health trend window (hours)' }}
+            >
+              {trendWindowOptions.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}h
+                </MenuItem>
+              ))}
+            </TextField>
+            {trendsRefreshing && <CircularProgress size={20} aria-label="Loading health trends" />}
+          </Box>
+        </Box>
+
+        {trendsError && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {trendsError}
+          </Alert>
+        )}
+
+        {trendsLoading && !trends ? (
+          <Grid container spacing={2} mt={1}>
+            <Grid item xs={12} md={7}>
+              <Skeleton variant="rectangular" height={180} />
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <Skeleton variant="rectangular" height={180} />
+            </Grid>
+          </Grid>
+        ) : trends ? (
+          <Grid container spacing={3} mt={1}>
+            <Grid item xs={12} md={7}>
+              <Typography variant="subtitle1" gutterBottom>
+                Watchlist (Top 6 by failure rate)
+              </Typography>
+              <Grid container spacing={2}>
+                {trendFeatureEntries.map(([featureName, stats]) => (
+                  <Grid item xs={12} sm={6} key={featureName}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 2, height: '100%' }}
+                      aria-label={`Trend summary for ${formatFeatureName(featureName)}`}
+                    >
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {formatFeatureName(featureName)}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                        Healthy uptime: {formatPercentage(stats.healthy_pct)}
+                      </Typography>
+                      <Grid container spacing={1}>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="success.main">
+                            Healthy
+                          </Typography>
+                          <Typography variant="body2">{stats.healthy}</Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="warning.main">
+                            Degraded
+                          </Typography>
+                          <Typography variant="body2">{stats.degraded}</Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="error.main">
+                            Failing
+                          </Typography>
+                          <Typography variant="body2">{stats.failing}</Typography>
+                        </Grid>
+                      </Grid>
+                      <Typography variant="caption" color="textSecondary" display="block" mt={1}>
+                        Avg latency: {stats.avg_latency_ms !== undefined && stats.avg_latency_ms !== null
+                          ? `${stats.avg_latency_ms.toFixed(1)} ms`
+                          : 'n/a'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+                {!trendFeatureEntries.length && (
+                  <Grid item xs={12}>
+                    <Typography variant="body2" color="textSecondary">
+                      Trend analytics will appear after the first scheduled health run completes.
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <Typography variant="subtitle1" gutterBottom>
+                Recent samples
+              </Typography>
+              <Box display="flex" flexDirection="column" gap={1} role="list">
+                {recentHistory.length ? recentHistory.map((entry) => {
+                  const counts = summarizeHistoryEntry(entry);
+                  return (
+                    <Paper
+                      key={entry.timestamp}
+                      variant="outlined"
+                      sx={{ p: 2 }}
+                      role="listitem"
+                      aria-label={`Health sample at ${new Date(entry.timestamp).toLocaleString()}`}
+                    >
+                      <Typography variant="body2" fontWeight="bold">
+                        {new Date(entry.timestamp).toLocaleString()}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        Healthy: {counts.healthy} | Degraded: {counts.degraded} | Failing: {counts.failing} | Unknown: {counts.unknown}
+                      </Typography>
+                    </Paper>
+                  );
+                }) : (
+                  <Typography variant="body2" color="textSecondary">
+                    Waiting for historical health samples...
+                  </Typography>
+                )}
+              </Box>
+            </Grid>
+          </Grid>
+        ) : (
+          <Typography variant="body2" color="textSecondary" mt={2}>
+            Trend analytics are generated once background health checks have persisted enough history.
+          </Typography>
+        )}
+      </Paper>
 
       {/* Filters and Search */}
       <Paper sx={{ p: 2, mb: 3 }} role="search" aria-label="Filter and search health checks">

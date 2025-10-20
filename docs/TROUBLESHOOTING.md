@@ -22,13 +22,14 @@ Comprehensive guide for diagnosing and fixing common issues with PokerTool.
 ### Run System Health Check
 
 ```bash
-# Check all components
-python3 scripts/health_check.py
+# Check all components via API
+curl http://localhost:5001/api/system/health | python3 -m json.tool
 
-# Check specific component
-python3 scripts/health_check.py --component scraper
-python3 scripts/health_check.py --component database
-python3 scripts/health_check.py --component frontend
+# Check backend only
+curl http://localhost:5001/health
+
+# View health dashboard
+# Open http://localhost:3000/system-status in browser
 ```
 
 ### View Logs
@@ -60,6 +61,62 @@ cd pokertool-frontend && npm list --depth=0
 python3 --version  # Should be 3.12+
 node --version     # Should be 18+
 npm --version
+```
+
+---
+
+## Common Issues (Updated October 2025)
+
+### Problem: Health check shows "API server failing"
+
+**Symptoms**: `/api/system/health` shows API server status as "failing"
+
+**Cause**: Health checker configured for wrong port (8000 instead of 5001)
+
+**Solution**:
+```bash
+# Fixed in v88.5.1+
+# If on older version, update system_health_checker.py:
+# Change POKERTOOL_PORT from '8000' to '5001'
+
+# Restart app to apply
+python restart.py
+```
+
+### Problem: Dependency conflict with numpy and opencv-python
+
+**Symptoms**:
+```
+opencv-python 4.12.0.88 requires numpy>=2, but you have numpy 1.26.4
+```
+
+**Solution**:
+```bash
+# Update numpy to 2.x (fixed in requirements.txt v88.5.1+)
+.venv/bin/pip install "numpy>=2.0.0,<2.3.0"
+
+# Or clean reinstall
+python restart.py --kill-only
+rm -rf .venv
+python start.py --setup-only
+python restart.py
+```
+
+### Problem: Port already in use after crash
+
+**Symptoms**: `Address already in use` when starting app
+
+**Solution**:
+```bash
+# Use restart script (automatic cleanup)
+python restart.py
+
+# Or manual cleanup
+lsof -ti:5001 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
+
+# Or kill all pokertool processes
+python scripts/kill.py
 ```
 
 ---

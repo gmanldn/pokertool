@@ -24,7 +24,6 @@ import {
   Divider,
   Chip,
   Alert,
-  LinearProgress,
   useTheme,
   useMediaQuery,
 } from '@mui/material';

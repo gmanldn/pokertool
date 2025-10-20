@@ -33,7 +33,6 @@ import {
   Visibility,
   CheckCircle,
   Build,
-  TrendingUp,
 } from '@mui/icons-material';
 import { buildApiUrl } from '../config/api';
 

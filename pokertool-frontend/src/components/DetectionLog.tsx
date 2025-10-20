@@ -22,15 +22,8 @@ import {
   FormControlLabel,
   useTheme,
   useMediaQuery,
-  Divider,
 } from '@mui/material';
-import {
-  Clear,
-  PauseCircle,
-  PlayCircle,
-  GetApp,
-  FilterList,
-} from '@mui/icons-material';
+import { Clear, GetApp, FilterList } from '@mui/icons-material';
 import { DetectionMessage, DetectionLogData } from '../types/common';
 import { buildApiUrl, httpToWs } from '../config/api';
 
@@ -50,8 +43,15 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   const detectionEndpoint = React.useMemo(() => httpToWs(buildApiUrl('/ws/detections')), []);
+  const fallbackEndpoint = React.useMemo(() => {
+    if (detectionEndpoint.includes('localhost')) {
+      return detectionEndpoint.replace('localhost', '127.0.0.1');
+    }
+    return null;
+  }, [detectionEndpoint]);
 
   const [logs, setLogs] = useState<LogEntry[]>([
     {
@@ -67,7 +67,6 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
     },
   ]);
 
-  const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [filters, setFilters] = useState({
     player: true,
@@ -87,21 +86,22 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
 
   // Connect to WebSocket for real detection events with retry logic
   useEffect(() => {
-    if (isPaused) return;
 
     let ws: WebSocket | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
     let hasShownError = false;
     let isCleaningUp = false;
+    let attemptedFallback = false;
 
-    const connect = () => {
+    const connect = (endpoint: string) => {
       if (isCleaningUp) return;
 
       try {
-        ws = new WebSocket(detectionEndpoint);
+        ws = new WebSocket(endpoint);
 
         ws.onopen = () => {
           console.log('Detection WebSocket connected');
+          setIsConnected(true);
           hasShownError = false;
           setLogs((prev) => [
             ...prev,
@@ -110,7 +110,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
               type: 'system' as const,
               severity: 'success' as const,
               message: 'Connected to detection backend',
-              data: { endpoint: detectionEndpoint },
+              data: { endpoint },
             },
           ].slice(-100));
         };
@@ -128,7 +128,30 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
         };
 
         ws.onerror = (error) => {
+          setIsConnected(false);
           console.error('Detection WebSocket error:', error);
+          if (!attemptedFallback && fallbackEndpoint && endpoint !== fallbackEndpoint) {
+            attemptedFallback = true;
+            setLogs((prev) => [
+              ...prev,
+              {
+                timestamp: new Date().toISOString(),
+                type: 'system' as const,
+                severity: 'warning' as const,
+                message: `Primary endpoint unavailable, retrying via ${fallbackEndpoint}`,
+              },
+            ].slice(-100));
+            if (ws) {
+              try {
+                ws.close();
+              } catch (closeErr) {
+                console.debug('Error closing failed WebSocket:', closeErr);
+              }
+            }
+            reconnectTimeout = setTimeout(() => connect(fallbackEndpoint), 500);
+            return;
+          }
+
           if (!hasShownError) {
             hasShownError = true;
             setLogs((prev) => [
@@ -137,7 +160,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
                 timestamp: new Date().toISOString(),
                 type: 'system' as const,
                 severity: 'warning' as const,
-                message: `Waiting for backend API at ${detectionEndpoint}`,
+                message: `Waiting for backend API at ${endpoint}`,
                 data: {
                   status: 'Retrying in 10 seconds...',
                   possibleCauses: [
@@ -153,9 +176,10 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
 
         ws.onclose = () => {
           console.log('Detection WebSocket closed');
-          if (!isCleaningUp && !isPaused) {
+          setIsConnected(false);
+          if (!isCleaningUp) {
             // Reconnect after 10 seconds
-            reconnectTimeout = setTimeout(connect, 10000);
+            reconnectTimeout = setTimeout(() => connect(endpoint), 10000);
           }
         };
       } catch (error) {
@@ -168,7 +192,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
               timestamp: new Date().toISOString(),
               type: 'system' as const,
               severity: 'warning' as const,
-              message: `Waiting for backend API at ${detectionEndpoint}`,
+              message: `Waiting for backend API at ${endpoint}`,
               data: {
                 status: 'Retrying in 10 seconds...',
                 error: String(error),
@@ -180,12 +204,12 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
               },
             },
           ].slice(-100));
-          reconnectTimeout = setTimeout(connect, 10000);
+          reconnectTimeout = setTimeout(() => connect(endpoint), 10000);
         }
       }
     };
 
-    connect();
+    connect(detectionEndpoint);
 
     return () => {
       isCleaningUp = true;
@@ -196,7 +220,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
         ws.close();
       }
     };
-  }, [isPaused, detectionEndpoint]);
+  }, [detectionEndpoint, fallbackEndpoint]);
 
   const handleClearLogs = () => {
     setLogs([
@@ -250,6 +274,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
   };
 
   const filteredLogs = logs.filter((log) => filters[log.type]);
+  const isPaused = !isConnected;
 
   return (
     <Box sx={{ p: isMobile ? 2 : 3 }}>
@@ -268,13 +293,6 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
             }
             label={<Typography variant="caption">Auto-scroll</Typography>}
           />
-          <IconButton
-            onClick={() => setIsPaused(!isPaused)}
-            color={isPaused ? 'warning' : 'success'}
-            size="small"
-          >
-            {isPaused ? <PlayCircle /> : <PauseCircle />}
-          </IconButton>
           <IconButton onClick={handleExportLogs} size="small">
             <GetApp />
           </IconButton>

@@ -43,6 +43,9 @@ The installer validates dependencies, provisions the virtual environment, and pr
 
 ```bash
 # Launch the web interface
+python start.py
+
+# Or use the module interface
 python -m pokertool web
 
 # Run the comprehensive test suite with architecture validation
@@ -51,6 +54,26 @@ python test.py
 # Execute headless screen scraping (optional)
 python -m pokertool scrape
 ```
+
+### Restarting After Updates
+
+After pulling updates or making configuration changes, use the restart script for a clean reboot:
+
+```bash
+# Restart web application (kills old processes and starts fresh)
+python restart.py
+
+# Restart with GUI mode
+python restart.py --gui
+
+# Just stop all processes without restarting
+python restart.py --kill-only
+```
+
+The restart script:
+- Gracefully stops all pokertool processes (backend API, frontend, GUI)
+- Cleans up stuck processes and releases ports
+- Relaunches the application with updated code/config
 
 Additional commands:
 

@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -76,7 +76,7 @@ export const SessionClock: React.FC<SessionClockProps> = ({
   };
 
   // Start session
-  const startSession = () => {
+  const startSession = useCallback(() => {
     const now = Date.now();
     setSessionState(prev => ({
       ...prev,
@@ -84,20 +84,20 @@ export const SessionClock: React.FC<SessionClockProps> = ({
       isPaused: false,
       lastActivity: now,
     }));
-  };
+  }, []);
 
   // Pause session
-  const pauseSession = () => {
+  const pauseSession = useCallback(() => {
     const now = Date.now();
     setSessionState(prev => ({
       ...prev,
       isPaused: true,
       breaks: [...prev.breaks, { start: now }],
     }));
-  };
+  }, []);
 
   // Resume session
-  const resumeSession = () => {
+  const resumeSession = useCallback(() => {
     const now = Date.now();
     setSessionState(prev => {
       const updatedBreaks = [...prev.breaks];
@@ -111,10 +111,10 @@ export const SessionClock: React.FC<SessionClockProps> = ({
         breaks: updatedBreaks,
       };
     });
-  };
+  }, []);
 
   // Stop session
-  const stopSession = () => {
+  const stopSession = useCallback(() => {
     setSessionState({
       startTime: null,
       totalElapsed: 0,
@@ -123,7 +123,7 @@ export const SessionClock: React.FC<SessionClockProps> = ({
       lastActivity: Date.now(),
       breaks: [],
     });
-  };
+  }, []);
 
   // Update clock every second
   useEffect(() => {
@@ -169,7 +169,16 @@ export const SessionClock: React.FC<SessionClockProps> = ({
     if (onTimeUpdate) {
       onTimeUpdate(totalSeconds, Math.max(0, activeSeconds));
     }
-  }, [currentTime, sessionState.startTime, sessionState.lastActivity, sessionState.isPaused, inactivityThreshold, onTimeUpdate]);
+  }, [
+    currentTime,
+    sessionState.startTime,
+    sessionState.lastActivity,
+    sessionState.isPaused,
+    sessionState.breaks,
+    inactivityThreshold,
+    onTimeUpdate,
+    pauseSession,
+  ]);
 
   // Register activity to prevent auto-pause
   useEffect(() => {

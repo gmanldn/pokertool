@@ -276,6 +276,53 @@ class ChromeDevToolsScraper:
             logger.error(f"Failed to launch Chrome: {e}")
             return False
 
+    def ensure_remote_debugging(self, ensure_poker_tab: bool = False) -> bool:
+        """
+        Ensure Chrome is running with remote debugging enabled.
+
+        Args:
+            ensure_poker_tab: When True, verify a poker tab is available (launches if missing).
+
+        Returns:
+            True if the remote debugging endpoint is reachable (and poker tab ready when requested).
+        """
+        if self._is_chrome_running_with_debug():
+            logger.info("Chrome remote debugging endpoint already detected")
+            if ensure_poker_tab:
+                return self._ensure_poker_tab()
+            return True
+
+        if not self.auto_launch:
+            logger.warning("Chrome not running with remote debugging and auto-launch disabled")
+            return False
+
+        if not self._launch_chrome():
+            return False
+
+        if ensure_poker_tab:
+            return self._ensure_poker_tab()
+        return True
+
+    def _ensure_poker_tab(self) -> bool:
+        """
+        Ensure the target poker tab is available through the Chrome DevTools endpoint.
+        """
+        logger.info("Ensuring poker tab is available through Chrome DevTools")
+        try:
+            if self.connect():
+                logger.info("✓ Poker tab reachable via Chrome DevTools")
+                self.disconnect(close_chrome=False)
+                return True
+            logger.warning("Poker tab not reachable via Chrome DevTools")
+            return False
+        except Exception as exc:
+            logger.error(f"Failed to verify poker tab availability: {exc}")
+            try:
+                self.disconnect(close_chrome=False)
+            except Exception:
+                pass
+            return False
+
     def connect(self, tab_filter: str = "betfair") -> bool:
         """
         Connect to Chrome and find the Betfair poker tab with AUTOMATIC setup.
