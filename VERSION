@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 94.0.0
+version = 95.0.0
 release_date = 2025-10-21
 
 [release_notes]
-# v94.0.0 - Trouble Feed System Release
-description = Comprehensive AI-optimized error aggregation and trouble feed system at /logs/trouble_feed.txt that captures all errors and warnings from across the entire application with maximum detail for intelligent debugging and decision-making.
-changes = Created centralized trouble feed handler (trouble_feed.py) with human and AI-readable formatting including full stack traces, context preservation, and severity classification. Integrated automatic backend error capture through master_logging system. Added frontend error tracking service (troubleFeed.ts) with automatic global error handler and unhandled rejection capture. Implemented API endpoint (/api/errors/frontend) for frontend error reporting with rate limiting. Features include automatic log rotation at 50MB, real-time error streaming, in-memory caching of recent entries, deduplication, and multi-source aggregation (Backend, Frontend, WebSocket, Scraper, Database, Build). Each trouble entry includes timestamp, severity, source, module location, error type/message, full stack trace, context data, system state, and AI suggestion hints. Trouble feed automatically captures warnings/errors from all logging handlers across the application.
+# v95.0.0 - Dashboard Version Display & Comprehensive Documentation Release
+description = Enhanced dashboard to display current git-tracked version at all times, plus comprehensive documentation of all previously undocumented features from v92-v95.
+changes = Updated Dashboard component to use RELEASE_VERSION constant from config/releaseVersion.ts (auto-synced from VERSION file via scripts/sync-version.js) instead of environment variable for robust version display. Enhanced version chip styling with gradient background and responsive sizing. Created comprehensive documentation in FEATURES.md covering v92.0.0 (Session Management), v93.0.0 (Frontend Compilation Fixes), v94.0.0 (Trouble Feed System), and v95.0.0 (Dashboard Version & Documentation). Documentation includes technical implementation details, file changes, API endpoints, and feature benefits. Dashboard version chip now consistently shows accurate git-tracked version with visual polish.
 status = stable
+
+# v94.0.0 - Trouble Feed System Release
+# description = Comprehensive AI-optimized error aggregation and trouble feed system at /logs/trouble_feed.txt that captures all errors and warnings from across the entire application with maximum detail for intelligent debugging and decision-making.
+# changes = Created centralized trouble feed handler (trouble_feed.py) with human and AI-readable formatting including full stack traces, context preservation, and severity classification. Integrated automatic backend error capture through master_logging system. Added frontend error tracking service (troubleFeed.ts) with automatic global error handler and unhandled rejection capture. Implemented API endpoint (/api/errors/frontend) for frontend error reporting with rate limiting. Features include automatic log rotation at 50MB, real-time error streaming, in-memory caching of recent entries, deduplication, and multi-source aggregation (Backend, Frontend, WebSocket, Scraper, Database, Build). Each trouble entry includes timestamp, severity, source, module location, error type/message, full stack trace, context data, system state, and AI suggestion hints. Trouble feed automatically captures warnings/errors from all logging handlers across the application.
+# status = stable
 
 [components]
 # Scraping System Components - v75.0.0 Implementation
