@@ -1897,9 +1897,19 @@ This API implements comprehensive security measures including:
             thread_stats = self.services.thread_pool.get_stats()
             db_stats = self.services.db.get_database_stats()
 
+            # Get model cache metrics
+            model_cache_stats = {}
+            try:
+                from pokertool.model_cache import get_model_cache
+                model_cache = get_model_cache()
+                model_cache_stats = model_cache.get_metrics()
+            except Exception as e:
+                logger.warning(f"Could not get model cache stats: {e}")
+
             return {
                 'threading': thread_stats,
                 'database': db_stats,
+                'model_cache': model_cache_stats,
                 'websockets': {
                     'active_connections': len(self.services.connection_manager.active_connections),
                     'users_connected': len(self.services.connection_manager.user_connections)

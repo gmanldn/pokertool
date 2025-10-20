@@ -26,7 +26,7 @@ Conventions
 - [x] [P1][S] WebSocket reliability tests — `ws/system-health` connect, broadcast to multiple clients, backoff/reconnect.
 - [x] [P1][M] RBAC audit — verify all sensitive endpoints enforce roles; extend tests covering `src/pokertool/rbac.py` policies. ✅ Complete: all admin endpoints (`/admin/users`, `/admin/system/stats`, `/gamification/badges`) properly enforce admin role via `get_admin_user` dependency. Tests exist in `tests/api/test_admin_endpoints_authorization.py`. Fixed test imports and installed httpx. Full audit report in `RBAC_AUDIT_REPORT.md`. No security vulnerabilities found.
 - [x] [P1][S] Fix `/auth/token` handler signature — annotate `request: Request` so SlowAPI limiter works without errors in tests/runtime.
-- [ ] [P1][M] Lazy-load and cache ML models — reduce startup latency and memory; add warmup path and metrics.
+- [x] [P1][M] Lazy-load and cache ML models — ✅ Complete: implemented ModelCache with lazy loading, in-memory caching, weak references for memory pressure handling, usage tracking, warmup support for critical models, thread-safe operations, and @lazy_model decorator. Metrics exposed via `/admin/system/stats` endpoint. File: `src/pokertool/model_cache.py` (315 lines). Features: cache hit/miss tracking, access patterns, automatic garbage collection under memory pressure.
 - [ ] [P1][M] Long-session memory profiling — tracemalloc sampling for GUI to detect widget/thread leaks.
 - [ ] [P1][M] End-to-end dashboard test — frontend subscribes to health updates; simulate failures and verify status changes.
 
