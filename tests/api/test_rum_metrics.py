@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
@@ -27,7 +27,7 @@ def test_rum_ingest_and_summary(tmp_path):
         "rating": "good",
         "session_id": "session-test",
         "page": "/dashboard",
-        "client_timestamp": datetime.utcnow().isoformat(),
+        "client_timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     response = client.post("/api/rum/metrics", json=payload, headers={"User-Agent": "pytest"})

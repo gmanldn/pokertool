@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -24,8 +24,8 @@ def _parse_iso_timestamp(value: Optional[str]) -> Optional[datetime]:
     except ValueError:
         return None
     if dt.tzinfo is not None:
-        return dt.astimezone(tz=None).replace(tzinfo=None)
-    return dt
+        return dt.astimezone(timezone.utc)
+    return dt.replace(tzinfo=timezone.utc)
 
 
 def _percentile(values: List[float], percentile: float) -> float:
@@ -62,7 +62,7 @@ class RUMMetricsStore:
         """Persist a single metric entry."""
         record = self._sanitise_metric(metric)
         if not record.get("received_at"):
-            record["received_at"] = datetime.utcnow().isoformat()
+            record["received_at"] = datetime.now(timezone.utc).isoformat()
 
         with self._lock:
             with self.storage_file.open("a", encoding="utf-8") as handle:
@@ -74,7 +74,7 @@ class RUMMetricsStore:
 
     def load_recent(self, hours: int) -> List[Dict[str, Any]]:
         """Load metrics recorded within the last `hours` hours."""
-        cutoff = datetime.utcnow() - timedelta(hours=max(1, hours))
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=max(1, hours))
         if not self.storage_file.exists():
             return []
 
@@ -118,7 +118,7 @@ class RUMMetricsStore:
         metric_summaries.sort(key=lambda item: item["metric"])
 
         return {
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "window_hours": window_hours,
             "total_samples": len(samples),
             "metrics": metric_summaries,
@@ -222,7 +222,7 @@ class RUMMetricsStore:
 
     def _trim_old_entries(self) -> None:
         """Remove metrics older than the retention window."""
-        cutoff = datetime.utcnow() - timedelta(days=max(1, self.retention_days))
+        cutoff = datetime.now(timezone.utc) - timedelta(days=max(1, self.retention_days))
         entries: List[str] = []
 
         if not self.storage_file.exists():

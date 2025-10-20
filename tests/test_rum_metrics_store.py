@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from pokertool.rum_metrics import RUMMetricsStore
 
 
 def test_record_and_summarise(tmp_path):
     store = RUMMetricsStore(storage_dir=tmp_path)
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     store.record_metric({
         "metric": "LCP",
@@ -52,8 +52,8 @@ def test_record_and_summarise(tmp_path):
 
 def test_load_recent_filters_old_entries(tmp_path):
     store = RUMMetricsStore(storage_dir=tmp_path)
-    old_time = (datetime.utcnow() - timedelta(hours=50)).isoformat()
-    recent_time = (datetime.utcnow() - timedelta(hours=2)).isoformat()
+    old_time = (datetime.now(timezone.utc) - timedelta(hours=50)).isoformat()
+    recent_time = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
 
     store.record_metric({
         "metric": "TTFB",
