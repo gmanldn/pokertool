@@ -285,6 +285,17 @@ if FASTAPI_AVAILABLE:
     class ChallengeParticipationRequest(BaseModel):
         challenge_id: str
 
+    class FrontendErrorPayload(BaseModel):
+        """Payload for frontend error logging to trouble feed"""
+        error_type: str = Field(..., description="Type of error (e.g., TypeError, ReferenceError)")
+        error_message: str = Field(..., description="Error message")
+        stack_trace: str = Field(default="", description="Full stack trace if available")
+        component: str = Field(..., description="React component or module where error occurred")
+        severity: str = Field(default="ERROR", description="Severity level: WARNING, ERROR, or CRITICAL")
+        context: Dict[str, Any] = Field(default_factory=dict, description="Additional context (props, state, etc.)")
+        url: Optional[str] = Field(default=None, description="URL where error occurred")
+        user_agent: Optional[str] = Field(default=None, description="Browser user agent")
+
 else:
     # Fallback classes when FastAPI is not available
     class BaseModel:
@@ -1791,6 +1802,69 @@ This API implements comprehensive security measures including:
             except Exception as exc:
                 logger.error(f'Failed to summarise RUM metrics: {exc}')
                 raise HTTPException(status_code=500, detail='Unable to summarise RUM metrics')
+
+        # Frontend Error Logging to Trouble Feed
+        @self.app.post('/api/errors/frontend', tags=['monitoring'], summary='Log frontend error to trouble feed')
+        @self.services.limiter.limit('60/minute')
+        async def log_frontend_error(
+            request: Request,
+            payload: FrontendErrorPayload,
+        ):
+            """
+            Log frontend JavaScript/React errors to the centralized trouble feed.
+
+            This endpoint allows the frontend to report errors that occur in the browser
+            to the backend trouble feed system for AI analysis and debugging.
+            """
+            try:
+                from pokertool.trouble_feed import log_frontend_error as log_fe_error, TroubleSeverity
+
+                # Map severity string to enum
+                severity_map = {
+                    'WARNING': TroubleSeverity.WARNING,
+                    'ERROR': TroubleSeverity.ERROR,
+                    'CRITICAL': TroubleSeverity.CRITICAL,
+                }
+                severity = severity_map.get(payload.severity.upper(), TroubleSeverity.ERROR)
+
+                # Enhance context with request metadata
+                enhanced_context = {
+                    **payload.context,
+                    'url': payload.url or 'unknown',
+                    'user_agent': payload.user_agent or request.headers.get('user-agent', 'unknown'),
+                    'client_ip': request.client.host if request.client else 'unknown',
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+
+                # Log to trouble feed
+                log_fe_error(
+                    error_type=payload.error_type,
+                    error_message=payload.error_message,
+                    stack_trace=payload.stack_trace,
+                    component=payload.component,
+                    context=enhanced_context,
+                    severity=severity,
+                )
+
+                return JSONResponse(
+                    status_code=202,
+                    content={
+                        'status': 'accepted',
+                        'message': 'Error logged to trouble feed',
+                        'timestamp': datetime.utcnow().isoformat(),
+                    }
+                )
+            except Exception as exc:
+                logger.error(f'Failed to log frontend error to trouble feed: {exc}')
+                # Don't fail the request - just log it
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        'status': 'error',
+                        'message': 'Failed to log error',
+                        'detail': str(exc),
+                    }
+                )
 
         # Gamification endpoints
         @self.app.post('/gamification/activity')
