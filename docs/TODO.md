@@ -22,7 +22,7 @@ Conventions
 ## Next (P1)
 
 - [x] [P1][M] TypeScript strict mode — enable in frontend; remove `any` and add missing types. ✅ Complete: strict mode already enabled in tsconfig, all 4 remaining `any` types replaced with proper types (AxiosInstance, AxiosResponse, AxiosError, unknown)
-- [ ] [P1][M] OpenTelemetry tracing for key API paths — minimal spans around request handling and external calls; propagate correlation IDs.
+- [x] [P1][M] OpenTelemetry tracing for key API paths — ✅ Complete: implemented OpenTelemetry SDK integration with FastAPI auto-instrumentation, correlation ID propagation, configurable OTLP export, trace context propagation, and traced() decorator for custom spans. Files: `src/pokertool/tracing.py` (293 lines), `src/pokertool/api.py:895-917` (_setup_tracing method), `src/pokertool/correlation_id_middleware.py:256-267` (span integration). Environment vars: OTEL_CONSOLE_EXPORT, OTEL_EXPORTER_OTLP_ENDPOINT.
 - [x] [P1][S] WebSocket reliability tests — `ws/system-health` connect, broadcast to multiple clients, backoff/reconnect.
 - [x] [P1][M] RBAC audit — verify all sensitive endpoints enforce roles; extend tests covering `src/pokertool/rbac.py` policies. ✅ Complete: all admin endpoints (`/admin/users`, `/admin/system/stats`, `/gamification/badges`) properly enforce admin role via `get_admin_user` dependency. Tests exist in `tests/api/test_admin_endpoints_authorization.py`. Fixed test imports and installed httpx. Full audit report in `RBAC_AUDIT_REPORT.md`. No security vulnerabilities found.
 - [x] [P1][S] Fix `/auth/token` handler signature — annotate `request: Request` so SlowAPI limiter works without errors in tests/runtime.

@@ -861,6 +861,7 @@ This API implements comprehensive security measures including:
         )
 
         self._setup_sentry()
+        self._setup_tracing()
         self._setup_middleware()
         self._setup_routes()
         self._setup_background_tasks()
@@ -872,12 +873,12 @@ This API implements comprehensive security measures including:
         if not SENTRY_AVAILABLE:
             logger.info("Sentry not available for API error tracking")
             return
-        
+
         sentry_dsn = os.getenv('SENTRY_DSN')
         if not sentry_dsn:
             logger.info("SENTRY_DSN not configured for API")
             return
-        
+
         try:
             sentry_sdk.init(
                 dsn=sentry_dsn,
@@ -890,6 +891,30 @@ This API implements comprehensive security measures including:
             logger.info("Sentry initialized for API error tracking")
         except Exception as e:
             logger.error(f"Failed to initialize Sentry for API: {e}")
+
+    def _setup_tracing(self):
+        """Initialize OpenTelemetry distributed tracing."""
+        try:
+            from pokertool.tracing import initialize_tracing, instrument_fastapi
+
+            # Initialize tracing with optional console export for development
+            enable_console = os.getenv('OTEL_CONSOLE_EXPORT', 'false').lower() == 'true'
+            otlp_endpoint = os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')
+
+            if initialize_tracing(
+                service_name="pokertool-api",
+                enable_console_export=enable_console,
+                export_endpoint=otlp_endpoint
+            ):
+                # Instrument FastAPI app
+                instrument_fastapi(self.app)
+                logger.info("OpenTelemetry tracing initialized and FastAPI instrumented")
+            else:
+                logger.info("OpenTelemetry tracing not initialized (dependencies may not be installed)")
+        except ImportError:
+            logger.info("OpenTelemetry tracing module not available")
+        except Exception as e:
+            logger.error(f"Failed to setup tracing: {e}")
 
     def _setup_background_tasks(self):
         """Setup background cleanup tasks."""

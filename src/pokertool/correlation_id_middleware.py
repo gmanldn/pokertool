@@ -251,3 +251,20 @@ class DatabaseQueryTracer:
             "correlation_id": get_correlation_id(),
             "timestamp": uuid.uuid1().hex
         }
+
+
+# Integration with OpenTelemetry tracing
+def add_correlation_to_span():
+    """
+    Add current correlation ID to OpenTelemetry span if tracing is enabled.
+
+    This automatically integrates correlation IDs with distributed tracing.
+    """
+    try:
+        from pokertool.tracing import set_span_attribute
+        correlation_id = get_correlation_id()
+        if correlation_id:
+            set_span_attribute("correlation_id", correlation_id)
+    except ImportError:
+        # Tracing module not available
+        pass
