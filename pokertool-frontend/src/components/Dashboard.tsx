@@ -48,6 +48,7 @@ import {
 import { WebSocketMessage } from '../hooks/useWebSocket';
 import { SessionGoalsTracker } from './SessionGoalsTracker';
 import { SessionClock } from './SessionClock';
+import { RELEASE_VERSION } from '../config/releaseVersion';
 
 ChartJS.register(
   CategoryScale,
@@ -77,7 +78,8 @@ interface SessionStats {
 export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const appVersion = (process.env.REACT_APP_VERSION || '').trim();
+  // Use RELEASE_VERSION which is auto-synced from VERSION file in git
+  const appVersion = RELEASE_VERSION;
 
   const [stats, setStats] = useState<SessionStats>({
     handsPlayed: 0,
