@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 92.0.0
-release_date = 2025-10-20
+version = 93.0.0
+release_date = 2025-10-21
 
 [release_notes]
-# v92.0.0 - Production Ready Release
-description = Consolidated production-ready release with all API dependencies, import fixes, and comprehensive testing validation. This release marks a stable milestone with all critical infrastructure components working correctly.
-changes = Complete production-ready system with FastAPI and uvicorn properly configured, API module exports working correctly for direct uvicorn usage (pokertool.api:app), all dependencies installed and verified, comprehensive test suite passing (dashboard health monitoring, API imports), background process management, version synchronization across all components. This release represents a fully functional and tested poker analysis platform.
+# v93.0.0 - Frontend Compilation Fix Release
+description = Critical frontend compilation fixes for web-vitals library compatibility and TypeScript errors. Resolves all build errors preventing successful React compilation.
+changes = Fixed web-vitals v2.x API compatibility (updated from v3.x on* functions to v2.x get* functions), resolved TypeScript errors for experimental navigator.userAgentData API, added type assertions for Metric properties (rating, navigationType), fixed ESLint import ordering in errorTracking.ts. Frontend now builds successfully without errors, ensuring stable development and production deployments.
 status = stable
 
 [components]
