@@ -36,7 +36,7 @@ Conventions
 - [ ] [P2][S] Structured JSON logging everywhere; consistent fields and log rotation. (Added correlation_id and request_id fields to JSON formatter)
 - [ ] [P3][M] Internationalization of core UI strings; verify number/date formats.
 - [ ] [P3][L] Real User Monitoring (RUM) for frontend performance and Core Web Vitals.
-- [ ] [P3][L] Platform compatibility matrix and adaptations for target poker sites.
+- [x] [P3][L] Platform compatibility matrix and adaptations for target poker sites. (docs/development/platform-compatibility.md, src/pokertool/platform_compatibility.py)
 
 ## Done Recently (summary)
 
