@@ -6,6 +6,7 @@
 
 import * as Sentry from '@sentry/react';
 import type { BrowserOptions } from '@sentry/browser';
+import type { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 
 /**
  * Initialize Sentry error tracking
@@ -120,8 +121,6 @@ export function addBreadcrumb(message: string, category?: string, data?: Record<
 /**
  * Axios interceptor to capture correlation IDs from API responses
  */
-import type { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
-
 export function setupAxiosInterceptor(axiosInstance: AxiosInstance) {
   axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => {
