@@ -291,6 +291,9 @@ class MasterLogger:
         
         # Redirect existing loggers to master system
         self._redirect_existing_loggers()
+
+        # Setup trouble feed integration
+        self._setup_trouble_feed()
     
     def _setup_sentry(self):
         """Configure Sentry error tracking if available."""
@@ -332,7 +335,7 @@ class MasterLogger:
         """Process events before sending to Sentry."""
         # Add session ID to all events
         event.setdefault('tags', {})['session_id'] = self.session_id
-        
+
         # Add correlation ID if available in context
         if 'exc_info' in hint:
             exc_info = hint['exc_info']
@@ -340,8 +343,20 @@ class MasterLogger:
                 correlation_id = getattr(exc_info[1], 'correlation_id', None)
                 if correlation_id:
                     event['tags']['correlation_id'] = correlation_id
-        
+
         return event
+
+    def _setup_trouble_feed(self):
+        """Configure trouble feed integration."""
+        try:
+            from pokertool.trouble_feed import TroubleFeedLogHandler, setup_trouble_feed_integration
+
+            # Setup global integration
+            setup_trouble_feed_integration()
+
+            self.master_logger.info("Trouble feed integration initialized successfully")
+        except Exception as e:
+            self.master_logger.warning(f"Failed to initialize trouble feed: {e}")
     
     def _get_json_formatter(self):
         """Create a JSON formatter for structured logging."""
