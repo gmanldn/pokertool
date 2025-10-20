@@ -133,7 +133,7 @@ const mockHistoryResponse = {
   ],
 };
 
-const createFetchResponse = (data: any) => ({
+const createFetchResponse = (data: unknown) => ({
   ok: true,
   json: async () => data,
 });
