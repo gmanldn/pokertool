@@ -861,6 +861,7 @@ This API implements comprehensive security measures including:
         )
 
         self._setup_sentry()
+        self._setup_tracing()
         self._setup_middleware()
         self._setup_routes()
         self._setup_background_tasks()
@@ -872,12 +873,12 @@ This API implements comprehensive security measures including:
         if not SENTRY_AVAILABLE:
             logger.info("Sentry not available for API error tracking")
             return
-        
+
         sentry_dsn = os.getenv('SENTRY_DSN')
         if not sentry_dsn:
             logger.info("SENTRY_DSN not configured for API")
             return
-        
+
         try:
             sentry_sdk.init(
                 dsn=sentry_dsn,
@@ -890,6 +891,30 @@ This API implements comprehensive security measures including:
             logger.info("Sentry initialized for API error tracking")
         except Exception as e:
             logger.error(f"Failed to initialize Sentry for API: {e}")
+
+    def _setup_tracing(self):
+        """Initialize OpenTelemetry distributed tracing."""
+        try:
+            from pokertool.tracing import initialize_tracing, instrument_fastapi
+
+            # Initialize tracing with optional console export for development
+            enable_console = os.getenv('OTEL_CONSOLE_EXPORT', 'false').lower() == 'true'
+            otlp_endpoint = os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')
+
+            if initialize_tracing(
+                service_name="pokertool-api",
+                enable_console_export=enable_console,
+                export_endpoint=otlp_endpoint
+            ):
+                # Instrument FastAPI app
+                instrument_fastapi(self.app)
+                logger.info("OpenTelemetry tracing initialized and FastAPI instrumented")
+            else:
+                logger.info("OpenTelemetry tracing not initialized (dependencies may not be installed)")
+        except ImportError:
+            logger.info("OpenTelemetry tracing module not available")
+        except Exception as e:
+            logger.error(f"Failed to setup tracing: {e}")
 
     def _setup_background_tasks(self):
         """Setup background cleanup tasks."""
@@ -1240,13 +1265,14 @@ This API implements comprehensive security measures including:
         
         @self.app.get('/api/system/health/history', tags=['system'], summary='Get Health History')
         @self.services.limiter.limit('12/minute')
-        async def get_health_history(hours: int = 24):
+        async def get_health_history(request: Request, hours: int = 24):
             """
             Get historical health check data for the specified time period.
-            
+
             Args:
+                request: FastAPI request object (required for rate limiting)
                 hours: Number of hours of history to retrieve (default: 24)
-            
+
             Returns:
                 List of historical health check results with timestamps
             """
@@ -1268,13 +1294,14 @@ This API implements comprehensive security measures including:
         
         @self.app.get('/api/system/health/trends', tags=['system'], summary='Get Health Trends')
         @self.services.limiter.limit('12/minute')
-        async def get_health_trends(hours: int = 24):
+        async def get_health_trends(request: Request, hours: int = 24):
             """
             Get health trend analysis over the specified time period.
-            
+
             Analyzes patterns, failure rates, and average latencies per feature.
-            
+
             Args:
+                request: FastAPI request object (required for rate limiting)
                 hours: Number of hours to analyze (default: 24)
             
             Returns:
@@ -1738,8 +1765,8 @@ This API implements comprehensive security measures including:
         @self.app.post('/api/rum/metrics', tags=['analytics'], summary='Ingest frontend performance metric')
         @self.services.limiter.limit('180/minute')
         async def ingest_rum_metric(
-            payload: RUMMetricPayload,
             request: Request,
+            payload: RUMMetricPayload,
             background_tasks: BackgroundTasks,
         ):
             correlation_id = request.headers.get('x-correlation-id')
@@ -1757,7 +1784,7 @@ This API implements comprehensive security measures including:
 
         @self.app.get('/api/rum/summary', tags=['analytics'], summary='Summarise frontend RUM metrics')
         @self.services.limiter.limit('30/minute')
-        async def rum_summary(hours: int = 24, user: APIUser = Depends(get_current_user)):
+        async def rum_summary(request: Request, hours: int = 24, user: APIUser = Depends(get_current_user)):
             try:
                 summary = self.services.rum_metrics.summarise(hours)
                 return summary
@@ -1870,9 +1897,19 @@ This API implements comprehensive security measures including:
             thread_stats = self.services.thread_pool.get_stats()
             db_stats = self.services.db.get_database_stats()
 
+            # Get model cache metrics
+            model_cache_stats = {}
+            try:
+                from pokertool.model_cache import get_model_cache
+                model_cache = get_model_cache()
+                model_cache_stats = model_cache.get_metrics()
+            except Exception as e:
+                logger.warning(f"Could not get model cache stats: {e}")
+
             return {
                 'threading': thread_stats,
                 'database': db_stats,
+                'model_cache': model_cache_stats,
                 'websockets': {
                     'active_connections': len(self.services.connection_manager.active_connections),
                     'users_connected': len(self.services.connection_manager.user_connections)

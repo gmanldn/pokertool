@@ -120,9 +120,11 @@ export function addBreadcrumb(message: string, category?: string, data?: Record<
 /**
  * Axios interceptor to capture correlation IDs from API responses
  */
-export function setupAxiosInterceptor(axiosInstance: any) {
+import type { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+
+export function setupAxiosInterceptor(axiosInstance: AxiosInstance) {
   axiosInstance.interceptors.response.use(
-    (response: any) => {
+    (response: AxiosResponse) => {
       // Extract correlation ID from response headers
       const correlationId = response.headers['x-correlation-id'];
       if (correlationId) {
@@ -130,7 +132,7 @@ export function setupAxiosInterceptor(axiosInstance: any) {
       }
       return response;
     },
-    (error: any) => {
+    (error: AxiosError) => {
       // Extract correlation ID even from error responses
       if (error.response?.headers?.['x-correlation-id']) {
         setCorrelationId(error.response.headers['x-correlation-id']);

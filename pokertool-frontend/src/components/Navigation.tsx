@@ -80,44 +80,64 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     return () => clearTimeout(t);
   }, [connected]);
 
-  // System health (used for FullyLoaded indicator)
+  // System health (used for unified status indicator)
   const { healthData } = useSystemHealth({ enableWebSocket: true, autoFetch: true, enableCache: true });
-  const fullyLoaded = useMemo(() => {
+
+  // Debounce health data to prevent flickering
+  const [debouncedHealthStatus, setDebouncedHealthStatus] = useState<string>('unknown');
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedHealthStatus(healthData?.overall_status || 'unknown');
+    }, 600);
+    return () => clearTimeout(t);
+  }, [healthData?.overall_status]);
+
+  // Unified system status
+  const systemStatus = useMemo(() => {
     const backendOnline = backendStatus.state === 'online';
-    const healthOk = (healthData?.overall_status || 'unknown') === 'healthy';
-    return backendOnline && debouncedConnected && healthOk;
-  }, [backendStatus.state, debouncedConnected, healthData]);
+    const wsConnected = debouncedConnected;
+    const healthOk = debouncedHealthStatus === 'healthy';
 
-  const fullyLoadedTooltip = useMemo(() => {
-    const reasons: string[] = [];
-
-    if (backendStatus.state !== 'online') {
-      reasons.push(`Backend status: ${backendStatus.state}`);
+    if (backendOnline && wsConnected && healthOk) {
+      return { state: 'ready', label: 'System Ready', color: 'success' as const };
+    } else if (!backendOnline) {
+      return { state: 'backend_down', label: 'Backend Offline', color: 'error' as const };
+    } else if (!wsConnected) {
+      return { state: 'ws_down', label: 'Realtime Offline', color: 'warning' as const };
+    } else if (!healthOk) {
+      return { state: 'degraded', label: 'System Degraded', color: 'warning' as const };
+    } else {
+      return { state: 'starting', label: 'System Starting', color: 'info' as const };
     }
-    if (!debouncedConnected) {
-      reasons.push('Realtime WebSocket not connected');
-    }
+  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus]);
 
-    if (healthData) {
+  // Unified system status tooltip
+  const systemStatusTooltip = useMemo(() => {
+    const details: string[] = [];
+
+    // Backend status
+    details.push(`Backend: ${backendStatus.state}`);
+
+    // WebSocket status
+    details.push(`WebSocket: ${debouncedConnected ? 'connected' : 'disconnected'}`);
+
+    // Health status
+    details.push(`Health: ${debouncedHealthStatus}`);
+
+    // Add affected categories if health is not OK
+    if (healthData && debouncedHealthStatus !== 'healthy') {
       const affectedCategories = Object.entries(healthData.categories || {})
         .filter(([, value]) => value.status !== 'healthy')
         .map(([name, value]) => `${name.charAt(0).toUpperCase() + name.slice(1)}: ${value.status}`);
 
-      reasons.push(...affectedCategories);
-
-      if (!affectedCategories.length && (healthData.overall_status || 'unknown') !== 'healthy') {
-        reasons.push(`Health status: ${healthData.overall_status}`);
+      if (affectedCategories.length > 0) {
+        details.push('---');
+        details.push(...affectedCategories);
       }
-    } else {
-      reasons.push('Awaiting health data');
     }
 
-    if (!reasons.length) {
-      return 'All core systems healthy';
-    }
-
-    return reasons.join(' • ');
-  }, [backendStatus.state, debouncedConnected, healthData]);
+    return details.join(' • ');
+  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, healthData]);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -141,35 +161,6 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     navigate(path);
     setDrawerOpen(false);
   };
-
-  const backendStatusMeta = useMemo(() => {
-    switch (backendStatus.state) {
-      case 'online':
-        return {
-          label: 'Backend: Online',
-          color: 'success' as const,
-          tooltip: backendStatus.message || 'Backend API reachable.',
-        };
-      case 'starting':
-        return {
-          label: 'Backend: Starting…',
-          color: 'warning' as const,
-          tooltip: backendStatus.message || 'Attempting to start backend API.',
-        };
-      case 'checking':
-        return {
-          label: 'Backend: Checking…',
-          color: 'info' as const,
-          tooltip: backendStatus.message || 'Verifying backend health.',
-        };
-      default:
-        return {
-          label: 'Backend: Offline',
-          color: 'error' as const,
-          tooltip: backendStatus.error || backendStatus.message || 'Backend health check failed. See logs for details.',
-        };
-    }
-  }, [backendStatus]);
 
   const drawer = (
     <Box
@@ -312,7 +303,8 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
             </>
           )}
 
-          <Tooltip title={backendStatusMeta.tooltip}>
+          {/* Unified System Status Indicator */}
+          <Tooltip title={systemStatusTooltip} arrow>
             <Box
               sx={{
                 display: 'flex',
@@ -327,44 +319,21 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
                     : theme.palette.grey[100],
                 mr: 2,
                 border: `1px solid ${theme.palette.divider}`,
+                transition: 'all 0.3s ease',
               }}
             >
-              <Typography variant="caption" color="text.secondary">
-                Critical Service
-              </Typography>
               <Chip
                 icon={<Circle sx={{ fontSize: 8 }} />}
-                label={backendStatusMeta.label}
+                label={systemStatus.label}
                 size="small"
-                color={backendStatusMeta.color}
-                variant="outlined"
+                color={systemStatus.color}
+                variant="filled"
+                sx={{
+                  transition: 'all 0.3s ease',
+                  fontWeight: 'bold',
+                }}
               />
             </Box>
-          </Tooltip>
-
-          <Badge
-            color={debouncedConnected ? 'success' : 'error'}
-            variant="dot"
-            sx={{ mr: 2 }}
-          >
-            <Chip
-              label={debouncedConnected ? 'Realtime Online' : 'Realtime Offline'}
-              size="small"
-              color={debouncedConnected ? 'success' : 'default'}
-              variant={debouncedConnected ? 'filled' : 'outlined'}
-            />
-          </Badge>
-
-          {/* FullyLoaded indicator */}
-          <Tooltip title={fullyLoadedTooltip}>
-            <Chip
-              icon={<Circle sx={{ fontSize: 8 }} />}
-              label={fullyLoaded ? 'FullyLoaded' : 'Loading…'}
-              size="small"
-              color={fullyLoaded ? 'success' : 'default'}
-              variant={fullyLoaded ? 'filled' : 'outlined'}
-              sx={{ mr: 1 }}
-            />
           </Tooltip>
 
           {!isMobile && (

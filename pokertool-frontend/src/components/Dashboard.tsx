@@ -77,6 +77,7 @@ interface SessionStats {
 export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const appVersion = (process.env.REACT_APP_VERSION || '').trim();
 
   const [stats, setStats] = useState<SessionStats>({
     handsPlayed: 0,
@@ -208,15 +209,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
       {loading && <LinearProgress />}
       
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold">
-          Dashboard
-        </Typography>
         <Box display="flex" alignItems="center" gap={2}>
-          <Chip
-            label={`Last Update: ${lastUpdate.toLocaleTimeString()}`}
-            size="small"
-            variant="outlined"
-          />
+          <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold">
+            Dashboard
+          </Typography>
+          {!!appVersion && (
+            <Chip
+              label={appVersion.startsWith('v') ? appVersion : `v${appVersion}`}
+              size={isMobile ? 'small' : 'medium'}
+              color="primary"
+              sx={{
+                fontWeight: 'bold',
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                background: theme.palette.mode === 'dark'
+                  ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`
+                  : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              }}
+            />
+          )}
+        </Box>
+        <Box display="flex" alignItems="center" gap={2}>
+          {!isMobile && (
+            <Chip
+              label={`Last Update: ${lastUpdate.toLocaleTimeString()}`}
+              size="small"
+              variant="outlined"
+            />
+          )}
           <IconButton onClick={handleRefresh} size="small">
             <Refresh />
           </IconButton>

@@ -61,3 +61,9 @@ isort>=5.12.0
 pylint>=2.17.0
 autoflake>=2.0.0
 mypy>=1.0.0
+
+# Distributed tracing (OpenTelemetry)
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-instrumentation-fastapi>=0.41b0
+opentelemetry-exporter-otlp>=1.20.0  # Optional: for exporting to OTLP collectors

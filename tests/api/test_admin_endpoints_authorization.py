@@ -4,7 +4,7 @@
 import pytest
 
 try:
-    from starlette.testclient import TestClient
+    from fastapi.testclient import TestClient
 except Exception:  # pragma: no cover
     TestClient = None  # type: ignore
 
@@ -28,7 +28,6 @@ def _user_token() -> str:
 
 
 @pytest.mark.api
-@pytest.mark.xfail(reason="SlowAPI limiter requires typed Request param on some routes; admin tests intermittently fail due to middleware bug. Fix login route signature or disable limiter in tests.")
 def test_admin_endpoints_enforce_admin_role():
     app = create_app()
     client = TestClient(app)
