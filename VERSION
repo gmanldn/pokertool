@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 91.0.0
-release_date = 2025-10-20
+version = 93.0.0
+release_date = 2025-10-21
 
 [release_notes]
-# v91.0.0 - API Dependencies & Import Fixes
-description = Critical fixes for API module dependencies and import errors, ensuring FastAPI and uvicorn are properly specified in requirements and the API module exports the app variable for direct uvicorn usage.
-changes = Added fastapi>=0.100.0 and uvicorn>=0.23.0 to requirements.txt, exported app variable at module level in pokertool.api for direct uvicorn import (pokertool.api:app now works), verified all dependencies install correctly, confirmed tests pass (dashboard health monitoring test passes), fixed "No module named uvicorn" error, fixed import error preventing API server startup.
+# v93.0.0 - Frontend Compilation Fix Release
+description = Critical frontend compilation fixes for web-vitals library compatibility and TypeScript errors. Resolves all build errors preventing successful React compilation.
+changes = Fixed web-vitals v2.x API compatibility (updated from v3.x on* functions to v2.x get* functions), resolved TypeScript errors for experimental navigator.userAgentData API, added type assertions for Metric properties (rating, navigationType), fixed ESLint import ordering in errorTracking.ts. Frontend now builds successfully without errors, ensuring stable development and production deployments.
 status = stable
 
 [components]

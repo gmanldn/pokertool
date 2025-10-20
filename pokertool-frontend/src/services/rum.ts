@@ -1,4 +1,4 @@
-import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';
+import { getCLS, getFCP, getFID, getLCP, getTTFB, type Metric } from 'web-vitals';
 
 type RumOptions = {
   endpoint: string;
@@ -102,11 +102,12 @@ function buildEnvironment(options: RumOptions): Record<string, unknown> {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return {};
   }
+  const userAgentData = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData;
   return {
     environment: options.environment,
     release: options.release,
     platform: navigator.platform,
-    device: navigator.userAgentData?.mobile ? 'mobile' : 'desktop',
+    device: userAgentData?.mobile ? 'mobile' : 'desktop',
     language: navigator.language,
   };
 }
@@ -141,13 +142,14 @@ function reportMetric(metric: Metric, options: RumOptions, sessionId: string) {
     return;
   }
 
+  const metricWithExtras = metric as Metric & { rating?: string; navigationType?: string };
   const payload: RumPayload = {
     metric: metric.name,
     value: Number(metric.value.toFixed(4)),
     delta: metric.delta != null ? Number(metric.delta.toFixed(4)) : undefined,
-    rating: metric.rating,
+    rating: metricWithExtras.rating || null,
     session_id: sessionId || undefined,
-    navigation_type: metric.navigationType,
+    navigation_type: metricWithExtras.navigationType,
     page: typeof window !== 'undefined' ? window.location.pathname : undefined,
     client_timestamp: new Date().toISOString(),
     app_version: options.release,
@@ -210,11 +212,11 @@ export function initializeRUM(customOptions?: Partial<RumOptions>) {
 
   try {
     const handler = (metric: Metric) => reportMetric(metric, options, sessionId);
-    onCLS(handler);
-    onLCP(handler);
-    onINP(handler);
-    onTTFB(handler);
-    onFCP(handler);
+    getCLS(handler);
+    getLCP(handler);
+    getFID(handler);
+    getTTFB(handler);
+    getFCP(handler);
     reportNavigationTiming(options, sessionId);
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
