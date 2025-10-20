@@ -13,7 +13,7 @@ Conventions
 ## Now (P0: highest ROI)
 
 - [x] [P0][M] Concurrency regression tests for shared thread pool — race/leak harness for `src/pokertool/threading.py`; fail on resource leaks in CI. (17 tests in `tests/test_threading_concurrency.py`)
-- [ ] [P0][M] HUD overlay integration tests with prerecorded screenshots — drive on-table updates, profile switching, stat rendering via fixtures.
+- [x] [P0][M] HUD overlay integration tests with prerecorded screenshots — drive on-table updates, profile switching, stat rendering via fixtures. (16 tests in `tests/test_hud_overlay_integration.py`)
 - [x] [P0][S] Error tracking integration — add Sentry (or Rollbar) SDK in backend (`src/pokertool/master_logging.py`, `src/pokertool/api.py`) and frontend; tag correlation IDs. (Frontend init added; backend already integrated; correlation IDs tagged)
 - [ ] [P0][M] System health history and trends — persist health results, add `GET /api/system/health/history`, and show 24h trend in UI. Cache results (5s TTL) and rate-limit. (Cache + rate-limit implemented)
 - [x] [P0][S] HUD Designer developer guide — document recording/saving/applying profiles; place in `docs/advanced/hud.md` and link from install docs.

@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List
 from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Test fixtures directory
 TEST_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "hud_overlay"
@@ -110,7 +110,7 @@ def sample_game_state():
         'to_call': 30,
         'num_players': 6,
         'hole_confidence': 0.95,
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -158,14 +158,31 @@ class TestHUDInitialization:
     def test_hud_initialize(self, hud_config, mock_gto_solver, mock_ml_system, mock_db):
         """Test HUD initialization creates GUI components."""
         hud = HUDOverlay(hud_config)
-        
+
         # Mock root window to avoid actually creating GUI
         with patch.object(tk, 'Tk') as mock_tk:
             mock_root = Mock()
+            mock_root.configure = Mock()
+            mock_root.attributes = Mock()
+            mock_root.overrideredirect = Mock()
+            mock_root.geometry = Mock()
             mock_tk.return_value = mock_root
-            
-            result = hud.initialize()
-            
+
+            # Mock ttk.Style
+            with patch('pokertool.hud_overlay.ttk.Style'):
+                # Mock tkFont.Font to avoid font creation issues
+                with patch('pokertool.hud_overlay.tkFont.Font'):
+                    # Mock Frame, LabelFrame, Label, StringVar, Text, and Combobox
+                    with patch.object(tk, 'Frame', return_value=Mock()):
+                        with patch.object(tk, 'LabelFrame', return_value=Mock()):
+                            with patch.object(tk, 'Label', return_value=Mock()):
+                                with patch.object(tk, 'Text', return_value=Mock()):
+                                    with patch.object(tk, 'StringVar', return_value=Mock()):
+                                        with patch('pokertool.hud_overlay.ttk.Combobox', return_value=Mock()):
+                                            with patch('pokertool.hud_overlay.ttk.Button', return_value=Mock()):
+                                                with patch('pokertool.hud_overlay.list_hud_profiles', return_value=['Default']):
+                                                    result = hud.initialize()
+
             assert result is True
             assert hud.root is not None
             mock_root.title.assert_called_once_with("Poker HUD")
@@ -376,12 +393,12 @@ class TestDisplayScaling:
 class TestOpponentPopup:
     """Test opponent popup functionality."""
 
-    def test_popup_creation(self, hud_config, mock_gto_solver, 
+    def test_popup_creation(self, hud_config, mock_gto_solver,
                            mock_ml_system, mock_db):
         """Test opponent popup window is created."""
         hud_config.popup_enabled = True
         hud = HUDOverlay(hud_config)
-        
+
         player_profile = {
             'name': 'TestPlayer',
             'vpip': 0.30,
@@ -389,17 +406,30 @@ class TestOpponentPopup:
             'hands_observed': 200,
             'notes': ['Plays tight early', 'Loosens up late']
         }
-        
+
         # Mock root and popup window
         hud.root = Mock()
+        # Initialize colors manually since we're not calling initialize()
+        hud.colors = {
+            'bg': '#2b2b2b',
+            'fg': '#ffffff',
+            'accent': '#4a9eff',
+            'warning': '#ff6b6b',
+            'success': '#51cf66'
+        }
         mock_popup = Mock()
-        
+        mock_popup.winfo_exists = Mock(return_value=False)
+
         with patch.object(tk, 'Toplevel', return_value=mock_popup):
-            hud._show_popup(player_profile)
-            
-            # Popup should be created
-            assert mock_popup.title.called
-            assert mock_popup.configure.called
+            with patch('pokertool.hud_overlay.tkFont.Font'):
+                with patch.object(tk, 'Frame', return_value=Mock()):
+                    with patch.object(tk, 'Label', return_value=Mock()):
+                        with patch.object(tk, 'Text', return_value=Mock()):
+                            hud._show_popup(player_profile)
+
+                            # Popup should be created
+                            assert mock_popup.title.called
+                            assert mock_popup.configure.called
 
 
 class TestHUDLifecycle:
