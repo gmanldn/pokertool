@@ -12,7 +12,7 @@ Conventions
 
 ## Now (P0: highest ROI)
 
-- [ ] [P0][S] Rationalize top-right UI indicators (backend/loaded) — investigate why "backend" and "loaded" status indicators in top right corner cause UI flickering; determine if both are needed; refactor for elegance and performance. Check `pokertool-frontend/src/components/ConnectionStatus.tsx`, `pokertool-frontend/src/components/SystemStatus.tsx`, and WebSocket connection state management. Goal: single, clean status indicator without visual flicker.
+- [x] [P0][S] Rationalize top-right UI indicators (backend/loaded) — ✅ Complete: consolidated 3 separate indicators into single unified "System Status" indicator with 5 states (ready/backend_down/ws_down/degraded/starting), added 600ms debouncing for health data, smooth 0.3s CSS transitions, comprehensive tooltip. File: `pokertool-frontend/src/components/Navigation.tsx:86-140`. Commit: f7566b9c2
 - [x] [P0][M] Concurrency regression tests for shared thread pool — race/leak harness for `src/pokertool/threading.py`; fail on resource leaks in CI. (17 tests in `tests/test_threading_concurrency.py`)
 - [x] [P0][M] HUD overlay integration tests with prerecorded screenshots — drive on-table updates, profile switching, stat rendering via fixtures. (16 tests in `tests/test_hud_overlay_integration.py`)
 - [x] [P0][S] Error tracking integration — add Sentry (or Rollbar) SDK in backend (`src/pokertool/master_logging.py`, `src/pokertool/api.py`) and frontend; tag correlation IDs. (Frontend init added; backend already integrated; correlation IDs tagged)
