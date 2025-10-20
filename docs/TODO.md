@@ -21,10 +21,10 @@ Conventions
 
 ## Next (P1)
 
-- [ ] [P1][M] TypeScript strict mode — enable in frontend; remove `any` and add missing types.
+- [x] [P1][M] TypeScript strict mode — enable in frontend; remove `any` and add missing types. ✅ Complete: strict mode already enabled in tsconfig, all 4 remaining `any` types replaced with proper types (AxiosInstance, AxiosResponse, AxiosError, unknown)
 - [ ] [P1][M] OpenTelemetry tracing for key API paths — minimal spans around request handling and external calls; propagate correlation IDs.
 - [x] [P1][S] WebSocket reliability tests — `ws/system-health` connect, broadcast to multiple clients, backoff/reconnect.
-- [ ] [P1][M] RBAC audit — verify all sensitive endpoints enforce roles; extend tests covering `src/pokertool/rbac.py` policies. (Admin endpoints tests added)
+- [x] [P1][M] RBAC audit — verify all sensitive endpoints enforce roles; extend tests covering `src/pokertool/rbac.py` policies. ✅ Complete: all admin endpoints (`/admin/users`, `/admin/system/stats`, `/gamification/badges`) properly enforce admin role via `get_admin_user` dependency. Tests exist in `tests/api/test_admin_endpoints_authorization.py`. Fixed test imports and installed httpx. Full audit report in `RBAC_AUDIT_REPORT.md`. No security vulnerabilities found.
 - [x] [P1][S] Fix `/auth/token` handler signature — annotate `request: Request` so SlowAPI limiter works without errors in tests/runtime.
 - [ ] [P1][M] Lazy-load and cache ML models — reduce startup latency and memory; add warmup path and metrics.
 - [ ] [P1][M] Long-session memory profiling — tracemalloc sampling for GUI to detect widget/thread leaks.
