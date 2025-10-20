@@ -9,7 +9,6 @@ from pokertool.rum_metrics import RUMMetricsStore
 def test_rum_ingest_and_summary(tmp_path):
     services = APIServices()
     services._rum_metrics = RUMMetricsStore(storage_dir=tmp_path)
-<<<<<<< HEAD
     class _DummyLimiter:
         enabled = False
 
@@ -18,8 +17,6 @@ def test_rum_ingest_and_summary(tmp_path):
                 return func
             return decorator
     services._limiter = _DummyLimiter()
-=======
->>>>>>> a6f584195 (feature: rum backend metrics)
 
     api = PokerToolAPI(services=services)
     client = TestClient(api.app)

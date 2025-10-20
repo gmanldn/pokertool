@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 88.6.0
-release_date = 2025-10-19
+version = 88.7.0
+release_date = 2025-10-20
 
 [release_notes]
-# v88.6.0 - Frontend Error Tracking & System Health Hardening
-description = Added frontend Sentry instrumentation with correlation IDs and tightened WebSocket health coverage across the stack.
-changes = Integrated Sentry browser tracing/replay helpers, refreshed TableView tests to assert WebSocket payload rendering, and hardened backend system-health broadcasting logic with dedicated pytest coverage.
+# v88.7.0 - Chrome Flickering Fix & System Stability
+description = Fixed critical Chrome flickering issue caused by VS Code ScreenCaptureKit and Google Updater interference. Resolved merge conflict in RUM metrics tests. Disabled file mode tracking to prevent spurious permission changes.
+changes = Disabled Chrome GPU VSync for Retina displays, stopped Google Updater background processes, configured git to ignore file mode changes, fixed merge conflict in test_rum_metrics.py.
 status = stable
 
 [components]
