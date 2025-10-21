@@ -10,6 +10,19 @@ Conventions
 - Status: TODO | IN PROGRESS | BLOCKED | DONE
 - Format: [ ] [P#][E#] Title — details and code path(s)
 
+## AI Features Expansion (P0: Push Codebase-Wide)
+
+- [ ] [P0][S] Integrate LangChain router into main FastAPI app — Import and include `api_langchain.router` in `src/pokertool/api.py` to expose `/api/ai/*` endpoints in running application.
+- [ ] [P0][M] Frontend AI chat interface — Create React component `pokertool-frontend/src/pages/AIChat.tsx` with chat UI, message history, and connection to `/api/ai/chat` endpoint. Add route to Navigation.
+- [ ] [P0][M] Connect LLM provider (OpenAI/Anthropic) — Add LLM integration in `langchain_memory_service.py` using environment variables for API keys. Support OpenAI GPT-4 and Anthropic Claude via LangChain.
+- [ ] [P0][S] Auto-store hands in vector DB — Hook into hand history parser to automatically embed and store completed hands in ChromaDB for semantic search.
+- [ ] [P0][M] AI-powered opponent profiling — Use LangChain to analyze opponent patterns from stored hands and generate natural language profiles with playing style, tendencies, and exploitation strategies.
+- [ ] [P0][S] Real-time hand analysis suggestions — Integrate AI analysis into HUD overlay to show contextual advice during live play (e.g., "Similar situations suggest 4-bet").
+- [ ] [P0][M] Strategy coach chatbot — Implement conversational poker coach that can answer questions like "How should I play AK from UTG?" with examples from user's hand history.
+- [ ] [P0][S] Session review AI summary — Generate end-of-session summaries using LLM: key hands, mistakes, wins, areas for improvement.
+- [ ] [P0][M] Automated hand tagging — Use AI to automatically tag hands with categories (bluff, value bet, hero call, etc.) for better organization and search.
+- [ ] [P0][S] AI endpoints authorization — Add authentication/authorization to `/api/ai/*` endpoints using existing RBAC system.
+
 ## Now (P0: highest ROI)
 
 - [x] [P0][S] Fix frontend unknown error — ✅ Complete: Frontend builds successfully. Fixed ESLint warnings in BackendStatus.tsx by removing unused import (HourglassEmptyIcon), removing unused function (getStatusColor), and adding explicit comment for useEffect dependency rule. Build completes with no errors or warnings.

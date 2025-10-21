@@ -862,7 +862,8 @@ This API implements comprehensive security measures including:
                 {'name': 'analytics', 'description': 'Usage analytics and metrics'},
                 {'name': 'gamification', 'description': 'Achievements, badges, and leaderboards'},
                 {'name': 'community', 'description': 'Community features and social'},
-                {'name': 'admin', 'description': 'Administrative endpoints (admin only)'}
+                {'name': 'admin', 'description': 'Administrative endpoints (admin only)'},
+                {'name': 'AI & LangChain', 'description': 'AI-powered hand analysis and conversational poker coaching'}
             ],
             swagger_ui_parameters={
                 'docExpansion': 'none',
@@ -2435,6 +2436,14 @@ This API implements comprehensive security measures including:
         from pokertool.system_health_checker import get_health_checker
         health_checker = get_health_checker()
         health_checker.set_broadcast_callback(broadcast_health_update)
+
+        # Include LangChain AI router
+        try:
+            from pokertool.api_langchain import router as ai_router
+            self.app.include_router(ai_router)
+            logger.info("LangChain AI router integrated successfully")
+        except ImportError as e:
+            logger.warning(f"LangChain AI router not available: {e}")
 
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None
