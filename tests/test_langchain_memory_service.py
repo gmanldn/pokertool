@@ -148,7 +148,7 @@ class TestPokerConversationalMemory:
 
     def test_initialization(self, conversation_memory):
         """Test conversational memory initializes correctly."""
-        assert conversation_memory.memory is not None
+        assert conversation_memory.conversation_history is not None
         assert conversation_memory.memory_type == "buffer"
 
     def test_add_exchange(self, conversation_memory):

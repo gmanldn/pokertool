@@ -23,7 +23,13 @@ from pathlib import Path
 
 import chromadb
 from chromadb.config import Settings
-from langchain.memory import ConversationBufferMemory, ConversationSummaryMemory
+try:
+    from langchain.memory import ConversationBufferMemory
+except ImportError:
+    # LangChain 0.3+ moved memory to langchain-community
+    from langchain_community.chat_message_histories import ChatMessageHistory
+    # Create a simple in-memory buffer for compatibility
+    ConversationBufferMemory = None
 
 logger = logging.getLogger(__name__)
 
@@ -215,8 +221,9 @@ class PokerVectorStore:
             List of notes about the opponent
         """
         try:
+            # ChromaDB requires an operator like $and for multiple conditions
             results = self.collection.get(
-                where={"player": player_name, "type": "opponent_note"},
+                where={"$and": [{"player": player_name}, {"type": "opponent_note"}]},
                 limit=n_results
             )
 
@@ -277,6 +284,8 @@ class PokerConversationalMemory:
 
     Maintains context across multiple questions about poker hands,
     strategies, and opponent analysis.
+
+    Simple in-memory implementation compatible with LangChain 0.3+
     """
 
     def __init__(
@@ -293,20 +302,7 @@ class PokerConversationalMemory:
         """
         self.memory_type = memory_type
         self.max_token_limit = max_token_limit
-
-        if memory_type == "buffer":
-            self.memory = ConversationBufferMemory(
-                memory_key="chat_history",
-                return_messages=True,
-                output_key="output"
-            )
-        else:
-            # Summary memory would require an LLM, so falling back to buffer
-            self.memory = ConversationBufferMemory(
-                memory_key="chat_history",
-                return_messages=True,
-                output_key="output"
-            )
+        self.conversation_history: List[Dict[str, str]] = []
 
         logger.info(f"Initialized {memory_type} memory")
 
@@ -318,10 +314,22 @@ class PokerConversationalMemory:
             user_input: User's question or input
             ai_response: AI's response
         """
-        self.memory.save_context(
-            {"input": user_input},
-            {"output": ai_response}
-        )
+        self.conversation_history.append({
+            "role": "user",
+            "content": user_input,
+            "timestamp": datetime.now().isoformat()
+        })
+        self.conversation_history.append({
+            "role": "assistant",
+            "content": ai_response,
+            "timestamp": datetime.now().isoformat()
+        })
+
+        # Keep only last N exchanges to respect token limit
+        # Simple heuristic: ~4 chars per token
+        max_exchanges = self.max_token_limit // 100  # Roughly 25 chars per exchange avg
+        if len(self.conversation_history) > max_exchanges * 2:
+            self.conversation_history = self.conversation_history[-(max_exchanges * 2):]
 
     def get_context(self) -> str:
         """
@@ -330,11 +338,19 @@ class PokerConversationalMemory:
         Returns:
             Formatted conversation history
         """
-        return str(self.memory.load_memory_variables({}))
+        if not self.conversation_history:
+            return "No conversation history"
+
+        context_lines = []
+        for msg in self.conversation_history:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            context_lines.append(f"{role}: {msg['content']}")
+
+        return "\n".join(context_lines)
 
     def clear(self) -> None:
         """Clear the conversation memory."""
-        self.memory.clear()
+        self.conversation_history.clear()
         logger.info("Cleared conversation memory")
 
 
