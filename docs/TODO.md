@@ -12,6 +12,7 @@ Conventions
 
 ## Now (P0: highest ROI)
 
+- [ ] [P0][M] Fix React webpack chunk loading errors — Frontend showing repeated "Loading chunk vendors-node_modules_mui_material_Stack_Stack_js failed" ChunkLoadError. Error occurs at `http://localhost:3000/static/js/vendors-node_modules_mui_material_Stack_Stack_js.chunk.js`. Investigate webpack configuration, code splitting strategy, and MUI Stack lazy loading. May need to adjust chunk optimization or add retry logic. File: `pokertool-frontend/webpack.config.js` or `pokertool-frontend/craco.config.js`. Error stack: `Object.j (bundle.js:114621:29) → __webpack_require__.e (bundle.js:114022:67) → hotRequire (bundle.js:114224:50)`.
 - [x] [P0][S] Rationalize top-right UI indicators (backend/loaded) — ✅ Complete: consolidated 3 separate indicators into single unified "System Status" indicator with 5 states (ready/backend_down/ws_down/degraded/starting), added 600ms debouncing for health data, smooth 0.3s CSS transitions, comprehensive tooltip. File: `pokertool-frontend/src/components/Navigation.tsx:86-140`. Commit: f7566b9c2
 - [x] [P0][M] Concurrency regression tests for shared thread pool — race/leak harness for `src/pokertool/threading.py`; fail on resource leaks in CI. (17 tests in `tests/test_threading_concurrency.py`)
 - [x] [P0][M] HUD overlay integration tests with prerecorded screenshots — drive on-table updates, profile switching, stat rendering via fixtures. (16 tests in `tests/test_hud_overlay_integration.py`)

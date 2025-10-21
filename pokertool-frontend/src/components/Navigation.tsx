@@ -52,6 +52,7 @@ import {
   People,
   Psychology,
   Biotech,
+  DeveloperBoard,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
@@ -140,6 +141,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Backend', icon: <DeveloperBoard />, path: '/backend' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
     { text: 'Detection Log', icon: <Article />, path: '/detection-log' },
     { text: 'Statistics', icon: <Assessment />, path: '/statistics' },

@@ -386,13 +386,24 @@ def launch_web_app() -> int:
     """Launch the web-only application: Backend API + React frontend."""
     venv_python = get_venv_python()
 
+    # Initialize startup logger
+    from pokertool.backend_startup_logger import get_startup_logger
+    startup_logger = get_startup_logger()
+    startup_logger.set_total_steps(7)
+
     # Clean up any old processes first
+    step1 = startup_logger.start_step("Clean old processes", "Removing previous pokertool instances")
     cleanup_old_processes()
+    startup_logger.complete_step(step1)
 
     # Set up macOS dock icon (if on macOS)
+    step2 = startup_logger.start_step("Setup macOS dock icon", "Configuring application icon" if IS_MACOS else "Skipping (not macOS)")
     dock_app = setup_dock_icon()
     if dock_app and IS_MACOS:
         log("✓ macOS dock icon configured (click for status window)")
+        startup_logger.complete_step(step2, success=True, message="Dock icon configured")
+    else:
+        startup_logger.complete_step(step2, success=True, message="Not applicable" if not IS_MACOS else "No dock icon")
 
     # Setup environment
     env = os.environ.copy()
@@ -417,26 +428,36 @@ def launch_web_app() -> int:
     log("")
 
     # Check for Node.js
+    step3 = startup_logger.start_step("Check Node.js", "Verifying Node.js installation")
     log("Checking dependencies...")
     if not shutil.which('node'):
         log("❌ Node.js not found. Please install Node.js to run the frontend.")
         log("   Visit: https://nodejs.org/")
+        startup_logger.complete_step(step3, success=False, message="Node.js not found")
         return 1
 
     log("✓ Node.js found")
+    startup_logger.complete_step(step3, success=True, message="Node.js available")
 
     # Check if frontend dependencies are installed
+    step4 = startup_logger.start_step("Install frontend dependencies", "Checking npm packages")
     frontend_dir = ROOT / 'pokertool-frontend'
     if not (frontend_dir / 'node_modules').exists():
         log("Installing frontend dependencies...")
+        startup_logger.log_info("Running npm install...")
         try:
             subprocess.run(['npm', 'install'], cwd=frontend_dir, check=True)
             log("✓ Frontend dependencies installed")
+            startup_logger.complete_step(step4, success=True, message="npm packages installed")
         except subprocess.CalledProcessError:
             log("❌ Failed to install frontend dependencies")
+            startup_logger.complete_step(step4, success=False, message="npm install failed")
             return 1
+    else:
+        startup_logger.complete_step(step4, success=True, message="Dependencies already installed")
 
     # Start backend API server
+    step5 = startup_logger.start_step("Start backend API", f"Launching FastAPI on port {5001}")
     log("")
     log("Starting backend API server...")
     backend_port = 5001  # Using 5001 since 5000 is often used by macOS Control Center
@@ -450,8 +471,10 @@ def launch_web_app() -> int:
     )
 
     log(f"✓ Backend API starting on http://localhost:{backend_port}")
+    startup_logger.complete_step(step5, success=True, message=f"API server on port {backend_port}")
 
     # Start React frontend
+    step6 = startup_logger.start_step("Start React frontend", "Launching development server on port 3000")
     log("Starting React frontend...")
     frontend_env = os.environ.copy()
     frontend_env['REACT_APP_API_URL'] = f'http://localhost:{backend_port}'
@@ -465,6 +488,10 @@ def launch_web_app() -> int:
     )
 
     log("✓ Frontend starting on http://localhost:3000")
+    startup_logger.complete_step(step6, success=True, message="React dev server started")
+
+    # Final startup step
+    step7 = startup_logger.start_step("Application ready", "All services started successfully")
     log("")
     log("=" * 70)
     log("🎉 POKERTOOL IS RUNNING!")
@@ -474,6 +501,7 @@ def launch_web_app() -> int:
     log("")
     log("Press Ctrl+C to stop the application")
     log("")
+    startup_logger.complete_step(step7, success=True, message="Application fully operational")
 
     try:
         # Wait for both processes
