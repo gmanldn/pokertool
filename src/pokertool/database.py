@@ -450,6 +450,48 @@ def migrate_to_production(sqlite_path: str = 'poker_decisions.db') -> bool:
         return False
 
 
+# Backward compatibility: PokerDatabase class for legacy code and tests
+class PokerDatabase:
+    """
+    Legacy database interface for backward compatibility.
+    Wraps SecureDatabase for simple SQLite operations.
+    """
+    def __init__(self, db_path: str = 'poker_decisions.db'):
+        """Initialize database with given path."""
+        self.db_path = db_path
+        self.db = SecureDatabase(db_path)
+
+    def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
+                          session_id: Optional[str] = None) -> int:
+        """Save hand analysis to database."""
+        return self.db.save_hand_analysis(hand, board, result, session_id)
+
+    def get_recent_hands(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get recent hands from database."""
+        return self.db.get_recent_hands(limit, offset)
+
+    def get_total_hands(self) -> int:
+        """Get total number of hands in database."""
+        try:
+            hands = self.db.get_recent_hands(limit=999999)
+            return len(hands)
+        except Exception:
+            return 0
+
+    def close(self):
+        """Close database connection."""
+        if hasattr(self.db, 'close'):
+            self.db.close()
+
+    def __enter__(self):
+        """Context manager support."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager cleanup."""
+        self.close()
+
+
 if __name__ == '__main__':
     # Test database connectivity
     db = get_production_db()

@@ -403,6 +403,40 @@ def launch_web_app(skip_chrome: bool = False, chrome_port: int = 9222, poker_url
 
     return 0
 
+def cleanup_old_processes():
+    """Clean up old pokertool processes."""
+    import psutil
+    import signal
+
+    current_pid = os.getpid()
+    killed_count = 0
+
+    try:
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                # Skip current process
+                if proc.pid == current_pid:
+                    continue
+
+                cmdline = proc.cmdline()
+                if not cmdline:
+                    continue
+
+                # Check if it's a pokertool process
+                cmdline_str = ' '.join(cmdline).lower()
+                if 'pokertool' in cmdline_str or 'start.py' in cmdline_str:
+                    log(f"Cleaning up old process: PID {proc.pid}")
+                    proc.send_signal(signal.SIGTERM)
+                    killed_count += 1
+
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+
+        if killed_count > 0:
+            log(f"✓ Cleaned up {killed_count} old process(es)")
+    except Exception as e:
+        log(f"Warning: Could not cleanup old processes: {e}")
+
 def show_banner():
     """Show startup banner."""
     clear_terminal()

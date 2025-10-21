@@ -1511,7 +1511,7 @@ This API implements comprehensive security measures including:
 
         # Sequential Opponent Fusion endpoints
         @self.app.get('/api/ml/opponent-fusion/stats')
-        async def get_opponent_fusion_stats(request):
+        async def get_opponent_fusion_stats():
             """Get opponent fusion statistics"""
             try:
                 # Import and initialize fusion system
@@ -1539,7 +1539,7 @@ This API implements comprehensive security measures including:
                 }
 
         @self.app.get('/api/ml/opponent-fusion/players')
-        async def get_tracked_players(request):
+        async def get_tracked_players():
             """Get list of tracked players with their stats"""
             try:
                 return {
@@ -1557,7 +1557,7 @@ This API implements comprehensive security measures including:
 
         # Active Learning endpoints
         @self.app.get('/api/ml/active-learning/stats')
-        async def get_active_learning_stats(request):
+        async def get_active_learning_stats():
             """Get active learning statistics"""
             try:
                 # Import active learning module
@@ -1602,7 +1602,7 @@ This API implements comprehensive security measures including:
 
         # Scraping Accuracy endpoints
         @self.app.get('/api/scraping/accuracy/stats')
-        async def get_scraping_accuracy_stats(request):
+        async def get_scraping_accuracy_stats():
             """Get scraping accuracy statistics"""
             try:
                 # Import scraping accuracy module
