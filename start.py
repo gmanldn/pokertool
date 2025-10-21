@@ -490,6 +490,43 @@ def launch_web_app() -> int:
     log("✓ Frontend starting on http://localhost:3000")
     startup_logger.complete_step(step6, success=True, message="React dev server started")
 
+    # Set up frontend error monitoring
+    from pokertool.frontend_error_monitor import get_frontend_error_monitor
+    error_monitor = get_frontend_error_monitor()
+
+    def monitor_frontend_output():
+        """Monitor frontend process output for compile errors."""
+        try:
+            for line in iter(frontend_process.stdout.readline, b''):
+                line_str = line.decode('utf-8', errors='ignore')
+
+                # Check for blocking errors
+                if error_monitor.process_line(line_str):
+                    # Blocking error detected - trigger shutdown
+                    log("")
+                    log("⚠️  Blocking frontend compile error detected!")
+
+                    # Give a moment for more errors to be captured
+                    import time
+                    time.sleep(2)
+
+                    # Terminate processes
+                    backend_process.terminate()
+                    frontend_process.terminate()
+
+                    # Handle error logging and TODO updates
+                    error_monitor.shutdown_with_errors()
+
+                    # Exit with error code
+                    os._exit(1)
+        except Exception as e:
+            log(f"Error monitoring frontend output: {e}")
+
+    # Start monitoring thread
+    import threading
+    monitor_thread = threading.Thread(target=monitor_frontend_output, daemon=True)
+    monitor_thread.start()
+
     # Final startup step
     step7 = startup_logger.start_step("Application ready", "All services started successfully")
     log("")
