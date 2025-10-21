@@ -161,38 +161,53 @@ class ProductionDatabase:
             self._init_sqlite()
 
     def _init_postgresql(self):
-        """Initialize PostgreSQL connection pool."""
-        try:
-            # Build connection string
-            conn_params = {
-                'host': self.config.host,
-                'port': self.config.port,
-                'database': self.config.database,
-                'user': self.config.user,
-                'password': self.config.password,
-                'sslmode': self.config.ssl_mode,
-                'connect_timeout': self.config.connection_timeout,
-                'application_name': 'pokertool'
-            }
+        """Initialize PostgreSQL connection pool with exponential backoff retry."""
+        max_retries = 5
+        base_delay = 1  # seconds
+        max_delay = 30  # seconds
 
-            # Remove None values
-            conn_params = {k: v for k, v in conn_params.items() if v is not None}
+        for attempt in range(max_retries):
+            try:
+                # Build connection string
+                conn_params = {
+                    'host': self.config.host,
+                    'port': self.config.port,
+                    'database': self.config.database,
+                    'user': self.config.user,
+                    'password': self.config.password,
+                    'sslmode': self.config.ssl_mode,
+                    'connect_timeout': self.config.connection_timeout,
+                    'application_name': 'pokertool'
+                }
 
-            # Create connection pool
-            self.connection_pool = psycopg2.pool.ThreadedConnectionPool(
-                self.config.min_connections,
-                self.config.max_connections,
-                **conn_params
-            )
+                # Remove None values
+                conn_params = {k: v for k, v in conn_params.items() if v is not None}
 
-            # Initialize schema
-            self._create_postgresql_schema()
+                # Create connection pool
+                self.connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                    self.config.min_connections,
+                    self.config.max_connections,
+                    **conn_params
+                )
 
-            logger.info(f"PostgreSQL connection pool initialized: {self.config.host}:{self.config.port}/{self.config.database}")
+                # Initialize schema
+                self._create_postgresql_schema()
 
-        except Exception as e:
-            logger.error(f'Failed to initialize PostgreSQL: {e}')
-            raise
+                logger.info(f"PostgreSQL connection pool initialized: {self.config.host}:{self.config.port}/{self.config.database}")
+                return  # Success!
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    # Calculate exponential backoff delay
+                    delay = min(base_delay * (2 ** attempt), max_delay)
+                    logger.warning(
+                        f'Failed to initialize PostgreSQL (attempt {attempt + 1}/{max_retries}): {e}. '
+                        f'Retrying in {delay} seconds...'
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(f'Failed to initialize PostgreSQL after {max_retries} attempts: {e}')
+                    raise
 
     def _init_sqlite(self):
         """Initialize SQLite fallback."""
@@ -201,16 +216,35 @@ class ProductionDatabase:
 
     @contextmanager
     def get_connection(self) -> Iterator[Any]:
-        """Get database connection from pool or SQLite."""
-        if self.config.db_type == DatabaseType.POSTGRESQL:
-            conn = self.connection_pool.getconn()
+        """Get database connection from pool or SQLite with retry logic."""
+        max_retries = 3
+        base_delay = 0.5  # seconds
+
+        for attempt in range(max_retries):
             try:
-                yield conn
-            finally:
-                self.connection_pool.putconn(conn)
-        else:
-            with self.sqlite_db._get_connection() as conn:
-                yield conn
+                if self.config.db_type == DatabaseType.POSTGRESQL:
+                    conn = self.connection_pool.getconn()
+                    try:
+                        yield conn
+                        return  # Success!
+                    finally:
+                        self.connection_pool.putconn(conn)
+                else:
+                    with self.sqlite_db._get_connection() as conn:
+                        yield conn
+                        return  # Success!
+
+            except (psycopg2.OperationalError if psycopg2 else Exception, OSError) as e:
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    logger.warning(
+                        f'Database connection failed (attempt {attempt + 1}/{max_retries}): {e}. '
+                        f'Retrying in {delay:.1f} seconds...'
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(f'Database connection failed after {max_retries} attempts: {e}')
+                    raise
 
     def _create_postgresql_schema(self):
         """Create PostgreSQL schema with enhanced features."""
