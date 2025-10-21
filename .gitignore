@@ -242,6 +242,14 @@ test_outputs/
 test_data/generated/
 test_logs/
 
+# Playwright visual testing artifacts (keep snapshots, ignore reports)
+playwright-report/
+test-results/
+pokertool-frontend/playwright-report/
+pokertool-frontend/test-results/
+# Keep baseline snapshots for visual regression
+!pokertool-frontend/tests/visual/**/*-snapshots/
+
 # Performance profiling
 *.prof
 *.profile

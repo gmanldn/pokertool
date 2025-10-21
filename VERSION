@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.1.8
+version = 96.2.0
 release_date = 2025-10-21
 
 [release_notes]
-# v96.1.8 - In-App TODO List Dashboard
-description = Patch release adding in-app TODO list viewer for real-time development progress tracking.
-changes = Created /api/todo endpoint in api.py that parses docs/TODO.md with regex to extract structured TODO items with checkboxes, priority levels (P0-P3), effort estimates (S/M/L), titles, and descriptions. Built TodoList React component (162 lines) with Material-UI showing color-coded priority chips (P0=red, P1=warning, P2=info, P3=default), completion checkboxes, linear progress bar, and auto-refresh every 30 seconds. Added /todo route in App.tsx with lazy loading and added TODO navigation menu item with ChecklistIcon in Navigation.tsx. Users can now view complete development backlog at localhost:3000/todo without leaving the application, with visual progress tracking showing X/Y tasks completed with percentage.
+# v96.2.0 - Visual Regression Testing Infrastructure
+description = Minor release adding Playwright-based visual regression testing infrastructure for UI components in light/dark themes.
+changes = Installed Playwright @playwright/test v1.56.1 with Chromium browser for visual regression testing. Created playwright.config.ts configuration with separate test projects for light and dark color schemes. Built 3 comprehensive test suites covering 8 visual regression tests: system-status.spec.ts tests SystemStatus page (full page, navigation bar, health cards), dashboard.spec.ts tests Dashboard (full page, header section), navigation.spec.ts tests Navigation component (appbar, mobile drawer, backend status indicator). Added npm scripts in package.json: test:visual for running tests, test:visual:ui for interactive mode, test:visual:update for updating snapshots. Updated .gitignore to exclude playwright-report/ and test-results/ while preserving snapshot baselines. Infrastructure complete and ready for baseline generation with `npm run test:visual:update`.
 status = stable
+
+# v96.1.8 - In-App TODO List Dashboard
+# description = Patch release adding in-app TODO list viewer for real-time development progress tracking.
+# changes = Created /api/todo endpoint in api.py that parses docs/TODO.md with regex to extract structured TODO items with checkboxes, priority levels (P0-P3), effort estimates (S/M/L), titles, and descriptions. Built TodoList React component (162 lines) with Material-UI showing color-coded priority chips (P0=red, P1=warning, P2=info, P3=default), completion checkboxes, linear progress bar, and auto-refresh every 30 seconds. Added /todo route in App.tsx with lazy loading and added TODO navigation menu item with ChecklistIcon in Navigation.tsx. Users can now view complete development backlog at localhost:3000/todo without leaving the application, with visual progress tracking showing X/Y tasks completed with percentage.
+# status = stable
 
 # v96.1.7 - Backend Startup Status Cross-Process Persistence Fix
 # description = Patch release fixing status file being overwritten by uvicorn, completing live backend monitoring.

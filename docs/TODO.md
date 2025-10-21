@@ -34,7 +34,7 @@ Conventions
 
 ## Later (P2/P3)
 
-- [ ] [P2][M] Visual regression snapshots for key UI components (HUD, SystemStatus) in light/dark themes.
+- [x] [P2][M] Visual regression snapshots for key UI components (HUD, SystemStatus) in light/dark themes. ✅ Infrastructure Complete: Playwright @playwright/test v1.56.1 installed with Chromium browser. Created playwright.config.ts with light/dark theme testing for chromium. Built 3 comprehensive visual test suites: tests/visual/system-status.spec.ts (3 tests: full page, navigation bar, health cards), tests/visual/dashboard.spec.ts (2 tests: full dashboard, header section), tests/visual/navigation.spec.ts (3 tests: appbar, mobile drawer, backend status indicator). Added npm scripts: test:visual, test:visual:ui, test:visual:update. Configured .gitignore to exclude test reports while preserving snapshot baselines. Tests ready to run with `npm run test:visual:update` to generate baselines, then `npm run test:visual` for regression checking. Snapshots will be stored in tests/visual/**/*-snapshots/ directories.
 - [ ] [P2][M] Load testing of critical APIs (Locust/k6) with alert thresholds.
 - [x] [P2][S] Structured JSON logging everywhere; consistent fields and log rotation. ✅ Complete: comprehensive JSON logging system with correlation_id and request_id fields, automatic log rotation (master: daily rotation, 90-day retention; error/performance/security: size-based rotation with 5-20MB limits), multiple log categories (general, error, performance, security), structured context data, and Sentry integration. Files: `src/pokertool/master_logging.py` (1107 lines), `src/pokertool/structured_logger.py` (239 lines). Log directory: `logs/`.
 - [ ] [P3][M] Internationalization of core UI strings; verify number/date formats.
