@@ -37,6 +37,7 @@ import {
   Dashboard as DashboardIcon,
   TableChart,
   Assessment,
+  Checklist as ChecklistIcon,
   AccountBalance,
   EmojiEvents,
   Settings,
@@ -196,6 +197,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Backend', icon: <DeveloperBoard />, path: '/backend' },
+    { text: 'TODO', icon: <ChecklistIcon />, path: '/todo' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
     { text: 'Detection Log', icon: <Article />, path: '/detection-log' },
     { text: 'Statistics', icon: <Assessment />, path: '/statistics' },

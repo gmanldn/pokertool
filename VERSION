@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.1.7
+version = 96.1.8
 release_date = 2025-10-21
 
 [release_notes]
-# v96.1.7 - Backend Startup Status Cross-Process Persistence Fix
-description = Patch release fixing status file being overwritten by uvicorn, completing live backend monitoring.
-changes = Fixed BackendStartupLogger to load and restore existing status from file when uvicorn subprocess starts. When status file exists, logger now loads steps from it and restores them to the new instance instead of overwriting with empty data. This ensures API endpoint /api/backend/startup/status returns the actual startup steps logged by start.py. Backend Status page at localhost:3000/backend now shows live startup progress. Navigation bar "Backend Offline (%)" indicator now displays realistic progress percentage during startup.
+# v96.1.8 - In-App TODO List Dashboard
+description = Patch release adding in-app TODO list viewer for real-time development progress tracking.
+changes = Created /api/todo endpoint in api.py that parses docs/TODO.md with regex to extract structured TODO items with checkboxes, priority levels (P0-P3), effort estimates (S/M/L), titles, and descriptions. Built TodoList React component (162 lines) with Material-UI showing color-coded priority chips (P0=red, P1=warning, P2=info, P3=default), completion checkboxes, linear progress bar, and auto-refresh every 30 seconds. Added /todo route in App.tsx with lazy loading and added TODO navigation menu item with ChecklistIcon in Navigation.tsx. Users can now view complete development backlog at localhost:3000/todo without leaving the application, with visual progress tracking showing X/Y tasks completed with percentage.
 status = stable
+
+# v96.1.7 - Backend Startup Status Cross-Process Persistence Fix
+# description = Patch release fixing status file being overwritten by uvicorn, completing live backend monitoring.
+# changes = Fixed BackendStartupLogger to load and restore existing status from file when uvicorn subprocess starts. When status file exists, logger now loads steps from it and restores them to the new instance instead of overwriting with empty data. This ensures API endpoint /api/backend/startup/status returns the actual startup steps logged by start.py. Backend Status page at localhost:3000/backend now shows live startup progress. Navigation bar "Backend Offline (%)" indicator now displays realistic progress percentage during startup.
+# status = stable
 
 # v96.1.6 - Backend Startup Logger Log Preservation Fix
 # description = Patch release fixing backend startup log file being truncated by uvicorn subprocess.

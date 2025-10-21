@@ -1214,6 +1214,50 @@ This API implements comprehensive security measures including:
             except Exception as e:
                 return {'error': str(e), 'log_lines': [], 'total_lines': 0}
 
+        @self.app.get('/api/todo', tags=['development'], summary='Development TODO List')
+        async def get_todo():
+            """
+            Get TODO.md content with parsed checkboxes and priorities.
+
+            Returns structured TODO list for development progress tracking.
+            """
+            try:
+                from pathlib import Path
+                import re
+
+                # Read TODO.md from docs/
+                todo_path = Path(__file__).parent.parent.parent / 'docs' / 'TODO.md'
+
+                if not todo_path.exists():
+                    return {'error': 'TODO.md not found', 'raw_content': '', 'items': []}
+
+                with open(todo_path, 'r') as f:
+                    raw_content = f.read()
+
+                # Parse TODO items
+                items = []
+                for line in raw_content.split('\n'):
+                    # Match lines like: - [x] [P0][S] Title — description
+                    match = re.match(r'^- \[([ x])\] \[([P\d]+)\]\[([SML])\] (.+?)(?:—|—) (.+)$', line)
+                    if match:
+                        checked, priority, effort, title, description = match.groups()
+                        items.append({
+                            'checked': checked.lower() == 'x',
+                            'priority': priority,
+                            'effort': effort,
+                            'title': title.strip(),
+                            'description': description.strip()
+                        })
+
+                return {
+                    'raw_content': raw_content,
+                    'items': items,
+                    'total_items': len(items),
+                    'completed_items': sum(1 for item in items if item['checked'])
+                }
+            except Exception as e:
+                return {'error': str(e), 'raw_content': '', 'items': []}
+
         # Status endpoint for status window
         @self.app.get('/api/status', tags=['health'], summary='Application Status')
         async def app_status():
