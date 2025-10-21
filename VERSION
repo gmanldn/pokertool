@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.3.0
+version = 96.4.0
 release_date = 2025-10-21
 
 [release_notes]
-# v96.3.0 - API Load Testing with Locust
-description = Minor release adding comprehensive Locust-based load testing for critical API endpoints with automated performance threshold validation.
-changes = Installed Locust v2.42.0 load testing framework with 24 dependencies including gevent, flask, and python-socketio. Created tests/load/locustfile.py (255 lines) implementing 3 user behavior classes simulating realistic load patterns: HealthCheckUser (monitoring systems, 20% of users, 1-3s between requests), DashboardUser (typical frontend users, 50% of users, 3-10s page loads), APIHeavyUser (active interactions, 30% of users, 2-5s operations). Defined strict performance SLAs: health endpoints p95<100ms p99<200ms, data endpoints p95<500ms p99<1000ms, write endpoints p95<1000ms p99<2000ms, overall error rate <1%. Automated threshold validation via test_stop event handler that logs violations as warnings. Created Makefile with 3 load testing commands: make load-test (interactive web UI at localhost:8089), make load-test-headless (100 users, 10/s spawn rate, 60s duration, generates timestamped CSV/HTML reports in results/load/), make load-test-quick (10 users, 2/s spawn, 30s smoke test). Added locust>=2.42.0 to requirements.txt.
+# v96.4.0 - Real-Time Backend Startup Monitoring
+description = Minor release adding WebSocket-based real-time backend startup status monitoring with instant updates showing current step progress.
+changes = Created WebSocket endpoint /ws/backend-startup in api.py (146 lines) for real-time startup status broadcasts. WebSocket polls backend status every 500ms and pushes updates only when status changes. Added current_step_info extraction showing in-progress step name, description, and number. Updated Navigation.tsx to connect to WebSocket with automatic reconnection and 500ms fallback HTTP polling. Enhanced top-right backend status indicator to show "Waiting for [step name] (X%)" or "Starting: [step name] (X%)" with live step updates. Added current step details to status tooltip showing step description. Updated Backend Status page (BackendStatus.tsx) to use WebSocket for instant step-by-step progress updates. Replaced 2-second HTTP polling with WebSocket + 500ms fallback polling on both Navigation and Backend Status pages. Users now see immediate backend startup progress with step names, descriptions, and percentages updating in real-time without page refresh.
 status = stable
+
+# v96.3.0 - API Load Testing with Locust
+# description = Minor release adding comprehensive Locust-based load testing for critical API endpoints with automated performance threshold validation.
+# changes = Installed Locust v2.42.0 load testing framework with 24 dependencies including gevent, flask, and python-socketio. Created tests/load/locustfile.py (255 lines) implementing 3 user behavior classes simulating realistic load patterns: HealthCheckUser (monitoring systems, 20% of users, 1-3s between requests), DashboardUser (typical frontend users, 50% of users, 3-10s page loads), APIHeavyUser (active interactions, 30% of users, 2-5s operations). Defined strict performance SLAs: health endpoints p95<100ms p99<200ms, data endpoints p95<500ms p99<1000ms, write endpoints p95<1000ms p99<2000ms, overall error rate <1%. Automated threshold validation via test_stop event handler that logs violations as warnings. Created Makefile with 3 load testing commands: make load-test (interactive web UI at localhost:8089), make load-test-headless (100 users, 10/s spawn rate, 60s duration, generates timestamped CSV/HTML reports in results/load/), make load-test-quick (10 users, 2/s spawn, 30s smoke test). Added locust>=2.42.0 to requirements.txt.
+# status = stable
 
 # v96.2.0 - Visual Regression Testing Infrastructure
 # description = Minor release adding Playwright-based visual regression testing infrastructure for UI components in light/dark themes.

@@ -2214,6 +2214,153 @@ This API implements comprehensive security measures including:
                 if connection_id in self._health_ws_connections:
                     del self._health_ws_connections[connection_id]
 
+        @self.app.websocket('/ws/backend-startup')
+        async def backend_startup_websocket(websocket: WebSocket):
+            """
+            WebSocket endpoint for real-time backend startup status updates.
+            Pushes startup progress whenever steps are completed.
+            """
+            await websocket.accept()
+            connection_id = f'startup_{int(time.time() * 1000)}'
+
+            # Create connection manager for startup updates
+            if not hasattr(self, '_startup_ws_connections'):
+                self._startup_ws_connections = {}
+
+            try:
+                # Register connection
+                self._startup_ws_connections[connection_id] = websocket
+
+                # Send welcome message
+                await websocket.send_json({
+                    'type': 'system',
+                    'message': 'Connected to backend startup monitor',
+                    'timestamp': datetime.utcnow().isoformat(),
+                })
+
+                # Send initial startup status
+                try:
+                    from pokertool.backend_startup_logger import get_startup_logger
+                    logger_instance = get_startup_logger()
+                    status = logger_instance.get_status()
+
+                    # Add current step details
+                    current_step_info = None
+                    if not status.get('is_complete', True):
+                        for step in status.get('steps', []):
+                            if step['status'] == 'in_progress':
+                                current_step_info = {
+                                    'name': step['name'],
+                                    'description': step['description'],
+                                    'number': step['number']
+                                }
+                                break
+
+                    await websocket.send_json({
+                        'type': 'startup_update',
+                        'timestamp': datetime.utcnow().isoformat(),
+                        'data': {
+                            **status,
+                            'current_step_info': current_step_info
+                        }
+                    })
+                except Exception as e:
+                    logger.error(f'Error getting startup status: {e}')
+                    await websocket.send_json({
+                        'type': 'error',
+                        'message': 'Failed to get startup status',
+                        'timestamp': datetime.utcnow().isoformat(),
+                    })
+
+                # Keep connection alive - poll for status changes every 500ms
+                import asyncio
+                last_status = None
+                while True:
+                    try:
+                        # Non-blocking receive with timeout
+                        try:
+                            data = await asyncio.wait_for(websocket.receive_text(), timeout=0.5)
+
+                            # Handle ping/pong
+                            if data == 'ping':
+                                await websocket.send_json({
+                                    'type': 'pong',
+                                    'timestamp': datetime.utcnow().isoformat(),
+                                })
+                            # Handle refresh request
+                            elif data == 'refresh':
+                                logger_instance = get_startup_logger()
+                                status = logger_instance.get_status()
+
+                                # Add current step info
+                                current_step_info = None
+                                if not status.get('is_complete', True):
+                                    for step in status.get('steps', []):
+                                        if step['status'] == 'in_progress':
+                                            current_step_info = {
+                                                'name': step['name'],
+                                                'description': step['description'],
+                                                'number': step['number']
+                                            }
+                                            break
+
+                                await websocket.send_json({
+                                    'type': 'startup_update',
+                                    'timestamp': datetime.utcnow().isoformat(),
+                                    'data': {
+                                        **status,
+                                        'current_step_info': current_step_info
+                                    }
+                                })
+
+                        except asyncio.TimeoutError:
+                            # Check for status changes every 500ms
+                            logger_instance = get_startup_logger()
+                            status = logger_instance.get_status()
+
+                            # Only send update if status changed
+                            status_str = json.dumps(status, sort_keys=True)
+                            if status_str != last_status:
+                                last_status = status_str
+
+                                # Add current step info
+                                current_step_info = None
+                                if not status.get('is_complete', True):
+                                    for step in status.get('steps', []):
+                                        if step['status'] == 'in_progress':
+                                            current_step_info = {
+                                                'name': step['name'],
+                                                'description': step['description'],
+                                                'number': step['number']
+                                            }
+                                            break
+
+                                await websocket.send_json({
+                                    'type': 'startup_update',
+                                    'timestamp': datetime.utcnow().isoformat(),
+                                    'data': {
+                                        **status,
+                                        'current_step_info': current_step_info
+                                    }
+                                })
+
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        logger.error(f'Backend startup WebSocket error: {e}')
+                        break
+
+            except Exception as e:
+                logger.error(f'Backend startup WebSocket setup error: {e}')
+                try:
+                    await websocket.close()
+                except:
+                    pass
+            finally:
+                # Unregister connection
+                if connection_id in self._startup_ws_connections:
+                    del self._startup_ws_connections[connection_id]
+
         # WebSocket endpoint
         @self.app.websocket('/ws/{user_id}')
         async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str):
