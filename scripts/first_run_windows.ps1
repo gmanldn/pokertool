@@ -7,7 +7,9 @@
 
 # Enable strict mode
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"  # Don't stop on first error - handle gracefully
+$global:InstallErrors = 0
+$global:InstallWarnings = 0
 
 Write-Host "=================================="
 Write-Host "PokerTool - Windows Bootstrap"
