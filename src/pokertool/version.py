@@ -50,13 +50,27 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-21',
-    'release_name': 'Backend Status Live Monitoring & Documentation Update',
+    'release_name': 'Backend Startup Percentage Indicator',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '96.1.3',
+        'date': '2025-10-21',
+        'name': 'Backend Startup Percentage Indicator',
+        'description': 'Patch release adding real-time startup progress percentage to navigation bar status indicator.',
+        'highlights': [
+            'Added live percentage indicator to navigation bar backend status showing "Backend Offline (25%)" during startup',
+            'Polls /api/backend/startup/status endpoint every 2 seconds for real-time progress updates',
+            'Displays steps_completed/total_steps percentage with automatic calculation',
+            'Enhanced system status tooltip with detailed startup progress information including pending task counts',
+            'Percentage automatically hides when backend comes online or startup completes',
+            'Provides immediate visual feedback on backend initialization without requiring navigation to Backend Status page',
+        ],
+    },
     {
         'version': '96.1.2',
         'date': '2025-10-21',

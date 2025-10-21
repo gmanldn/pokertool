@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.1.2
+version = 96.1.3
 release_date = 2025-10-21
 
 [release_notes]
-# v96.1.2 - Backend Status Live Monitoring & Documentation Update
-description = Patch release enhancing Backend Status page with live color-coded task tracking, clickable logo navigation, and comprehensive documentation of monitoring features.
-changes = Enhanced Backend Status page with real-time color-coded task visualization (brown→orange→green transitions). Pre-register all 7 startup steps as 'pending' for immediate visibility. Added status alerts explaining why backend is offline with task counts. Improved task list with colored backgrounds, smooth transitions, and detailed status chips. Made PokerTool Pro logo clickable to navigate back to dashboard with hover effect. Updated backend_startup_logger.py to support pending status and step pre-registration. Enhanced README.md with comprehensive monitoring, error handling, and best practices sections covering Backend Status Dashboard, Frontend Error Monitoring, Webpack Chunk Loading Resilience, production deployment checklist, and development best practices. All changes create professional always-live monitoring experience.
+# v96.1.3 - Backend Startup Percentage Indicator
+description = Patch release adding real-time startup progress percentage to navigation bar status indicator.
+changes = Added live percentage indicator to navigation bar backend status showing "Backend Offline (25%)" during startup. Polls /api/backend/startup/status endpoint every 2 seconds for real-time progress updates. Displays steps_completed/total_steps percentage with automatic calculation. Enhanced system status tooltip with detailed startup progress information including pending task counts. Percentage automatically hides when backend comes online or startup completes. Provides immediate visual feedback on backend initialization progress without requiring navigation to Backend Status page.
 status = stable
+
+# v96.1.2 - Backend Status Live Monitoring & Documentation Update
+# description = Patch release enhancing Backend Status page with live color-coded task tracking, clickable logo navigation, and comprehensive documentation of monitoring features.
+# changes = Enhanced Backend Status page with real-time color-coded task visualization (brown→orange→green transitions). Pre-register all 7 startup steps as 'pending' for immediate visibility. Added status alerts explaining why backend is offline with task counts. Improved task list with colored backgrounds, smooth transitions, and detailed status chips. Made PokerTool Pro logo clickable to navigate back to dashboard with hover effect. Updated backend_startup_logger.py to support pending status and step pre-registration. Enhanced README.md with comprehensive monitoring, error handling, and best practices sections covering Backend Status Dashboard, Frontend Error Monitoring, Webpack Chunk Loading Resilience, production deployment checklist, and development best practices. All changes create professional always-live monitoring experience.
+# status = stable
 
 # v96.1.1 - Frontend Error Monitoring & Chunk Loading Fix
 # description = Patch release adding comprehensive frontend compile error monitoring with auto-shutdown and fixing webpack chunk loading errors with automatic retry mechanism.
