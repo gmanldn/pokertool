@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, Paper, LinearProgress, Chip, Card, CardContent, Alert, List, ListItem, ListItemIcon, ListItemText, useTheme } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { buildApiUrl } from '../config/api';
@@ -141,6 +140,7 @@ const BackendStatus: React.FC = () => {
         clearTimeout(reconnectTimeout);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const formatDuration = (seconds: number) => {
@@ -164,21 +164,6 @@ const BackendStatus: React.FC = () => {
         return <RadioButtonUncheckedIcon sx={{ color: '#8B4513', fontSize: 24 }} />; // Brown color
       default:
         return <RadioButtonUncheckedIcon sx={{ color: 'text.disabled', fontSize: 24 }} />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'success';
-      case 'failed':
-        return 'error';
-      case 'in_progress':
-        return 'warning';
-      case 'pending':
-        return 'default';
-      default:
-        return 'default';
     }
   };
 
