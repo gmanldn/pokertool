@@ -49,14 +49,26 @@ VERSION_INFO = {
     'major': VERSION_MAJOR,
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
-    'release_date': '2025-10-22',
-    'release_name': 'Startup Optimisations & Detection Stream',
+    'release_date': '2025-10-21',
+    'release_name': 'Reliability & Stability Release',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '96.0.0',
+        'date': '2025-10-21',
+        'name': 'Reliability & Stability Release',
+        'description': 'Major release focused on application reliability, stability improvements, and validated startup processes.',
+        'highlights': [
+            'Verified complete startup sequence including dependency installation, backend API initialization, and frontend build processes',
+            'Confirmed successful loading of all core modules (logging, scraper, concurrency, health checker, tracing)',
+            'Enhanced process cleanup for reliable restarts with comprehensive pattern matching',
+            'Production-ready with comprehensive error handling and monitoring across all subsystems',
+        ],
+    },
     {
         'version': '88.5.0',
         'date': '2025-10-22',

@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 95.0.2
+version = 96.0.0
 release_date = 2025-10-21
 
 [release_notes]
-# v95.0.2 - Build Stability Fix
-description = Patch release fixing ESLint import ordering error that prevented production builds from completing successfully.
-changes = Fixed import/first ESLint violation in errorTracking.ts by reordering type imports alphabetically (axios before browser). Frontend build now completes without errors. This is a critical build stability fix for production deployments.
+# v96.0.0 - Reliability & Stability Release
+description = Major release focused on application reliability, stability improvements, and validated startup processes.
+changes = Verified and validated complete startup sequence including dependency installation, backend API initialization, and frontend build processes. Confirmed successful loading of all core modules (logging, scraper, concurrency, health checker, tracing). Enhanced process cleanup for reliable restarts. All systems operational with graceful degradation where optional dependencies (TensorFlow) are unavailable. Production-ready with comprehensive error handling and monitoring.
 status = stable
 
 # v95.0.1 - Complete Documentation Update
