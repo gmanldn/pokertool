@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 95.0.1
+version = 95.0.2
 release_date = 2025-10-21
 
 [release_notes]
-# v95.0.1 - Complete Documentation Update
-description = Documentation patch release completing comprehensive documentation of all features from v89-v95, including error analysis workflow and full technical details.
-changes = Added comprehensive documentation for v89-v91 releases in FEATURES.md. v91: FastAPI/Uvicorn API infrastructure. v90: OpenTelemetry distributed tracing, structured JSON logging with correlation IDs, ML model lazy loading and caching. v89: UI status consolidation, RBAC security audit, TypeScript strict mode. Added complete error analysis and staged fixing workflow to README documenting Trouble Feed system. All releases from v89 through v95 now have complete feature documentation with technical implementation details.
+# v95.0.2 - Build Stability Fix
+description = Patch release fixing ESLint import ordering error that prevented production builds from completing successfully.
+changes = Fixed import/first ESLint violation in errorTracking.ts by reordering type imports alphabetically (axios before browser). Frontend build now completes without errors. This is a critical build stability fix for production deployments.
 status = stable
+
+# v95.0.1 - Complete Documentation Update
+# description = Documentation patch release completing comprehensive documentation of all features from v89-v95, including error analysis workflow and full technical details.
+# changes = Added comprehensive documentation for v89-v91 releases in FEATURES.md. v91: FastAPI/Uvicorn API infrastructure. v90: OpenTelemetry distributed tracing, structured JSON logging with correlation IDs, ML model lazy loading and caching. v89: UI status consolidation, RBAC security audit, TypeScript strict mode. Added complete error analysis and staged fixing workflow to README documenting Trouble Feed system. All releases from v89 through v95 now have complete feature documentation with technical implementation details.
+# status = stable
 
 # v95.0.0 - Dashboard Version Display & Comprehensive Documentation Release
 # description = Enhanced dashboard to display current git-tracked version at all times, plus comprehensive documentation of all previously undocumented features from v92-v95.
