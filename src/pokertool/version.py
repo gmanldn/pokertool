@@ -50,13 +50,27 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-21',
-    'release_name': 'Backend Status Monitoring & Test Fixes',
+    'release_name': 'Frontend Error Monitoring & Chunk Loading Fix',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '96.1.1',
+        'date': '2025-10-21',
+        'name': 'Frontend Error Monitoring & Chunk Loading Fix',
+        'description': 'Patch release adding comprehensive frontend compile error monitoring with auto-shutdown and fixing webpack chunk loading errors.',
+        'highlights': [
+            'Created FrontendErrorMonitor for real-time detection of blocking compile errors',
+            'Integrated monitoring thread into start.py with auto-shutdown on errors',
+            'Automatic logging to logs/frontend_compile_errors.log',
+            'Auto-creates P0 tasks in docs/TODO.md for all detected errors',
+            'Added chunk loading retry mechanism with exponential backoff (1s, 2s, 3s)',
+            'Graceful recovery from chunk loading failures without manual intervention',
+        ],
+    },
     {
         'version': '96.1.0',
         'date': '2025-10-21',

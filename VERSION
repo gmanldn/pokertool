@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.1.0
+version = 96.1.1
 release_date = 2025-10-21
 
 [release_notes]
-# v96.1.0 - Backend Status Monitoring & Test Fixes
-description = Minor release adding comprehensive backend startup monitoring system with real-time visibility into backend initialization process, plus critical test fixes for thread pool stats and merge conflicts.
-changes = Added Backend Status tab in navigation with real-time startup progress tracking. Created BackendStartupLogger class for thread-safe step tracking with timestamps and durations. Integrated logger into start.py for all 7 startup steps (cleanup, dock icon, Node.js check, npm install, backend API, React frontend, application ready). Added API endpoints GET /api/backend/startup/status and GET /api/backend/startup/log. Created BackendStatus.tsx component with progress bar, step list, and scrolling terminal-style log viewer with auto-refresh. Fixed ThreadPoolExecutor get_stats() AttributeError with try-except fallback. Resolved merge conflict in test_rum_metrics_store.py. Removed duplicate test_master_logging.py file. Cleared __pycache__ causing import mismatches. Frontend builds successfully with zero errors. All admin endpoint tests passing.
+# v96.1.1 - Frontend Error Monitoring & Chunk Loading Fix
+description = Patch release adding comprehensive frontend compile error monitoring with auto-shutdown and fixing webpack chunk loading errors with automatic retry mechanism.
+changes = Created FrontendErrorMonitor class for real-time detection of blocking compile errors (module not found, import errors, syntax errors, compilation failures). Integrated monitoring thread into start.py that automatically logs errors, adds P0 tasks to TODO.md, and gracefully shuts down application. Added automatic chunk loading retry mechanism in public/index.html with exponential backoff (1s, 2s, 3s delays, max 3 retries). Handles both window.onerror and unhandledrejection events for ChunkLoadError. Prevents user-facing errors from transient network/caching issues. Created comprehensive test suite for error monitor (10 tests, all passing). Cleared webpack cache directories. Frontend now gracefully recovers from chunk loading failures without manual intervention.
 status = stable
 
 # v96.0.0 - Reliability & Stability Release
