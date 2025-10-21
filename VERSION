@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.0.0
+version = 96.0.1
 release_date = 2025-10-21
 
 [release_notes]
-# v96.0.0 - Reliability & Stability Release
-description = Major release focused on application reliability, stability improvements, and validated startup processes.
-changes = Verified and validated complete startup sequence including dependency installation, backend API initialization, and frontend build processes. Confirmed successful loading of all core modules (logging, scraper, concurrency, health checker, tracing). Enhanced process cleanup for reliable restarts. All systems operational with graceful degradation where optional dependencies (TensorFlow) are unavailable. Production-ready with comprehensive error handling and monitoring.
+# v96.0.1 - Frontend Build Stability Fix
+description = Patch release fixing webpack chunk loading errors and ESLint warnings in the React frontend build.
+changes = Fixed webpack chunk loading errors by clearing build cache. Removed unused Badge import from Navigation.tsx. Fixed ESLint import/no-anonymous-default-export warnings in errorTracking.ts and rum.ts by assigning objects to variables before export. Frontend now builds cleanly with zero warnings. Eliminates MUI Button chunk loading failures in production builds.
 status = stable
+
+# v96.0.0 - Reliability & Stability Release
+# description = Major release focused on application reliability, stability improvements, and validated startup processes.
+# changes = Verified and validated complete startup sequence including dependency installation, backend API initialization, and frontend build processes. Confirmed successful loading of all core modules (logging, scraper, concurrency, health checker, tracing). Enhanced process cleanup for reliable restarts. All systems operational with graceful degradation where optional dependencies (TensorFlow) are unavailable. Production-ready with comprehensive error handling and monitoring.
+# status = stable
 
 # v95.0.1 - Complete Documentation Update
 # description = Documentation patch release completing comprehensive documentation of all features from v89-v95, including error analysis workflow and full technical details.

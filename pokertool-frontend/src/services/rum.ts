@@ -225,6 +225,8 @@ export function initializeRUM(customOptions?: Partial<RumOptions>) {
   }
 }
 
-export default {
+const rum = {
   initialize: initializeRUM,
 };
+
+export default rum;

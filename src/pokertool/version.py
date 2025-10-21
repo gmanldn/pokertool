@@ -50,7 +50,7 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-21',
-    'release_name': 'Reliability & Stability Release',
+    'release_name': 'Frontend Build Stability Fix',
     'is_release': True,
     'is_dev': False,
 }

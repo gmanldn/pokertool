@@ -141,7 +141,7 @@ export function setupAxiosInterceptor(axiosInstance: AxiosInstance) {
   );
 }
 
-export default {
+const errorTracking = {
   initialize: initializeErrorTracking,
   captureError,
   captureMessage,
@@ -151,3 +151,5 @@ export default {
   setCorrelationId,
   setupAxiosInterceptor,
 };
+
+export default errorTracking;

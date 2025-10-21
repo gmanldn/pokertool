@@ -24,7 +24,6 @@ import {
   ListItemText,
   ListItemButton,
   Box,
-  Badge,
   Avatar,
   Divider,
   Switch,
