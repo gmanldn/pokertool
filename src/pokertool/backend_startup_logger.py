@@ -75,11 +75,16 @@ class BackendStartupLogger:
         self._log_file = log_dir / 'backend_startup.log'
         self._status_file = log_dir / 'backend_startup_status.json'
 
-        # Initialize log file
-        with open(self._log_file, 'w') as f:
-            f.write("=== Backend Startup Log ===\n")
-            f.write(f"Started: {datetime.now().isoformat()}\n")
-            f.write("=" * 70 + "\n\n")
+        # Initialize log file (append mode to preserve logs from parent process)
+        if not self._log_file.exists():
+            with open(self._log_file, 'w') as f:
+                f.write("=== Backend Startup Log ===\n")
+                f.write(f"Started: {datetime.now().isoformat()}\n")
+                f.write("=" * 70 + "\n\n")
+        else:
+            # Log that a new process instance started
+            with open(self._log_file, 'a') as f:
+                f.write(f"\n[New process started: {datetime.now().isoformat()}]\n")
 
         # Initialize status file
         self._save_status_to_file()
