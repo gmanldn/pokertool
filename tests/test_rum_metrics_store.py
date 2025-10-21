@@ -42,12 +42,8 @@ def test_record_and_summarise(tmp_path):
     assert lcp_summary["samples"] == 2
     assert lcp_summary["ratings"]["good"] == 1
     assert lcp_summary["ratings"]["needs-improvement"] == 1
-<<<<<<< HEAD
     assert lcp_summary["max"] == 3400
     assert lcp_summary["p95"] >= 3330
-=======
-    assert lcp_summary["p95"] >= 3400
->>>>>>> a6f584195 (feature: rum backend metrics)
 
     cls_summary = next(item for item in summary["metrics"] if item["metric"] == "CLS")
     assert cls_summary["samples"] == 1

@@ -2009,7 +2009,16 @@ This API implements comprehensive security measures including:
 
         @self.app.get('/admin/system/stats')
         async def system_stats(admin_user: APIUser = Depends(get_admin_user)):
-            thread_stats = self.services.thread_pool.get_stats()
+            # Get thread pool stats (if available)
+            try:
+                thread_stats = self.services.thread_pool.get_stats()
+            except (AttributeError, Exception):
+                # Fallback for standard ThreadPoolExecutor
+                thread_stats = {
+                    'type': 'ThreadPoolExecutor',
+                    'max_workers': self.services.thread_pool._max_workers if hasattr(self.services.thread_pool, '_max_workers') else 'unknown'
+                }
+
             db_stats = self.services.db.get_database_stats()
 
             # Get model cache metrics
