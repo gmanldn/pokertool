@@ -50,13 +50,27 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-21',
-    'release_name': 'Frontend Error Monitoring & Chunk Loading Fix',
+    'release_name': 'Backend Status Live Monitoring & Documentation Update',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '96.1.2',
+        'date': '2025-10-21',
+        'name': 'Backend Status Live Monitoring & Documentation Update',
+        'description': 'Patch release enhancing Backend Status page with live color-coded task tracking, clickable logo navigation, and comprehensive documentation.',
+        'highlights': [
+            'Enhanced Backend Status page with real-time color-coded task visualization (brown→orange→green)',
+            'Pre-register all 7 startup steps as "pending" for immediate visibility',
+            'Added status alerts explaining why backend is offline with task counts',
+            'Made PokerTool Pro logo clickable to navigate back to dashboard',
+            'Updated backend_startup_logger.py to support pending status',
+            'Comprehensive README.md updates with monitoring, error handling, and best practices',
+        ],
+    },
     {
         'version': '96.1.1',
         'date': '2025-10-21',
