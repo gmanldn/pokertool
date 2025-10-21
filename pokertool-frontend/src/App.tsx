@@ -27,6 +27,7 @@ import './styles/mobile.css';
 // Eagerly load critical components needed for initial render
 import { Navigation } from './components/Navigation';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load route components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -143,23 +144,23 @@ function AppContent() {
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard messages={messages} />} />
-                  <Route path="/backend" element={<BackendStatus />} />
-                  <Route path="/todo" element={<TodoList />} />
-                  <Route path="/tables" element={<TableView sendMessage={sendMessage} />} />
-                  <Route path="/detection-log" element={<DetectionLog messages={messages} />} />
-                  <Route path="/statistics" element={<Statistics />} />
-                  <Route path="/bankroll" element={<BankrollManager />} />
-                  <Route path="/tournament" element={<TournamentView />} />
-                  <Route path="/hud" element={<HUDOverlay />} />
-                  <Route path="/gto" element={<GTOTrainer />} />
-                  <Route path="/history" element={<HandHistory />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/model-calibration" element={<ModelCalibration />} />
-                  <Route path="/system-status" element={<SystemStatus />} />
-                  <Route path="/opponent-fusion" element={<OpponentFusion />} />
-                  <Route path="/active-learning" element={<ActiveLearning />} />
-                  <Route path="/scraping-accuracy" element={<ScrapingAccuracy />} />
+                  <Route path="/dashboard" element={<ErrorBoundary fallbackType="general"><Dashboard messages={messages} /></ErrorBoundary>} />
+                  <Route path="/backend" element={<ErrorBoundary fallbackType="general"><BackendStatus /></ErrorBoundary>} />
+                  <Route path="/todo" element={<ErrorBoundary fallbackType="general"><TodoList /></ErrorBoundary>} />
+                  <Route path="/tables" element={<ErrorBoundary fallbackType="table"><TableView sendMessage={sendMessage} /></ErrorBoundary>} />
+                  <Route path="/detection-log" element={<ErrorBoundary fallbackType="general"><DetectionLog messages={messages} /></ErrorBoundary>} />
+                  <Route path="/statistics" element={<ErrorBoundary fallbackType="stats"><Statistics /></ErrorBoundary>} />
+                  <Route path="/bankroll" element={<ErrorBoundary fallbackType="general"><BankrollManager /></ErrorBoundary>} />
+                  <Route path="/tournament" element={<ErrorBoundary fallbackType="general"><TournamentView /></ErrorBoundary>} />
+                  <Route path="/hud" element={<ErrorBoundary fallbackType="general"><HUDOverlay /></ErrorBoundary>} />
+                  <Route path="/gto" element={<ErrorBoundary fallbackType="advice"><GTOTrainer /></ErrorBoundary>} />
+                  <Route path="/history" element={<ErrorBoundary fallbackType="general"><HandHistory /></ErrorBoundary>} />
+                  <Route path="/settings" element={<ErrorBoundary fallbackType="general"><Settings /></ErrorBoundary>} />
+                  <Route path="/model-calibration" element={<ErrorBoundary fallbackType="general"><ModelCalibration /></ErrorBoundary>} />
+                  <Route path="/system-status" element={<ErrorBoundary fallbackType="general"><SystemStatus /></ErrorBoundary>} />
+                  <Route path="/opponent-fusion" element={<ErrorBoundary fallbackType="general"><OpponentFusion /></ErrorBoundary>} />
+                  <Route path="/active-learning" element={<ErrorBoundary fallbackType="general"><ActiveLearning /></ErrorBoundary>} />
+                  <Route path="/scraping-accuracy" element={<ErrorBoundary fallbackType="general"><ScrapingAccuracy /></ErrorBoundary>} />
                 </Routes>
               </Suspense>
             </main>
