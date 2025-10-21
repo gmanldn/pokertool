@@ -44,6 +44,7 @@ const ModelCalibration = lazy(() => import('./components/ModelCalibration').then
 const OpponentFusion = lazy(() => import('./components/OpponentFusion').then(module => ({ default: module.OpponentFusion })));
 const ActiveLearning = lazy(() => import('./components/ActiveLearning').then(module => ({ default: module.ActiveLearning })));
 const ScrapingAccuracy = lazy(() => import('./components/ScrapingAccuracy').then(module => ({ default: module.ScrapingAccuracy })));
+const BackendStatus = lazy(() => import('./pages/BackendStatus'));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -142,6 +143,7 @@ function AppContent() {
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard messages={messages} />} />
+                  <Route path="/backend" element={<BackendStatus />} />
                   <Route path="/tables" element={<TableView sendMessage={sendMessage} />} />
                   <Route path="/detection-log" element={<DetectionLog messages={messages} />} />
                   <Route path="/statistics" element={<Statistics />} />

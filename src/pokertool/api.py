@@ -1173,6 +1173,47 @@ This API implements comprehensive security measures including:
             """
             return {'status': 'healthy', 'timestamp': datetime.utcnow()}
 
+        # Backend Startup Status Endpoints
+        @self.app.get('/api/backend/startup/status', tags=['backend'], summary='Backend Startup Status')
+        async def get_backend_startup_status():
+            """
+            Get current backend startup status including progress and timing.
+
+            Returns detailed information about startup steps, elapsed time, and remaining tasks.
+            """
+            try:
+                from pokertool.backend_startup_logger import get_startup_logger
+                logger_instance = get_startup_logger()
+                return logger_instance.get_status()
+            except Exception as e:
+                return {
+                    'error': str(e),
+                    'elapsed_time': 0,
+                    'current_step': 0,
+                    'total_steps': 0,
+                    'steps_completed': 0,
+                    'steps_remaining': 0,
+                    'steps': []
+                }
+
+        @self.app.get('/api/backend/startup/log', tags=['backend'], summary='Backend Startup Log')
+        async def get_backend_startup_log(lines: int = 100):
+            """
+            Get recent lines from backend startup log.
+
+            Args:
+                lines: Number of lines to return (default 100)
+
+            Returns list of log lines with timestamps.
+            """
+            try:
+                from pokertool.backend_startup_logger import get_startup_logger
+                logger_instance = get_startup_logger()
+                log_lines = logger_instance.get_log_tail(lines)
+                return {'log_lines': log_lines, 'total_lines': len(log_lines)}
+            except Exception as e:
+                return {'error': str(e), 'log_lines': [], 'total_lines': 0}
+
         # Status endpoint for status window
         @self.app.get('/api/status', tags=['health'], summary='Application Status')
         async def app_status():
