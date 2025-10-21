@@ -43,21 +43,51 @@ class BackendStartupLogger:
             self.total_steps = total
             self._log(f"Total startup steps: {total}")
 
+    def register_steps(self, step_names: List[tuple]):
+        """Pre-register all steps as pending.
+
+        Args:
+            step_names: List of tuples (name, description)
+        """
+        with self.lock:
+            for i, (name, description) in enumerate(step_names, 1):
+                step_info = {
+                    'number': i,
+                    'name': name,
+                    'description': description,
+                    'status': 'pending'
+                }
+                self.steps.append(step_info)
+            self._log(f"Registered {len(step_names)} pending steps")
+
     def start_step(self, step_name: str, description: str = ""):
-        """Start a new startup step."""
+        """Start a new startup step or update pending step."""
         with self.lock:
             self.current_step += 1
             elapsed = time.time() - self.start_time
 
-            step_info = {
-                'number': self.current_step,
-                'name': step_name,
-                'description': description,
-                'start_time': time.time(),
-                'elapsed_at_start': elapsed,
-                'status': 'in_progress'
-            }
-            self.steps.append(step_info)
+            # Check if this step was pre-registered
+            step_index = next((i for i, s in enumerate(self.steps) if s.get('number') == self.current_step), None)
+
+            if step_index is not None:
+                # Update existing pending step
+                self.steps[step_index].update({
+                    'start_time': time.time(),
+                    'elapsed_at_start': elapsed,
+                    'status': 'in_progress'
+                })
+            else:
+                # Create new step (fallback for backwards compatibility)
+                step_info = {
+                    'number': self.current_step,
+                    'name': step_name,
+                    'description': description,
+                    'start_time': time.time(),
+                    'elapsed_at_start': elapsed,
+                    'status': 'in_progress'
+                }
+                self.steps.append(step_info)
+                step_index = len(self.steps) - 1
 
             progress = f"[{self.current_step}/{self.total_steps}]" if self.total_steps > 0 else f"[{self.current_step}]"
             msg = f"{progress} {step_name}"
@@ -66,7 +96,7 @@ class BackendStartupLogger:
             msg += f" (elapsed: {elapsed:.1f}s)"
 
             self._log(msg)
-            return len(self.steps) - 1  # Return step index
+            return step_index
 
     def complete_step(self, step_index: int = -1, success: bool = True, message: str = ""):
         """Mark a step as complete."""
@@ -118,17 +148,20 @@ class BackendStartupLogger:
             in_progress = sum(1 for s in self.steps if s['status'] == 'in_progress')
             completed = sum(1 for s in self.steps if s['status'] in ['success', 'failed'])
             failed = sum(1 for s in self.steps if s['status'] == 'failed')
+            pending = sum(1 for s in self.steps if s['status'] == 'pending')
+            success = sum(1 for s in self.steps if s['status'] == 'success')
 
             return {
                 'elapsed_time': elapsed,
                 'current_step': self.current_step,
-                'total_steps': self.total_steps,
-                'steps_completed': completed,
+                'total_steps': self.total_steps if self.total_steps > 0 else len(self.steps),
+                'steps_completed': success,
                 'steps_in_progress': in_progress,
                 'steps_failed': failed,
-                'steps_remaining': max(0, self.total_steps - self.current_step),
+                'steps_pending': pending,
+                'steps_remaining': pending,
                 'steps': self.steps.copy(),
-                'is_complete': self.current_step >= self.total_steps and in_progress == 0,
+                'is_complete': (self.current_step >= self.total_steps or success + failed == len(self.steps)) and in_progress == 0 and pending == 0,
             }
 
     def get_log_tail(self, lines: int = 100) -> List[str]:

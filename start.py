@@ -391,6 +391,17 @@ def launch_web_app() -> int:
     startup_logger = get_startup_logger()
     startup_logger.set_total_steps(7)
 
+    # Pre-register all steps as pending for live UI updates
+    startup_logger.register_steps([
+        ("Clean old processes", "Removing previous pokertool instances"),
+        ("Setup macOS dock icon", "Configuring application icon"),
+        ("Check Node.js", "Verifying Node.js installation"),
+        ("Install frontend dependencies", "Checking npm packages"),
+        ("Start backend API", "Launching FastAPI on port 5001"),
+        ("Start React frontend", "Launching development server on port 3000"),
+        ("Application ready", "All services started successfully"),
+    ])
+
     # Clean up any old processes first
     step1 = startup_logger.start_step("Clean old processes", "Removing previous pokertool instances")
     cleanup_old_processes()
