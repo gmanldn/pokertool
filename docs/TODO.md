@@ -23,6 +23,70 @@ Conventions
 - [ ] [P0][M] Automated hand tagging — Use AI to automatically tag hands with categories (bluff, value bet, hero call, etc.) for better organization and search.
 - [ ] [P0][S] AI endpoints authorization — Add authentication/authorization to `/api/ai/*` endpoints using existing RBAC system.
 
+## Code Quality & Reliability (P0-P2: Foundation for Scale)
+
+### Test Coverage & Quality (P0)
+- [ ] [P0][M] Increase core poker engine test coverage to 98%+ — Add tests for edge cases in `src/pokertool/core.py`, particularly around hand evaluation, position logic, and pot odds calculations. Target: `tests/test_core_comprehensive.py` coverage from 95% to 98%.
+- [ ] [P0][M] Database module integration tests — Add tests for transaction rollback, concurrent access, connection pool exhaustion, and database failover in `src/pokertool/database.py`. Create `tests/test_database_integration.py` with 20+ tests.
+- [ ] [P0][S] API endpoint contract tests — Verify all FastAPI endpoints return correct status codes, response schemas, and error formats. Add `tests/api/test_endpoint_contracts.py` validating 100+ endpoints.
+- [ ] [P0][M] Frontend component unit test coverage to 80%+ — Add Jest/RTL tests for Dashboard, TableView, SystemStatus, and BackendStatus components. Currently at ~40%, target 80%.
+- [ ] [P0][S] Smoke test expansion — Add tests for configuration loading, environment variable validation, and dependency availability. Expand `tests/test_smoke_suite.py` from 38 to 50 tests.
+
+### Error Handling & Resilience (P0)
+- [ ] [P0][M] Centralized error handling middleware — Create `src/pokertool/error_middleware.py` to catch all unhandled exceptions, log with context, and return user-friendly errors. Integrate with Sentry.
+- [ ] [P0][S] Database connection retry logic — Add exponential backoff retry for database connections in `src/pokertool/database.py`. Handle network failures, connection pool exhaustion, and timeouts gracefully.
+- [ ] [P0][S] WebSocket reconnection improvements — Enhance `pokertool-frontend/src/services/websocket.ts` with automatic reconnection, exponential backoff, and connection state management. Add heartbeat mechanism.
+- [ ] [P0][M] API timeout handling — Add timeout configuration for all external API calls (ML models, database queries, external services). Default 30s timeout with configurable overrides. File: `src/pokertool/api.py`.
+- [ ] [P0][S] Frontend error boundaries — Wrap all major route components with React ErrorBoundary to prevent full-page crashes. Show user-friendly error UI with report button. Add to `pokertool-frontend/src/components/ErrorBoundary.tsx`.
+
+### Performance Optimization (P0-P1)
+- [ ] [P0][S] Database query optimization — Add indexes on frequently queried columns (session_id, timestamp, player_id). Profile slow queries with `EXPLAIN ANALYZE`. Target: <50ms for 95th percentile queries.
+- [ ] [P0][M] Frontend bundle size reduction — Analyze webpack bundle, implement code splitting for routes, lazy load heavy components (HUD, Charts). Target: reduce initial bundle from 2.5MB to <1.5MB.
+- [ ] [P0][S] API response caching layer — Implement Redis caching for expensive endpoints (/api/stats/*, /api/ml/*). Add cache invalidation on data updates. TTL: 5-60s based on endpoint.
+- [ ] [P1][M] React component memoization audit — Add React.memo, useMemo, useCallback to prevent unnecessary re-renders in Dashboard, TableView, and SystemStatus. Profile with React DevTools.
+- [ ] [P1][S] Backend async optimization — Convert blocking I/O operations to async/await in `src/pokertool/api.py` endpoints. Use asyncio.gather for parallel operations. Target: 2x throughput improvement.
+
+### Code Quality & Maintainability (P1)
+- [ ] [P1][M] TypeScript strict null checks — Enable `strictNullChecks` in tsconfig.json and fix all null/undefined violations in frontend. Estimate 200+ locations to fix.
+- [ ] [P1][S] Python type hints audit — Add missing type hints to all public functions in src/pokertool/ modules. Run mypy in strict mode and fix all violations. Target: 100% type coverage.
+- [ ] [P1][M] Remove duplicate code — Identify and refactor duplicated logic in screen scraper modules (`poker_screen_scraper_betfair.py`, OCR helpers). Extract common utilities to `src/pokertool/scraper_utils.py`.
+- [ ] [P1][S] Consistent naming conventions — Rename inconsistent variable/function names across codebase. Examples: `db` vs `database`, `cfg` vs `config`. Document conventions in `CONTRIBUTING.md`.
+- [ ] [P1][M] Reduce cyclomatic complexity — Refactor functions with complexity >10 into smaller, testable units. Focus on `src/pokertool/api.py` (_create_app), `src/pokertool/modules/poker_screen_scraper_betfair.py`.
+
+### Security Hardening (P1)
+- [ ] [P1][S] SQL injection audit — Review all raw SQL queries for injection vulnerabilities. Use parameterized queries exclusively. Add SQLAlchemy ORM where appropriate. File: `src/pokertool/database.py`.
+- [ ] [P1][S] API rate limiting expansion — Add rate limits to all public endpoints, not just /auth. Use Redis-backed rate limiter with per-user quotas. Configure via environment variables.
+- [ ] [P1][M] Input sanitization library — Create `src/pokertool/input_validator.py` with validators for all user inputs (file paths, database queries, API parameters). Prevent path traversal, XSS, command injection.
+- [ ] [P1][S] Secrets management audit — Move all hardcoded secrets to environment variables or secret management service. Scan with `trufflehog` and `detect-secrets`. Add pre-commit hook to prevent secret commits.
+- [ ] [P1][S] Dependency vulnerability scanning — Add `safety check` and `npm audit` to CI pipeline. Fail build on high/critical vulnerabilities. Set up automated dependency updates with Dependabot.
+
+### Documentation & Observability (P1-P2)
+- [ ] [P1][M] API documentation generation — Set up automatic OpenAPI/Swagger docs generation from FastAPI routes. Add request/response examples. Publish to `/api/docs` endpoint.
+- [ ] [P1][S] Architecture decision records (ADRs) — Document major technical decisions in `docs/adr/`. Start with: database choice, WebSocket architecture, ML model selection, caching strategy.
+- [ ] [P1][M] Logging standardization — Ensure all modules use `master_logging.py` consistently. Remove print() statements. Add structured context to all log entries. Validate log rotation works.
+- [ ] [P2][M] Performance monitoring dashboards — Create Grafana dashboards for key metrics: API latency, error rates, database query times, ML model inference times. Use Prometheus or built-in metrics.
+- [ ] [P2][S] Code coverage reporting — Integrate coverage.py reports into CI. Fail PR if coverage drops below 90%. Display coverage badge in README.md.
+
+### Refactoring & Technical Debt (P2)
+- [ ] [P2][L] Migrate legacy database module — Complete migration from `scripts/start.py` (17KB) to root `start.py` (22KB). Remove deprecated version. Update all references.
+- [ ] [P2][M] Centralize configuration management — Create `src/pokertool/config.py` using pydantic BaseSettings for all config. Remove scattered config loading. Support .env files and environment variables.
+- [ ] [P2][M] Frontend state management refactor — Evaluate and potentially migrate from Context API to Zustand or Redux Toolkit for better performance and DevTools. Focus on SystemStatus and Dashboard state.
+- [ ] [P2][S] Remove dead code — Identify and remove unused functions, imports, and files. Use `vulture` for Python, `ts-prune` for TypeScript. Estimate: 5-10% codebase reduction.
+- [ ] [P2][M] Extract poker logic library — Create standalone `pokertool-core` package with pure poker logic (hand evaluation, odds calculation, GTO solver). Enable reuse across projects.
+
+### Testing Infrastructure (P2)
+- [ ] [P2][M] Chaos engineering tests — Add tests that simulate failures: database unavailable, network timeouts, high CPU load, memory pressure. Verify graceful degradation. Use `pytest-chaos`.
+- [ ] [P2][S] Mutation testing setup — Run `mutmut` on core modules to identify weak tests. Target 80%+ mutation score for critical paths (`src/pokertool/core.py`, `src/pokertool/database.py`).
+- [ ] [P2][M] E2E testing with Playwright — Add end-to-end tests covering full user workflows: login, view dashboard, analyze hand, check stats. Run in CI with headless browser.
+- [ ] [P2][S] Property-based testing — Add Hypothesis tests for poker engine to catch edge cases. Test properties like: "any hand has valid equity 0-100%", "pot odds are always positive".
+- [ ] [P2][M] Performance regression testing — Add benchmark tests that fail if API endpoints regress >20%. Use `pytest-benchmark`. Track p50/p95/p99 latencies over time.
+
+### Platform Compatibility & Deployment (P2)
+- [ ] [P2][M] Windows compatibility audit — Test full application on Windows 10/11. Fix path handling issues (use pathlib). Ensure PowerShell scripts work. Document Windows-specific setup in `INSTALL.md`.
+- [ ] [P2][S] Docker containerization — Create production-ready Dockerfile with multi-stage build. Add docker-compose.yml for full stack (backend, frontend, Redis, Postgres). Optimize image size <500MB.
+- [ ] [P2][M] CI/CD pipeline improvements — Add deployment automation to staging/production. Implement blue-green deployments. Add smoke tests post-deployment. Use GitHub Actions workflows.
+- [ ] [P2][S] Cross-browser testing — Verify frontend works on Chrome, Firefox, Safari, Edge. Add BrowserStack or Sauce Labs integration for automated cross-browser tests. Fix rendering issues.
+
 ## Now (P0: highest ROI)
 
 - [x] [P0][S] Fix frontend unknown error — ✅ Complete: Frontend builds successfully. Fixed ESLint warnings in BackendStatus.tsx by removing unused import (HourglassEmptyIcon), removing unused function (getStatusColor), and adding explicit comment for useEffect dependency rule. Build completes with no errors or warnings.
