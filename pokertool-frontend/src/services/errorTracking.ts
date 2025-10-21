@@ -1,12 +1,12 @@
 /**
  * Error Tracking Service
- * 
+ *
  * Integrates Sentry for frontend error tracking with correlation IDs
  */
 
 import * as Sentry from '@sentry/react';
-import type { BrowserOptions } from '@sentry/browser';
 import type { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import type { BrowserOptions } from '@sentry/browser';
 
 /**
  * Initialize Sentry error tracking
