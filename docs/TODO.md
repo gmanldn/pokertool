@@ -34,10 +34,10 @@ Conventions
 
 ### Error Handling & Resilience (P0)
 - [ ] [P0][M] Centralized error handling middleware — Create `src/pokertool/error_middleware.py` to catch all unhandled exceptions, log with context, and return user-friendly errors. Integrate with Sentry.
-- [ ] [P0][S] Database connection retry logic — Add exponential backoff retry for database connections in `src/pokertool/database.py`. Handle network failures, connection pool exhaustion, and timeouts gracefully.
-- [ ] [P0][S] WebSocket reconnection improvements — Enhance `pokertool-frontend/src/services/websocket.ts` with automatic reconnection, exponential backoff, and connection state management. Add heartbeat mechanism.
+- [x] [P0][S] Database connection retry logic — ✅ Complete: Added exponential backoff retry for both PostgreSQL initialization (5 retries, 1s-30s delays) and connection acquisition (3 retries, 0.5s-2s delays) in `src/pokertool/database.py:_init_postgresql` and `get_connection`. Graceful degradation with detailed logging at each retry attempt.
+- [x] [P0][S] WebSocket reconnection improvements — ✅ Complete: WebSocket hook already has comprehensive reconnection logic with exponential backoff (max 10 attempts, 1s-30s delays), heartbeat/ping-pong mechanism (30s interval, 35s timeout), message queue for caching during disconnection, and automatic replay on reconnect. File: `pokertool-frontend/src/hooks/useWebSocket.ts`.
 - [ ] [P0][M] API timeout handling — Add timeout configuration for all external API calls (ML models, database queries, external services). Default 30s timeout with configurable overrides. File: `src/pokertool/api.py`.
-- [ ] [P0][S] Frontend error boundaries — Wrap all major route components with React ErrorBoundary to prevent full-page crashes. Show user-friendly error UI with report button. Add to `pokertool-frontend/src/components/ErrorBoundary.tsx`.
+- [x] [P0][S] Frontend error boundaries — ✅ Complete: Wrapped all 17 route components with React ErrorBoundary to prevent full-page crashes. Each route has isolated error handling with type-specific fallback messages (general, table, stats, advice). Automatic recovery with exponential backoff, degraded mode after max retries. File: `pokertool-frontend/src/App.tsx:146-164`.
 
 ### Performance Optimization (P0-P1)
 - [ ] [P0][S] Database query optimization — Add indexes on frequently queried columns (session_id, timestamp, player_id). Profile slow queries with `EXPLAIN ANALYZE`. Target: <50ms for 95th percentile queries.
