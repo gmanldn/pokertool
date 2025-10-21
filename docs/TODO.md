@@ -12,6 +12,7 @@ Conventions
 
 ## Now (P0: highest ROI)
 
+- [x] [P0][S] Fix frontend Navigation.test.tsx type errors — ✅ Complete: Fixed BackendStatus interface mismatch in test file. Changed `lastSeen: Date.now()` to `lastChecked: new Date().toISOString()` and added required `attempts` property to match actual interface definition in useBackendLifecycle.ts. All 8 test cases updated. Frontend build now succeeds.
 - [x] [P0][M] Fix React webpack chunk loading errors — ✅ Complete: Added automatic chunk loading retry mechanism with exponential backoff in `public/index.html`. Handles both `window.onerror` and `unhandledrejection` events for ChunkLoadError. Automatically retries up to 3 times with 1s, 2s, 3s delays. Cleared webpack cache directories. This resolves the "Loading chunk vendors-node_modules_mui_material_Stack_Stack_js failed" errors by gracefully recovering from transient network/caching issues.
 - [x] [P0][S] Rationalize top-right UI indicators (backend/loaded) — ✅ Complete: consolidated 3 separate indicators into single unified "System Status" indicator with 5 states (ready/backend_down/ws_down/degraded/starting), added 600ms debouncing for health data, smooth 0.3s CSS transitions, comprehensive tooltip. File: `pokertool-frontend/src/components/Navigation.tsx:86-140`. Commit: f7566b9c2
 - [x] [P0][M] Concurrency regression tests for shared thread pool — race/leak harness for `src/pokertool/threading.py`; fail on resource leaks in CI. (17 tests in `tests/test_threading_concurrency.py`)

@@ -81,7 +81,8 @@ describe('Navigation - Backend Status Indicator', () => {
   it('should show "Backend Online" when all systems are healthy', async () => {
     const backendStatus: BackendStatus = {
       state: 'online',
-      lastSeen: Date.now(),
+      lastChecked: new Date().toISOString(),
+      attempts: 1,
     };
 
     renderWithProviders(
@@ -97,7 +98,8 @@ describe('Navigation - Backend Status Indicator', () => {
   it('should show "Backend Offline" when API is down', async () => {
     const backendStatus: BackendStatus = {
       state: 'offline',
-      lastSeen: Date.now() - 10000,
+      lastChecked: new Date(Date.now() - 10000).toISOString(),
+      attempts: 3,
     };
 
     renderWithProviders(
@@ -112,7 +114,8 @@ describe('Navigation - Backend Status Indicator', () => {
   it('should show "Backend Offline" when WebSocket is disconnected', async () => {
     const backendStatus: BackendStatus = {
       state: 'online',
-      lastSeen: Date.now(),
+      lastChecked: new Date().toISOString(),
+      attempts: 1,
     };
 
     renderWithProviders(
@@ -139,7 +142,8 @@ describe('Navigation - Backend Status Indicator', () => {
 
     const backendStatus: BackendStatus = {
       state: 'online',
-      lastSeen: Date.now(),
+      lastChecked: new Date().toISOString(),
+      attempts: 1,
     };
 
     renderWithProviders(
@@ -156,7 +160,8 @@ describe('Navigation - Backend Status Indicator', () => {
     // This test ensures we removed the confusing "Realtime Offline" label
     const backendStatus: BackendStatus = {
       state: 'online',
-      lastSeen: Date.now(),
+      lastChecked: new Date().toISOString(),
+      attempts: 1,
     };
 
     renderWithProviders(
@@ -185,7 +190,8 @@ describe('Navigation - Backend Status Indicator', () => {
 
     const backendStatus: BackendStatus = {
       state: 'offline',
-      lastSeen: Date.now() - 1000,
+      lastChecked: new Date(Date.now() - 1000).toISOString(),
+      attempts: 2,
     };
 
     renderWithProviders(
@@ -200,7 +206,8 @@ describe('Navigation - Backend Status Indicator', () => {
   it('should handle navigation clicks', async () => {
     const backendStatus: BackendStatus = {
       state: 'online',
-      lastSeen: Date.now(),
+      lastChecked: new Date().toISOString(),
+      attempts: 1,
     };
 
     renderWithProviders(
@@ -222,7 +229,8 @@ describe('Navigation - Backend Status Indicator', () => {
   it('should toggle dark mode', async () => {
     const backendStatus: BackendStatus = {
       state: 'online',
-      lastSeen: Date.now(),
+      lastChecked: new Date().toISOString(),
+      attempts: 1,
     };
 
     renderWithProviders(
