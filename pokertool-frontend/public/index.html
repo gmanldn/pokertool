@@ -33,6 +33,77 @@ fixes:
     />
     
     <title>PokerTool Pro</title>
+
+    <!-- Chunk Loading Error Handler - Automatic Retry -->
+    <script>
+      // Handle webpack chunk loading failures with automatic retry
+      (function() {
+        var chunkFailureCount = {};
+        var MAX_RETRIES = 3;
+
+        // Store original error handler
+        var originalOnError = window.onerror;
+
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+          // Check if this is a ChunkLoadError
+          if (error && error.name === 'ChunkLoadError') {
+            var chunkId = url || 'unknown';
+
+            // Track retry count for this chunk
+            if (!chunkFailureCount[chunkId]) {
+              chunkFailureCount[chunkId] = 0;
+            }
+
+            chunkFailureCount[chunkId]++;
+
+            // Retry if under max retries
+            if (chunkFailureCount[chunkId] <= MAX_RETRIES) {
+              console.warn('Chunk loading failed for ' + chunkId + ', retrying (' + chunkFailureCount[chunkId] + '/' + MAX_RETRIES + ')...');
+
+              // Wait a bit before reloading
+              setTimeout(function() {
+                window.location.reload();
+              }, 1000 * chunkFailureCount[chunkId]); // Exponential backoff
+
+              return true; // Prevent default error handling
+            } else {
+              console.error('Chunk loading failed after ' + MAX_RETRIES + ' retries for ' + chunkId);
+            }
+          }
+
+          // Call original error handler
+          if (originalOnError) {
+            return originalOnError(msg, url, lineNo, columnNo, error);
+          }
+
+          return false;
+        };
+
+        // Also handle unhandled promise rejections (modern chunk errors)
+        window.addEventListener('unhandledrejection', function(event) {
+          if (event.reason && event.reason.name === 'ChunkLoadError') {
+            var chunkId = event.reason.request || 'unknown';
+
+            if (!chunkFailureCount[chunkId]) {
+              chunkFailureCount[chunkId] = 0;
+            }
+
+            chunkFailureCount[chunkId]++;
+
+            if (chunkFailureCount[chunkId] <= MAX_RETRIES) {
+              console.warn('Chunk loading promise rejected for ' + chunkId + ', retrying (' + chunkFailureCount[chunkId] + '/' + MAX_RETRIES + ')...');
+              event.preventDefault();
+
+              setTimeout(function() {
+                window.location.reload();
+              }, 1000 * chunkFailureCount[chunkId]);
+            } else {
+              console.error('Chunk loading failed after ' + MAX_RETRIES + ' retries for ' + chunkId);
+            }
+          }
+        });
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
