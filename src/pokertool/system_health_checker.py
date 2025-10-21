@@ -44,6 +44,8 @@ from pathlib import Path
 from collections import deque
 import threading
 
+from pokertool.timeout_config import get_timeout_config
+
 logger = logging.getLogger(__name__)
 
 # Health history storage
@@ -64,13 +66,20 @@ def _join_url(base: str, path: str) -> str:
 _BACKEND_HEALTH_URL = _join_url(_BACKEND_BASE_URL, '/health')
 
 
-async def _http_get_status(url: str, timeout: float = 2.0) -> Tuple[int, str]:
+async def _http_get_status(url: str, timeout: Optional[float] = None) -> Tuple[int, str]:
     """
     Perform an HTTP GET request and return status code and body text.
 
     Tries to use aiohttp when available, otherwise falls back to requests
     executed in a thread to avoid blocking the event loop.
+
+    Args:
+        url: URL to request
+        timeout: Optional timeout in seconds. If None, uses health_check_timeout from config.
     """
+    if timeout is None:
+        timeout = get_timeout_config().health_check_timeout
+
     try:
         import aiohttp  # type: ignore
     except ImportError:
@@ -83,7 +92,7 @@ async def _http_get_status(url: str, timeout: float = 2.0) -> Tuple[int, str]:
         return await asyncio.to_thread(_sync_request)
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, timeout=timeout) as response:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as response:
             body = await response.text()
             return response.status, body
 
