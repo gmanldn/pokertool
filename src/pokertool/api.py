@@ -124,6 +124,7 @@ from .production_database import get_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
 from .thread_utils import get_thread_pool, TaskPriority
 from .error_handling import SecurityError, retry_on_failure
+from .error_middleware import register_error_handlers
 
 if TYPE_CHECKING:  # pragma: no cover - for type hints only
     from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
@@ -871,6 +872,9 @@ This API implements comprehensive security measures including:
                 'syntaxHighlight.theme': 'monokai'
             }
         )
+
+        # Register centralized error handlers
+        register_error_handlers(self.app)
 
         self._setup_sentry()
         self._setup_tracing()
