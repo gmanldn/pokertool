@@ -72,3 +72,13 @@ opentelemetry-sdk>=1.20.0
 opentelemetry-instrumentation-fastapi>=0.41b0
 opentelemetry-exporter-otlp>=1.20.0  # Optional: for exporting to OTLP collectors
 locust>=2.42.0
+
+# LangChain and AI/ML Memory
+langchain>=0.3.0
+langchain-community>=0.3.0
+chromadb>=0.5.0
+# sentence-transformers>=3.0.0  # Disabled: requires torch (Python 3.13 compatibility issue)
+# Note: ChromaDB will use default embedding function (sentence-transformers backend via onnx runtime)
+tiktoken>=0.8.0  # Token counting for LLM context management
+pydantic>=2.0.0  # Already used by FastAPI, but ensuring compatibility
+onnxruntime>=1.16.0  # Lightweight runtime for ChromaDB embeddings (no torch needed)
