@@ -571,4 +571,4 @@ After successful installation:
 ---
 
 **Last Updated:** October 21, 2025
-**PokerTool Version:** 99.0.0
+**PokerTool Version:** 100.0.0
