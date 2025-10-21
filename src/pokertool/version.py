@@ -50,13 +50,28 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-21',
-    'release_name': 'Backend Startup Percentage Indicator',
+    'release_name': 'Unified Backend Status Indicator',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '96.1.4',
+        'date': '2025-10-21',
+        'name': 'Unified Backend Status Indicator',
+        'description': 'Patch release consolidating confusing realtime/backend status split into single unified backend indicator.',
+        'highlights': [
+            'Removed confusing "Realtime Offline" status that appeared inconsistently',
+            'Consolidated backend and WebSocket status into single "Backend" indicator',
+            'Backend shows green when API + WebSocket + health checks all pass, red when any component fails',
+            'Simplified status logic: Backend Online (green), Backend Offline (red), Backend Degraded (yellow)',
+            'Removed all "realtime" terminology from UI and code comments',
+            'Added comprehensive unit tests (7 test cases) for status indicator logic',
+            'Fixed start.py hanging during dependency installation by adding timeout and capture_output',
+        ],
+    },
     {
         'version': '96.1.3',
         'date': '2025-10-21',

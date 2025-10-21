@@ -46,6 +46,11 @@ const BackendStatus: React.FC = () => {
   }, [logLines]);
 
   useEffect(() => {
+    let ws: WebSocket | null = null;
+    let statusPollInterval: NodeJS.Timeout | null = null;
+    let logInterval: NodeJS.Timeout | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+
     const fetchStatus = async () => {
       try {
         const response = await fetch(buildApiUrl('/api/backend/startup/status'));
@@ -67,17 +72,74 @@ const BackendStatus: React.FC = () => {
       }
     };
 
+    const connectWebSocket = () => {
+      try {
+        // Connect to backend startup WebSocket
+        const wsUrl = buildApiUrl('/ws/backend-startup').replace('http', 'ws');
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log('Backend Status page: WebSocket connected');
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.type === 'startup_update' && message.data) {
+              setStatus(message.data);
+              setError(null);
+            }
+          } catch (err) {
+            console.error('Error parsing startup WebSocket message:', err);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('Backend startup WebSocket error:', error);
+        };
+
+        ws.onclose = () => {
+          console.log('Backend startup WebSocket disconnected');
+          // Reconnect after 2 seconds if status not complete
+          if (!status?.is_complete) {
+            reconnectTimeout = setTimeout(connectWebSocket, 2000);
+          }
+        };
+      } catch (err) {
+        console.error('Error connecting to startup WebSocket:', err);
+      }
+    };
+
     // Initial fetch
     fetchStatus();
     fetchLog();
 
-    // Poll every 2 seconds
-    const statusInterval = setInterval(fetchStatus, 2000);
-    const logInterval = setInterval(fetchLog, 2000);
+    // Connect to WebSocket for real-time status updates
+    connectWebSocket();
+
+    // Fallback HTTP polling every 500ms for status if WebSocket disconnected
+    statusPollInterval = setInterval(() => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        fetchStatus();
+      }
+    }, 500);
+
+    // Poll logs every 2 seconds (logs don't have WebSocket updates yet)
+    logInterval = setInterval(fetchLog, 2000);
 
     return () => {
-      clearInterval(statusInterval);
-      clearInterval(logInterval);
+      if (ws) {
+        ws.close();
+      }
+      if (statusPollInterval) {
+        clearInterval(statusPollInterval);
+      }
+      if (logInterval) {
+        clearInterval(logInterval);
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
     };
   }, []);
 

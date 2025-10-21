@@ -45,6 +45,7 @@ const OpponentFusion = lazy(() => import('./components/OpponentFusion').then(mod
 const ActiveLearning = lazy(() => import('./components/ActiveLearning').then(module => ({ default: module.ActiveLearning })));
 const ScrapingAccuracy = lazy(() => import('./components/ScrapingAccuracy').then(module => ({ default: module.ScrapingAccuracy })));
 const BackendStatus = lazy(() => import('./pages/BackendStatus'));
+const TodoList = lazy(() => import('./components/TodoList').then(module => ({ default: module.TodoList })));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -144,6 +145,7 @@ function AppContent() {
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard messages={messages} />} />
                   <Route path="/backend" element={<BackendStatus />} />
+                  <Route path="/todo" element={<TodoList />} />
                   <Route path="/tables" element={<TableView sendMessage={sendMessage} />} />
                   <Route path="/detection-log" element={<DetectionLog messages={messages} />} />
                   <Route path="/statistics" element={<Statistics />} />

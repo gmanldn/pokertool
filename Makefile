@@ -1,0 +1,28 @@
+.PHONY: load-test load-test-headless load-test-quick help
+
+help:
+	@echo "PokerTool Load Testing Commands:"
+	@echo "  make load-test          - Run load test with web UI (recommended)"
+	@echo "  make load-test-headless - Run headless load test (100 users, 60s)"
+	@echo "  make load-test-quick    - Quick smoke test (10 users, 30s)"
+
+load-test:
+	@echo "Starting Locust load test with web UI..."
+	@echo "Open http://localhost:8089 in your browser"
+	@echo "Target host will be http://localhost:5001"
+	.venv/bin/locust -f tests/load/locustfile.py --host http://localhost:5001
+
+load-test-headless:
+	@echo "Running headless load test: 100 users, spawn rate 10/s, 60s duration"
+	@mkdir -p results/load
+	.venv/bin/locust -f tests/load/locustfile.py --headless \
+		--users 100 --spawn-rate 10 --run-time 60s \
+		--host http://localhost:5001 \
+		--csv results/load/load_test_$(shell date +%Y%m%d_%H%M%S) \
+		--html results/load/report_$(shell date +%Y%m%d_%H%M%S).html
+
+load-test-quick:
+	@echo "Running quick smoke test: 10 users, spawn rate 2/s, 30s duration"
+	.venv/bin/locust -f tests/load/locustfile.py --headless \
+		--users 10 --spawn-rate 2 --run-time 30s \
+		--host http://localhost:5001

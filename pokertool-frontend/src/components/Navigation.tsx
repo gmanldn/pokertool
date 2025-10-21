@@ -37,6 +37,7 @@ import {
   Dashboard as DashboardIcon,
   TableChart,
   Assessment,
+  Checklist as ChecklistIcon,
   AccountBalance,
   EmojiEvents,
   Settings,
@@ -55,6 +56,7 @@ import {
   DeveloperBoard,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import type { BackendStatus } from '../hooks/useBackendLifecycle';
 import { useSystemHealth } from '../hooks/useSystemHealth';
@@ -70,9 +72,15 @@ interface StartupStatus {
   steps_completed: number;
   steps_pending?: number;
   is_complete: boolean;
+  current_step_info?: {
+    name: string;
+    description: string;
+    number: number;
+  };
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { darkMode, toggleDarkMode } = useCustomTheme();
   const navigate = useNavigate();
@@ -83,7 +91,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const appVersion = (process.env.REACT_APP_VERSION || '').trim();
   const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
 
-  // Debounce realtime indicator to reduce flicker on transient disconnects
+  // Debounce WebSocket connection status to reduce flicker on transient disconnects
   useEffect(() => {
     const t = setTimeout(() => setDebouncedConnected(connected), 400);
     return () => clearTimeout(t);
@@ -101,8 +109,12 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     return () => clearTimeout(t);
   }, [healthData?.overall_status]);
 
-  // Fetch startup status for percentage indicator
+  // WebSocket + Fallback polling for startup status
   useEffect(() => {
+    let ws: WebSocket | null = null;
+    let pollInterval: NodeJS.Timeout | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+
     const fetchStartupStatus = async () => {
       try {
         const response = await fetch(buildApiUrl('/api/backend/startup/status'));
@@ -115,17 +127,67 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
       }
     };
 
-    // Fetch immediately
+    const connectWebSocket = () => {
+      try {
+        // Connect to backend startup WebSocket
+        const wsUrl = buildApiUrl('/ws/backend-startup').replace('http', 'ws');
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log('Backend startup WebSocket connected');
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.type === 'startup_update' && message.data) {
+              setStartupStatus(message.data);
+            }
+          } catch (err) {
+            console.error('Error parsing startup WebSocket message:', err);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('Backend startup WebSocket error:', error);
+        };
+
+        ws.onclose = () => {
+          console.log('Backend startup WebSocket disconnected');
+          // Reconnect after 2 seconds if backend is not online
+          if (backendStatus.state !== 'online') {
+            reconnectTimeout = setTimeout(connectWebSocket, 2000);
+          }
+        };
+      } catch (err) {
+        console.error('Error connecting to startup WebSocket:', err);
+      }
+    };
+
+    // Fetch initial status
     fetchStartupStatus();
 
-    // Poll every 2 seconds if backend is not online
-    const interval = setInterval(() => {
-      if (backendStatus.state !== 'online') {
+    // Try WebSocket connection
+    connectWebSocket();
+
+    // Fallback HTTP polling every 500ms (reduced from 2s for faster updates)
+    pollInterval = setInterval(() => {
+      if (backendStatus.state !== 'online' && (!ws || ws.readyState !== WebSocket.OPEN)) {
         fetchStartupStatus();
       }
-    }, 2000);
+    }, 500);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+    };
   }, [backendStatus.state]);
 
   // Calculate startup percentage
@@ -135,25 +197,48 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     return Math.round((startupStatus.steps_completed / startupStatus.total_steps) * 100);
   }, [startupStatus]);
 
-  // Unified system status
+  // Unified backend status - consolidated from separate backend/realtime indicators
   const systemStatus = useMemo(() => {
     const backendOnline = backendStatus.state === 'online';
     const wsConnected = debouncedConnected;
     const healthOk = debouncedHealthStatus === 'healthy';
 
-    if (backendOnline && wsConnected && healthOk) {
-      return { state: 'ready', label: 'System Ready', color: 'success' as const, percentage: null };
-    } else if (!backendOnline) {
-      const label = startupPercentage !== null ? `Backend Offline (${startupPercentage}%)` : 'Backend Offline';
+    // Backend is only considered "online" if API + WebSocket + health are all good
+    const backendFullyOnline = backendOnline && wsConnected && healthOk;
+
+    if (backendFullyOnline) {
+      return { state: 'ready', label: 'Backend Online', color: 'success' as const, percentage: null };
+    } else if (!backendOnline || !wsConnected) {
+      // Treat WebSocket disconnection same as backend offline
+      // Show current step name if available
+      let label = 'Backend Offline';
+      if (startupStatus?.current_step_info) {
+        const stepName = startupStatus.current_step_info.name || 'Unknown Step';
+        label = `Waiting for ${stepName}`;
+        if (startupPercentage !== null) {
+          label += ` (${startupPercentage}%)`;
+        }
+      } else if (startupPercentage !== null) {
+        label = `Backend Offline (${startupPercentage}%)`;
+      }
       return { state: 'backend_down', label, color: 'error' as const, percentage: startupPercentage };
-    } else if (!wsConnected) {
-      return { state: 'ws_down', label: 'Realtime Offline', color: 'warning' as const, percentage: null };
     } else if (!healthOk) {
-      return { state: 'degraded', label: 'System Degraded', color: 'warning' as const, percentage: null };
+      return { state: 'degraded', label: 'Backend Degraded', color: 'warning' as const, percentage: null };
     } else {
-      return { state: 'starting', label: 'System Starting', color: 'info' as const, percentage: startupPercentage };
+      // Backend starting
+      let label = 'Backend Starting';
+      if (startupStatus?.current_step_info) {
+        const stepName = startupStatus.current_step_info.name || 'Unknown Step';
+        label = `Starting: ${stepName}`;
+        if (startupPercentage !== null) {
+          label += ` (${startupPercentage}%)`;
+        }
+      } else if (startupPercentage !== null) {
+        label = `Backend Starting (${startupPercentage}%)`;
+      }
+      return { state: 'starting', label, color: 'info' as const, percentage: startupPercentage };
     }
-  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, startupPercentage]);
+  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, startupPercentage, startupStatus]);
 
   // Unified system status tooltip
   const systemStatusTooltip = useMemo(() => {
@@ -167,6 +252,13 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
       details.push(`Startup: ${startupStatus.steps_completed}/${startupStatus.total_steps} steps (${startupPercentage || 0}%)`);
       if (startupStatus.steps_pending) {
         details.push(`Pending: ${startupStatus.steps_pending} tasks`);
+      }
+
+      // Add current step details
+      if (startupStatus.current_step_info) {
+        details.push('---');
+        details.push(`Current Step: ${startupStatus.current_step_info.name}`);
+        details.push(`Description: ${startupStatus.current_step_info.description}`);
       }
     }
 
@@ -194,6 +286,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Backend', icon: <DeveloperBoard />, path: '/backend' },
+    { text: 'TODO', icon: <ChecklistIcon />, path: '/todo' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
     { text: 'Detection Log', icon: <Article />, path: '/detection-log' },
     { text: 'Statistics', icon: <Assessment />, path: '/statistics' },
@@ -232,7 +325,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         }}
       >
         <Typography variant="h6" fontWeight="bold" color="primary">
-          PokerTool Pro
+          {t('app.title')}
         </Typography>
       </Box>
       <Divider />
@@ -242,7 +335,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
           <Typography variant="subtitle1">Player</Typography>
           <Chip
             icon={<Circle sx={{ fontSize: 8 }} />}
-            label={connected ? 'Connected' : 'Offline'}
+            label={connected ? t('status.connected') : t('status.offline')}
             size="small"
             color={connected ? 'success' : 'default'}
             variant="outlined"
@@ -288,7 +381,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         <IconButton onClick={toggleDarkMode} color="inherit">
           {darkMode ? <Brightness7 /> : <Brightness4 />}
         </IconButton>
-        <Typography variant="body2">Dark Mode</Typography>
+        <Typography variant="body2">{t('navigation.darkMode')}</Typography>
         <Box sx={{ flexGrow: 1 }} />
         <Switch checked={darkMode} onChange={toggleDarkMode} />
       </Box>
@@ -331,7 +424,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
             }}
             onClick={() => handleNavigation('/dashboard')}
           >
-            {isMobile ? 'PokerTool' : 'PokerTool Pro'}
+            {isMobile ? t('app.titleShort') : t('app.title')}
             {!!appVersion && (
               <Chip
                 size="small"

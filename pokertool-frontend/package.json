@@ -35,6 +35,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:visual": "playwright test",
+    "test:visual:ui": "playwright test --ui",
+    "test:visual:update": "playwright test --update-snapshots",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -54,5 +57,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
   }
 }

@@ -14,6 +14,7 @@ POKERTOOL-HEADER-END */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/index.css';
+import './i18n/i18n'; // Initialize i18n early
 import App from './App';
 import errorTracking from './services/errorTracking';
 import { initializeRUM } from './services/rum';
