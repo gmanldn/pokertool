@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.1.1
+version = 96.1.2
 release_date = 2025-10-21
 
 [release_notes]
-# v96.1.1 - Frontend Error Monitoring & Chunk Loading Fix
-description = Patch release adding comprehensive frontend compile error monitoring with auto-shutdown and fixing webpack chunk loading errors with automatic retry mechanism.
-changes = Created FrontendErrorMonitor class for real-time detection of blocking compile errors (module not found, import errors, syntax errors, compilation failures). Integrated monitoring thread into start.py that automatically logs errors, adds P0 tasks to TODO.md, and gracefully shuts down application. Added automatic chunk loading retry mechanism in public/index.html with exponential backoff (1s, 2s, 3s delays, max 3 retries). Handles both window.onerror and unhandledrejection events for ChunkLoadError. Prevents user-facing errors from transient network/caching issues. Created comprehensive test suite for error monitor (10 tests, all passing). Cleared webpack cache directories. Frontend now gracefully recovers from chunk loading failures without manual intervention.
+# v96.1.2 - Backend Status Live Monitoring & Documentation Update
+description = Patch release enhancing Backend Status page with live color-coded task tracking, clickable logo navigation, and comprehensive documentation of monitoring features.
+changes = Enhanced Backend Status page with real-time color-coded task visualization (brown→orange→green transitions). Pre-register all 7 startup steps as 'pending' for immediate visibility. Added status alerts explaining why backend is offline with task counts. Improved task list with colored backgrounds, smooth transitions, and detailed status chips. Made PokerTool Pro logo clickable to navigate back to dashboard with hover effect. Updated backend_startup_logger.py to support pending status and step pre-registration. Enhanced README.md with comprehensive monitoring, error handling, and best practices sections covering Backend Status Dashboard, Frontend Error Monitoring, Webpack Chunk Loading Resilience, production deployment checklist, and development best practices. All changes create professional always-live monitoring experience.
 status = stable
+
+# v96.1.1 - Frontend Error Monitoring & Chunk Loading Fix
+# description = Patch release adding comprehensive frontend compile error monitoring with auto-shutdown and fixing webpack chunk loading errors with automatic retry mechanism.
+# changes = Created FrontendErrorMonitor class for real-time detection of blocking compile errors (module not found, import errors, syntax errors, compilation failures). Integrated monitoring thread into start.py that automatically logs errors, adds P0 tasks to TODO.md, and gracefully shuts down application. Added automatic chunk loading retry mechanism in public/index.html with exponential backoff (1s, 2s, 3s delays, max 3 retries). Handles both window.onerror and unhandledrejection events for ChunkLoadError. Prevents user-facing errors from transient network/caching issues. Created comprehensive test suite for error monitor (10 tests, all passing). Cleared webpack cache directories. Frontend now gracefully recovers from chunk loading failures without manual intervention.
+# status = stable
 
 # v96.0.0 - Reliability & Stability Release
 # description = Major release focused on application reliability, stability improvements, and validated startup processes.

@@ -265,7 +265,20 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
             </IconButton>
           )}
           
-          <Typography variant="h6" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.8,
+              },
+            }}
+            onClick={() => handleNavigation('/dashboard')}
+          >
             {isMobile ? 'PokerTool' : 'PokerTool Pro'}
             {!!appVersion && (
               <Chip

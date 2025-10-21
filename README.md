@@ -7,7 +7,7 @@ PokerTool is a web-based poker assistant that pairs a React dashboard with a Pyt
 - **Probability & Solver Stack** – GTO solvers, Nash equilibrium search (`src/pokertool/nash_solver.py`), and the ICM calculator (`tests/system/test_icm_calculator.py`) collaborate to price every spot, run deviation analysis, and surface bankroll-safe lines within milliseconds.
 - **Opponent Modeling & Active Learning** – `src/pokertool/ml_opponent_modeling.py` and `src/pokertool/active_learning.py` learn villain tendencies, update ranges, and feed the advice loop with personalised exploit suggestions.
 - **Coaching, Reporting & Session Ops** – The analytics dashboard, advanced reporting suite, session tracker, and study-mode helpers (`src/pokertool/analytics_dashboard.py`, `src/pokertool/advanced_reporting.py`, `src/pokertool/session_management.py`) explain “why” behind every recommendation and archive hands for review.
-- **Resilience & Observability** – Compliance and security layers (`src/pokertool/compliance.py`, `src/pokertool/error_handling.py`, `src/pokertool/storage.py`), health monitors, and the consolidated logging system ensure the stack survives long sessions and is auditable after the fact.
+- **Resilience & Observability** – Compliance and security layers (`src/pokertool/compliance.py`, `src/pokertool/error_handling.py`, `src/pokertool/storage.py`), health monitors, real-time startup tracking (`src/pokertool/backend_startup_logger.py`), automatic frontend error detection (`src/pokertool/frontend_error_monitor.py`), and the consolidated logging system ensure the stack survives long sessions, catches errors early, and is fully auditable after the fact.
 
 ### Test & Coverage Snapshot
 - **1,199 automated tests** across 69+ files, driven by `test_everything.py` (see `docs/TESTING.md`).
@@ -19,9 +19,13 @@ PokerTool is a web-based poker assistant that pairs a React dashboard with a Pyt
 
 - Real-time hand analysis with opponent modeling and coaching prompts.
 - Modern web interface with multi-table support and live WebSocket updates.
+- **Backend Status monitoring tab** with live startup progress tracking and log viewer.
+- **Automatic frontend error detection** with graceful shutdown and TODO creation.
+- **Webpack chunk loading resilience** with exponential backoff retry mechanism.
 - Automated dependency validation and environment bootstrap scripts.
 - Screen-scraping utilities for Betfair-optimized capture pipelines.
 - Comprehensive logging, diagnostics, and architecture graph tooling.
+- Thread-safe error monitoring with real-time logging and health endpoints.
 
 ## Prerequisites
 
@@ -42,7 +46,7 @@ The installer validates dependencies, provisions the virtual environment, and pr
 ## Quick Start
 
 ```bash
-# Launch the web interface
+# Launch the web interface (backend + frontend)
 python start.py
 
 # Or use the module interface
@@ -54,6 +58,17 @@ python test.py
 # Execute headless screen scraping (optional)
 python -m pokertool scrape
 ```
+
+**After Startup:**
+1. Frontend will be available at `http://localhost:3000`
+2. Backend API at `http://localhost:5001`
+3. Check the **Backend** tab (`http://localhost:3000/backend`) to monitor startup progress
+4. Review `logs/backend_startup.log` for detailed timing metrics
+
+**Monitoring Startup:**
+- Watch real-time progress in the Backend Status tab
+- All 7 startup steps should complete in under 5 seconds
+- If frontend compilation errors occur, the app will auto-shutdown with details in `logs/frontend_compile_errors.log`
 
 ### Restarting After Updates
 
@@ -81,6 +96,71 @@ Additional commands:
 - `python src/pokertool/dependency_manager.py` — dependency health check.
 - `pytest tests/ -v` — direct pytest access.
 
+## Monitoring & Health Checks
+
+PokerTool includes comprehensive monitoring and error detection systems to ensure reliable operation:
+
+### Backend Status Dashboard
+
+Access real-time startup progress and backend health via the **Backend Status** tab:
+
+```
+http://localhost:3000/backend
+```
+
+**Features:**
+- Live progress tracking through 7 startup steps
+- Real-time log viewer with auto-scrolling terminal output
+- Step duration and timing metrics
+- Visual progress indicators for each initialization phase
+- Auto-refresh every 2 seconds
+
+**Startup Steps Monitored:**
+1. Clean old processes - Remove previous instances
+2. Setup macOS dock icon - Configure application icon
+3. Check Node.js - Verify Node.js installation
+4. Install frontend dependencies - Check npm packages
+5. Start backend API - Launch FastAPI on port 5001
+6. Start React frontend - Launch dev server on port 3000
+7. Application ready - All services operational
+
+### Frontend Error Monitoring
+
+PokerTool automatically detects and handles frontend compilation errors:
+
+**Automatic Error Detection:**
+- Monitors frontend build output in real-time
+- Detects blocking errors: compilation failures, module not found, import errors, syntax errors
+- Automatically logs all errors to `logs/frontend_compile_errors.log`
+- Creates P0 tasks in `docs/TODO.md` with full error context
+- Gracefully shuts down application to prevent running with broken frontend
+
+**Error Types Detected:**
+- `Failed to compile` - Build failures
+- `Module not found` / `Cannot find module` - Missing dependencies
+- `Attempted import error` - Import resolution failures
+- `SyntaxError` / `TypeError` / `ReferenceError` - Code errors
+
+**Chunk Loading Resilience:**
+PokerTool includes automatic retry for webpack chunk loading failures:
+- Exponential backoff retry strategy (1s, 2s, 3s delays)
+- Maximum 3 automatic retries per chunk
+- Handles both synchronous and promise-based chunk errors
+- Prevents user-facing errors from transient network/caching issues
+
+### Health Endpoints
+
+**Backend Health Check:**
+```bash
+curl http://localhost:5001/health
+```
+
+**Backend Startup Status API:**
+```bash
+curl http://localhost:5001/api/backend/startup/status
+curl http://localhost:5001/api/backend/startup/log?lines=100
+```
+
 ## Logging
 
 Centralized logs live in `logs/` and rotate automatically:
@@ -91,8 +171,25 @@ Centralized logs live in `logs/` and rotate automatically:
 - `logs/pokertool_performance.log` — latency and resource metrics.
 - `logs/pokertool_security.log` — authentication and security events.
 - `logs/app-run.log` / `startup.log` — latest runtime bootstrap output.
+- `logs/backend_startup.log` — detailed startup progress with timing metrics (NEW).
+- `logs/frontend_compile_errors.log` — frontend compilation errors with full context (NEW).
 
 Use `./scripts/error-summary.sh` for grouped issue reports and `tail -f logs/errors-and-warnings.log` for real-time monitoring. Additional retention policies and troubleshooting tips live in `logs/README.md`.
+
+**Real-Time Monitoring:**
+```bash
+# Watch backend startup progress
+tail -f logs/backend_startup.log
+
+# Monitor frontend compilation errors
+tail -f logs/frontend_compile_errors.log
+
+# Watch all errors and warnings
+tail -f logs/errors-and-warnings.log
+
+# Monitor application runtime
+tail -f logs/app-run.log
+```
 
 ## Error Analysis & Fix Workflow
 
@@ -322,6 +419,85 @@ try {
 - `pytest tests/ -k <pattern>` — targeted debugging; architecture graph lives in `tests/architecture/data/`.
 
 Failures in scraper-related tests often mean no live Betfair table is available; rerun with `pytest -m "not scraper"` if you need to bypass them locally.
+
+## Best Practices
+
+### Error Handling & Monitoring
+
+**1. Monitor Application Health Regularly**
+- Check the Backend Status tab (`http://localhost:3000/backend`) after startup
+- Review startup logs to ensure all 7 initialization steps completed successfully
+- Monitor health endpoints (`/health`, `/api/backend/startup/status`) for production deployments
+
+**2. Frontend Compilation Best Practices**
+- If frontend compilation errors occur, the application will auto-shutdown and log details
+- Check `logs/frontend_compile_errors.log` for full error context and stack traces
+- Review `docs/TODO.md` for auto-created P0 tasks with fix instructions
+- Never ignore compilation warnings—they often indicate future breaking changes
+
+**3. Chunk Loading Resilience**
+- The application automatically retries failed chunk loads up to 3 times
+- If chunk errors persist after 3 retries, check network connectivity and clear browser cache
+- Review webpack build configuration if chunk loading errors are frequent
+- Monitor browser console for chunk loading patterns during testing
+
+**4. Log Monitoring Strategy**
+```bash
+# Daily health check routine
+tail -100 logs/backend_startup.log        # Verify clean startup
+tail -100 logs/frontend_compile_errors.log # Check for build issues
+tail -100 logs/pokertool_errors.log       # Review runtime errors
+grep "ERROR" logs/pokertool_master.log    # Scan for error patterns
+```
+
+**5. Error Response Workflow**
+1. **Detection** - Application detects error and logs to appropriate log file
+2. **Logging** - Full context written to `logs/` with timestamp and stack trace
+3. **TODO Creation** - Critical errors automatically create P0 tasks in `docs/TODO.md`
+4. **Notification** - Terminal output shows error summary and log file location
+5. **Resolution** - Fix error using context from logs and TODO tasks
+6. **Verification** - Restart application and monitor logs to confirm fix
+
+**6. Thread-Safe Error Handling**
+- All error monitoring systems use thread locks for safe concurrent access
+- Error detection and logging operations are non-blocking
+- Multiple threads can report errors simultaneously without data corruption
+
+**7. Production Deployment Checklist**
+- [ ] Verify all startup steps complete in under 5 seconds
+- [ ] Test health endpoints respond with 200 status
+- [ ] Confirm frontend builds without warnings or errors
+- [ ] Review recent logs for any ERROR or WARNING entries
+- [ ] Test chunk loading with slow network conditions
+- [ ] Verify TODO.md has no outstanding P0 tasks
+- [ ] Check all log rotation policies are configured
+
+**8. Error Prevention**
+- Run `python test.py` before committing code changes
+- Use `python test.py --coverage` to ensure test coverage above 95%
+- Monitor `logs/trouble_feed.txt` for patterns indicating systemic issues
+- Review frontend build output during development
+- Test with frontend hot module replacement (HMR) to catch build issues early
+
+### Development Best Practices
+
+**Frontend Development:**
+- Use the Backend Status tab to verify backend is fully initialized before testing
+- Monitor browser console for chunk loading warnings
+- Clear webpack cache (`rm -rf node_modules/.cache`) if build issues persist
+- Test error boundaries and fallback UIs for graceful degradation
+
+**Backend Development:**
+- Use `logs/backend_startup.log` to optimize startup performance
+- Add startup steps to BackendStartupLogger for new initialization phases
+- Implement proper error handling with context logging
+- Use thread-safe patterns for concurrent operations
+
+**Integration Testing:**
+- Test with frontend error monitoring active
+- Verify error auto-shutdown behavior with intentional compile errors
+- Test chunk loading retry mechanism with network throttling
+- Validate log file creation and rotation under load
 
 ## Documentation
 
