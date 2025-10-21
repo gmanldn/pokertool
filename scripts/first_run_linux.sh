@@ -10,7 +10,8 @@ echo "=================================="
 echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
 
 # Colors for output
 RED='\033[0;31m'
@@ -213,8 +214,8 @@ else
 fi
 
 # Make start.py executable
-if [ -f "scripts/start.py" ]; then
-    chmod +x scripts/start.py
+if [ -f "start.py" ]; then
+    chmod +x start.py
     log_info "✓ Made start.py executable"
 fi
 
@@ -224,7 +225,7 @@ log_info "Bootstrap complete! Launching PokerTool..."
 echo "=================================="
 echo ""
 
-# Run start.py
-$PYTHON_CMD scripts/start.py "$@"
+# Run start.py from project root
+$PYTHON_CMD start.py "$@"
 
 exit $?

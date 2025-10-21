@@ -14,9 +14,10 @@ Write-Host "PokerTool - Windows Bootstrap"
 Write-Host "=================================="
 Write-Host ""
 
-# Change to script directory
+# Change to project root directory (parent of scripts/)
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $ScriptDir
+$ProjectRoot = Split-Path -Parent $ScriptDir
+Set-Location $ProjectRoot
 
 # Logging functions
 function Log-Info {

@@ -2,6 +2,28 @@
 
 All notable changes to this project are tracked in this file. The structure follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [98.0.0] - 2025-10-21
+
+### Added
+- Introduced `PokerDatabase` backward compatibility wrapper class in `src/pokertool/database.py` to maintain compatibility with legacy code expecting the old database interface.
+- Created `pokertool.system` package (`src/pokertool/system/__init__.py`) to provide backward-compatible import paths for ML modules (model_calibration, sequential_opponent_fusion, active_learning).
+- Created `pokertool.modules` package (`src/pokertool/modules/__init__.py`) to support import of nash_solver from the modules namespace.
+- Added `cleanup_old_processes()` function in `scripts/start.py` to automatically terminate stale pokertool processes during startup using psutil.
+- Added `get_total_hands()` method to PokerDatabase class for database query compatibility.
+
+### Fixed
+- Fixed ML API endpoint signatures by removing incorrect `request` parameter from GET handlers that caused 422 validation errors:
+  - `/api/ml/opponent-fusion/stats`
+  - `/api/ml/opponent-fusion/players`
+  - `/api/ml/active-learning/stats`
+  - `/api/scraping/accuracy/stats`
+- Fixed smoke test module loading by properly importing and executing `importlib.util` for dynamic module inspection.
+- Resolved 9 failing smoke tests, achieving 100% pass rate (38/38 tests).
+
+### Changed
+- Enhanced smoke test coverage to validate database operations, ML module imports, API endpoint responses, and startup process cleanup.
+- Improved module organization with dedicated package structures for system and modules namespaces.
+
 ## [88.6.0] - 2025-10-19
 
 ### Added

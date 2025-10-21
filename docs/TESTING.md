@@ -21,7 +21,45 @@ python test_everything.py --verbose
 
 # With coverage report
 python test_everything.py --coverage
+
+# Run smoke tests (fast validation suite)
+python scripts/run_smoke_tests.py -v
 ```
+
+### Smoke Tests
+
+PokerTool includes a comprehensive smoke test suite (`scripts/run_smoke_tests.py`) for fast validation of core functionality:
+
+**Features:**
+- 38 smoke tests covering critical system components
+- Automatic backend startup and shutdown
+- Fast execution (completes in under 2 minutes)
+- Detailed reporting with timestamps
+- CI/CD-friendly exit codes
+
+**Test Categories:**
+- Backend API health and startup monitoring
+- Database operations and imports
+- ML module availability (opponent fusion, active learning, model calibration)
+- Nash solver and module imports
+- API endpoint validation (GET/POST responses, status codes)
+- Process cleanup and startup utilities
+
+**Running Smoke Tests:**
+
+```bash
+# Run with verbose output
+python scripts/run_smoke_tests.py -v
+
+# Run without auto-starting backend (if already running)
+python scripts/run_smoke_tests.py --no-auto-start
+
+# CI/CD integration
+python scripts/run_smoke_tests.py
+echo $?  # 0 = all passed, non-zero = failures
+```
+
+**Test Results:** All 38 smoke tests passing (100% pass rate as of v98.0.0)
 
 ### Test Organization
 

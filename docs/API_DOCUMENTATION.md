@@ -63,6 +63,7 @@ Production database module supporting PostgreSQL and SQLite.
 - `DatabaseType`: Enum for database types
 - `DatabaseConfig`: Configuration dataclass
 - `ProductionDatabase`: Main database interface with connection pooling
+- `PokerDatabase`: Backward-compatible wrapper class for legacy code (wraps SecureDatabase)
 
 **Features:**
 
@@ -70,6 +71,13 @@ Production database module supporting PostgreSQL and SQLite.
 - Connection pooling
 - Migration utilities
 - Database statistics
+- Backward compatibility with legacy PokerDatabase interface
+
+**PokerDatabase Methods:**
+
+- `save_hand_analysis(hand, board, result, session_id)`: Save hand analysis to database
+- `get_recent_hands(limit, offset)`: Retrieve recent hands with pagination
+- `get_total_hands()`: Get total count of hands in database
 
 #### `pokertool.threading`
 Advanced threading and async task management.
