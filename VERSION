@@ -3,13 +3,13 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.0.1
+version = 96.1.0
 release_date = 2025-10-21
 
 [release_notes]
-# v96.0.1 - Frontend Build Stability Fix
-description = Patch release fixing webpack chunk loading errors and ESLint warnings in the React frontend build.
-changes = Fixed webpack chunk loading errors by clearing build cache. Removed unused Badge import from Navigation.tsx. Fixed ESLint import/no-anonymous-default-export warnings in errorTracking.ts and rum.ts by assigning objects to variables before export. Frontend now builds cleanly with zero warnings. Eliminates MUI Button chunk loading failures in production builds.
+# v96.1.0 - Backend Status Monitoring & Test Fixes
+description = Minor release adding comprehensive backend startup monitoring system with real-time visibility into backend initialization process, plus critical test fixes for thread pool stats and merge conflicts.
+changes = Added Backend Status tab in navigation with real-time startup progress tracking. Created BackendStartupLogger class for thread-safe step tracking with timestamps and durations. Integrated logger into start.py for all 7 startup steps (cleanup, dock icon, Node.js check, npm install, backend API, React frontend, application ready). Added API endpoints GET /api/backend/startup/status and GET /api/backend/startup/log. Created BackendStatus.tsx component with progress bar, step list, and scrolling terminal-style log viewer with auto-refresh. Fixed ThreadPoolExecutor get_stats() AttributeError with try-except fallback. Resolved merge conflict in test_rum_metrics_store.py. Removed duplicate test_master_logging.py file. Cleared __pycache__ causing import mismatches. Frontend builds successfully with zero errors. All admin endpoint tests passing.
 status = stable
 
 # v96.0.0 - Reliability & Stability Release

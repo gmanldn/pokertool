@@ -50,13 +50,27 @@ VERSION_INFO = {
     'minor': VERSION_MINOR,
     'patch': VERSION_PATCH,
     'release_date': '2025-10-21',
-    'release_name': 'Frontend Build Stability Fix',
+    'release_name': 'Backend Status Monitoring & Test Fixes',
     'is_release': True,
     'is_dev': False,
 }
 
 # Release history (last 10 releases)
 RELEASE_HISTORY = [
+    {
+        'version': '96.1.0',
+        'date': '2025-10-21',
+        'name': 'Backend Status Monitoring & Test Fixes',
+        'description': 'Minor release adding comprehensive backend startup monitoring system with real-time visibility into backend initialization process, plus critical test fixes.',
+        'highlights': [
+            'Added Backend Status tab in navigation with real-time startup progress tracking',
+            'Created BackendStartupLogger for thread-safe step tracking with timestamps and durations',
+            'Integrated logger into start.py for all 7 startup steps',
+            'Added API endpoints for backend startup status and log streaming',
+            'Fixed ThreadPoolExecutor get_stats() AttributeError with try-except fallback',
+            'Resolved merge conflicts and removed duplicate test files',
+        ],
+    },
     {
         'version': '96.0.0',
         'date': '2025-10-21',
