@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.2.0
+version = 96.3.0
 release_date = 2025-10-21
 
 [release_notes]
-# v96.2.0 - Visual Regression Testing Infrastructure
-description = Minor release adding Playwright-based visual regression testing infrastructure for UI components in light/dark themes.
-changes = Installed Playwright @playwright/test v1.56.1 with Chromium browser for visual regression testing. Created playwright.config.ts configuration with separate test projects for light and dark color schemes. Built 3 comprehensive test suites covering 8 visual regression tests: system-status.spec.ts tests SystemStatus page (full page, navigation bar, health cards), dashboard.spec.ts tests Dashboard (full page, header section), navigation.spec.ts tests Navigation component (appbar, mobile drawer, backend status indicator). Added npm scripts in package.json: test:visual for running tests, test:visual:ui for interactive mode, test:visual:update for updating snapshots. Updated .gitignore to exclude playwright-report/ and test-results/ while preserving snapshot baselines. Infrastructure complete and ready for baseline generation with `npm run test:visual:update`.
+# v96.3.0 - API Load Testing with Locust
+description = Minor release adding comprehensive Locust-based load testing for critical API endpoints with automated performance threshold validation.
+changes = Installed Locust v2.42.0 load testing framework with 24 dependencies including gevent, flask, and python-socketio. Created tests/load/locustfile.py (255 lines) implementing 3 user behavior classes simulating realistic load patterns: HealthCheckUser (monitoring systems, 20% of users, 1-3s between requests), DashboardUser (typical frontend users, 50% of users, 3-10s page loads), APIHeavyUser (active interactions, 30% of users, 2-5s operations). Defined strict performance SLAs: health endpoints p95<100ms p99<200ms, data endpoints p95<500ms p99<1000ms, write endpoints p95<1000ms p99<2000ms, overall error rate <1%. Automated threshold validation via test_stop event handler that logs violations as warnings. Created Makefile with 3 load testing commands: make load-test (interactive web UI at localhost:8089), make load-test-headless (100 users, 10/s spawn rate, 60s duration, generates timestamped CSV/HTML reports in results/load/), make load-test-quick (10 users, 2/s spawn, 30s smoke test). Added locust>=2.42.0 to requirements.txt.
 status = stable
+
+# v96.2.0 - Visual Regression Testing Infrastructure
+# description = Minor release adding Playwright-based visual regression testing infrastructure for UI components in light/dark themes.
+# changes = Installed Playwright @playwright/test v1.56.1 with Chromium browser for visual regression testing. Created playwright.config.ts configuration with separate test projects for light and dark color schemes. Built 3 comprehensive test suites covering 8 visual regression tests: system-status.spec.ts tests SystemStatus page (full page, navigation bar, health cards), dashboard.spec.ts tests Dashboard (full page, header section), navigation.spec.ts tests Navigation component (appbar, mobile drawer, backend status indicator). Added npm scripts in package.json: test:visual for running tests, test:visual:ui for interactive mode, test:visual:update for updating snapshots. Updated .gitignore to exclude playwright-report/ and test-results/ while preserving snapshot baselines. Infrastructure complete and ready for baseline generation with `npm run test:visual:update`.
+# status = stable
 
 # v96.1.8 - In-App TODO List Dashboard
 # description = Patch release adding in-app TODO list viewer for real-time development progress tracking.

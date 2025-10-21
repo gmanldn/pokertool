@@ -71,3 +71,4 @@ opentelemetry-api>=1.20.0
 opentelemetry-sdk>=1.20.0
 opentelemetry-instrumentation-fastapi>=0.41b0
 opentelemetry-exporter-otlp>=1.20.0  # Optional: for exporting to OTLP collectors
+locust>=2.42.0
