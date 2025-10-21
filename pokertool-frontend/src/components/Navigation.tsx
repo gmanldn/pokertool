@@ -83,7 +83,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const appVersion = (process.env.REACT_APP_VERSION || '').trim();
   const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
 
-  // Debounce realtime indicator to reduce flicker on transient disconnects
+  // Debounce WebSocket connection status to reduce flicker on transient disconnects
   useEffect(() => {
     const t = setTimeout(() => setDebouncedConnected(connected), 400);
     return () => clearTimeout(t);
@@ -135,23 +135,25 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     return Math.round((startupStatus.steps_completed / startupStatus.total_steps) * 100);
   }, [startupStatus]);
 
-  // Unified system status
+  // Unified backend status - consolidated from separate backend/realtime indicators
   const systemStatus = useMemo(() => {
     const backendOnline = backendStatus.state === 'online';
     const wsConnected = debouncedConnected;
     const healthOk = debouncedHealthStatus === 'healthy';
 
-    if (backendOnline && wsConnected && healthOk) {
-      return { state: 'ready', label: 'System Ready', color: 'success' as const, percentage: null };
-    } else if (!backendOnline) {
+    // Backend is only considered "online" if API + WebSocket + health are all good
+    const backendFullyOnline = backendOnline && wsConnected && healthOk;
+
+    if (backendFullyOnline) {
+      return { state: 'ready', label: 'Backend Online', color: 'success' as const, percentage: null };
+    } else if (!backendOnline || !wsConnected) {
+      // Treat WebSocket disconnection same as backend offline
       const label = startupPercentage !== null ? `Backend Offline (${startupPercentage}%)` : 'Backend Offline';
       return { state: 'backend_down', label, color: 'error' as const, percentage: startupPercentage };
-    } else if (!wsConnected) {
-      return { state: 'ws_down', label: 'Realtime Offline', color: 'warning' as const, percentage: null };
     } else if (!healthOk) {
-      return { state: 'degraded', label: 'System Degraded', color: 'warning' as const, percentage: null };
+      return { state: 'degraded', label: 'Backend Degraded', color: 'warning' as const, percentage: null };
     } else {
-      return { state: 'starting', label: 'System Starting', color: 'info' as const, percentage: startupPercentage };
+      return { state: 'starting', label: 'Backend Starting', color: 'info' as const, percentage: startupPercentage };
     }
   }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, startupPercentage]);
 
