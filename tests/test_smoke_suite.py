@@ -519,10 +519,12 @@ class TestProcessCleanup:
     def test_cleanup_old_processes_function(self):
         """Test that cleanup function exists and can be called."""
         # Import the start script module
-        spec = __import__('importlib.util').util.spec_from_file_location(
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
             "start", PROJECT_ROOT / "scripts" / "start.py"
         )
-        start_module = __import__('importlib.util').util.module_from_spec(spec)
+        start_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(start_module)
 
         # Check that cleanup function exists
         assert hasattr(start_module, 'cleanup_old_processes')

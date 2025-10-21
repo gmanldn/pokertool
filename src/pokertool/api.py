@@ -862,7 +862,8 @@ This API implements comprehensive security measures including:
                 {'name': 'analytics', 'description': 'Usage analytics and metrics'},
                 {'name': 'gamification', 'description': 'Achievements, badges, and leaderboards'},
                 {'name': 'community', 'description': 'Community features and social'},
-                {'name': 'admin', 'description': 'Administrative endpoints (admin only)'}
+                {'name': 'admin', 'description': 'Administrative endpoints (admin only)'},
+                {'name': 'AI & LangChain', 'description': 'AI-powered hand analysis and conversational poker coaching'}
             ],
             swagger_ui_parameters={
                 'docExpansion': 'none',
@@ -1510,7 +1511,7 @@ This API implements comprehensive security measures including:
 
         # Sequential Opponent Fusion endpoints
         @self.app.get('/api/ml/opponent-fusion/stats')
-        async def get_opponent_fusion_stats(request):
+        async def get_opponent_fusion_stats():
             """Get opponent fusion statistics"""
             try:
                 # Import and initialize fusion system
@@ -1538,7 +1539,7 @@ This API implements comprehensive security measures including:
                 }
 
         @self.app.get('/api/ml/opponent-fusion/players')
-        async def get_tracked_players(request):
+        async def get_tracked_players():
             """Get list of tracked players with their stats"""
             try:
                 return {
@@ -1556,7 +1557,7 @@ This API implements comprehensive security measures including:
 
         # Active Learning endpoints
         @self.app.get('/api/ml/active-learning/stats')
-        async def get_active_learning_stats(request):
+        async def get_active_learning_stats():
             """Get active learning statistics"""
             try:
                 # Import active learning module
@@ -1601,7 +1602,7 @@ This API implements comprehensive security measures including:
 
         # Scraping Accuracy endpoints
         @self.app.get('/api/scraping/accuracy/stats')
-        async def get_scraping_accuracy_stats(request):
+        async def get_scraping_accuracy_stats():
             """Get scraping accuracy statistics"""
             try:
                 # Import scraping accuracy module
@@ -2435,6 +2436,14 @@ This API implements comprehensive security measures including:
         from pokertool.system_health_checker import get_health_checker
         health_checker = get_health_checker()
         health_checker.set_broadcast_callback(broadcast_health_update)
+
+        # Include LangChain AI router
+        try:
+            from pokertool.api_langchain import router as ai_router
+            self.app.include_router(ai_router)
+            logger.info("LangChain AI router integrated successfully")
+        except ImportError as e:
+            logger.warning(f"LangChain AI router not available: {e}")
 
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None

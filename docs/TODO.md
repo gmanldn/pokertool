@@ -1,6 +1,6 @@
 # PokerTool TODO
 
-Last updated: 2025-10-20
+Last updated: 2025-10-21
 
 This file tracks the active backlog at a glance. Keep items small, outcome‑focused, and linked to code where possible. Older, verbose plans have been removed; refer to git history if needed.
 
@@ -10,9 +10,22 @@ Conventions
 - Status: TODO | IN PROGRESS | BLOCKED | DONE
 - Format: [ ] [P#][E#] Title — details and code path(s)
 
+## AI Features Expansion (P0: Push Codebase-Wide)
+
+- [ ] [P0][S] Integrate LangChain router into main FastAPI app — Import and include `api_langchain.router` in `src/pokertool/api.py` to expose `/api/ai/*` endpoints in running application.
+- [ ] [P0][M] Frontend AI chat interface — Create React component `pokertool-frontend/src/pages/AIChat.tsx` with chat UI, message history, and connection to `/api/ai/chat` endpoint. Add route to Navigation.
+- [ ] [P0][M] Connect LLM provider (OpenAI/Anthropic) — Add LLM integration in `langchain_memory_service.py` using environment variables for API keys. Support OpenAI GPT-4 and Anthropic Claude via LangChain.
+- [ ] [P0][S] Auto-store hands in vector DB — Hook into hand history parser to automatically embed and store completed hands in ChromaDB for semantic search.
+- [ ] [P0][M] AI-powered opponent profiling — Use LangChain to analyze opponent patterns from stored hands and generate natural language profiles with playing style, tendencies, and exploitation strategies.
+- [ ] [P0][S] Real-time hand analysis suggestions — Integrate AI analysis into HUD overlay to show contextual advice during live play (e.g., "Similar situations suggest 4-bet").
+- [ ] [P0][M] Strategy coach chatbot — Implement conversational poker coach that can answer questions like "How should I play AK from UTG?" with examples from user's hand history.
+- [ ] [P0][S] Session review AI summary — Generate end-of-session summaries using LLM: key hands, mistakes, wins, areas for improvement.
+- [ ] [P0][M] Automated hand tagging — Use AI to automatically tag hands with categories (bluff, value bet, hero call, etc.) for better organization and search.
+- [ ] [P0][S] AI endpoints authorization — Add authentication/authorization to `/api/ai/*` endpoints using existing RBAC system.
+
 ## Now (P0: highest ROI)
 
-- [ ] [P0][S] Fix frontend unknown error — Frontend compilation blocked. Error: ERROR in src/i18n/i18n.ts:5:28. Detected on 2025-10-21. Check logs/frontend_compile_errors.log for full details. Application auto-shutdown due to blocking error. Total occurrences: 1.
+- [x] [P0][S] Fix frontend unknown error — ✅ Complete: Frontend builds successfully. Fixed ESLint warnings in BackendStatus.tsx by removing unused import (HourglassEmptyIcon), removing unused function (getStatusColor), and adding explicit comment for useEffect dependency rule. Build completes with no errors or warnings.
 - [x] [P0][S] Fix frontend Navigation.test.tsx type errors — ✅ Complete: Fixed BackendStatus interface mismatch in test file. Changed `lastSeen: Date.now()` to `lastChecked: new Date().toISOString()` and added required `attempts` property to match actual interface definition in useBackendLifecycle.ts. All 8 test cases updated. Frontend build now succeeds.
 - [x] [P0][M] Fix React webpack chunk loading errors — ✅ Complete: Added automatic chunk loading retry mechanism with exponential backoff in `public/index.html`. Handles both `window.onerror` and `unhandledrejection` events for ChunkLoadError. Automatically retries up to 3 times with 1s, 2s, 3s delays. Cleared webpack cache directories. This resolves the "Loading chunk vendors-node_modules_mui_material_Stack_Stack_js failed" errors by gracefully recovering from transient network/caching issues.
 - [x] [P0][S] Rationalize top-right UI indicators (backend/loaded) — ✅ Complete: consolidated 3 separate indicators into single unified "System Status" indicator with 5 states (ready/backend_down/ws_down/degraded/starting), added 600ms debouncing for health data, smooth 0.3s CSS transitions, comprehensive tooltip. File: `pokertool-frontend/src/components/Navigation.tsx:86-140`. Commit: f7566b9c2
@@ -32,6 +45,7 @@ Conventions
 - [x] [P1][M] Lazy-load and cache ML models — ✅ Complete: implemented ModelCache with lazy loading, in-memory caching, weak references for memory pressure handling, usage tracking, warmup support for critical models, thread-safe operations, and @lazy_model decorator. Metrics exposed via `/admin/system/stats` endpoint. File: `src/pokertool/model_cache.py` (315 lines). Features: cache hit/miss tracking, access patterns, automatic garbage collection under memory pressure.
 - [x] [P1][M] Long-session memory profiling — tracemalloc sampling for GUI to detect widget/thread leaks. ✅ Complete: comprehensive GuiMemoryProfiler with tracemalloc-based sampling, automatic thread count monitoring, memory growth detection, and JSONL output for analysis. File: `src/pokertool/gui_memory_profiler.py` (188 lines). Features: background sampling thread, configurable intervals, top allocation tracking with tracebacks, peak memory tracking, context manager support. Integration: environment-controlled activation in GUI (`POKERTOOL_ENABLE_MEMORY_PROFILING`). Test coverage: 7 tests in `tests/gui/test_gui_memory_profiler.py` covering thread leak detection, memory growth tracking, allocation source identification, and long-session simulation. Documentation: `docs/development/memory_profiling.md`.
 - [x] [P1][M] End-to-end dashboard test — frontend subscribes to health updates; simulate failures and verify status changes. ✅ Complete: comprehensive end-to-end test suite for dashboard WebSocket health monitoring system. File: `tests/api/test_dashboard_e2e.py` (242 lines, 9 tests total). Tests cover: health subscription and updates, WebSocket reconnection resilience, ping/pong keepalive, invalid message handling, long-running subscriptions, health data completeness. Test results: 6 passing, 3 skipped (concurrent connections and mocking tests skipped due to TestClient limitations). Verifies complete flow: backend health check → WebSocket broadcast → frontend receives status updates.
+- [x] [P1][L] LangChain AI memory integration for conversational poker analysis — ✅ Complete: Integrated LangChain v0.3.0 with ChromaDB v0.5.0 for semantic search and conversational memory. Installed dependencies: langchain, langchain-community, chromadb, tiktoken, onnxruntime. Created `src/pokertool/langchain_memory_service.py` (445 lines) with PokerVectorStore for semantic hand history search, PokerConversationalMemory for chat context, and LangChainMemoryService singleton. Implemented `src/pokertool/api_langchain.py` (438 lines) with 11 FastAPI endpoints: `/api/ai/analyze_hand`, `/api/ai/store_hand`, `/api/ai/opponent_note`, `/api/ai/search_similar`, `/api/ai/chat` for conversational analysis. Features: ChromaDB-backed vector embeddings (using onnxruntime, no torch dependency), opponent notes storage, semantic search over hand histories, conversational memory with context retention. Test coverage: `tests/test_langchain_memory_service.py` with 15 tests covering vector store operations, conversational memory, and end-to-end workflows. Vector database persists to `~/.pokertool/vector_db/`. Ready for frontend integration and LLM connection (currently returns context-aware responses based on vector search). Dependencies added to requirements.txt.
 
 ## Later (P2/P3)
 
