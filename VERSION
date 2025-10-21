@@ -3,14 +3,19 @@
 # to prevent feature regression and ensure all features remain actively used.
 
 [main]
-version = 96.1.6
+version = 96.1.7
 release_date = 2025-10-21
 
 [release_notes]
-# v96.1.6 - Backend Startup Logger Log Preservation Fix
-description = Patch release fixing backend startup log file being truncated by uvicorn subprocess.
-changes = Fixed BackendStartupLogger to preserve logs from parent process (start.py) when uvicorn subprocess starts. Changed log file initialization to check if file exists first - only creates header if file doesn't exist, otherwise appends process start marker. This prevents uvicorn's logger instance from wiping out start.py's startup steps. Now both start.py and API process logs are preserved in ~/.pokertool/logs/backend_startup.log.
+# v96.1.7 - Backend Startup Status Cross-Process Persistence Fix
+description = Patch release fixing status file being overwritten by uvicorn, completing live backend monitoring.
+changes = Fixed BackendStartupLogger to load and restore existing status from file when uvicorn subprocess starts. When status file exists, logger now loads steps from it and restores them to the new instance instead of overwriting with empty data. This ensures API endpoint /api/backend/startup/status returns the actual startup steps logged by start.py. Backend Status page at localhost:3000/backend now shows live startup progress. Navigation bar "Backend Offline (%)" indicator now displays realistic progress percentage during startup.
 status = stable
+
+# v96.1.6 - Backend Startup Logger Log Preservation Fix
+# description = Patch release fixing backend startup log file being truncated by uvicorn subprocess.
+# changes = Fixed BackendStartupLogger to preserve logs from parent process (start.py) when uvicorn subprocess starts. Changed log file initialization to check if file exists first - only creates header if file doesn't exist, otherwise appends process start marker. This prevents uvicorn's logger instance from wiping out start.py's startup steps. Now both start.py and API process logs are preserved in ~/.pokertool/logs/backend_startup.log.
+# status = stable
 
 # v96.1.5 - Backend Startup Logger Implementation
 # description = Patch release adding backend startup progress tracking infrastructure with cross-process file-based state sharing.

@@ -86,8 +86,34 @@ class BackendStartupLogger:
             with open(self._log_file, 'a') as f:
                 f.write(f"\n[New process started: {datetime.now().isoformat()}]\n")
 
-        # Initialize status file
-        self._save_status_to_file()
+        # Initialize status file only if it doesn't exist or is empty
+        # This preserves status from parent process (start.py)
+        if not self._status_file.exists():
+            self._save_status_to_file()
+        else:
+            # Try to load existing status to populate our state
+            try:
+                with open(self._status_file, 'r') as f:
+                    existing_status = json.load(f)
+                    # If there are existing steps, restore them to our instance
+                    if existing_status.get('steps'):
+                        for step_dict in existing_status['steps']:
+                            step_name = step_dict['name']
+                            if step_name not in self._steps:
+                                step = StartupStep(
+                                    number=step_dict['number'],
+                                    name=step_dict['name'],
+                                    description=step_dict['description'],
+                                    status=step_dict['status'],
+                                    start_time=step_dict.get('start_time'),
+                                    end_time=step_dict.get('end_time')
+                                )
+                                self._steps[step_name] = step
+                                if step_name not in self._step_order:
+                                    self._step_order.append(step_name)
+            except Exception:
+                # If loading fails, initialize with empty status
+                self._save_status_to_file()
 
         self._initialized = True
 
