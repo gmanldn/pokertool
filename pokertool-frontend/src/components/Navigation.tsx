@@ -58,10 +58,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import type { BackendStatus } from '../hooks/useBackendLifecycle';
 import { useSystemHealth } from '../hooks/useSystemHealth';
+import { buildApiUrl } from '../config/api';
 
 interface NavigationProps {
   connected: boolean;
   backendStatus: BackendStatus;
+}
+
+interface StartupStatus {
+  total_steps: number;
+  steps_completed: number;
+  steps_pending?: number;
+  is_complete: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus }) => {
@@ -73,6 +81,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [debouncedConnected, setDebouncedConnected] = useState(connected);
   const appVersion = (process.env.REACT_APP_VERSION || '').trim();
+  const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
 
   // Debounce realtime indicator to reduce flicker on transient disconnects
   useEffect(() => {
@@ -92,6 +101,40 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     return () => clearTimeout(t);
   }, [healthData?.overall_status]);
 
+  // Fetch startup status for percentage indicator
+  useEffect(() => {
+    const fetchStartupStatus = async () => {
+      try {
+        const response = await fetch(buildApiUrl('/api/backend/startup/status'));
+        if (response.ok) {
+          const data = await response.json();
+          setStartupStatus(data);
+        }
+      } catch (err) {
+        // Silently fail - backend might not be ready yet
+      }
+    };
+
+    // Fetch immediately
+    fetchStartupStatus();
+
+    // Poll every 2 seconds if backend is not online
+    const interval = setInterval(() => {
+      if (backendStatus.state !== 'online') {
+        fetchStartupStatus();
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [backendStatus.state]);
+
+  // Calculate startup percentage
+  const startupPercentage = useMemo(() => {
+    if (!startupStatus || startupStatus.is_complete) return null;
+    if (startupStatus.total_steps === 0) return 0;
+    return Math.round((startupStatus.steps_completed / startupStatus.total_steps) * 100);
+  }, [startupStatus]);
+
   // Unified system status
   const systemStatus = useMemo(() => {
     const backendOnline = backendStatus.state === 'online';
@@ -99,17 +142,18 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     const healthOk = debouncedHealthStatus === 'healthy';
 
     if (backendOnline && wsConnected && healthOk) {
-      return { state: 'ready', label: 'System Ready', color: 'success' as const };
+      return { state: 'ready', label: 'System Ready', color: 'success' as const, percentage: null };
     } else if (!backendOnline) {
-      return { state: 'backend_down', label: 'Backend Offline', color: 'error' as const };
+      const label = startupPercentage !== null ? `Backend Offline (${startupPercentage}%)` : 'Backend Offline';
+      return { state: 'backend_down', label, color: 'error' as const, percentage: startupPercentage };
     } else if (!wsConnected) {
-      return { state: 'ws_down', label: 'Realtime Offline', color: 'warning' as const };
+      return { state: 'ws_down', label: 'Realtime Offline', color: 'warning' as const, percentage: null };
     } else if (!healthOk) {
-      return { state: 'degraded', label: 'System Degraded', color: 'warning' as const };
+      return { state: 'degraded', label: 'System Degraded', color: 'warning' as const, percentage: null };
     } else {
-      return { state: 'starting', label: 'System Starting', color: 'info' as const };
+      return { state: 'starting', label: 'System Starting', color: 'info' as const, percentage: startupPercentage };
     }
-  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus]);
+  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, startupPercentage]);
 
   // Unified system status tooltip
   const systemStatusTooltip = useMemo(() => {
@@ -117,6 +161,14 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
 
     // Backend status
     details.push(`Backend: ${backendStatus.state}`);
+
+    // Add startup progress if backend is offline
+    if (backendStatus.state !== 'online' && startupStatus) {
+      details.push(`Startup: ${startupStatus.steps_completed}/${startupStatus.total_steps} steps (${startupPercentage || 0}%)`);
+      if (startupStatus.steps_pending) {
+        details.push(`Pending: ${startupStatus.steps_pending} tasks`);
+      }
+    }
 
     // WebSocket status
     details.push(`WebSocket: ${debouncedConnected ? 'connected' : 'disconnected'}`);
@@ -137,7 +189,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     }
 
     return details.join(' • ');
-  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, healthData]);
+  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, healthData, startupStatus, startupPercentage]);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
