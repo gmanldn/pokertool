@@ -293,18 +293,41 @@ class ProductionDatabase:
             metadata JSONB DEFAULT '{}'
         );
 
-        -- Performance indexes
+        -- Performance indexes (optimized for <50ms p95 query times)
+        -- Single-column indexes
         CREATE INDEX IF NOT EXISTS idx_hands_timestamp ON poker_hands(timestamp DESC);
         CREATE INDEX IF NOT EXISTS idx_hands_user_hash ON poker_hands(user_hash);
         CREATE INDEX IF NOT EXISTS idx_hands_session ON poker_hands(session_id);
         CREATE INDEX IF NOT EXISTS idx_hands_metadata ON poker_hands USING GIN(metadata);
 
+        -- Composite indexes for common query patterns
+        CREATE INDEX IF NOT EXISTS idx_hands_user_time ON poker_hands(user_hash, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_hands_session_time ON poker_hands(session_id, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_hands_user_session ON poker_hands(user_hash, session_id);
+
+        -- Partial index for recent hands (last 30 days) - faster for common queries
+        CREATE INDEX IF NOT EXISTS idx_hands_recent ON poker_hands(timestamp DESC)
+            WHERE timestamp > NOW() - INTERVAL '30 days';
+
+        -- Covering index for common SELECT queries (avoids table lookups)
+        CREATE INDEX IF NOT EXISTS idx_hands_covering ON poker_hands(user_hash, timestamp DESC)
+            INCLUDE (hand_text, board_text, session_id);
+
+        -- Session indexes
         CREATE INDEX IF NOT EXISTS idx_sessions_start ON game_sessions(start_time DESC);
         CREATE INDEX IF NOT EXISTS idx_sessions_metadata ON game_sessions USING GIN(metadata);
+        CREATE INDEX IF NOT EXISTS idx_sessions_end ON game_sessions(end_time DESC) WHERE end_time IS NOT NULL;
 
+        -- Security log indexes
         CREATE INDEX IF NOT EXISTS idx_security_timestamp ON security_log(timestamp DESC);
         CREATE INDEX IF NOT EXISTS idx_security_type ON security_log(event_type);
         CREATE INDEX IF NOT EXISTS idx_security_user ON security_log(user_hash);
+        CREATE INDEX IF NOT EXISTS idx_security_user_time ON security_log(user_hash, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_security_type_time ON security_log(event_type, timestamp DESC);
+
+        -- Partial index for high severity security events
+        CREATE INDEX IF NOT EXISTS idx_security_high_severity ON security_log(timestamp DESC, severity)
+            WHERE severity >= 3;
         """
 
         with self.get_connection() as conn:
