@@ -56,6 +56,7 @@ import {
   DeveloperBoard,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import type { BackendStatus } from '../hooks/useBackendLifecycle';
 import { useSystemHealth } from '../hooks/useSystemHealth';
@@ -79,6 +80,7 @@ interface StartupStatus {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { darkMode, toggleDarkMode } = useCustomTheme();
   const navigate = useNavigate();
@@ -323,7 +325,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         }}
       >
         <Typography variant="h6" fontWeight="bold" color="primary">
-          PokerTool Pro
+          {t('app.title')}
         </Typography>
       </Box>
       <Divider />
@@ -333,7 +335,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
           <Typography variant="subtitle1">Player</Typography>
           <Chip
             icon={<Circle sx={{ fontSize: 8 }} />}
-            label={connected ? 'Connected' : 'Offline'}
+            label={connected ? t('status.connected') : t('status.offline')}
             size="small"
             color={connected ? 'success' : 'default'}
             variant="outlined"
@@ -379,7 +381,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         <IconButton onClick={toggleDarkMode} color="inherit">
           {darkMode ? <Brightness7 /> : <Brightness4 />}
         </IconButton>
-        <Typography variant="body2">Dark Mode</Typography>
+        <Typography variant="body2">{t('navigation.darkMode')}</Typography>
         <Box sx={{ flexGrow: 1 }} />
         <Switch checked={darkMode} onChange={toggleDarkMode} />
       </Box>
@@ -422,7 +424,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
             }}
             onClick={() => handleNavigation('/dashboard')}
           >
-            {isMobile ? 'PokerTool' : 'PokerTool Pro'}
+            {isMobile ? t('app.titleShort') : t('app.title')}
             {!!appVersion && (
               <Chip
                 size="small"
