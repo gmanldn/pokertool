@@ -4,9 +4,9 @@
  * Primary card displaying the recommended poker action with GTO frequencies,
  * strategic reasoning, and confidence metrics.
  */
-import React from 'react';
-import { Box, Paper, Typography, Chip, LinearProgress, Tooltip } from '@mui/material';
-import { TrendingUp, TrendingDown, Remove } from '@mui/icons-material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Chip, LinearProgress, Tooltip, IconButton, Snackbar } from '@mui/material';
+import { TrendingUp, TrendingDown, Remove, ContentCopy, Check } from '@mui/icons-material';
 
 export type PokerAction = 'FOLD' | 'CHECK' | 'CALL' | 'BET' | 'RAISE' | 'ALL_IN';
 
@@ -36,6 +36,20 @@ export const ActionRecommendationCard: React.FC<ActionRecommendationCardProps> =
   confidence,
   isUpdating = false
 }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyToClipboard = async () => {
+    const copyText = `Action: ${action}${amount ? ` ${formatAmount(amount)}` : ''}\nConfidence: ${(confidence * 100).toFixed(0)}%\nReasoning: ${strategicReasoning}`;
+
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   const getActionColor = (action: PokerAction): string => {
     switch (action) {
       case 'FOLD': return '#f44336';
@@ -97,6 +111,25 @@ export const ActionRecommendationCard: React.FC<ActionRecommendationCardProps> =
           }}
         />
       )}
+
+      {/* Copy Button */}
+      <Tooltip title={copied ? 'Copied!' : 'Copy recommendation'}>
+        <IconButton
+          onClick={handleCopyToClipboard}
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            color: copied ? '#4caf50' : 'rgba(255, 255, 255, 0.7)',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)'
+            }
+          }}
+        >
+          {copied ? <Check fontSize="small" /> : <ContentCopy fontSize="small" />}
+        </IconButton>
+      </Tooltip>
 
       {/* Main Action Display */}
       <Box sx={{
