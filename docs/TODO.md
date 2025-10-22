@@ -239,7 +239,7 @@ Conventions
 - [ ] [P0][M] Improve card rank detection accuracy to >99% — Train enhanced OCR model on 10,000+ labeled card images. Add confidence thresholds. `src/pokertool/card_recognizer.py`
 - [ ] [P0][S] Add suit detection fallback using color analysis — If OCR fails, detect suit by color (red=hearts/diamonds, black=spades/clubs). `src/pokertool/card_recognizer.py:150-200`
 - [ ] [P0][M] Implement multi-template matching for cards — Support multiple card deck styles (classic, modern, large-pip). Add template library. `src/pokertool/modules/poker_screen_scraper.py`
-- [ ] [P0][S] Add card detection confidence scoring — Return confidence 0-100% for each card detected. Log low-confidence detections (<80%). `src/pokertool/card_recognizer.py`
+- [x] [P0][S] Add card detection confidence scoring — ✅ Complete: Added automatic logging for low-confidence detections (<80%) with separate rank and suit confidence scores. Added confidence_percent property to RecognitionResult class (returns 0-100%). Enhanced both full-card template matching and rank/suit matching methods with warning logs. File: `src/pokertool/card_recognizer.py:78-86,135-140,261-266`.
 - [ ] [P0][M] Optimize card ROI detection for different table sizes — Dynamically adjust ROIs based on table window dimensions. `src/pokertool/modules/poker_screen_scraper_betfair.py:800-900`
 - [ ] [P1][S] Add card animation detection and waiting — Detect when cards are animating, wait for animation to complete before OCR. `src/pokertool/modules/poker_screen_scraper.py`
 - [ ] [P1][M] Implement ensemble OCR for cards — Combine Tesseract + EasyOCR + template matching, use voting. `src/pokertool/ocr_ensemble.py:200-250`
