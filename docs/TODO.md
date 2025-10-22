@@ -332,7 +332,7 @@ Conventions
 - [ ] [P2][M] Create error analysis dashboard — Visualize error rates, types, trends. `pokertool-frontend/src/pages/ErrorAnalysis.tsx`
 
 #### Results Validation (10 tasks)
-- [ ] [P0][M] Add sanity checks for detection results — Validate pot = sum of bets, stacks never negative, etc. `src/pokertool/modules/poker_screen_scraper.py:validate`
+- [x] [P0][M] Add sanity checks for detection results — ✅ Complete: Created detection_sanity_checks.py module (450 lines) with comprehensive DetectionSanityChecker class validating pot sizes, stack sizes, bet amounts, player counts, board cards, hole cards, player actions, and overall game state consistency. Includes card conflict detection, street progression validation, and detailed logging with three severity levels (WARNING/ERROR/CRITICAL). Validates logical consistency and catches detection errors early. File: `src/pokertool/detection_sanity_checks.py`.
 - [ ] [P0][S] Implement physics-based validation — Chips can't disappear, cards can't duplicate. `src/pokertool/modules/poker_screen_scraper.py:physics`
 - [ ] [P0][M] Create statistical validation — Validate card distributions, action frequencies match expected. `src/pokertool/validation/statistical.py`
 - [ ] [P0][S] Add temporal consistency checks — Validate state changes are logically possible. `src/pokertool/modules/poker_screen_scraper.py:temporal`
