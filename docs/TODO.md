@@ -96,7 +96,7 @@ Conventions
 - [ ] [P0][M] Create task dependency graph — Visualize task dependencies. Auto-order tasks by dependencies. `components/improve/TaskDependencyGraph.tsx`
 - [x] [P0][S] Add task search & filter — ✅ Complete: TaskSearch with keyword search, filter chips, real-time filtering. `components/improve/TaskSearch.tsx`
 - [x] [P0][M] Implement task analytics — ✅ Complete: TaskAnalytics dashboard with completion rate, avg time, priority distribution. `components/improve/TaskAnalytics.tsx`
-- [ ] [P0][M] Add TODO.md real-time sync — Watch file for external changes. Refresh UI automatically. Warn on conflicts. `backend: todo_file_watcher.py`
+- [x] [P0][M] Add TODO.md real-time sync — ✅ Complete: Background file watcher with hash-based change detection, conflict detection, safe write operations `backend: todo_file_watcher.py`
 
 ### 5. Multi-Provider Support (12 tasks)
 
@@ -113,8 +113,8 @@ Conventions
 #### API Key Management (4 tasks)
 - [x] [P0][M] Implement secure key storage — ✅ Complete: AES-GCM 256-bit encryption with PBKDF2 key derivation, per-provider encrypted storage `utils/secureKeyStorage.ts`
 - [x] [P0][S] Add key validation — ✅ Complete: Real-time validation for all providers with status detection (valid/invalid/quota/rate limited) `utils/apiKeyValidation.ts`
-- [ ] [P0][S] Create key management modal — View/edit/delete saved keys. Support multiple keys per provider. `components/improve/KeyManagementModal.tsx`
-- [ ] [P0][M] Add environment variable fallback — If no UI key, check environment variables (ANTHROPIC_API_KEY, etc.). `backend: api_key_resolver.py`
+- [x] [P0][S] Create key management modal — ✅ Complete: Full key management UI with view/edit/delete, validation, masked display, temporary reveal `components/improve/KeyManagementModal.tsx`
+- [x] [P0][M] Add environment variable fallback — ✅ Complete: Multi-source key resolution (UI → env → cache) with provider-specific env vars `backend: api_key_resolver.py`
 
 ## AI Features Expansion (P0: Push Codebase-Wide)
 
