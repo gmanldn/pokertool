@@ -39,6 +39,11 @@
     "test:visual": "playwright test",
     "test:visual:ui": "playwright test --ui",
     "test:visual:update": "playwright test --update-snapshots",
+    "test:cross-browser": "playwright test tests/cross-browser --reporter=list,html",
+    "test:cross-browser:chromium": "playwright test tests/cross-browser --project=chromium-light --project=chromium-dark",
+    "test:cross-browser:firefox": "playwright test tests/cross-browser --project=firefox-light --project=firefox-dark",
+    "test:cross-browser:webkit": "playwright test tests/cross-browser --project=webkit-light --project=webkit-dark",
+    "test:cross-browser:edge": "playwright test tests/cross-browser --project=edge-light --project=edge-dark",
     "analyze": "source-map-explorer 'build/static/js/*.js' --html build/bundle-analysis.html",
     "eject": "react-scripts eject"
   },
