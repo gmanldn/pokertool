@@ -50,6 +50,7 @@ const BackendStatus = lazy(() => import('./pages/BackendStatus'));
 const TodoList = lazy(() => import('./components/TodoList').then(module => ({ default: module.TodoList })));
 const SmartHelper = lazy(() => import('./pages/SmartHelper'));
 const Improve = lazy(() => import('./pages/Improve'));
+const AIChat = lazy(() => import('./pages/AIChat'));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -166,6 +167,7 @@ function AppContent() {
                   <Route path="/scraping-accuracy" element={<ErrorBoundary fallbackType="general"><ScrapingAccuracy /></ErrorBoundary>} />
                   <Route path="/smarthelper" element={<ErrorBoundary fallbackType="general"><SmartHelper /></ErrorBoundary>} />
                   <Route path="/improve" element={<ErrorBoundary fallbackType="general"><Improve /></ErrorBoundary>} />
+                  <Route path="/ai-chat" element={<ErrorBoundary fallbackType="general"><AIChat /></ErrorBoundary>} />
                 </Routes>
               </Suspense>
             </main>

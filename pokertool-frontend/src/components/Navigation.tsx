@@ -55,6 +55,7 @@ import {
   Biotech,
   DeveloperBoard,
   Info as InfoIcon,
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -287,6 +288,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: '🧠 SmartHelper', icon: <Psychology />, path: '/smarthelper' },
+    { text: '💬 AI Chat', icon: <ChatIcon />, path: '/ai-chat' },
     { text: '🚀 Improve', icon: <InfoIcon />, path: '/improve' },
     { text: 'Backend', icon: <DeveloperBoard />, path: '/backend' },
     { text: 'TODO', icon: <ChecklistIcon />, path: '/todo' },
