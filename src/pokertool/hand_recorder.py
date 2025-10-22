@@ -274,6 +274,34 @@ class HandRecorder:
             db = get_hand_history_db()
             if db.save_hand(hand):
                 logger.info(f"✓ Saved hand {self.current_hand_id} to database")
+
+                # Auto-store in vector DB for AI-powered semantic search
+                try:
+                    from pokertool.langchain_memory_service import get_langchain_service
+                    langchain_service = get_langchain_service()
+
+                    # Convert hand to text representation for embedding
+                    hand_text = self._format_hand_for_vectordb(hand)
+
+                    # Store in vector DB with metadata
+                    langchain_service.store_hand(
+                        hand_id=self.current_hand_id,
+                        hand_text=hand_text,
+                        metadata={
+                            'timestamp': hand.timestamp,
+                            'table_name': hand.table_name,
+                            'site': hand.site,
+                            'hero_result': hand.hero_result,
+                            'hero_net': hand.hero_net,
+                            'pot_size': hand.pot_size,
+                            'final_stage': hand.final_stage.value if hasattr(hand.final_stage, 'value') else str(hand.final_stage),
+                            'num_players': len(hand.players)
+                        }
+                    )
+                    logger.info(f"✓ Stored hand {self.current_hand_id} in vector DB for AI analysis")
+                except Exception as e:
+                    # Don't fail the hand save if vector DB storage fails
+                    logger.warning(f"Failed to store hand in vector DB (non-critical): {e}")
             else:
                 logger.error(f"Failed to save hand {self.current_hand_id}")
 

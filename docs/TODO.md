@@ -10,6 +10,100 @@ Conventions
 - Status: TODO | IN PROGRESS | BLOCKED | DONE
 - Format: [ ] [P#][E#] Title — details and code path(s)
 
+## 🚀 AI Development Automation Hub (P0: HIGHEST PRIORITY - 60 Tasks)
+
+**Status:** 🔴 NOT STARTED
+**Priority:** P0 - CRITICAL
+**Overview:** Revolutionary "Improve" tab that enables autonomous AI-driven development using multiple AI agents working in parallel to automatically complete TODO tasks, commit improvements, write tests, and document changes.
+
+### 1. Core UI & Infrastructure (15 tasks)
+
+#### Main Improve Tab Interface (8 tasks)
+- [ ] [P0][M] Create Improve tab with "I" icon — New main navigation tab for AI development automation. Icon: Info/Intelligence symbol. `pokertool-frontend/src/pages/Improve.tsx`
+- [ ] [P0][M] Add TODO task creator interface — Top section with button "Add New Task(s)" that opens modal for adding tasks to `docs/TODO.md`. Support single task or bulk task import. `Improve.tsx:TaskCreator`
+- [ ] [P0][M] Implement AI provider selector — Dropdown to choose AI provider: Claude Code (default), Anthropic API, OpenRouter, OpenAI. Store selection in localStorage. `Improve.tsx:ProviderSelector`
+- [ ] [P0][S] Add API key input field — Secure input for API keys (masked, encrypted in localStorage). Show different fields based on provider. Validate keys before use. `Improve.tsx:APIKeyInput`
+- [ ] [P0][M] Create three embedded terminal windows — Split view with 3 terminal emulators using xterm.js. Resizable panels. Each terminal tracks separate AI agent. `Improve.tsx:TerminalGrid`
+- [ ] [P0][S] Add "DoActions" button — Primary action button to spawn all 3 AI agents simultaneously. Disabled state when no API key or agents already running. `Improve.tsx:DoActionsButton`
+- [ ] [P0][M] Implement agent status indicators — Live status badges for each terminal (idle/loading tasks/working/committing/done/error). Color-coded with animations. `components/improve/AgentStatusBadge.tsx`
+- [ ] [P0][M] Add kill/pause controls — Individual stop/pause buttons per agent. Emergency stop all button. `Improve.tsx:AgentControls`
+
+#### Terminal Integration (7 tasks)
+- [ ] [P0][M] Integrate xterm.js library — Install and configure xterm.js v5+ with addons (fit, webgl, search). `pokertool-frontend/package.json`, `Improve.tsx:TerminalSetup`
+- [ ] [P0][M] Create WebSocket terminal bridge — Backend WebSocket endpoint `/ws/improve/terminal/{agent_id}` for bidirectional terminal communication. `src/pokertool/api_improve.py:terminal_websocket`
+- [ ] [P0][S] Add terminal output formatting — ANSI color support, clickable file paths, timestamp prefixes. `components/improve/TerminalFormatter.tsx`
+- [ ] [P0][S] Implement terminal scrollback — 10,000 line scrollback buffer per terminal. Clear terminal button. `Improve.tsx:TerminalScrollback`
+- [ ] [P0][M] Add terminal copy/paste — Right-click context menu for copy. Ctrl+C to copy selection. `components/improve/TerminalContextMenu.tsx`
+- [ ] [P0][S] Create terminal search — Ctrl+F to search terminal output. Highlight matches. `Improve.tsx:TerminalSearch`
+- [ ] [P0][M] Add terminal logging — Save all terminal output to `logs/improve/agent_{id}_{timestamp}.log`. Auto-rotate daily. `backend: improve_logger.py`
+
+### 2. AI Agent Orchestration (15 tasks)
+
+#### Agent Manager Backend (8 tasks)
+- [ ] [P0][L] Create AIAgentManager class — Core orchestration engine for managing 3 parallel AI agents. `src/pokertool/ai_agent_manager.py`
+- [ ] [P0][M] Implement task assignment strategy — Agent 1: Top 20 tasks from TODO.md. Agent 2: Bottom 20 tasks. Agent 3: Random 20 tasks (weighted by priority). `ai_agent_manager.py:TaskAssignment`
+- [ ] [P0][M] Add TODO.md parser — Parse markdown TODO with checkboxes, priorities, effort estimates. Handle nested tasks. `src/pokertool/todo_parser.py`
+- [ ] [P0][M] Create task queue system — Per-agent task queue with priority ordering. Support task redistribution on agent failure. `ai_agent_manager.py:TaskQueue`
+- [ ] [P0][M] Implement AI provider abstraction — Unified interface for Claude Code, Anthropic, OpenRouter, OpenAI. Handle rate limits, retries. `src/pokertool/ai_providers/base_provider.py`
+- [ ] [P0][M] Add Claude Code integration — Spawn Claude Code CLI as subprocess. Parse JSON responses. `ai_providers/claude_code_provider.py`
+- [ ] [P0][M] Add Anthropic API integration — Direct API calls to Claude 3.5 Sonnet. Streaming responses. `ai_providers/anthropic_provider.py`
+- [ ] [P0][M] Add OpenRouter/OpenAI integration — Support for alternative LLM providers. Unified prompt format. `ai_providers/openrouter_provider.py`, `ai_providers/openai_provider.py`
+
+#### Agent Execution Engine (7 tasks)
+- [ ] [P0][L] Implement agent execution loop — Main loop: fetch task → plan → execute → test → commit → update TODO → repeat. `ai_agent_manager.py:AgentExecutionLoop`
+- [ ] [P0][M] Add planning phase — Agent analyzes task, creates step-by-step plan. User can approve/modify plan before execution. `ai_agent_manager.py:PlanningPhase`
+- [ ] [P0][M] Implement code execution phase — Agent executes plan: edits files, runs commands, installs packages. Sandbox for safety. `ai_agent_manager.py:ExecutionPhase`
+- [ ] [P0][M] Add testing phase — Automatically run relevant tests after changes. Require tests to pass before commit. `ai_agent_manager.py:TestingPhase`
+- [ ] [P0][M] Create commit automation — Auto-generate commit messages following conventional commits. Include task reference. `ai_agent_manager.py:CommitPhase`
+- [ ] [P0][M] Add documentation phase — Agent updates docs, adds code comments, updates README if needed. `ai_agent_manager.py:DocumentationPhase`
+- [ ] [P0][S] Implement TODO updater — Mark completed tasks with [x] in TODO.md. Update progress counts. `ai_agent_manager.py:TodoUpdater`
+
+### 3. Safety & Quality Controls (10 tasks)
+
+#### Safety Mechanisms (5 tasks)
+- [ ] [P0][M] Implement sandbox execution — Run AI agents in isolated environment. Restrict file system access to project directory. `src/pokertool/agent_sandbox.py`
+- [ ] [P0][M] Add approval workflow — Optional manual approval before commits. Show diff preview. One-click approve/reject. `components/improve/ApprovalModal.tsx`
+- [ ] [P0][S] Create rollback mechanism — One-click git revert for problematic commits. Restore previous state. `backend: improve_rollback.py`
+- [ ] [P0][M] Add rate limiting — Prevent API quota exhaustion. Configurable requests per minute per provider. `ai_agent_manager.py:RateLimiter`
+- [ ] [P0][M] Implement cost tracking — Track API usage costs. Show running total. Alert when exceeding budget. `components/improve/CostTracker.tsx`
+
+#### Quality Assurance (5 tasks)
+- [ ] [P0][M] Add pre-commit validation — Run linters, formatters, type checkers before allowing commit. `ai_agent_manager.py:PreCommitValidation`
+- [ ] [P0][M] Implement test requirement — Require new code to include tests. Verify test coverage doesn't decrease. `ai_agent_manager.py:TestCoverageCheck`
+- [ ] [P0][S] Add code review agent — Optional 4th agent that reviews commits from other 3 agents. `ai_agent_manager.py:CodeReviewAgent`
+- [ ] [P0][M] Create quality metrics dashboard — Track: tasks completed, tests added, coverage %, commits, lines changed. `components/improve/QualityDashboard.tsx`
+- [ ] [P0][M] Add error recovery — Automatic retry on failures. Exponential backoff. Skip task after 3 failures. `ai_agent_manager.py:ErrorRecovery`
+
+### 4. Task Management Integration (8 tasks)
+
+#### TODO.md Integration (8 tasks)
+- [ ] [P0][M] Create task editor modal — Rich text editor for adding tasks to TODO.md. Support markdown formatting. `components/improve/TaskEditorModal.tsx`
+- [ ] [P0][S] Add task templates — Quick templates for common task types (feature, bug fix, refactor, test, docs). `TaskEditorModal.tsx:Templates`
+- [ ] [P0][M] Implement bulk task import — Import multiple tasks from text, CSV, or other TODO files. Auto-format to TODO.md style. `backend: task_importer.py`
+- [ ] [P0][S] Add priority/effort selectors — Dropdowns for setting P0-P3 priority and S/M/L effort. Auto-suggest based on description. `TaskEditorModal.tsx:PriorityEffort`
+- [ ] [P0][M] Create task dependency graph — Visualize task dependencies. Auto-order tasks by dependencies. `components/improve/TaskDependencyGraph.tsx`
+- [ ] [P0][S] Add task search & filter — Search TODO.md by keyword, priority, status. Filter to show specific categories. `Improve.tsx:TaskSearch`
+- [ ] [P0][M] Implement task analytics — Show task completion rate, average time per task, priority distribution. `components/improve/TaskAnalytics.tsx`
+- [ ] [P0][M] Add TODO.md real-time sync — Watch file for external changes. Refresh UI automatically. Warn on conflicts. `backend: todo_file_watcher.py`
+
+### 5. Multi-Provider Support (12 tasks)
+
+#### Provider Implementations (8 tasks)
+- [ ] [P0][L] Research Claude Code CLI integration — Investigate spawning Claude Code as subprocess, parsing responses, handling interactive prompts. Document best practices. `docs/improve/CLAUDE_CODE_INTEGRATION.md`
+- [ ] [P0][M] Implement Claude Code provider — Spawn `claude-code` CLI, send tasks via stdin, parse JSON output. Handle authentication. `src/pokertool/ai_providers/claude_code_provider.py`
+- [ ] [P0][M] Implement Anthropic API provider — Direct API integration with Claude 3.5 Sonnet. Use Messages API. Streaming support. `ai_providers/anthropic_provider.py`
+- [ ] [P0][M] Implement OpenRouter provider — Multi-model support via OpenRouter. Support Claude, GPT-4, etc. `ai_providers/openrouter_provider.py`
+- [ ] [P0][M] Implement OpenAI provider — GPT-4 Turbo integration. Function calling for tool use. `ai_providers/openai_provider.py`
+- [ ] [P0][S] Add provider capabilities matrix — Document what each provider supports (code execution, file editing, testing). `docs/improve/PROVIDER_CAPABILITIES.md`
+- [ ] [P0][M] Create provider fallback chain — If primary provider fails, automatically fallback to secondary. Configurable order. `ai_agent_manager.py:ProviderFallback`
+- [ ] [P0][M] Add provider benchmarking — Track task completion time, success rate, cost per provider. Show recommendations. `components/improve/ProviderBenchmarks.tsx`
+
+#### API Key Management (4 tasks)
+- [ ] [P0][M] Implement secure key storage — Encrypt API keys in localStorage using Web Crypto API. Never send to backend. `utils/secureKeyStorage.ts`
+- [ ] [P0][S] Add key validation — Test API keys before saving. Show provider status (valid/invalid/quota exceeded). `Improve.tsx:KeyValidation`
+- [ ] [P0][S] Create key management modal — View/edit/delete saved keys. Support multiple keys per provider. `components/improve/KeyManagementModal.tsx`
+- [ ] [P0][M] Add environment variable fallback — If no UI key, check environment variables (ANTHROPIC_API_KEY, etc.). `backend: api_key_resolver.py`
+
 ## AI Features Expansion (P0: Push Codebase-Wide)
 
 - [x] [P0][S] Integrate LangChain router into main FastAPI app — ✅ Complete: LangChain router already integrated at `src/pokertool/api.py:2444-2450` with proper error handling.
@@ -241,7 +335,7 @@ Conventions
 - [ ] [P1][M] Add memory usage logging for detection — Track memory consumption during detection. Detect leaks. `src/pokertool/detection_logger.py:memory`
 - [ ] [P1][S] Implement CPU usage tracking per detection type — Measure CPU % for OCR, template matching, etc. `src/pokertool/performance_telemetry.py`
 - [ ] [P2][M] Create detection performance reports — Daily/weekly reports on detection performance metrics. `src/pokertool/detection_logger.py:reports`
-- [ ] [P2][S] Add performance comparison across versions — Compare detection performance across code versions. `scripts/benchmark_detection.py`
+- [x] [P2][S] Add performance comparison across versions — ✅ Complete: Created `scripts/compare_detection_performance.py` (405 lines) with comprehensive performance benchmarking and comparison system. Features: BenchmarkResult dataclass tracking 9 metrics (mean/median/min/max/p95/p99/std_dev/ops_per_second), ComparisonResult dataclass with regression/improvement detection, PerformanceBenchmark class with configurable iterations/warmup, PerformanceComparator class with 5%/1ms thresholds for statistical significance. CLI supports: `--run` to execute benchmarks, `--iterations N` for custom iterations, `--output FILE` to save JSON results, `--compare FILE` to compare against baseline, `--compare-with FILE` to compare two saved benchmarks. Benchmarks 5 detection operations: card_detection, pot_detection, player_detection, full_table_scan, event_deduplication. Outputs: human-readable comparison with regressions/improvements/neutral summary, exit code 1 if regressions detected (CI-friendly), JSON export for historical tracking. Tested successfully with 10 iterations, comparison shows no regressions. Ready for integration into CI/CD pipeline for performance regression detection. `scripts/compare_detection_performance.py`
 
 ### 3. Table View Live Updates (40 tasks)
 
