@@ -10,6 +10,18 @@ Conventions
 - Status: TODO | IN PROGRESS | BLOCKED | DONE
 - Format: [ ] [P#][E#] Title — details and code path(s)
 
+---
+
+## 📋 Additional TODO Collections
+
+**NEW:** [Testing, Bootstrapping, Reliability & Auto-Updates (75 tasks)](./TODO_TESTING_RELIABILITY_UPDATES.md)
+- 35 tasks: Comprehensive testing (E2E, chaos, benchmarks, coverage 98%+)
+- 20 tasks: Clean bootstrapping (setup wizard, installers for Windows/macOS/Linux)
+- 10 tasks: Reliability & stability (error recovery, backups, monitoring)
+- 10 tasks: Seamless auto-updates (background updates, delta downloads, rollback)
+
+---
+
 ## 🚀 AI Development Automation Hub (P0: HIGHEST PRIORITY - 60 Tasks)
 
 **Status:** 🔴 NOT STARTED
