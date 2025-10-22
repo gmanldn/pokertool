@@ -23,8 +23,8 @@
 ### E2E & Smoke Tests (8 tasks)
 
 - [ ] [P0][M] Create E2E smoke test suite — Test critical user journeys: launch app → view dashboard → analyze hand → check stats → export data. Run in CI. `tests/e2e/test_smoke.spec.ts`
-- [ ] [P0][S] Add startup smoke tests — Verify app starts cleanly: no crashes, no errors in logs, all services healthy, database connected. `tests/smoke/test_startup.py`
-- [ ] [P0][S] Add shutdown smoke tests — Verify graceful shutdown: close WebSockets, flush logs, save state, close database connections. `tests/smoke/test_shutdown.py`
+- [x] [P0][S] Add startup smoke tests — ✅ Complete: 22 tests verifying clean app start, module imports, service initialization, configuration loading, health checks, logging, port availability, and startup performance. `tests/smoke/test_startup.py`
+- [x] [P0][S] Add shutdown smoke tests — ✅ Complete: 17 tests verifying graceful shutdown: WebSocket disconnection, database closure, log flushing, thread pool shutdown, state preservation, resource cleanup, and shutdown performance. `tests/smoke/test_shutdown.py`
 - [ ] [P1][M] Add cross-platform E2E tests — Test on Windows, macOS, Linux: installation, startup, basic operations, shutdown. `tests/e2e/test_cross_platform.spec.ts`
 - [ ] [P1][M] Add offline mode E2E tests — Test app behavior without internet: local database, cached data, error messages, reconnection. `tests/e2e/test_offline.spec.ts`
 - [ ] [P1][S] Add update E2E tests — Test update flow: check for updates, download, verify checksum, install, restart. `tests/e2e/test_updates.spec.ts`
