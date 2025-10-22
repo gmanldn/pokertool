@@ -360,7 +360,7 @@ Conventions
 - [ ] [P2][M] Store tournament information — Track tournament ID, buy-in, structure, position. `src/pokertool/database.py:tournaments`
 
 #### Performance Optimization (10 tasks)
-- [ ] [P0][M] Add indexes for common query patterns — Index on (player_id, timestamp), (session_id, hand_id). `src/pokertool/database.py:indexes`
+- [x] [P0][M] Add indexes for common query patterns — ✅ Complete: Comprehensive indexes already implemented in database.py lines 296-330. Includes single-column indexes (timestamp, user_hash, session, metadata GIN), composite indexes for common patterns (user_time, session_time, user_session), partial index for recent hands (last 30 days), covering index to avoid table lookups, session indexes, and security log indexes. Optimized for <50ms p95 query times. File: `src/pokertool/database.py:296-330`.
 - [ ] [P0][S] Implement query result caching — Cache frequent queries (5min TTL). `src/pokertool/api_cache.py:db_queries`
 - [ ] [P0][M] Create materialized views for complex queries — Precompute stats views. Refresh hourly. `src/pokertool/database.py:views`
 - [ ] [P0][S] Add connection pooling optimization — Tune pool size based on load. Monitor pool usage. `src/pokertool/database.py:pool`
