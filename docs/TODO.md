@@ -414,7 +414,7 @@ Conventions
 - [ ] [P2][M] Create accuracy dashboard — Real-time accuracy metrics per feature. `pokertool-frontend/src/pages/AccuracyDashboard.tsx`
 
 #### Error Handling (10 tasks)
-- [ ] [P0][M] Add graceful degradation for detection failures — Continue with partial data if some detections fail. `src/pokertool/modules/poker_screen_scraper.py:fallback`
+- [x] [P0][M] Add graceful degradation for detection failures — ✅ Complete: Created detection_fallback.py module (350 lines) with DetectionFallbackManager for progressive degradation (FULL→PARTIAL→MINIMAL→FALLBACK→OFFLINE modes). Features cached state management, automatic recovery, with_fallback() decorator, failure tracking with configurable thresholds, multiple fallback strategies (cached/last known/minimal), and detailed mode transition logging. System continues operating during failures with reduced functionality. File: `src/pokertool/detection_fallback.py`.
 - [ ] [P0][S] Implement automatic retry for failed detections — Retry detection 3x with exponential backoff. `src/pokertool/modules/poker_screen_scraper_betfair.py:retry`
 - [ ] [P0][M] Create detection confidence thresholds — Only use detections above threshold. Log low-confidence detections. `src/pokertool/modules/poker_screen_scraper.py:confidence`
 - [ ] [P0][S] Add detection failure notifications — Alert user when critical detections fail. `src/pokertool/detection_websocket.py:alerts`
