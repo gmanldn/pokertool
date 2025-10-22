@@ -47,7 +47,7 @@ Conventions
 - [ ] [P0][S] Implement terminal scrollback — 10,000 line scrollback buffer per terminal. Clear terminal button. `Improve.tsx:TerminalScrollback`
 - [ ] [P0][M] Add terminal copy/paste — Right-click context menu for copy. Ctrl+C to copy selection. `components/improve/TerminalContextMenu.tsx`
 - [ ] [P0][S] Create terminal search — Ctrl+F to search terminal output. Highlight matches. `Improve.tsx:TerminalSearch`
-- [ ] [P0][M] Add terminal logging — Save all terminal output to `logs/improve/agent_{id}_{timestamp}.log`. Auto-rotate daily. `backend: improve_logger.py`
+- [x] [P0][M] Add terminal logging — ✅ Complete: Full ImproveLogger with rotating/timed handlers, log_terminal_output(), log_agent_action(), log_error(), compress_old_logs(), tail_log(), search_logs(). Daily rotation, 30-day retention. `src/pokertool/improve_logger.py`
 
 ### 2. AI Agent Orchestration (15 tasks)
 
