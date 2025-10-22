@@ -367,8 +367,16 @@ class ProductionDatabase:
         self._rate_limit_check('save_hand', 50)
 
         from .error_handling import sanitize_input
+        from .data_validation import validate_before_insert, ValidationError
 
-        # Sanitize inputs
+        # Comprehensive validation before insert
+        try:
+            validate_before_insert(hand, board, result, session_id, metadata)
+        except ValidationError as e:
+            logger.error(f"Data validation failed: {e}")
+            raise ValueError(f"Invalid data for insertion: {e}")
+
+        # Sanitize inputs (after validation)
         hand = sanitize_input(hand, max_length=50)
         if board:
             board = sanitize_input(board, max_length=50)
@@ -520,7 +528,16 @@ class PokerDatabase:
 
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
                           session_id: Optional[str] = None) -> int:
-        """Save hand analysis to database."""
+        """Save hand analysis to database with validation."""
+        from .data_validation import validate_before_insert, ValidationError
+
+        # Validate before insert
+        try:
+            validate_before_insert(hand, board, result, session_id, None)
+        except ValidationError as e:
+            logger.error(f"Data validation failed: {e}")
+            raise ValueError(f"Invalid data for insertion: {e}")
+
         return self.db.save_hand_analysis(hand, board, result, session_id)
 
     def get_recent_hands(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
