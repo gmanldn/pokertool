@@ -263,6 +263,8 @@ class ProductionDatabase:
             user_hash VARCHAR(32),
             session_id VARCHAR(32),
             confidence_score REAL CHECK(confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0)),
+            bet_size_ratio REAL CHECK(bet_size_ratio IS NULL OR bet_size_ratio >= 0.0),
+            pot_size REAL CHECK(pot_size IS NULL OR pot_size >= 0.0),
             metadata JSONB DEFAULT '{}',
             -- Enhanced constraints for PostgreSQL
             CONSTRAINT valid_hand_format CHECK(
@@ -364,7 +366,9 @@ class ProductionDatabase:
     @retry_on_failure(max_retries=3)
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
                           session_id: Optional[str] = None, metadata: Optional[Dict] = None,
-                          confidence_score: Optional[float] = None) -> int:
+                          confidence_score: Optional[float] = None,
+                          bet_size_ratio: Optional[float] = None,
+                          pot_size: Optional[float] = None) -> int:
         """
         Save hand analysis with enhanced metadata support.
 
@@ -375,6 +379,8 @@ class ProductionDatabase:
             session_id: Optional session identifier
             metadata: Optional metadata dictionary
             confidence_score: Detection confidence (0.0-1.0), None if unknown
+            bet_size_ratio: Bet size as ratio of pot (bet/pot), None if no bet
+            pot_size: Total pot size, None if unknown
 
         Returns:
             The ID of the inserted record
@@ -398,6 +404,20 @@ class ProductionDatabase:
             if not (0.0 <= confidence_score <= 1.0):
                 raise ValueError(f'Confidence score must be between 0.0 and 1.0, got {confidence_score}')
 
+        # Validate bet size ratio
+        if bet_size_ratio is not None:
+            if not isinstance(bet_size_ratio, (int, float)):
+                raise ValueError(f'Bet size ratio must be numeric, got {type(bet_size_ratio)}')
+            if bet_size_ratio < 0.0:
+                raise ValueError(f'Bet size ratio must be non-negative, got {bet_size_ratio}')
+
+        # Validate pot size
+        if pot_size is not None:
+            if not isinstance(pot_size, (int, float)):
+                raise ValueError(f'Pot size must be numeric, got {type(pot_size)}')
+            if pot_size < 0.0:
+                raise ValueError(f'Pot size must be non-negative, got {pot_size}')
+
         # Sanitize inputs (after validation)
         hand = sanitize_input(hand, max_length=50)
         if board:
@@ -413,15 +433,18 @@ class ProductionDatabase:
                     with conn.cursor() as cursor:
                         cursor.execute(
                             """INSERT INTO poker_hands
-                            (hand_text, board_text, analysis_result, user_hash, session_id, confidence_score, metadata)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
-                            (hand, board, result, user_hash, session_id, confidence_score, metadata_json)
+                            (hand_text, board_text, analysis_result, user_hash, session_id,
+                             confidence_score, bet_size_ratio, pot_size, metadata)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                            (hand, board, result, user_hash, session_id, confidence_score,
+                             bet_size_ratio, pot_size, metadata_json)
                         )
                         result_id = cursor.fetchone()[0]
                         conn.commit()
                         return result_id
             else:
-                return self.sqlite_db.save_hand_analysis(hand, board, result, session_id, confidence_score)
+                return self.sqlite_db.save_hand_analysis(hand, board, result, session_id,
+                                                        confidence_score, bet_size_ratio, pot_size)
 
     def get_recent_hands(self, limit: int = 100, offset: int = 0,
                         user_hash: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -437,7 +460,8 @@ class ProductionDatabase:
                     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                         if user_hash:
                             cursor.execute(
-                                """SELECT id, hand_text, board_text, analysis_result, timestamp, confidence_score, metadata
+                                """SELECT id, hand_text, board_text, analysis_result, timestamp,
+                                          confidence_score, bet_size_ratio, pot_size, metadata
                                 FROM poker_hands
                                 WHERE user_hash = %s
                                 ORDER BY timestamp DESC
@@ -446,7 +470,8 @@ class ProductionDatabase:
                             )
                         else:
                             cursor.execute(
-                                """SELECT id, hand_text, board_text, analysis_result, timestamp, confidence_score, metadata
+                                """SELECT id, hand_text, board_text, analysis_result, timestamp,
+                                          confidence_score, bet_size_ratio, pot_size, metadata
                                 FROM poker_hands
                                 ORDER BY timestamp DESC
                                 LIMIT %s OFFSET %s""",
@@ -550,7 +575,9 @@ class PokerDatabase:
 
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
                           session_id: Optional[str] = None,
-                          confidence_score: Optional[float] = None) -> int:
+                          confidence_score: Optional[float] = None,
+                          bet_size_ratio: Optional[float] = None,
+                          pot_size: Optional[float] = None) -> int:
         """
         Save hand analysis to database with validation.
 
@@ -560,6 +587,8 @@ class PokerDatabase:
             result: The analysis result
             session_id: Optional session identifier
             confidence_score: Detection confidence (0.0-1.0), None if unknown
+            bet_size_ratio: Bet size as ratio of pot (bet/pot), None if no bet
+            pot_size: Total pot size, None if unknown
 
         Returns:
             The ID of the inserted record
@@ -573,7 +602,8 @@ class PokerDatabase:
             logger.error(f"Data validation failed: {e}")
             raise ValueError(f"Invalid data for insertion: {e}")
 
-        return self.db.save_hand_analysis(hand, board, result, session_id, confidence_score)
+        return self.db.save_hand_analysis(hand, board, result, session_id,
+                                         confidence_score, bet_size_ratio, pot_size)
 
     def get_recent_hands(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """Get recent hands from database."""

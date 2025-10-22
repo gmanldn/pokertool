@@ -94,6 +94,8 @@ class SecureDatabase:
             user_hash TEXT,
             session_id TEXT,
             confidence_score REAL CHECK(confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0)),
+            bet_size_ratio REAL CHECK(bet_size_ratio IS NULL OR bet_size_ratio >= 0.0),
+            pot_size REAL CHECK(pot_size IS NULL OR pot_size >= 0.0),
             CONSTRAINT valid_hand_format CHECK(hand_text GLOB '[AKQJT2-9][shdc][AKQJT2-9][shdc]' OR
                 hand_text GLOB '[AKQJT2-9][shdc][AKQJT2-9][shdc] [AKQJT2-9][shdc][AKQJT2-9][shdc]')
         );
@@ -229,7 +231,9 @@ class SecureDatabase:
     @retry_on_failure(max_retries=3)
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
                           session_id: Optional[str] = None,
-                          confidence_score: Optional[float] = None) -> int:
+                          confidence_score: Optional[float] = None,
+                          bet_size_ratio: Optional[float] = None,
+                          pot_size: Optional[float] = None) -> int:
         """
         Securely save hand analysis with input validation.
 
@@ -239,6 +243,8 @@ class SecureDatabase:
             result: The analysis result
             session_id: Optional session identifier
             confidence_score: Detection confidence (0.0-1.0), None if unknown
+            bet_size_ratio: Bet size as ratio of pot (bet/pot), None if no bet
+            pot_size: Total pot size, None if unknown
 
         Returns:
             The ID of the inserted record
@@ -265,15 +271,29 @@ class SecureDatabase:
             if not (0.0 <= confidence_score <= 1.0):
                 raise ValueError(f'Confidence score must be between 0.0 and 1.0, got {confidence_score}')
 
+        # Validate bet size ratio
+        if bet_size_ratio is not None:
+            if not isinstance(bet_size_ratio, (int, float)):
+                raise ValueError(f'Bet size ratio must be numeric, got {type(bet_size_ratio)}')
+            if bet_size_ratio < 0.0:
+                raise ValueError(f'Bet size ratio must be non-negative, got {bet_size_ratio}')
+
+        # Validate pot size
+        if pot_size is not None:
+            if not isinstance(pot_size, (int, float)):
+                raise ValueError(f'Pot size must be numeric, got {type(pot_size)}')
+            if pot_size < 0.0:
+                raise ValueError(f'Pot size must be non-negative, got {pot_size}')
+
         user_hash = self._generate_user_hash()
 
         with db_guard('saving hand analysis'):
             with self._get_connection() as conn:
                 cursor = conn.execute(
                     """INSERT INTO poker_hands
-                    (hand_text, board_text, analysis_result, user_hash, session_id, confidence_score)
-                    VALUES (?, ?, ?, ?, ?, ?)""",
-                    (hand, board, result, user_hash, session_id, confidence_score)
+                    (hand_text, board_text, analysis_result, user_hash, session_id, confidence_score, bet_size_ratio, pot_size)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (hand, board, result, user_hash, session_id, confidence_score, bet_size_ratio, pot_size)
                 )
                 conn.commit()
                 return cursor.lastrowid
@@ -288,7 +308,8 @@ class SecureDatabase:
         with db_guard('fetching recent hands'):
             with self._get_connection() as conn:
                 cursor = conn.execute(
-                    """SELECT id, hand_text, board_text, analysis_result, timestamp, confidence_score
+                    """SELECT id, hand_text, board_text, analysis_result, timestamp,
+                              confidence_score, bet_size_ratio, pot_size
                     FROM poker_hands
                     ORDER BY timestamp DESC
                     LIMIT ? OFFSET ?""",

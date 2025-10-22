@@ -42,7 +42,7 @@ Conventions
 #### Agent Manager Backend (8 tasks)
 - [ ] [P0][L] Create AIAgentManager class — Core orchestration engine for managing 3 parallel AI agents. `src/pokertool/ai_agent_manager.py`
 - [ ] [P0][M] Implement task assignment strategy — Agent 1: Top 20 tasks from TODO.md. Agent 2: Bottom 20 tasks. Agent 3: Random 20 tasks (weighted by priority). `ai_agent_manager.py:TaskAssignment`
-- [ ] [P0][M] Add TODO.md parser — Parse markdown TODO with checkboxes, priorities, effort estimates. Handle nested tasks. `src/pokertool/todo_parser.py`
+- [x] [P0][M] Add TODO.md parser — ✅ Complete: Comprehensive parser with regex matching, priority/effort extraction, section tracking, task filtering, statistics, search, and weighted random selection. Supports top/bottom/random task selection for 3 agents. `src/pokertool/todo_parser.py`
 - [ ] [P0][M] Create task queue system — Per-agent task queue with priority ordering. Support task redistribution on agent failure. `ai_agent_manager.py:TaskQueue`
 - [ ] [P0][M] Implement AI provider abstraction — Unified interface for Claude Code, Anthropic, OpenRouter, OpenAI. Handle rate limits, retries. `src/pokertool/ai_providers/base_provider.py`
 - [ ] [P0][M] Add Claude Code integration — Spawn Claude Code CLI as subprocess. Parse JSON responses. `ai_providers/claude_code_provider.py`
@@ -445,7 +445,7 @@ Conventions
 - [ ] [P0][S] Store complete detection timeline — Save all detection events per hand. Replay capability. `src/pokertool/database.py:detection_timeline`
 - [ ] [P0][M] Add player position to all hand records — Store position for every action. Position-based queries. `src/pokertool/database.py:player_position`
 - [ ] [P0][S] Store board texture classifications — Save board as wet/dry/coordinated. Analyze by texture. `src/pokertool/database.py:board_texture`
-- [ ] [P0][M] Add bet sizing ratios to database — Store bet/pot ratio for all bets. Analyze sizing patterns. `src/pokertool/database.py:bet_ratios`
+- [x] [P0][M] Add bet sizing ratios to database — ✅ Complete: Added bet_size_ratio and pot_size columns (REAL, >= 0.0) to poker_hands table in both PostgreSQL and SQLite. Updated save_hand_analysis() to accept optional bet_size_ratio and pot_size parameters with validation. Updated get_recent_hands() to include bet sizing data in results. Created migration script for existing databases. Files: `src/pokertool/database.py:266-267,370-447,463-482,578-606`, `src/pokertool/storage.py:97-98,234-299,311-320`, `src/pokertool/migrations/add_bet_sizing_columns.py`
 - [ ] [P1][M] Store opponent range estimates — Save estimated ranges for opponents. Track range evolution. `src/pokertool/database.py:opponent_ranges`
 - [ ] [P1][S] Add timing tells to database — Store time taken for each action. Analyze timing patterns. `src/pokertool/database.py:action_timing`
 - [ ] [P1][M] Store hand strength calculations — Save calculated hand strength at each street. `src/pokertool/database.py:hand_strength`
