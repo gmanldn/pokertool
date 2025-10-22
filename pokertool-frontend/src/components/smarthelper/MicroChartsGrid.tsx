@@ -2,7 +2,7 @@
  * Micro Charts Grid Component
  *
  * Responsive grid layout organizing all SmartHelper micro-analytics components
- * with collapsible panels for space management
+ * with collapsible panels for space management and smooth animations
  */
 import React, { useState } from 'react';
 import {
@@ -29,6 +29,7 @@ import { EquityChart, EquityDataPoint } from './EquityChart';
 import { PotOddsVisual } from './PotOddsVisual';
 import { PositionStatsCard } from './PositionStatsCard';
 import { OpponentTendencyHeatmap } from './OpponentTendencyHeatmap';
+import styles from './MicroChartsGrid.module.css';
 
 interface MicroChartsGridProps {
   // Equity data
@@ -133,6 +134,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
       <Accordion
         expanded={expandedPanels.has(panelId)}
         onChange={() => handlePanelChange(panelId)}
+        className={styles.panel}
         sx={{
           backgroundColor: 'rgba(255, 255, 255, 0.03)',
           '&:before': { display: 'none' },
@@ -141,7 +143,13 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMore sx={{ color: 'white' }} />}
+          expandIcon={
+            <ExpandMore
+              className={expandedPanels.has(panelId) ? styles.expandIconRotated : styles.expandIcon}
+              sx={{ color: 'white' }}
+            />
+          }
+          className={styles.panelHeader}
           sx={{
             minHeight: 48,
             '& .MuiAccordionSummary-content': {
@@ -158,7 +166,10 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
             {statusChip && <Box sx={{ ml: 'auto', mr: 1 }}>{statusChip}</Box>}
           </Box>
         </AccordionSummary>
-        <AccordionDetails sx={{ p: 0 }}>
+        <AccordionDetails
+          className={expandedPanels.has(panelId) ? styles.panelContentExpanded : styles.panelContentCollapsed}
+          sx={{ p: 0 }}
+        >
           {content}
         </AccordionDetails>
       </Accordion>
@@ -173,12 +184,22 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
       {enableCollapsiblePanels && hasAnyData && (
         <Box sx={{ display: 'flex', gap: 1, mb: 2, justifyContent: 'flex-end' }}>
           <Tooltip title="Collapse All Panels">
-            <IconButton size="small" onClick={collapseAll} sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <IconButton
+              size="small"
+              onClick={collapseAll}
+              className={styles.controlButton}
+              sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+            >
               <UnfoldLess fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Expand All Panels">
-            <IconButton size="small" onClick={expandAll} sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <IconButton
+              size="small"
+              onClick={expandAll}
+              className={styles.controlButton}
+              sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+            >
               <UnfoldMore fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -188,7 +209,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
       <Grid container spacing={2}>
         {/* Equity Chart - Full width top row */}
         {showEquityChart && equityData.length > 0 && (
-          <Grid item xs={12}>
+          <Grid item xs={12} className={styles.staggered}>
             {renderPanel(
               'equity',
               'Hand Equity Evolution',
@@ -201,6 +222,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
               <Chip
                 label={`${currentEquity.toFixed(1)}%`}
                 size="small"
+                className={styles.statusChip}
                 sx={{
                   height: 20,
                   fontSize: '10px',
@@ -214,7 +236,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
 
         {/* Pot Odds and Position Stats - Side by side */}
         {showPotOdds && potSize > 0 && (
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={6} className={styles.staggered}>
             {renderPanel(
               'potOdds',
               'Pot Odds',
@@ -227,6 +249,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
               <Chip
                 label={`${((betToCall / (potSize + betToCall)) * 100).toFixed(1)}%`}
                 size="small"
+                className={styles.statusChip}
                 sx={{ height: 20, fontSize: '10px' }}
               />
             )}
@@ -234,7 +257,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
         )}
 
         {showPositionStats && positionStats && (
-          <Grid item xs={12} md={showPotOdds && potSize > 0 ? 6 : 12}>
+          <Grid item xs={12} md={showPotOdds && potSize > 0 ? 6 : 12} className={styles.staggered}>
             {renderPanel(
               'position',
               'Position Stats',
@@ -246,6 +269,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
               <Chip
                 label={positionStats.position}
                 size="small"
+                className={styles.statusChip}
                 sx={{ height: 20, fontSize: '10px', backgroundColor: 'primary.main', color: 'white' }}
               />
             )}
@@ -254,7 +278,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
 
         {/* Opponent Heatmap - Full width bottom row */}
         {showOpponentHeatmap && opponentStats && (
-          <Grid item xs={12}>
+          <Grid item xs={12} className={styles.staggered}>
             {renderPanel(
               'opponent',
               'Opponent Tendencies',
@@ -263,6 +287,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
               <Chip
                 label={`${opponentStats.handsPlayed} hands`}
                 size="small"
+                className={styles.statusChip}
                 sx={{ height: 20, fontSize: '10px' }}
               />
             )}
@@ -273,6 +298,7 @@ export const MicroChartsGrid: React.FC<MicroChartsGridProps> = React.memo(({
       {/* Empty State */}
       {!hasAnyData && (
         <Box
+          className={styles.emptyState}
           sx={{
             p: 4,
             textAlign: 'center',
