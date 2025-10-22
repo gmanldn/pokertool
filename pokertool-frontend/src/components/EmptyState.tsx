@@ -9,7 +9,6 @@ import { Box, Typography, Button, Paper } from '@mui/material';
 import {
   Inbox,
   SearchOff,
-  FilterAltOff,
   ErrorOutline,
   CloudOff,
   HourglassEmpty,
