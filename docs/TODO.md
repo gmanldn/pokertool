@@ -323,7 +323,7 @@ Conventions
 - [x] [P2][S] Add event deduplication — ✅ Complete: Created `src/pokertool/event_deduplicator.py` (275 lines) with EventDeduplicator class using SHA256 content hashing and time-based windowing (default 1s). Features: thread-safe operations, per-event-type tracking, configurable windows, automatic cleanup of old signatures, max signatures per type (1000), force emit bypass, metrics tracking (total/unique/duplicate/dedup_rate), signature counts. Global singleton via get_deduplicator(). Test suite: `tests/test_event_deduplicator.py` (16 tests, all passing) covering first event pass, duplicate blocking, window expiration, force bypass, cleanup, thread safety, high volume (1000 events). Reduces WebSocket overhead and improves client performance.
 
 #### Logging Infrastructure (8 tasks)
-- [ ] [P0][M] Implement detection-specific logger with rotation — Separate logger for detection events. Rotate daily, keep 30 days. `src/pokertool/detection_logger.py`
+- [x] [P0][M] Implement detection-specific logger with rotation — ✅ Complete: DetectionLogger with daily TimedRotatingFileHandler, 30-day retention (configurable), log_detection() with automatic severity, log_fps() for performance, global singleton, and environment variable config. File: `src/pokertool/detection_logger.py` (72 lines).
 - [x] [P0][S] Add detection metrics to telemetry — ✅ Complete: DetectionMetricsTracker tracks per-type metrics (total/successful/failed detections, avg/min/max confidence, avg/min/max duration_ms, last detection time), thread-safe operations, real-time aggregation, telemetry integration, and dict export. File: `src/pokertool/detection_metrics_tracker.py` (223 lines).
 - [ ] [P0][M] Create detection event database table — Store all detection events with full metadata. Index by timestamp, type. `src/pokertool/database.py:detection_events table`
 - [x] [P0][S] Add detection confidence logging — ✅ Complete: DetectionLogger logs all detections with confidence scores, automatic severity (ERROR for failures, WARNING for <0.6, INFO otherwise), confidence level labels (HIGH ≥0.8, MEDIUM ≥0.6, LOW <0.6), duration tracking, detailed metadata, daily rotation (30-day retention), FPS logging, and global singleton. File: `src/pokertool/detection_logger.py` (72 lines).
@@ -624,7 +624,7 @@ Conventions
 ### 2. Micro Analytics & Visualizations (30 tasks)
 
 #### Equity Chart (8 tasks)
-- [ ] [P0][M] Create EquityChart component — Real-time line graph showing equity evolution. `pokertool-frontend/src/components/smarthelper/EquityChart.tsx`
+- [x] [P0][M] Create EquityChart component — ✅ Complete: Real-time line graph showing equity evolution using Recharts. File: `pokertool-frontend/src/components/smarthelper/EquityChart.tsx`
 - [ ] [P0][S] Add preflop equity calculation — Calculate starting hand equity. `hooks/useRealTimeEquity.ts:preflop`
 - [ ] [P0][S] Add flop equity recalculation — Update equity when flop appears. `hooks/useRealTimeEquity.ts:flop`
 - [ ] [P0][S] Add turn/river equity updates — Continuous equity tracking. `hooks/useRealTimeEquity.ts:turn_river`
@@ -634,7 +634,7 @@ Conventions
 - [ ] [P3][M] Add Monte Carlo simulation visualization — Show equity distribution. `EquityChart.tsx:MonteCarloViz`
 
 #### Pot Odds Visual (7 tasks)
-- [ ] [P0][M] Create PotOddsVisual component — Circular odds calculator with visual segments. `pokertool-frontend/src/components/smarthelper/PotOddsVisual.tsx`
+- [x] [P0][M] Create PotOddsVisual component — ✅ Complete: Circular odds calculator with visual segments. File: `pokertool-frontend/src/components/smarthelper/PotOddsVisual.tsx`
 - [ ] [P0][S] Add pot size display — Center number showing total pot. `PotOddsVisual.tsx:PotDisplay`
 - [ ] [P0][S] Add bet-to-call display — Amount needed to call. `PotOddsVisual.tsx:CallAmount`
 - [ ] [P0][S] Calculate pot odds ratio — Display as "3.5:1" format. `PotOddsVisual.tsx:OddsRatio`
@@ -643,7 +643,7 @@ Conventions
 - [ ] [P2][S] Create pot odds history — Show odds evolution through hand. `PotOddsVisual.tsx:OddsHistory`
 
 #### Position Stats Card (7 tasks)
-- [ ] [P0][M] Create PositionStatsCard component — Show your stats from current position. `pokertool-frontend/src/components/smarthelper/PositionStatsCard.tsx`
+- [x] [P0][M] Create PositionStatsCard component — ✅ Complete: Card showing position-specific stats (VPIP, PFR, aggression, win rate). File: `pokertool-frontend/src/components/smarthelper/PositionStatsCard.tsx`
 - [ ] [P0][S] Display VPIP from position — % of hands played from this position. `PositionStatsCard.tsx:VPIP`
 - [ ] [P0][S] Display PFR from position — % of hands raised from this position. `PositionStatsCard.tsx:PFR`
 - [ ] [P0][S] Display aggression from position — Aggression factor from this position. `PositionStatsCard.tsx:Aggression`
@@ -652,7 +652,7 @@ Conventions
 - [ ] [P2][M] Add positional heatmap — Visual grid showing stats by position. `components/smarthelper/PositionHeatmap.tsx`
 
 #### Opponent Tendency Heatmap (8 tasks)
-- [ ] [P0][M] Create OpponentTendencyHeatmap component — Visual grid of opponent stats. `pokertool-frontend/src/components/smarthelper/OpponentTendencyHeatmap.tsx`
+- [x] [P0][M] Create OpponentTendencyHeatmap component — ✅ Complete: Visual heatmap grid of opponent statistics. File: `pokertool-frontend/src/components/smarthelper/OpponentTendencyHeatmap.tsx`
 - [ ] [P0][S] Track fold-to-cbet % — Opponent's fold rate to continuation bets. `backend: opponent_profiler.py:fold_to_cbet`
 - [ ] [P0][S] Track 3-bet % — Opponent's 3-betting frequency. `backend: opponent_profiler.py:three_bet_freq`
 - [ ] [P0][S] Track fold-to-3bet % — Opponent's fold rate to 3-bets. `backend: opponent_profiler.py:fold_to_3bet`
@@ -676,7 +676,7 @@ Conventions
 - [ ] [P3][L] Create GTO trainer mode — Practice GTO decisions with feedback. `components/GTOTrainerEnhanced.tsx`
 
 #### Range Analysis (10 tasks)
-- [ ] [P0][M] Create RangeAnalyzer component — Visual range grid (AA to 22, AK to 72o). `pokertool-frontend/src/components/smarthelper/RangeAnalyzer.tsx`
+- [x] [P0][M] Create RangeAnalyzer component — ✅ Complete: Visual range grid analyzer (AA to 22, AK to 72o). File: `pokertool-frontend/src/components/smarthelper/RangeAnalyzer.tsx`
 - [ ] [P0][M] Implement hero range builder — Select and edit your perceived range. `RangeAnalyzer.tsx:HeroRangeBuilder`
 - [ ] [P0][M] Implement villain range estimator — Estimate opponent's range based on actions. `backend: opponent_profiler.py:estimate_range`
 - [ ] [P0][S] Add range vs range equity — Calculate range-on-range equity. `backend: equity_calculator.py:range_vs_range`
