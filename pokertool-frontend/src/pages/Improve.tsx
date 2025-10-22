@@ -34,6 +34,9 @@ import {
   Lock as LockIcon,
   LockOpen as LockOpenIcon,
 } from '@mui/icons-material';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import '@xterm/xterm/css/xterm.css';
 
 interface AgentStatus {
   id: string;
@@ -102,6 +105,11 @@ const Improve: React.FC = () => {
   const terminal2Ref = useRef<HTMLDivElement>(null);
   const terminal3Ref = useRef<HTMLDivElement>(null);
 
+  // Terminal instances
+  const terminalInstances = useRef<(Terminal | null)[]>([null, null, null]);
+  const fitAddons = useRef<(FitAddon | null)[]>([null, null, null]);
+  const websockets = useRef<(WebSocket | null)[]>([null, null, null]);
+
   // Load saved API key from localStorage
   useEffect(() => {
     const savedKey = localStorage.getItem(`ai_api_key_${provider}`);
@@ -116,6 +124,102 @@ const Improve: React.FC = () => {
     if (superAdminSession === 'true') {
       setIsSuperAdminEnabled(true);
     }
+  }, []);
+
+  // Initialize xterm terminals
+  useEffect(() => {
+    const terminalRefs = [terminal1Ref, terminal2Ref, terminal3Ref];
+
+    terminalRefs.forEach((ref, index) => {
+      if (ref.current && !terminalInstances.current[index]) {
+        // Create terminal instance
+        const terminal = new Terminal({
+          cursorBlink: true,
+          fontSize: 13,
+          fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+          theme: {
+            background: '#1e1e1e',
+            foreground: '#d4d4d4',
+            cursor: '#aeafad',
+            black: '#000000',
+            red: '#cd3131',
+            green: '#0dbc79',
+            yellow: '#e5e510',
+            blue: '#2472c8',
+            magenta: '#bc3fbc',
+            cyan: '#11a8cd',
+            white: '#e5e5e5',
+            brightBlack: '#666666',
+            brightRed: '#f14c4c',
+            brightGreen: '#23d18b',
+            brightYellow: '#f5f543',
+            brightBlue: '#3b8eea',
+            brightMagenta: '#d670d6',
+            brightCyan: '#29b8db',
+            brightWhite: '#ffffff'
+          },
+          rows: 20,
+          cols: 80,
+        });
+
+        // Create fit addon
+        const fitAddon = new FitAddon();
+        terminal.loadAddon(fitAddon);
+
+        // Open terminal
+        terminal.open(ref.current);
+        fitAddon.fit();
+
+        // Store instances
+        terminalInstances.current[index] = terminal;
+        fitAddons.current[index] = fitAddon;
+
+        // Write welcome message
+        const agentNames = ['Top 20 Agent', 'Bottom 20 Agent', 'Random 20 Agent'];
+        terminal.writeln(`\x1b[32m╔══════════════════════════════════════════╗\x1b[0m`);
+        terminal.writeln(`\x1b[32m║  PokerTool AI Development Automation    ║\x1b[0m`);
+        terminal.writeln(`\x1b[32m╠══════════════════════════════════════════╣\x1b[0m`);
+        terminal.writeln(`\x1b[32m║  Agent: ${agentNames[index].padEnd(31, ' ')}║\x1b[0m`);
+        terminal.writeln(`\x1b[32m╚══════════════════════════════════════════╝\x1b[0m`);
+        terminal.writeln('');
+        terminal.writeln('\x1b[90m# Agent idle. Click "DoActions" to start...\x1b[0m');
+        terminal.writeln('');
+      }
+    });
+
+    // Handle window resize
+    const handleResize = () => {
+      fitAddons.current.forEach(addon => {
+        if (addon) {
+          try {
+            addon.fit();
+          } catch (e) {
+            console.error('Error fitting terminal:', e);
+          }
+        }
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener('resize', handleResize);
+
+      terminalInstances.current.forEach((terminal, index) => {
+        if (terminal) {
+          terminal.dispose();
+          terminalInstances.current[index] = null;
+        }
+      });
+
+      websockets.current.forEach((ws, index) => {
+        if (ws) {
+          ws.close();
+          websockets.current[index] = null;
+        }
+      });
+    };
   }, []);
 
   // Provider change handler
@@ -525,36 +629,17 @@ const Improve: React.FC = () => {
               ref={index === 0 ? terminal1Ref : index === 1 ? terminal2Ref : terminal3Ref}
               sx={{
                 flexGrow: 1,
-                bgcolor: '#1e1e1e',
-                color: '#d4d4d4',
-                fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-                fontSize: '13px',
-                p: 1,
-                overflow: 'auto',
-                position: 'relative'
+                overflow: 'hidden',
+                position: 'relative',
+                '& .xterm': {
+                  height: '100%',
+                  padding: '8px'
+                },
+                '& .xterm-viewport': {
+                  overflow: 'auto !important'
+                }
               }}
-            >
-              {agent.status === 'idle' ? (
-                <Typography sx={{ color: '#6a9955', fontStyle: 'italic' }}>
-                  # Agent idle. Click "DoActions" to start...
-                </Typography>
-              ) : (
-                <Box>
-                  <Typography sx={{ color: '#4ec9b0' }}>
-                    $ AI Agent {agent.id} initializing...
-                  </Typography>
-                  <Typography sx={{ color: '#9cdcfe' }}>
-                    Provider: {provider}
-                  </Typography>
-                  <Typography sx={{ color: '#ce9178' }}>
-                    Strategy: {agent.name}
-                  </Typography>
-                  <Typography sx={{ color: '#6a9955', mt: 1 }}>
-                    # Terminal integration with xterm.js coming soon...
-                  </Typography>
-                </Box>
-              )}
-            </Box>
+            />
           </Paper>
         ))}
       </Box>
