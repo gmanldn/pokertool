@@ -363,8 +363,22 @@ class ProductionDatabase:
 
     @retry_on_failure(max_retries=3)
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
-                          session_id: Optional[str] = None, metadata: Optional[Dict] = None) -> int:
-        """Save hand analysis with enhanced metadata support."""
+                          session_id: Optional[str] = None, metadata: Optional[Dict] = None,
+                          confidence_score: Optional[float] = None) -> int:
+        """
+        Save hand analysis with enhanced metadata support.
+
+        Args:
+            hand: The hand to analyze
+            board: The board cards
+            result: The analysis result
+            session_id: Optional session identifier
+            metadata: Optional metadata dictionary
+            confidence_score: Detection confidence (0.0-1.0), None if unknown
+
+        Returns:
+            The ID of the inserted record
+        """
         self._rate_limit_check('save_hand', 50)
 
         from .error_handling import sanitize_input
@@ -376,6 +390,13 @@ class ProductionDatabase:
         except ValidationError as e:
             logger.error(f"Data validation failed: {e}")
             raise ValueError(f"Invalid data for insertion: {e}")
+
+        # Validate confidence score
+        if confidence_score is not None:
+            if not isinstance(confidence_score, (int, float)):
+                raise ValueError(f'Confidence score must be numeric, got {type(confidence_score)}')
+            if not (0.0 <= confidence_score <= 1.0):
+                raise ValueError(f'Confidence score must be between 0.0 and 1.0, got {confidence_score}')
 
         # Sanitize inputs (after validation)
         hand = sanitize_input(hand, max_length=50)
@@ -392,15 +413,15 @@ class ProductionDatabase:
                     with conn.cursor() as cursor:
                         cursor.execute(
                             """INSERT INTO poker_hands
-                            (hand_text, board_text, analysis_result, user_hash, session_id, metadata)
-                            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-                            (hand, board, result, user_hash, session_id, metadata_json)
+                            (hand_text, board_text, analysis_result, user_hash, session_id, confidence_score, metadata)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                            (hand, board, result, user_hash, session_id, confidence_score, metadata_json)
                         )
                         result_id = cursor.fetchone()[0]
                         conn.commit()
                         return result_id
             else:
-                return self.sqlite_db.save_hand_analysis(hand, board, result, session_id)
+                return self.sqlite_db.save_hand_analysis(hand, board, result, session_id, confidence_score)
 
     def get_recent_hands(self, limit: int = 100, offset: int = 0,
                         user_hash: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -416,7 +437,7 @@ class ProductionDatabase:
                     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                         if user_hash:
                             cursor.execute(
-                                """SELECT id, hand_text, board_text, analysis_result, timestamp, metadata
+                                """SELECT id, hand_text, board_text, analysis_result, timestamp, confidence_score, metadata
                                 FROM poker_hands
                                 WHERE user_hash = %s
                                 ORDER BY timestamp DESC
@@ -425,7 +446,7 @@ class ProductionDatabase:
                             )
                         else:
                             cursor.execute(
-                                """SELECT id, hand_text, board_text, analysis_result, timestamp, metadata
+                                """SELECT id, hand_text, board_text, analysis_result, timestamp, confidence_score, metadata
                                 FROM poker_hands
                                 ORDER BY timestamp DESC
                                 LIMIT %s OFFSET %s""",
@@ -528,8 +549,21 @@ class PokerDatabase:
         self.db = SecureDatabase(db_path)
 
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
-                          session_id: Optional[str] = None) -> int:
-        """Save hand analysis to database with validation."""
+                          session_id: Optional[str] = None,
+                          confidence_score: Optional[float] = None) -> int:
+        """
+        Save hand analysis to database with validation.
+
+        Args:
+            hand: The hand to analyze
+            board: The board cards
+            result: The analysis result
+            session_id: Optional session identifier
+            confidence_score: Detection confidence (0.0-1.0), None if unknown
+
+        Returns:
+            The ID of the inserted record
+        """
         from .data_validation import validate_before_insert, ValidationError
 
         # Validate before insert
@@ -539,7 +573,7 @@ class PokerDatabase:
             logger.error(f"Data validation failed: {e}")
             raise ValueError(f"Invalid data for insertion: {e}")
 
-        return self.db.save_hand_analysis(hand, board, result, session_id)
+        return self.db.save_hand_analysis(hand, board, result, session_id, confidence_score)
 
     def get_recent_hands(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """Get recent hands from database."""
