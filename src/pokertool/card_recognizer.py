@@ -71,9 +71,19 @@ class RecognitionResult:
     """Information returned by card recognition."""
 
     card: Optional[Card]
-    confidence: float
+    confidence: float  # 0.0-1.0 range
     method: str
     location: Tuple[int, int, int, int]
+
+    @property
+    def confidence_percent(self) -> float:
+        """Return confidence as a percentage (0-100)."""
+        return self.confidence * 100.0
+
+    def __str__(self) -> str:
+        if self.card:
+            return f"{self.card} ({self.confidence_percent:.1f}% via {self.method})"
+        return f"No card detected ({self.method})"
 
 
 class CardRecognitionEngine:
@@ -131,6 +141,14 @@ class CardRecognitionEngine:
             card = Card(rank=rank, suit=suit)
             confidence = (rank_conf + suit_conf) / 2
             height, width = card_image.shape[:2]
+
+            # Log low-confidence detections (<80%)
+            if confidence < 0.80:
+                logger.warning(
+                    f"Low-confidence card detection: {card} (confidence: {confidence*100:.1f}%, "
+                    f"rank: {rank_conf*100:.1f}%, suit: {suit_conf*100:.1f}%)"
+                )
+
             return RecognitionResult(card, confidence, "rank_suit", (0, 0, width, height))
 
         return RecognitionResult(None, 0.0, "no_match", (0, 0, 0, 0))
@@ -249,6 +267,14 @@ class CardRecognitionEngine:
             width = original_shape[1]
             height = original_shape[0]
             card = Card(best_match.rank, best_match.suit)
+
+            # Log low-confidence detections (<80%)
+            if best_confidence < 0.80:
+                logger.warning(
+                    f"Low-confidence card detection (full template): {card} "
+                    f"(confidence: {best_confidence*100:.1f}%)"
+                )
+
             return RecognitionResult(card, best_confidence, "full_card", (0, 0, width, height))
 
         return RecognitionResult(None, 0.0, "no_match", (0, 0, 0, 0))
