@@ -329,7 +329,7 @@ Conventions
 - [ ] [P2][S] Add log export from frontend — Download logs as CSV/JSON from UI. `pokertool-frontend/src/pages/DetectionLogs.tsx:export`
 
 #### Performance Logging (7 tasks)
-- [ ] [P0][M] Add frame processing time logging — Log time spent on each frame. Identify slow frames. `src/pokertool/modules/poker_screen_scraper_betfair.py:perf`
+- [x] [P0][M] Add frame processing time logging — ✅ Complete: Created frame_performance_tracker.py (92 lines) with FramePerformanceTracker tracking last 100 frames, auto-logs slow frames >100ms, reports stats every 100 frames (avg/median/p95/min/max/FPS). Global tracker via get_tracker(). File: `src/pokertool/frame_performance_tracker.py`.
 - [ ] [P0][S] Implement detection bottleneck identification — Track which detection takes longest. Optimize hot paths. `src/pokertool/performance_telemetry.py`
 - [ ] [P0][M] Create performance regression detection — Alert when detection latency increases >20%. `src/pokertool/detection_logger.py:perf_regression`
 - [ ] [P1][M] Add memory usage logging for detection — Track memory consumption during detection. Detect leaks. `src/pokertool/detection_logger.py:memory`
