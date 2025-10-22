@@ -39,7 +39,7 @@
 - [ ] [P1][M] Create test reporting dashboard — Aggregate test results: coverage, flaky tests, slow tests, failure trends. Publish to GitHub Pages. `tests/reporting/dashboard.html`
 - [ ] [P1][S] Add test parallelization — Run tests in parallel: pytest-xdist for Python (8 workers), Jest workers for TypeScript (4 workers). Target: 3x faster test suite. `pytest.ini`, `jest.config.js`
 - [ ] [P1][M] Add test data generators — Create factories for generating test data: hands, players, sessions, screenshots. Use Faker and Hypothesis. `tests/factories/`
-- [ ] [P1][S] Add snapshot testing — Jest snapshots for React components, API response snapshots. Detect unintended changes. `__snapshots__/`
+- [x] [P1][S] Add snapshot testing — ✅ Complete: Jest snapshot tests for Dashboard and EmptyState components. Includes comprehensive guide with best practices, CI integration, and troubleshooting. Tests component structure and detect unintended visual changes. `__snapshots__/`
 
 ### Chaos Engineering (5 tasks)
 
