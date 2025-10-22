@@ -665,8 +665,8 @@ Conventions
 
 #### GTO Solver Integration (10 tasks)
 - [ ] [P0][L] Integrate GTO solver library — Add PioSolver or SimplePostflop library. `src/pokertool/gto_calculator.py:GtoSolver`
-- [ ] [P0][M] Create GTO frequency calculator — Calculate optimal action frequencies. `gto_calculator.py:calculate_frequencies`
-- [ ] [P0][M] Add range-based GTO calculations — Optimal play vs opponent ranges. `gto_calculator.py:range_gto`
+- [x] [P0][M] Create GTO frequency calculator — ✅ Complete: Implemented in GTOCalculator.calculate_gto_frequencies(). Calculates optimal fold/call/raise frequencies based on hero range, villain range, pot size, and bet size. Uses pot odds and equity estimation to determine GTO action distribution. Integrated with range-based GTO system. Files: `src/pokertool/gto_ranges.py:calculate_gto_frequencies`.
+- [x] [P0][M] Add range-based GTO calculations — ✅ Complete: Created comprehensive GTO range system (430 lines). Features: HandCategory enum (Premium/Strong/Medium/Weak/Trash), HandRange class with combo tracking, range parsing (specific hands "AA", groups "JJ+", ranges "22+", suited/offsuit "AKs"/"AKo"), plus notation (JJ+, ATs+), dash notation (22-77). GTOCalculator with position-based ranges: opening ranges for all positions (UTG through BTN/SB at 100BB), 3-bet ranges, calling ranges vs raises (adjusted for bet sizing). Methods: get_opening_range() (stack-adjusted), get_three_bet_range(), get_calling_range() (bet size adjusted), calculate_gto_frequencies() (pot odds + equity based). Predefined GTO_RANGES for common situations. Combo counting, hand containment checking. Ready for SmartHelper integration. Files: `src/pokertool/gto_ranges.py`.
 - [ ] [P0][S] Cache GTO solutions — Cache common game states (Redis, 24h TTL). `gto_calculator.py:GtoCache`
 - [ ] [P1][M] Implement simplified GTO for live play — Fast approximation algorithms. `gto_calculator.py:fast_gto_approx`
 - [ ] [P1][M] Add position-based GTO adjustments — Different strategies by position. `gto_calculator.py:position_gto`
