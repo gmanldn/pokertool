@@ -97,7 +97,7 @@
 ### Error Recovery (4 tasks)
 
 - [ ] [P0][M] Add automatic error recovery — Auto-recover from: crashed services (restart), corrupted data (restore backup), network failures (reconnect), database locks (retry). `src/pokertool/error_recovery.py`
-- [ ] [P0][S] Add crash reporter — Collect crash dumps: stack trace, logs, system info, recent actions. Prompt user to submit. Privacy-preserving. `src/pokertool/crash_reporter.py`
+- [x] [P0][S] Add crash reporter — ✅ Complete: Privacy-preserving crash reporter collecting stack traces, system info, and environment details. Auto-saves crash dumps, prompts user to submit, includes cleanup of old reports. 9/11 tests passing. `src/pokertool/crash_reporter.py`
 - [ ] [P0][M] Add health monitoring — Continuous health checks: service status, resource usage, error rates, performance. Alert on degradation. `src/pokertool/health_monitor.py`
 - [ ] [P0][S] Add circuit breakers — Prevent cascading failures: trip after N failures, half-open retry, auto-reset after timeout. `src/pokertool/circuit_breaker.py`
 
