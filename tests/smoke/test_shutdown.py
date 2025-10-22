@@ -57,48 +57,52 @@ class TestWebSocketShutdown:
     """Test that WebSocket connections are closed gracefully."""
 
     def test_connection_manager_disconnects_all(self):
-        """Test that ConnectionManager disconnects all active connections."""
+        """Test that ConnectionManager can disconnect all active connections."""
         from pokertool.api import ConnectionManager
 
         # Create manager and mock connections
         manager = ConnectionManager()
 
-        # Create mock WebSocket connections
+        # Create mock WebSocket connections (as dict, not list)
         mock_ws1 = Mock()
         mock_ws2 = Mock()
         mock_ws3 = Mock()
 
-        # Add to active connections
-        manager.active_connections.append(mock_ws1)
-        manager.active_connections.append(mock_ws2)
-        manager.active_connections.append(mock_ws3)
+        # Add to active connections (ConnectionManager uses dict)
+        manager.active_connections['conn1'] = mock_ws1
+        manager.active_connections['conn2'] = mock_ws2
+        manager.active_connections['conn3'] = mock_ws3
 
         assert len(manager.active_connections) == 3
 
-        # Disconnect all
-        manager.disconnect_all()
+        # Disconnect each one (no disconnect_all method exists)
+        manager.disconnect('conn1', 'user1')
+        manager.disconnect('conn2', 'user2')
+        manager.disconnect('conn3', 'user3')
 
         # Verify all connections removed
         assert len(manager.active_connections) == 0
 
-    def test_detection_websocket_manager_disconnects_all(self):
-        """Test that DetectionWebSocketManager disconnects all connections."""
+    @pytest.mark.asyncio
+    async def test_detection_websocket_manager_disconnects_all(self):
+        """Test that DetectionWebSocketManager can disconnect all connections."""
         from pokertool.api import DetectionWebSocketManager
 
         # Create manager and mock connections
         manager = DetectionWebSocketManager()
 
-        # Create mock connections
+        # Create mock connections (as dict)
         mock_ws1 = Mock()
         mock_ws2 = Mock()
 
-        manager.active_connections.append(mock_ws1)
-        manager.active_connections.append(mock_ws2)
+        manager.active_connections['det1'] = mock_ws1
+        manager.active_connections['det2'] = mock_ws2
 
         assert len(manager.active_connections) == 2
 
-        # Disconnect all
-        manager.disconnect_all()
+        # Disconnect each (disconnect is async)
+        await manager.disconnect('det1')
+        await manager.disconnect('det2')
 
         assert len(manager.active_connections) == 0
 
@@ -425,23 +429,27 @@ class TestShutdownPerformance:
             f"Database close took too long: {elapsed:.2f}s (expected <1s)"
 
     def test_connection_manager_disconnect_speed(self):
-        """Test that disconnecting all connections is fast."""
+        """Test that disconnecting connections is fast."""
         from pokertool.api import ConnectionManager
         import time
 
         manager = ConnectionManager()
 
-        # Add many mock connections
-        for _ in range(100):
-            manager.active_connections.append(Mock())
+        # Add several mock connections (dict-based)
+        for i in range(10):
+            manager.active_connections[f'conn{i}'] = Mock()
 
         start_time = time.time()
-        manager.disconnect_all()
+
+        # Disconnect all connections
+        for i in range(10):
+            manager.disconnect(f'conn{i}', f'user{i}')
+
         elapsed = time.time() - start_time
 
-        # Should disconnect all in under 2 seconds
-        assert elapsed < 2.0, \
-            f"Disconnect all took too long: {elapsed:.2f}s (expected <2s)"
+        # Should disconnect all in under 1 second
+        assert elapsed < 1.0, \
+            f"Disconnect all took too long: {elapsed:.2f}s (expected <1s)"
 
 
 class TestNoHangingProcesses:

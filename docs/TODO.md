@@ -617,7 +617,7 @@ Conventions
 - [x] [P1][M] Create factor weight configuration — ✅ Complete: Created configurable FactorWeights class with 5 predefined profiles (balanced, gto, exploitative, conservative, aggressive), property-based get/set for all weights, validation, save/load from JSON, and SmartHelperEngine integration with methods to update weights and switch profiles dynamically. File: `src/pokertool/smarthelper_engine.py:108-297`
 - [ ] [P1][M] Add caching for recommendations — Cache recommendations for identical game states (5s TTL). `smarthelper_engine.py:RecommendationCache`
 - [ ] [P1][S] Implement recommendation validation — Sanity checks on recommendations. `smarthelper_engine.py:validate_recommendation`
-- [ ] [P2][M] Add recommendation logging — Log all recommendations for analysis. `smarthelper_engine.py:log_recommendation`
+- [x] [P2][M] Add recommendation logging — ✅ Complete: Enhanced `_log_recommendation` with persistent JSONL daily logging to `~/.pokertool/smarthelper/logs/recommendations_YYYY-MM-DD.jsonl`. Expanded log entries to include all factors with weights, GTO frequencies, strategic reasoning, game state details. Added `get_recommendation_stats()` for analytics (action/street distribution, avg confidence), `export_recommendations()` for bulk export, and `clear_recommendation_log()` for cleanup. In-memory buffer of last 100 recommendations. File: `src/pokertool/smarthelper_engine.py:415-520`
 - [ ] [P2][M] Create recommendation A/B testing — Compare different algorithms. `smarthelper_engine.py:ABTestManager`
 - [ ] [P3][L] Add machine learning model integration — Train ML model on historical data. `smarthelper_ml_model.py`
 

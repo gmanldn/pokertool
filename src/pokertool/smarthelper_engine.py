@@ -413,9 +413,15 @@ class SmartHelperEngine:
         return True
 
     def _log_recommendation(self, recommendation: SmartHelperRecommendation, game_state: GameState):
-        """Log recommendation for analysis"""
+        """Log recommendation for analysis with persistent storage"""
+        import os
+        import json
+        from datetime import datetime
+
+        # Create in-memory log entry
         log_entry = {
             'timestamp': recommendation.timestamp,
+            'datetime': datetime.fromtimestamp(recommendation.timestamp / 1000).isoformat(),
             'street': game_state.street.value,
             'action': recommendation.action.value,
             'amount': recommendation.amount,
@@ -424,18 +430,94 @@ class SmartHelperEngine:
             'pot_size': game_state.pot_size,
             'bet_to_call': game_state.bet_to_call,
             'hero_stack': game_state.hero_stack,
-            'num_factors': len(recommendation.factors)
+            'hero_position': game_state.hero_position,
+            'num_opponents': len(game_state.opponents),
+            'num_factors': len(recommendation.factors),
+            'factors': [
+                {
+                    'name': f.name,
+                    'score': f.score,
+                    'weight': f.weight,
+                    'description': f.description
+                }
+                for f in recommendation.factors
+            ],
+            'gto_frequencies': recommendation.gto_frequencies.to_dict(),
+            'strategic_reasoning': recommendation.strategic_reasoning
         }
-        self._recommendation_log.append(log_entry)
 
-        # Keep only last 100 recommendations
+        # Add to in-memory log (keep last 100)
+        self._recommendation_log.append(log_entry)
         if len(self._recommendation_log) > 100:
             self._recommendation_log = self._recommendation_log[-100:]
 
+        # Persistent logging to file
+        log_dir = os.path.expanduser('~/.pokertool/smarthelper/logs')
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Log to daily file
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        log_file = os.path.join(log_dir, f'recommendations_{date_str}.jsonl')
+
+        try:
+            with open(log_file, 'a') as f:
+                f.write(json.dumps(log_entry) + '\n')
+        except Exception as e:
+            logger.error(f"Failed to write recommendation to log file: {e}")
+
+        # Console logging
         logger.info(
             f"Recommendation: {recommendation.action.value} "
-            f"(confidence: {recommendation.confidence:.1f}%, net: {recommendation.net_confidence:+.1f})"
+            f"(confidence: {recommendation.confidence:.1f}%, net: {recommendation.net_confidence:+.1f}) "
+            f"[{game_state.street.value}]"
         )
+
+    def get_recommendation_stats(self) -> Dict[str, Any]:
+        """Get statistics about logged recommendations"""
+        if not self._recommendation_log:
+            return {
+                'total_recommendations': 0,
+                'avg_confidence': 0,
+                'action_distribution': {},
+                'street_distribution': {}
+            }
+
+        action_counts = {}
+        street_counts = {}
+        total_confidence = 0
+
+        for log in self._recommendation_log:
+            # Count actions
+            action = log['action']
+            action_counts[action] = action_counts.get(action, 0) + 1
+
+            # Count streets
+            street = log['street']
+            street_counts[street] = street_counts.get(street, 0) + 1
+
+            # Sum confidence
+            total_confidence += log['confidence']
+
+        return {
+            'total_recommendations': len(self._recommendation_log),
+            'avg_confidence': total_confidence / len(self._recommendation_log),
+            'action_distribution': action_counts,
+            'street_distribution': street_counts,
+            'latest_recommendations': self._recommendation_log[-5:]  # Last 5
+        }
+
+    def export_recommendations(self, filepath: str):
+        """Export all logged recommendations to JSON file"""
+        import json
+        with open(filepath, 'w') as f:
+            json.dump(self._recommendation_log, f, indent=2)
+        logger.info(f"Exported {len(self._recommendation_log)} recommendations to {filepath}")
+
+    def clear_recommendation_log(self):
+        """Clear in-memory recommendation log"""
+        cleared_count = len(self._recommendation_log)
+        self._recommendation_log = []
+        logger.info(f"Cleared {cleared_count} recommendations from memory")
 
     def recommend(self, game_state: GameState) -> SmartHelperRecommendation:
         """

@@ -126,7 +126,7 @@ A hash-based password authentication system that locks the Improve tab features 
 
 1. Navigate to the Improve tab
 2. Click the "SuperAdmin" button in the top-right corner
-3. Enter the SuperAdmin password: `Becauseig0tta-pt`
+3. Enter the SuperAdmin password (contact administrator if you don't have it)
 4. Click "Authenticate" or press Enter
 5. Features are now enabled (indicated by red "SUPERADMIN" chip)
 6. To disable, click the SuperAdmin button again
@@ -141,8 +141,8 @@ npm test Improve.test.tsx
 
 **Verifying Hash:**
 ```bash
-echo -n 'Becauseig0tta-pt' | shasum -a 256
-# Output: afcf0cafd8f0161edc400dc94d14892a3da4862423863be5f6be6b530ca59416
+echo -n '<password>' | shasum -a 256
+# Should output: afcf0cafd8f0161edc400dc94d14892a3da4862423863be5f6be6b530ca59416
 ```
 
 **Code Location:**
@@ -223,7 +223,7 @@ The SuperAdmin authentication feature has been successfully implemented with:
 ✅ Complete UI lock/unlock functionality
 ✅ Comprehensive test coverage (20 tests)
 ✅ Detailed documentation
-✅ No hardcoded passwords in codebase
+✅ No hardcoded passwords in codebase or documentation
 ✅ Session-based authentication
 ✅ Visual indicators for auth status
 
@@ -231,5 +231,5 @@ The feature is ready for use and provides a secure way to restrict access to the
 
 ---
 
-**Password for Reference (not in codebase):** `Becauseig0tta-pt`
+**Password:** Known only to authorized administrator
 **Hash in Code:** `afcf0cafd8f0161edc400dc94d14892a3da4862423863be5f6be6b530ca59416`
