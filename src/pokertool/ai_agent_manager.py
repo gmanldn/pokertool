@@ -299,6 +299,274 @@ class AIAgent:
             return False
 
 
+class CodeReviewAgent:
+    """
+    Specialized 4th agent that reviews commits from other agents.
+
+    Reviews commits for:
+    - Code quality and best practices
+    - Test coverage
+    - Documentation completeness
+    - Security issues
+    - Breaking changes
+    """
+
+    def __init__(self, provider: BaseAIProvider, agent_id: str = "code-reviewer"):
+        self.provider = provider
+        self.agent_id = agent_id
+        self.reviews_performed = 0
+        self.issues_found = []
+
+        # Callbacks
+        self.on_review_complete: Optional[Callable[[Dict], None]] = None
+        self.on_output: Optional[Callable[[str, str], None]] = None
+
+    def output(self, message: str):
+        """Send output message"""
+        if self.on_output:
+            self.on_output(self.agent_id, message)
+        logger.info(f"[{self.agent_id}] {message}")
+
+    async def review_commit(self, commit_hash: str) -> Dict[str, any]:
+        """
+        Review a single commit
+
+        Args:
+            commit_hash: Git commit hash to review
+
+        Returns:
+            Dict with review results:
+            {
+                "approved": bool,
+                "issues": List[str],
+                "suggestions": List[str],
+                "score": float (0-100)
+            }
+        """
+        try:
+            self.output(f"🔍 Reviewing commit {commit_hash[:8]}...")
+
+            # Get commit diff
+            diff = await self._get_commit_diff(commit_hash)
+
+            # Get commit message
+            commit_msg = await self._get_commit_message(commit_hash)
+
+            # Get changed files
+            changed_files = await self._get_changed_files(commit_hash)
+
+            # Build review prompt
+            prompt = self._build_review_prompt(commit_hash, commit_msg, diff, changed_files)
+
+            # Get AI review
+            review_text = await self.provider.generate_response(prompt)
+
+            # Parse review
+            review = self._parse_review(review_text)
+
+            # Update stats
+            self.reviews_performed += 1
+            if not review["approved"]:
+                self.issues_found.extend(review["issues"])
+
+            # Notify
+            if self.on_review_complete:
+                self.on_review_complete(review)
+
+            # Output summary
+            status_emoji = "✅" if review["approved"] else "⚠️ "
+            self.output(f"{status_emoji} Review complete: Score {review['score']}/100")
+            if review["issues"]:
+                self.output(f"  Issues found: {len(review['issues'])}")
+                for issue in review["issues"][:3]:
+                    self.output(f"    - {issue}")
+                if len(review["issues"]) > 3:
+                    self.output(f"    ... and {len(review['issues']) - 3} more")
+
+            return review
+
+        except Exception as e:
+            logger.error(f"Code review failed: {e}")
+            return {
+                "approved": False,
+                "issues": [f"Review failed: {str(e)}"],
+                "suggestions": [],
+                "score": 0
+            }
+
+    async def _get_commit_diff(self, commit_hash: str) -> str:
+        """Get full diff for commit"""
+        proc = await asyncio.create_subprocess_exec(
+            "git", "show", commit_hash,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await proc.communicate()
+        return stdout.decode()
+
+    async def _get_commit_message(self, commit_hash: str) -> str:
+        """Get commit message"""
+        proc = await asyncio.create_subprocess_exec(
+            "git", "log", "-1", "--format=%B", commit_hash,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await proc.communicate()
+        return stdout.decode().strip()
+
+    async def _get_changed_files(self, commit_hash: str) -> List[str]:
+        """Get list of changed files"""
+        proc = await asyncio.create_subprocess_exec(
+            "git", "show", "--name-only", "--format=", commit_hash,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await proc.communicate()
+        return [f.strip() for f in stdout.decode().split('\n') if f.strip()]
+
+    def _build_review_prompt(self, commit_hash: str, commit_msg: str, diff: str, files: List[str]) -> str:
+        """Build comprehensive review prompt"""
+        return f"""Please review this git commit for code quality, best practices, and potential issues.
+
+**Commit Hash:** {commit_hash}
+
+**Commit Message:**
+{commit_msg}
+
+**Files Changed ({len(files)}):**
+{chr(10).join(f'- {f}' for f in files)}
+
+**Diff:**
+```diff
+{diff[:5000]}  # Limit diff size
+```
+
+Please provide a detailed review covering:
+
+1. **Code Quality** (0-25 points)
+   - Readability and maintainability
+   - Follows project conventions
+   - Appropriate abstractions
+
+2. **Functionality** (0-25 points)
+   - Implementation correctness
+   - Edge case handling
+   - Error handling
+
+3. **Testing** (0-25 points)
+   - Test coverage
+   - Test quality
+   - Tests for edge cases
+
+4. **Documentation** (0-25 points)
+   - Code comments
+   - Docstrings
+   - Updated docs
+
+**Please respond in this exact format:**
+
+SCORE: [0-100]
+APPROVED: [YES/NO]
+
+ISSUES:
+- [Issue 1]
+- [Issue 2]
+
+SUGGESTIONS:
+- [Suggestion 1]
+- [Suggestion 2]
+
+SUMMARY:
+[2-3 sentence summary]
+"""
+
+    def _parse_review(self, review_text: str) -> Dict:
+        """Parse AI review response"""
+        lines = review_text.strip().split('\n')
+
+        score = 85  # Default score
+        approved = True
+        issues = []
+        suggestions = []
+        summary = ""
+
+        current_section = None
+        for line in lines:
+            line = line.strip()
+
+            if line.startswith("SCORE:"):
+                try:
+                    score = float(line.split(":")[-1].strip())
+                except:
+                    pass
+            elif line.startswith("APPROVED:"):
+                approved = "YES" in line.upper()
+            elif line.startswith("ISSUES:"):
+                current_section = "issues"
+            elif line.startswith("SUGGESTIONS:"):
+                current_section = "suggestions"
+            elif line.startswith("SUMMARY:"):
+                current_section = "summary"
+            elif line.startswith("- ") and current_section:
+                item = line[2:].strip()
+                if current_section == "issues":
+                    issues.append(item)
+                elif current_section == "suggestions":
+                    suggestions.append(item)
+            elif current_section == "summary" and line:
+                summary += line + " "
+
+        # Auto-fail if score is too low
+        if score < 70:
+            approved = False
+
+        return {
+            "approved": approved,
+            "score": score,
+            "issues": issues,
+            "suggestions": suggestions,
+            "summary": summary.strip()
+        }
+
+    async def review_agent_commits(self, agent_id: str, commit_hashes: List[str]) -> Dict:
+        """
+        Review all commits from a specific agent
+
+        Returns:
+            {
+                "agent_id": str,
+                "total_commits": int,
+                "approved_commits": int,
+                "rejected_commits": int,
+                "average_score": float,
+                "all_reviews": List[Dict]
+            }
+        """
+        self.output(f"📊 Reviewing {len(commit_hashes)} commits from {agent_id}...")
+
+        reviews = []
+        for commit_hash in commit_hashes:
+            review = await self.review_commit(commit_hash)
+            reviews.append(review)
+            await asyncio.sleep(0.5)  # Rate limiting
+
+        approved_count = sum(1 for r in reviews if r["approved"])
+        avg_score = sum(r["score"] for r in reviews) / len(reviews) if reviews else 0
+
+        summary = {
+            "agent_id": agent_id,
+            "total_commits": len(commit_hashes),
+            "approved_commits": approved_count,
+            "rejected_commits": len(commit_hashes) - approved_count,
+            "average_score": avg_score,
+            "all_reviews": reviews
+        }
+
+        self.output(f"✨ Agent review complete: {approved_count}/{len(commit_hashes)} approved, avg score: {avg_score:.1f}/100")
+
+        return summary
+
+
 class AIAgentManager:
     """Manages multiple AI agents working in parallel"""
 
@@ -306,6 +574,7 @@ class AIAgentManager:
         self.todo_path = todo_path
         self.agents: Dict[str, AIAgent] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
+        self.code_reviewer: Optional[CodeReviewAgent] = None
 
     def create_agent(self, config: AgentConfig) -> AIAgent:
         """Create and register a new agent"""
@@ -353,3 +622,55 @@ class AIAgentManager:
         """Stop all agents"""
         for agent_id in list(self.agents.keys()):
             await self.stop_agent(agent_id)
+
+    def enable_code_review(self, provider: BaseAIProvider):
+        """
+        Enable code review agent
+
+        Args:
+            provider: AI provider to use for code reviews
+        """
+        self.code_reviewer = CodeReviewAgent(provider)
+        logger.info("Code review agent enabled")
+
+    async def review_recent_commits(self, agent_id: str, num_commits: int = 5) -> Optional[Dict]:
+        """
+        Review recent commits from an agent
+
+        Args:
+            agent_id: ID of agent whose commits to review
+            num_commits: Number of recent commits to review
+
+        Returns:
+            Review summary dict or None if code reviewer not enabled
+        """
+        if not self.code_reviewer:
+            logger.warning("Code reviewer not enabled. Call enable_code_review() first.")
+            return None
+
+        # Get recent commit hashes for this agent
+        # Look for commits with the agent ID in the commit message
+        proc = await asyncio.create_subprocess_exec(
+            "git", "log", f"-{num_commits * 3}",  # Get extra to filter
+            "--format=%H|||%s",  # Hash and subject
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await proc.communicate()
+
+        # Filter commits by agent ID
+        agent_commits = []
+        for line in stdout.decode().split('\n'):
+            if '|||' in line:
+                commit_hash, subject = line.split('|||', 1)
+                if agent_id.lower() in subject.lower():
+                    agent_commits.append(commit_hash.strip())
+                    if len(agent_commits) >= num_commits:
+                        break
+
+        if not agent_commits:
+            logger.warning(f"No commits found for agent {agent_id}")
+            return None
+
+        # Review the commits
+        return await self.code_reviewer.review_agent_commits(agent_id, agent_commits)
