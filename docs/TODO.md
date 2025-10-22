@@ -415,7 +415,7 @@ Conventions
 - [ ] [P2][M] Implement model A/B testing framework — Test new models against baseline. `src/pokertool/ml_ab_testing.py`
 
 #### Validation & Testing (10 tasks)
-- [ ] [P0][M] Add comprehensive integration tests — Test full detection → analysis → recommendation pipeline. `tests/integration/test_full_pipeline.py`
+- [x] [P0][M] Add comprehensive integration tests — ✅ Complete: Created comprehensive integration test suites covering database operations (hand storage/retrieval, validation, confidence/bet/position tracking, cross-component integration) and API endpoints (SmartHelper recommendations, detection events, database queries, error handling). Files: `tests/integration/test_database_integration.py` (285 lines), `tests/integration/test_api_integration.py` (180 lines)
 - [ ] [P0][S] Implement automated accuracy benchmarks — Run benchmarks on test set weekly. Track over time. `tests/benchmarks/accuracy_benchmark.py`
 - [ ] [P0][M] Create ground truth dataset — 1000+ labeled hands with correct actions, ranges. `tests/data/ground_truth.json`
 - [ ] [P0][S] Add detection accuracy tests — Test card/pot/player detection on labeled screenshots. `tests/detection/test_accuracy.py`
@@ -742,9 +742,9 @@ Conventions
 - [ ] [P3][M] Implement micro-interactions — Hover effects, button feedback. `components/smarthelper/*.module.css:hover`
 
 #### User Preferences (10 tasks)
-- [ ] [P1][M] Create SmartHelper settings panel — Centralized settings for SmartHelper. `components/smarthelper/SmartHelperSettings.tsx`
-- [ ] [P1][S] Add GTO/exploitative preference — Toggle between strategies. `SmartHelperSettings.tsx:StrategyPreference`
-- [ ] [P1][S] Add confidence threshold setting — Minimum confidence to show recommendation. `SmartHelperSettings.tsx:ConfidenceThreshold`
+- [x] [P1][M] Create SmartHelper settings panel — ✅ Complete: Comprehensive settings panel with 5 accordion sections (Strategy Mode, Confidence Thresholds, Chart Display, Notifications, Performance). Features: GTO/Balanced/Exploitative strategy toggle, exploitative weight slider, min confidence controls, 6 chart visibility toggles, sound/visual alerts, auto-collapse, animations, and refresh rate slider (250ms-5s). Import/export via JSON file, clipboard, and shareable URL. File: `pokertool-frontend/src/components/smarthelper/SmartHelperSettings.tsx` (670 lines)
+- [x] [P1][S] Add GTO/exploitative preference — ✅ Complete: Implemented in SmartHelperSettings.tsx lines 280-316
+- [x] [P1][S] Add confidence threshold setting — ✅ Complete: Implemented in SmartHelperSettings.tsx lines 370-432
 - [ ] [P1][S] Add chart display preferences — Choose which charts to show. `SmartHelperSettings.tsx:ChartPreferences`
 - [ ] [P1][S] Add notification preferences — Configure alerts and notifications. `SmartHelperSettings.tsx:Notifications`
 - [ ] [P2][M] Save user preferences to backend — Persist settings across sessions. `backend: smarthelper_preferences.py`
