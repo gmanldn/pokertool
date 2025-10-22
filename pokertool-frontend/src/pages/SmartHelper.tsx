@@ -15,11 +15,10 @@ import {
   Avatar,
   Chip,
   Grid,
-  Divider,
   Button,
   Alert
 } from '@mui/material';
-import { Send, Psychology, Person, Refresh, Science } from '@mui/icons-material';
+import { Send, Psychology, Person, Refresh } from '@mui/icons-material';
 import axios from 'axios';
 import { buildApiUrl } from '../config/api';
 import { ActionRecommendationCard, PokerAction } from '../components/smarthelper/ActionRecommendationCard';
