@@ -614,7 +614,7 @@ Conventions
 - [x] [P0][M] Add POST /api/smarthelper/recommend endpoint — ✅ Complete: POST /api/smarthelper/recommend endpoint fully implemented in api_smarthelper.py. Returns action, amount, GTO frequencies, reasoning, confidence score, factor-based decision reasoning, and net confidence calculation. Includes request/response models with comprehensive validation. Files: `src/pokertool/api_smarthelper.py:174-230`
 - [ ] [P0][M] Implement decision tree logic — Structured decision-making flow. `smarthelper_engine.py:DecisionTree`
 - [ ] [P0][S] Add confidence calculation algorithm — Multi-factor confidence scoring. `smarthelper_engine.py:calculate_confidence`
-- [ ] [P1][M] Create factor weight configuration — Configurable weights for each decision factor. `smarthelper_engine.py:FactorWeights`
+- [x] [P1][M] Create factor weight configuration — ✅ Complete: Created configurable FactorWeights class with 5 predefined profiles (balanced, gto, exploitative, conservative, aggressive), property-based get/set for all weights, validation, save/load from JSON, and SmartHelperEngine integration with methods to update weights and switch profiles dynamically. File: `src/pokertool/smarthelper_engine.py:108-297`
 - [ ] [P1][M] Add caching for recommendations — Cache recommendations for identical game states (5s TTL). `smarthelper_engine.py:RecommendationCache`
 - [ ] [P1][S] Implement recommendation validation — Sanity checks on recommendations. `smarthelper_engine.py:validate_recommendation`
 - [ ] [P2][M] Add recommendation logging — Log all recommendations for analysis. `smarthelper_engine.py:log_recommendation`

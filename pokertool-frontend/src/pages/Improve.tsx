@@ -16,6 +16,10 @@ import {
   Alert,
   Tooltip,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -23,6 +27,8 @@ import {
   Add as AddIcon,
   Settings as SettingsIcon,
   Refresh as RefreshIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
 } from '@mui/icons-material';
 
 interface AgentStatus {
@@ -36,6 +42,21 @@ interface AgentStatus {
 
 type AIProvider = 'claude-code' | 'anthropic' | 'openrouter' | 'openai';
 
+// SuperAdmin password hash - SHA-256 hash of the password
+const SUPERADMIN_PASSWORD_HASH = 'afcf0cafd8f0161edc400dc94d14892a3da4862423863be5f6be6b530ca59416';
+
+/**
+ * Hash a string using SHA-256
+ */
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
 const Improve: React.FC = () => {
   // State management
   const [provider, setProvider] = useState<AIProvider>('claude-code');
@@ -47,6 +68,12 @@ const Improve: React.FC = () => {
   ]);
   const [isRunning, setIsRunning] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+
+  // SuperAdmin authentication state
+  const [isSuperAdminEnabled, setIsSuperAdminEnabled] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
 
   // Terminal refs
   const terminal1Ref = useRef<HTMLDivElement>(null);
@@ -60,6 +87,14 @@ const Improve: React.FC = () => {
       setApiKey(savedKey);
     }
   }, [provider]);
+
+  // Check for SuperAdmin session on mount
+  useEffect(() => {
+    const superAdminSession = sessionStorage.getItem('superadmin_enabled');
+    if (superAdminSession === 'true') {
+      setIsSuperAdminEnabled(true);
+    }
+  }, []);
 
   // Provider change handler
   const handleProviderChange = (event: SelectChangeEvent<AIProvider>) => {
@@ -77,6 +112,51 @@ const Improve: React.FC = () => {
       localStorage.setItem(`ai_api_key_${provider}`, apiKey);
       alert('API key saved securely');
     }
+  };
+
+  // SuperAdmin authentication handler
+  const handleSuperAdminAuth = async () => {
+    if (!authPassword) {
+      setAuthError('Please enter a password');
+      return;
+    }
+
+    try {
+      const hashedInput = await hashPassword(authPassword);
+
+      if (hashedInput === SUPERADMIN_PASSWORD_HASH) {
+        setIsSuperAdminEnabled(true);
+        sessionStorage.setItem('superadmin_enabled', 'true');
+        setShowAuthDialog(false);
+        setAuthPassword('');
+        setAuthError('');
+      } else {
+        setAuthError('Invalid password');
+      }
+    } catch (error) {
+      setAuthError('Authentication error');
+      console.error('SuperAdmin auth error:', error);
+    }
+  };
+
+  // Handle SuperAdmin toggle
+  const handleSuperAdminToggle = () => {
+    if (isSuperAdminEnabled) {
+      // Disable SuperAdmin mode
+      setIsSuperAdminEnabled(false);
+      sessionStorage.removeItem('superadmin_enabled');
+    } else {
+      // Show authentication dialog
+      setShowAuthDialog(true);
+      setAuthError('');
+    }
+  };
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setShowAuthDialog(false);
+    setAuthPassword('');
+    setAuthError('');
   };
 
   // Start agents
@@ -144,14 +224,32 @@ const Improve: React.FC = () => {
   return (
     <Box sx={{ p: 3, height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          🚀 AI Development Automation Hub
-          <Chip label="BETA" color="warning" size="small" />
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Autonomous AI agents working in parallel to complete TODO tasks, test, commit, and document changes.
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            🚀 AI Development Automation Hub
+            <Chip label="BETA" color="warning" size="small" />
+            {isSuperAdminEnabled && (
+              <Chip label="SUPERADMIN" color="error" size="small" />
+            )}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Autonomous AI agents working in parallel to complete TODO tasks, test, commit, and document changes.
+          </Typography>
+        </Box>
+
+        {/* SuperAdmin Toggle Button */}
+        <Tooltip title={isSuperAdminEnabled ? "Disable SuperAdmin Mode" : "Enable SuperAdmin Mode"}>
+          <Button
+            variant={isSuperAdminEnabled ? "contained" : "outlined"}
+            color={isSuperAdminEnabled ? "error" : "primary"}
+            startIcon={isSuperAdminEnabled ? <LockOpenIcon /> : <LockIcon />}
+            onClick={handleSuperAdminToggle}
+            sx={{ minWidth: '160px' }}
+          >
+            SuperAdmin
+          </Button>
+        </Tooltip>
       </Box>
 
       {/* Alert for new feature */}
@@ -160,8 +258,15 @@ const Improve: React.FC = () => {
         AI agents will work independently on tasks from your TODO.md file. Always review changes before merging!
       </Alert>
 
+      {/* Disabled overlay when SuperAdmin is not enabled */}
+      {!isSuperAdminEnabled && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <strong>Feature Locked:</strong> This feature requires SuperAdmin authentication. Click the SuperAdmin button to enable.
+        </Alert>
+      )}
+
       {/* Control Panel */}
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper sx={{ p: 2, mb: 2, opacity: isSuperAdminEnabled ? 1 : 0.5, pointerEvents: isSuperAdminEnabled ? 'auto' : 'none' }}>
         <Grid container spacing={2} alignItems="center">
           {/* Add New Task Button */}
           <Grid item>
@@ -169,6 +274,7 @@ const Improve: React.FC = () => {
               variant="outlined"
               startIcon={<AddIcon />}
               onClick={() => alert('Task creator coming soon!')}
+              disabled={!isSuperAdminEnabled}
             >
               Add New Task(s)
             </Button>
@@ -229,6 +335,7 @@ const Improve: React.FC = () => {
                 startIcon={<PlayIcon />}
                 onClick={handleDoActions}
                 sx={{ fontWeight: 'bold' }}
+                disabled={!isSuperAdminEnabled}
               >
                 DoActions
               </Button>
@@ -239,6 +346,7 @@ const Improve: React.FC = () => {
                 size="large"
                 startIcon={<StopIcon />}
                 onClick={handleStopAll}
+                disabled={!isSuperAdminEnabled}
               >
                 Stop All
               </Button>
@@ -247,7 +355,7 @@ const Improve: React.FC = () => {
 
           <Grid item>
             <Tooltip title="Refresh TODO.md">
-              <IconButton>
+              <IconButton disabled={!isSuperAdminEnabled}>
                 <RefreshIcon />
               </IconButton>
             </Tooltip>
@@ -255,7 +363,7 @@ const Improve: React.FC = () => {
 
           <Grid item>
             <Tooltip title="Settings">
-              <IconButton>
+              <IconButton disabled={!isSuperAdminEnabled}>
                 <SettingsIcon />
               </IconButton>
             </Tooltip>
@@ -264,7 +372,7 @@ const Improve: React.FC = () => {
       </Paper>
 
       {/* Agent Terminals Grid */}
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden', opacity: isSuperAdminEnabled ? 1 : 0.5 }}>
         {agents.map((agent, index) => (
           <Paper
             key={agent.id}
@@ -366,6 +474,40 @@ const Improve: React.FC = () => {
           Use git to review and rollback if needed.
         </Typography>
       </Box>
+
+      {/* SuperAdmin Authentication Dialog */}
+      <Dialog open={showAuthDialog} onClose={handleDialogClose} maxWidth="xs" fullWidth>
+        <DialogTitle>SuperAdmin Authentication</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            This feature is restricted to SuperAdmin users only. Please enter the SuperAdmin password to continue.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            type="password"
+            label="Password"
+            value={authPassword}
+            onChange={(e) => setAuthPassword(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSuperAdminAuth();
+              }
+            }}
+            error={!!authError}
+            helperText={authError}
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleSuperAdminAuth} variant="contained" color="primary">
+            Authenticate
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

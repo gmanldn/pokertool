@@ -106,24 +106,230 @@ class SmartHelperRecommendation:
 
 
 class FactorWeights:
-    """Configuration for factor weights"""
-    POT_ODDS_WEIGHT = 1.5
-    POSITION_WEIGHT = 1.2
-    EQUITY_WEIGHT = 2.0
-    OPPONENT_WEIGHT = 1.3
-    STACK_SIZE_WEIGHT = 1.0
-    BOARD_TEXTURE_WEIGHT = 0.8
-    POT_COMMITMENT_WEIGHT = 1.1
+    """Configurable factor weights for SmartHelper decision-making"""
+
+    # Default weight values
+    DEFAULT_WEIGHTS = {
+        'pot_odds': 1.5,
+        'position': 1.2,
+        'equity': 2.0,
+        'opponent': 1.3,
+        'stack_size': 1.0,
+        'board_texture': 0.8,
+        'pot_commitment': 1.1
+    }
+
+    # Predefined profiles
+    PROFILES = {
+        'balanced': {
+            'pot_odds': 1.5,
+            'position': 1.2,
+            'equity': 2.0,
+            'opponent': 1.3,
+            'stack_size': 1.0,
+            'board_texture': 0.8,
+            'pot_commitment': 1.1
+        },
+        'gto': {
+            'pot_odds': 1.8,
+            'position': 1.5,
+            'equity': 2.2,
+            'opponent': 0.8,  # Less weight on opponent reads
+            'stack_size': 1.2,
+            'board_texture': 1.0,
+            'pot_commitment': 0.9
+        },
+        'exploitative': {
+            'pot_odds': 1.2,
+            'position': 1.0,
+            'equity': 1.5,
+            'opponent': 2.5,  # Heavy weight on opponent tendencies
+            'stack_size': 0.9,
+            'board_texture': 0.7,
+            'pot_commitment': 1.0
+        },
+        'conservative': {
+            'pot_odds': 2.0,  # High emphasis on pot odds
+            'position': 1.5,
+            'equity': 2.5,  # Only play strong hands
+            'opponent': 0.5,  # Less bluffing
+            'stack_size': 1.3,
+            'board_texture': 1.2,  # Careful on wet boards
+            'pot_commitment': 0.6  # Less pot committed calls
+        },
+        'aggressive': {
+            'pot_odds': 1.0,
+            'position': 1.8,  # Exploit position more
+            'equity': 1.5,
+            'opponent': 1.5,
+            'stack_size': 0.8,
+            'board_texture': 0.5,  # Aggressive on all boards
+            'pot_commitment': 1.5  # More willing to commit
+        }
+    }
+
+    def __init__(self, profile: str = 'balanced', custom_weights: Optional[Dict[str, float]] = None):
+        """
+        Initialize factor weights
+
+        Args:
+            profile: Name of predefined profile ('balanced', 'gto', 'exploitative', etc.)
+            custom_weights: Optional custom weights to override profile
+        """
+        # Load profile or use default
+        if profile in self.PROFILES:
+            self._weights = self.PROFILES[profile].copy()
+        else:
+            logger.warning(f"Unknown profile '{profile}', using 'balanced'")
+            self._weights = self.PROFILES['balanced'].copy()
+
+        # Override with custom weights if provided
+        if custom_weights:
+            self._weights.update(custom_weights)
+
+        # Validate weights
+        self._validate_weights()
+
+    def _validate_weights(self):
+        """Validate that all weights are in valid range"""
+        for key, value in self._weights.items():
+            if not isinstance(value, (int, float)):
+                raise ValueError(f"Weight '{key}' must be a number, got {type(value)}")
+            if value < 0 or value > 10:
+                logger.warning(f"Weight '{key}' = {value} is outside recommended range [0, 10]")
+
+    @property
+    def POT_ODDS_WEIGHT(self) -> float:
+        return self._weights['pot_odds']
+
+    @POT_ODDS_WEIGHT.setter
+    def POT_ODDS_WEIGHT(self, value: float):
+        self._weights['pot_odds'] = value
+        self._validate_weights()
+
+    @property
+    def POSITION_WEIGHT(self) -> float:
+        return self._weights['position']
+
+    @POSITION_WEIGHT.setter
+    def POSITION_WEIGHT(self, value: float):
+        self._weights['position'] = value
+        self._validate_weights()
+
+    @property
+    def EQUITY_WEIGHT(self) -> float:
+        return self._weights['equity']
+
+    @EQUITY_WEIGHT.setter
+    def EQUITY_WEIGHT(self, value: float):
+        self._weights['equity'] = value
+        self._validate_weights()
+
+    @property
+    def OPPONENT_WEIGHT(self) -> float:
+        return self._weights['opponent']
+
+    @OPPONENT_WEIGHT.setter
+    def OPPONENT_WEIGHT(self, value: float):
+        self._weights['opponent'] = value
+        self._validate_weights()
+
+    @property
+    def STACK_SIZE_WEIGHT(self) -> float:
+        return self._weights['stack_size']
+
+    @STACK_SIZE_WEIGHT.setter
+    def STACK_SIZE_WEIGHT(self, value: float):
+        self._weights['stack_size'] = value
+        self._validate_weights()
+
+    @property
+    def BOARD_TEXTURE_WEIGHT(self) -> float:
+        return self._weights['board_texture']
+
+    @BOARD_TEXTURE_WEIGHT.setter
+    def BOARD_TEXTURE_WEIGHT(self, value: float):
+        self._weights['board_texture'] = value
+        self._validate_weights()
+
+    @property
+    def POT_COMMITMENT_WEIGHT(self) -> float:
+        return self._weights['pot_commitment']
+
+    @POT_COMMITMENT_WEIGHT.setter
+    def POT_COMMITMENT_WEIGHT(self, value: float):
+        self._weights['pot_commitment'] = value
+        self._validate_weights()
+
+    def get_all_weights(self) -> Dict[str, float]:
+        """Get all current weights as dictionary"""
+        return self._weights.copy()
+
+    def update_weights(self, weights: Dict[str, float]):
+        """Update multiple weights at once"""
+        self._weights.update(weights)
+        self._validate_weights()
+
+    def load_profile(self, profile: str):
+        """Load a predefined profile"""
+        if profile not in self.PROFILES:
+            raise ValueError(f"Unknown profile '{profile}'. Available: {list(self.PROFILES.keys())}")
+        self._weights = self.PROFILES[profile].copy()
+        logger.info(f"Loaded profile: {profile}")
+
+    def save_to_file(self, filepath: str):
+        """Save current weights to JSON file"""
+        import json
+        with open(filepath, 'w') as f:
+            json.dump(self._weights, f, indent=2)
+        logger.info(f"Saved weights to {filepath}")
+
+    def load_from_file(self, filepath: str):
+        """Load weights from JSON file"""
+        import json
+        with open(filepath, 'r') as f:
+            self._weights = json.load(f)
+        self._validate_weights()
+        logger.info(f"Loaded weights from {filepath}")
+
+    def __repr__(self) -> str:
+        """String representation of weights"""
+        return f"FactorWeights({', '.join(f'{k}={v}' for k, v in self._weights.items())})"
 
 
 class SmartHelperEngine:
     """Main recommendation engine"""
 
-    def __init__(self):
-        self.weights = FactorWeights()
+    def __init__(self, weight_profile: str = 'balanced', custom_weights: Optional[Dict[str, float]] = None):
+        """
+        Initialize SmartHelper engine
+
+        Args:
+            weight_profile: Weight profile to use ('balanced', 'gto', 'exploitative', 'conservative', 'aggressive')
+            custom_weights: Optional custom weight overrides
+        """
+        self.weights = FactorWeights(profile=weight_profile, custom_weights=custom_weights)
         self._cache: Dict[str, Tuple[SmartHelperRecommendation, float]] = {}
         self._cache_ttl = 5.0  # 5 second TTL
         self._recommendation_log: List[Dict[str, Any]] = []
+
+    def update_factor_weights(self, weights: Dict[str, float]):
+        """Update factor weights dynamically"""
+        self.weights.update_weights(weights)
+        # Clear cache since weights changed
+        self._cache.clear()
+        logger.info(f"Updated factor weights: {weights}")
+
+    def load_weight_profile(self, profile: str):
+        """Load a predefined weight profile"""
+        self.weights.load_profile(profile)
+        # Clear cache since weights changed
+        self._cache.clear()
+        logger.info(f"Loaded weight profile: {profile}")
+
+    def get_current_weights(self) -> Dict[str, float]:
+        """Get current factor weights"""
+        return self.weights.get_all_weights()
 
     def _generate_cache_key(self, game_state: GameState) -> str:
         """Generate cache key from game state"""
