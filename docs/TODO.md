@@ -718,8 +718,8 @@ Conventions
 ### 5. UI/UX Polish (30 tasks)
 
 #### Layout & Design (12 tasks)
-- [ ] [P0][M] Create MicroChartsGrid layout — Responsive grid for all analytics components. `pokertool-frontend/src/components/smarthelper/MicroChartsGrid.tsx`
-- [ ] [P0][S] Add panel collapsing — Allow users to collapse/expand sections. `MicroChartsGrid.tsx:Collapsible`
+- [x] [P0][M] Create MicroChartsGrid layout — ✅ Complete: Comprehensive responsive grid layout component with Material-UI Grid system. Integrates EquityChart, PotOddsVisual, PositionStatsCard, and OpponentTendencyHeatmap components. Supports collapsible panels with individual expand/collapse states, expand all/collapse all controls, customizable panel visibility, default expanded panels configuration, and CSS module styling with animations. Files: `pokertool-frontend/src/components/smarthelper/MicroChartsGrid.tsx` (200+ lines), `MicroChartsGrid.module.css`, `MicroChartsGrid.module.css.d.ts`
+- [x] [P0][S] Add panel collapsing — ✅ Complete: Implemented in MicroChartsGrid.tsx with accordion-based panels, individual toggle handlers, and expand all/collapse all buttons
 - [ ] [P0][S] Implement panel reordering — Drag-and-drop to reorder panels. `MicroChartsGrid.tsx:DragDrop`
 - [ ] [P1][M] Create mobile-optimized layout — Vertical stacking on mobile devices. `MicroChartsGrid.module.css:mobile`
 - [ ] [P1][S] Add dark mode support — Ensure all components work in dark mode. `components/smarthelper/*.module.css:dark`
