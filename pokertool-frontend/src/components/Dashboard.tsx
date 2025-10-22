@@ -76,7 +76,7 @@ interface SessionStats {
   duration: string;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
+export const Dashboard: React.FC<DashboardProps> = React.memo(({ messages }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Use RELEASE_VERSION which is auto-synced from VERSION file in git
@@ -468,4 +468,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
       )}
     </Box>
   );
-};
+});
+
+Dashboard.displayName = 'Dashboard';
