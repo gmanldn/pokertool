@@ -76,7 +76,7 @@ Conventions
 
 ### Testing Infrastructure (P2)
 - [ ] [P2][M] Chaos engineering tests — Add tests that simulate failures: database unavailable, network timeouts, high CPU load, memory pressure. Verify graceful degradation. Use `pytest-chaos`.
-- [ ] [P2][S] Mutation testing setup — Run `mutmut` on core modules to identify weak tests. Target 80%+ mutation score for critical paths (`src/pokertool/core.py`, `src/pokertool/database.py`).
+- [x] [P2][S] Mutation testing setup — ✅ Complete: Installed mutmut>=2.4.0 in requirements.txt. Created `.mutmut_config.py` with targeted modules (core.py, database.py, equity_calculator.py, gto_calculator.py, rbac.py, input_validator.py). Added 4 Makefile targets: `make mutation-test` (all modules), `make mutation-test-core` (core.py only), `make mutation-test-html` (generate reports), `make mutation-test-reset` (clear cache). Documentation: `docs/testing/MUTATION_TESTING.md` with comprehensive guide covering mutation types, interpretation, best practices, troubleshooting, CI/CD integration, and target scores (80-85%). Target: 80%+ mutation score for critical paths.
 - [ ] [P2][M] E2E testing with Playwright — Add end-to-end tests covering full user workflows: login, view dashboard, analyze hand, check stats. Run in CI with headless browser.
 - [ ] [P2][S] Property-based testing — Add Hypothesis tests for poker engine to catch edge cases. Test properties like: "any hand has valid equity 0-100%", "pot odds are always positive".
 - [ ] [P2][M] Performance regression testing — Add benchmark tests that fail if API endpoints regress >20%. Use `pytest-benchmark`. Track p50/p95/p99 latencies over time.
