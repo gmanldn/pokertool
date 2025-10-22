@@ -543,7 +543,7 @@ class BetfairPokerDetector:
                                 details['table_axes'] = (int(major), int(minor))
                                 break
             except Exception as e:
-                logger.debug(f"Ellipse detection error: {e}")
+                logger.info(f"Ellipse detection error: {e}")
                 ellipse_conf = 0.0
             details['ellipse_confidence'] = ellipse_conf
 
@@ -597,6 +597,12 @@ class BetfairPokerDetector:
 
         except Exception as exc:
             logger.error(f"Betfair detection error: {exc}")
+            emit_detection_event(
+                event_type='error',
+                severity='error',
+                message=f"Betfair detection error: {exc}",
+                data={'error': str(exc), 'error_type': type(exc).__name__}
+            )
             return DetectionResult(False, 0.0, {'error': str(exc)}, 0.0)
     
     def _update_calibration(self, hsv: np.ndarray):
@@ -1230,6 +1236,12 @@ class UniversalPokerDetector:
             
         except Exception as e:
             logger.error(f"Universal detection error: {e}")
+            emit_detection_event(
+                event_type='error',
+                severity='error',
+                message=f"Universal detection error: {e}",
+                data={'error': str(e), 'error_type': type(e).__name__}
+            )
             return DetectionResult(False, 0.0, {'error': str(e)}, 0.0)
 
 
@@ -1738,7 +1750,7 @@ class PokerScreenScraper:
             # Instead, attempt to extract data anyway and let the caller decide
             if not is_poker:
                 # Still try to extract data - just mark confidence as low
-                logger.debug(f"[TABLE DETECTION] Low confidence detection ({confidence:.1%}), extracting partial data anyway")
+                logger.info(f"[TABLE DETECTION] Low confidence detection ({confidence:.1%}), extracting partial data anyway")
                 # Continue with extraction below
 
             # Log detection info (only periodically to avoid spam)
@@ -1817,6 +1829,39 @@ class PokerScreenScraper:
                 state.board_cards = self._extract_board_cards(image)
                 state.small_blind, state.big_blind, state.ante = self._extract_blinds(image)
 
+            # Emit detection events for successful extractions
+            if state.pot_size > 0:
+                emit_detection_event(
+                    event_type='pot',
+                    severity='info',
+                    message=f"Pot detected: ${state.pot_size:.2f}",
+                    data={'pot_size': state.pot_size}
+                )
+
+            if state.hero_cards:
+                hero_cards_str = ', '.join([str(c) for c in state.hero_cards])
+                emit_detection_event(
+                    event_type='card',
+                    severity='success',
+                    message=f"Hero cards detected: {hero_cards_str}",
+                    data={
+                        'card_count': len(state.hero_cards),
+                        'cards': [{'rank': c.rank, 'suit': c.suit} for c in state.hero_cards]
+                    }
+                )
+
+            if state.board_cards:
+                board_cards_str = ', '.join([str(c) for c in state.board_cards])
+                emit_detection_event(
+                    event_type='card',
+                    severity='info',
+                    message=f"Board cards detected: {board_cards_str}",
+                    data={
+                        'card_count': len(state.board_cards),
+                        'cards': [{'rank': c.rank, 'suit': c.suit} for c in state.board_cards]
+                    }
+                )
+
             # Logging
             if should_log_details:
                 logger.info(f"💰 POT: ${state.pot_size:.2f}")
@@ -1851,6 +1896,29 @@ class PokerScreenScraper:
             with telemetry_section('scraper', 'extract_seat_info'):
                 state.seats = self._extract_seat_info(image)
             state.active_players = sum(1 for seat in state.seats if seat.is_active)
+
+            # Emit player detection event
+            if state.active_players > 0:
+                active_seats = [seat for seat in state.seats if seat.is_active]
+                emit_detection_event(
+                    event_type='player',
+                    severity='info',
+                    message=f"{state.active_players} players detected",
+                    data={
+                        'active_players': state.active_players,
+                        'players': [
+                            {
+                                'seat': seat.seat_number,
+                                'name': seat.player_name,
+                                'stack': seat.stack_size,
+                                'position': seat.position,
+                                'is_hero': seat.is_hero,
+                                'is_dealer': seat.is_dealer
+                            }
+                            for seat in active_seats[:5]  # Limit to first 5 to avoid huge payloads
+                        ]
+                    }
+                )
 
             if should_log_details:
                 for seat in state.seats:
@@ -2407,9 +2475,9 @@ class PokerScreenScraper:
                 from pokertool.user_config import get_poker_handle
                 configured_handle = get_poker_handle()
                 if configured_handle:
-                    logger.debug(f"Using configured poker handle for hero detection: {configured_handle}")
+                    logger.info(f"Using configured poker handle for hero detection: {configured_handle}")
             except Exception as e:
-                logger.debug(f"Could not load poker handle: {e}")
+                logger.info(f"Could not load poker handle: {e}")
 
             h, w = image.shape[:2]
             if h == 0 or w == 0:

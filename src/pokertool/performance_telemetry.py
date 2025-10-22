@@ -36,6 +36,7 @@ from __future__ import annotations
 import sqlite3
 import zlib
 import json
+import logging
 import time
 import threading
 import os
@@ -46,6 +47,8 @@ from functools import wraps
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 # Optional dependency for system metrics
 try:
@@ -303,7 +306,7 @@ class PerformanceTelemetry:
                     """, [entry.to_db_tuple() for entry in entries])
                     conn.commit()
             except Exception as e:
-                print(f"Telemetry flush error: {e}")
+                logger.error(f"Telemetry flush error: {e}", exc_info=True)
 
     def _flush_loop(self):
         """Background thread to flush buffer periodically."""
@@ -341,7 +344,7 @@ class PerformanceTelemetry:
                     conn.execute("VACUUM")
                     conn.commit()
             except Exception as e:
-                print(f"Telemetry cleanup error: {e}")
+                logger.error(f"Telemetry cleanup error: {e}", exc_info=True)
 
     def shutdown(self):
         """Shutdown telemetry system."""
@@ -471,7 +474,7 @@ def init_telemetry(db_path: Path = TELEMETRY_DB_PATH) -> PerformanceTelemetry:
     with _telemetry_lock:
         if _telemetry_instance is None:
             _telemetry_instance = PerformanceTelemetry(db_path)
-            print(f"✓ Performance telemetry initialized: {db_path}")
+            logger.info(f"Performance telemetry initialized: {db_path}")
         return _telemetry_instance
 
 

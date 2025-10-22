@@ -59,6 +59,11 @@ class Permission(str, Enum):
     ACCESS_API = "access:api"
     ADMIN_API = "admin:api"
 
+    # AI and LangChain features
+    USE_AI_ANALYSIS = "use:ai_analysis"
+    USE_AI_CHAT = "use:ai_chat"
+    MANAGE_AI_DATA = "manage:ai_data"
+
     # System administration
     MANAGE_SYSTEM = "manage:system"
     VIEW_LOGS = "view:logs"
@@ -139,6 +144,8 @@ class RBACSystem:
                 Permission.USE_TRAINER,
                 Permission.VIEW_ANALYTICS,
                 Permission.ACCESS_API,
+                Permission.USE_AI_ANALYSIS,
+                Permission.USE_AI_CHAT,
             },
             inherits_from=[Role.GUEST]
         )
@@ -150,6 +157,7 @@ class RBACSystem:
             {
                 Permission.DELETE_DATABASE,
                 Permission.EXPORT_ANALYTICS,
+                Permission.MANAGE_AI_DATA,
             },
             inherits_from=[Role.USER]
         )

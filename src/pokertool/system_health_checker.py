@@ -1137,7 +1137,7 @@ async def check_region_extraction_health() -> HealthStatus:
         )
 
 
-def register_all_health_checks(checker: SystemHealthChecker):
+def register_all_health_checks(checker: SystemHealthChecker) -> None:
     """Register all health checks with the checker."""
 
     # Backend Core Checks

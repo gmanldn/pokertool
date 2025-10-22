@@ -15,10 +15,11 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request, status
 from pydantic import BaseModel, Field
 
 from pokertool.langchain_memory_service import get_langchain_service, LangChainMemoryService
+from pokertool.rbac import Permission, require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +103,7 @@ def get_service() -> LangChainMemoryService:
 
 # API Endpoints
 
-@router.post("/analyze_hand", response_model=HandAnalysisResponse)
+@router.post("/analyze_hand", response_model=HandAnalysisResponse, dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
 async def analyze_hand(
     request: HandAnalysisRequest,
     service: LangChainMemoryService = Depends(get_service)
@@ -146,7 +147,7 @@ async def analyze_hand(
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
-@router.post("/store_hand")
+@router.post("/store_hand", dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
 async def store_hand(
     request: StoreHandRequest,
     service: LangChainMemoryService = Depends(get_service)
@@ -193,7 +194,7 @@ async def store_hand(
         raise HTTPException(status_code=500, detail=f"Storage failed: {str(e)}")
 
 
-@router.post("/opponent_note", response_model=OpponentNoteResponse)
+@router.post("/opponent_note", response_model=OpponentNoteResponse, dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
 async def add_opponent_note(
     request: OpponentNoteRequest,
     service: LangChainMemoryService = Depends(get_service)
@@ -239,7 +240,7 @@ async def add_opponent_note(
         raise HTTPException(status_code=500, detail=f"Note storage failed: {str(e)}")
 
 
-@router.get("/opponent_notes/{player_name}")
+@router.get("/opponent_notes/{player_name}", dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
 async def get_opponent_notes(
     player_name: str,
     limit: int = Query(10, description="Maximum number of notes", ge=1, le=100),
@@ -271,7 +272,7 @@ async def get_opponent_notes(
         raise HTTPException(status_code=500, detail=f"Retrieval failed: {str(e)}")
 
 
-@router.post("/search_similar", response_model=List[Dict[str, Any]])
+@router.post("/search_similar", response_model=List[Dict[str, Any]], dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
 async def search_similar_hands(
     query: SimilarHandsQuery,
     service: LangChainMemoryService = Depends(get_service)
@@ -306,7 +307,7 @@ async def search_similar_hands(
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/chat", response_model=ChatResponse, dependencies=[Depends(require_permission(Permission.USE_AI_CHAT))])
 async def chat_about_poker(
     request: ChatRequest,
     service: LangChainMemoryService = Depends(get_service)
@@ -352,7 +353,7 @@ async def chat_about_poker(
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
 
 
-@router.get("/stats", response_model=ServiceStatsResponse)
+@router.get("/stats", response_model=ServiceStatsResponse, dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
 async def get_service_stats(
     service: LangChainMemoryService = Depends(get_service)
 ) -> ServiceStatsResponse:
@@ -377,7 +378,7 @@ async def get_service_stats(
         raise HTTPException(status_code=500, detail=f"Stats retrieval failed: {str(e)}")
 
 
-@router.delete("/hand/{hand_id}")
+@router.delete("/hand/{hand_id}", dependencies=[Depends(require_permission(Permission.MANAGE_AI_DATA))])
 async def delete_hand(
     hand_id: str,
     service: LangChainMemoryService = Depends(get_service)
@@ -409,7 +410,7 @@ async def delete_hand(
         raise HTTPException(status_code=500, detail=f"Deletion failed: {str(e)}")
 
 
-@router.post("/memory/clear")
+@router.post("/memory/clear", dependencies=[Depends(require_permission(Permission.MANAGE_AI_DATA))])
 async def clear_memory(
     service: LangChainMemoryService = Depends(get_service)
 ) -> Dict[str, str]:

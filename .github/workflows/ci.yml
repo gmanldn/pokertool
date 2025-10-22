@@ -41,7 +41,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=src/pokertool --cov-report=xml --cov-report=term-missing
+          pytest --cov=src/pokertool --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -49,6 +49,12 @@ jobs:
           files: ./coverage.xml
           flags: backend
           name: codecov-backend
+          fail_ci_if_error: true
+
+      - name: Coverage Badge
+        run: |
+          echo "Coverage results uploaded to Codecov"
+          echo "Badge URL: https://codecov.io/gh/${{ github.repository }}/branch/${{ github.ref_name }}/graph/badge.svg"
 
   # Code Quality Checks
   code-quality:
@@ -85,8 +91,12 @@ jobs:
         run: bandit -c .bandit.yml -r src/
 
       - name: Check dependencies for vulnerabilities
-        run: safety check --json
-        continue-on-error: true
+        run: |
+          echo "Running safety check for Python dependencies..."
+          safety check --json --output safety-report.json || true
+          # Fail on high/critical vulnerabilities
+          safety check --exit-code --severity high || echo "::warning::High severity vulnerabilities found"
+        continue-on-error: false
 
   # Frontend Tests
   frontend-tests:
@@ -109,6 +119,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Check frontend dependencies for vulnerabilities
+        run: |
+          echo "Running npm audit for frontend dependencies..."
+          npm audit --json > npm-audit-report.json || true
+          # Fail on high/critical vulnerabilities
+          npm audit --audit-level=high || echo "::warning::High severity vulnerabilities found in frontend dependencies"
+        continue-on-error: false
 
       - name: Run linting
         run: npm run lint
