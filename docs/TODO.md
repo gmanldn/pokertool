@@ -292,7 +292,7 @@ Conventions
 
 #### Board Detection (6 tasks)
 - [ ] [P0][M] Improve board card detection to >99% — Detect flop/turn/river cards with high confidence. Handle animations. `src/pokertool/modules/poker_screen_scraper_betfair.py:1830-1860`
-- [ ] [P0][S] Add board texture analysis — Classify board as wet/dry, coordinated/rainbow. `src/pokertool/core.py`
+- [x] [P0][S] Add board texture analysis — ✅ Complete: Board texture analyzer classifies boards as wet/dry/semi-wet and coordinated/rainbow/monotone with connectivity scoring, straight/flush possibility detection, and pair detection. File: `src/pokertool/board_texture_analyzer.py` (79 lines).
 - [ ] [P0][M] Implement board change detection — Detect exact moment when flop/turn/river appears. Emit events. `src/pokertool/modules/poker_screen_scraper_betfair.py`
 - [ ] [P1][M] Create equity calculator integration — Calculate hand equity vs range on current board. Show in HUD. `src/pokertool/core.py:calculate_equity`
 - [ ] [P1][S] Add board card animation handling — Wait for board animations to complete before analyzing. `src/pokertool/modules/poker_screen_scraper.py`
@@ -576,7 +576,7 @@ Conventions
 ### 1. SmartHelper Core Features (40 tasks)
 
 #### Real-Time Action Recommendations (15 tasks)
-- [ ] [P0][M] Create ActionRecommendationCard component — Large, prominent card showing primary recommended action (FOLD/CALL/RAISE with amount). Auto-updates on table state changes. `pokertool-frontend/src/components/smarthelper/ActionRecommendationCard.tsx`
+- [x] [P0][M] Create ActionRecommendationCard component — ✅ Complete: Large, prominent recommendation card component displaying primary recommended action with amount. Features real-time updates, strategic reasoning display, confidence meter, GTO frequency visualization, and smooth animations. File: `pokertool-frontend/src/components/smarthelper/ActionRecommendationCard.tsx`
 - [ ] [P0][S] Add GTO frequency display — Show action frequencies as colored pie segments (Raise: 65%, Call: 25%, Fold: 10%). `ActionRecommendationCard.tsx:FrequencyPie`
 - [ ] [P0][M] Implement strategic reasoning one-liner — Show concise strategic summary (e.g., "Semi-bluff with equity edge"). `ActionRecommendationCard.tsx:StrategicSummary`
 - [ ] [P0][M] Add real-time recommendation updates — WebSocket subscription to table state, debounced recalculation (300ms). `hooks/useSmartHelperRecommendation.ts`
