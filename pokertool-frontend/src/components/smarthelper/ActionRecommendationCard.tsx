@@ -5,7 +5,7 @@
  * strategic reasoning, and confidence metrics.
  */
 import React, { useState } from 'react';
-import { Box, Paper, Typography, Chip, LinearProgress, Tooltip, IconButton, Snackbar } from '@mui/material';
+import { Box, Paper, Typography, Chip, LinearProgress, Tooltip, IconButton } from '@mui/material';
 import { TrendingUp, TrendingDown, Remove, ContentCopy, Check } from '@mui/icons-material';
 
 export type PokerAction = 'FOLD' | 'CHECK' | 'CALL' | 'BET' | 'RAISE' | 'ALL_IN';
