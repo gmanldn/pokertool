@@ -111,8 +111,8 @@ Conventions
 - [ ] [P0][M] Add provider benchmarking — Track task completion time, success rate, cost per provider. Show recommendations. `components/improve/ProviderBenchmarks.tsx`
 
 #### API Key Management (4 tasks)
-- [ ] [P0][M] Implement secure key storage — Encrypt API keys in localStorage using Web Crypto API. Never send to backend. `utils/secureKeyStorage.ts`
-- [ ] [P0][S] Add key validation — Test API keys before saving. Show provider status (valid/invalid/quota exceeded). `Improve.tsx:KeyValidation`
+- [x] [P0][M] Implement secure key storage — ✅ Complete: AES-GCM 256-bit encryption with PBKDF2 key derivation, per-provider encrypted storage `utils/secureKeyStorage.ts`
+- [x] [P0][S] Add key validation — ✅ Complete: Real-time validation for all providers with status detection (valid/invalid/quota/rate limited) `utils/apiKeyValidation.ts`
 - [ ] [P0][S] Create key management modal — View/edit/delete saved keys. Support multiple keys per provider. `components/improve/KeyManagementModal.tsx`
 - [ ] [P0][M] Add environment variable fallback — If no UI key, check environment variables (ANTHROPIC_API_KEY, etc.). `backend: api_key_resolver.py`
 
