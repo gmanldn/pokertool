@@ -1,10 +1,18 @@
-.PHONY: load-test load-test-headless load-test-quick help
+.PHONY: load-test load-test-headless load-test-quick mutation-test mutation-test-core mutation-test-html mutation-test-reset help
 
 help:
-	@echo "PokerTool Load Testing Commands:"
+	@echo "PokerTool Testing Commands:"
+	@echo ""
+	@echo "Load Testing:"
 	@echo "  make load-test          - Run load test with web UI (recommended)"
 	@echo "  make load-test-headless - Run headless load test (100 users, 60s)"
 	@echo "  make load-test-quick    - Quick smoke test (10 users, 30s)"
+	@echo ""
+	@echo "Mutation Testing:"
+	@echo "  make mutation-test      - Run mutation tests on all configured modules"
+	@echo "  make mutation-test-core - Run mutation tests on core.py only (faster)"
+	@echo "  make mutation-test-html - Generate HTML report from last run"
+	@echo "  make mutation-test-reset - Reset mutation testing cache"
 
 load-test:
 	@echo "Starting Locust load test with web UI..."

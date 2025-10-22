@@ -49,6 +49,7 @@ import { WebSocketMessage } from '../hooks/useWebSocket';
 import { SessionGoalsTracker } from './SessionGoalsTracker';
 import { SessionClock } from './SessionClock';
 import { RELEASE_VERSION } from '../config/releaseVersion';
+import { NoHandsEmptyState } from './EmptyState';
 
 ChartJS.register(
   CategoryScale,
@@ -214,7 +215,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
   return (
     <Box sx={{ flexGrow: 1, p: isMobile ? 2 : 3 }}>
       {loading && <LinearProgress />}
-      
+
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center" gap={2}>
           <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold">
@@ -250,6 +251,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         </Box>
       </Box>
 
+      {/* Show empty state when no hands have been played */}
+      {stats.handsPlayed === 0 && !loading && (
+        <NoHandsEmptyState onAction={handleRefresh} />
+      )}
+
+      {/* Show dashboard content when hands have been played */}
+      {stats.handsPlayed > 0 && (
       <Grid container spacing={3}>
         {/* Session Clock */}
         <Grid item xs={12} md={6}>
@@ -457,6 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
           </Paper>
         </Grid>
       </Grid>
+      )}
     </Box>
   );
 };
