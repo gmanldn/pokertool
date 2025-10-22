@@ -441,7 +441,7 @@ Conventions
 ### 5. Database Enhancements (40 tasks)
 
 #### New Data Capture (12 tasks)
-- [ ] [P0][M] Add detection confidence scores to database — Store confidence for every detection. Query low-confidence hands. `src/pokertool/database.py:detection_confidence`
+- [x] [P0][M] Add detection confidence scores to database — ✅ Complete: Added confidence_score column (REAL, 0.0-1.0) to poker_hands table in both PostgreSQL and SQLite. Updated save_hand_analysis() to accept optional confidence_score parameter with validation. Updated get_recent_hands() to include confidence in results. Created migration script for existing databases. Files: `src/pokertool/database.py:265,367-424,440-457,553-576`, `src/pokertool/storage.py:96,230-279,291`, `src/pokertool/migrations/add_confidence_score.py`
 - [ ] [P0][S] Store complete detection timeline — Save all detection events per hand. Replay capability. `src/pokertool/database.py:detection_timeline`
 - [ ] [P0][M] Add player position to all hand records — Store position for every action. Position-based queries. `src/pokertool/database.py:player_position`
 - [ ] [P0][S] Store board texture classifications — Save board as wet/dry/coordinated. Analyze by texture. `src/pokertool/database.py:board_texture`
