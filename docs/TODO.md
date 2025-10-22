@@ -37,61 +37,61 @@ Conventions
 - [ ] [P0][S] Add API key input field — Secure input for API keys (masked, encrypted in localStorage). Show different fields based on provider. Validate keys before use. `Improve.tsx:APIKeyInput`
 - [ ] [P0][M] Create three embedded terminal windows — Split view with 3 terminal emulators using xterm.js. Resizable panels. Each terminal tracks separate AI agent. `Improve.tsx:TerminalGrid`
 - [ ] [P0][S] Add "DoActions" button — Primary action button to spawn all 3 AI agents simultaneously. Disabled state when no API key or agents already running. `Improve.tsx:DoActionsButton`
-- [ ] [P0][M] Implement agent status indicators — Live status badges for each terminal (idle/loading tasks/working/committing/done/error). Color-coded with animations. `components/improve/AgentStatusBadge.tsx`
-- [ ] [P0][M] Add kill/pause controls — Individual stop/pause buttons per agent. Emergency stop all button. `Improve.tsx:AgentControls`
+- [x] [P0][M] Implement agent status indicators — ✅ Complete: Live status badges with color-coded animations for all agent phases `components/improve/AgentStatusBadge.tsx`
+- [x] [P0][M] Add kill/pause controls — ✅ Complete: Individual stop/pause/resume buttons and emergency stop all functionality `Improve.tsx:AgentControls`
 
 #### Terminal Integration (7 tasks)
 - [x] [P0][M] Integrate xterm.js library — ✅ Complete: Installed @xterm/xterm, integrated into Improve.tsx terminals. `pokertool-frontend/src/pages/Improve.tsx`
-- [ ] [P0][M] Create WebSocket terminal bridge — Backend WebSocket endpoint `/ws/improve/terminal/{agent_id}` for bidirectional terminal communication. `src/pokertool/api_improve.py:terminal_websocket`
+- [x] [P0][M] Create WebSocket terminal bridge — ✅ Complete: Full WebSocket API with terminal communication and agent control endpoints `src/pokertool/api_improve.py:terminal_websocket`
 - [x] [P0][S] Add terminal output formatting — ✅ Complete: ANSI color parsing, clickable paths, timestamp prefixes. `pokertool-frontend/src/utils/terminalFormatter.ts`
 - [x] [P0][S] Implement terminal scrollback — ✅ Complete: 10,000 line buffer, integrated into terminal components. `Improve.tsx:TerminalScrollback`
-- [ ] [P0][M] Add terminal copy/paste — Right-click context menu for copy. Ctrl+C to copy selection. `components/improve/TerminalContextMenu.tsx`
+- [x] [P0][M] Add terminal copy/paste — ✅ Complete: Right-click context menu with copy, paste, select all, and clear options `components/improve/TerminalContextMenu.tsx`
 - [x] [P0][S] Create terminal search — ✅ Complete: Ctrl+F search with xterm addon, highlight matches. `Improve.tsx:TerminalSearch`
 - [x] [P0][M] Add terminal logging — ✅ Complete: Full ImproveLogger with rotating/timed handlers, log_terminal_output(), log_agent_action(), log_error(), compress_old_logs(), tail_log(), search_logs(). Daily rotation, 30-day retention. `src/pokertool/improve_logger.py`
 
 ### 2. AI Agent Orchestration (15 tasks)
 
 #### Agent Manager Backend (8 tasks)
-- [ ] [P0][L] Create AIAgentManager class — Core orchestration engine for managing 3 parallel AI agents. `src/pokertool/ai_agent_manager.py`
-- [ ] [P0][M] Implement task assignment strategy — Agent 1: Top 20 tasks from TODO.md. Agent 2: Bottom 20 tasks. Agent 3: Random 20 tasks (weighted by priority). `ai_agent_manager.py:TaskAssignment`
+- [x] [P0][L] Create AIAgentManager class — ✅ Complete: Full orchestration engine with parallel agent management, callbacks, and complete execution loop `src/pokertool/ai_agent_manager.py`
+- [x] [P0][M] Implement task assignment strategy — ✅ Complete: All three strategies (top, bottom, random weighted) implemented in AIAgentManager.load_tasks() `ai_agent_manager.py:TaskAssignment`
 - [x] [P0][M] Add TODO.md parser — ✅ Complete: Comprehensive parser with regex matching, priority/effort extraction, section tracking, task filtering, statistics, search, and weighted random selection. Supports top/bottom/random task selection for 3 agents. `src/pokertool/todo_parser.py`
 - [x] [P0][M] Create task queue system — ✅ Complete: AgentTaskQueue with priority queue, get_next_task(), mark_complete(), task redistribution support. `src/pokertool/task_queue.py`
 - [x] [P0][M] Implement AI provider abstraction — ✅ Complete: BaseAIProvider abstract class, ProviderType enum, unified interface for all providers. `src/pokertool/ai_providers/base_provider.py`
-- [ ] [P0][M] Add Claude Code integration — Spawn Claude Code CLI as subprocess. Parse JSON responses. `ai_providers/claude_code_provider.py`
-- [ ] [P0][M] Add Anthropic API integration — Direct API calls to Claude 3.5 Sonnet. Streaming responses. `ai_providers/anthropic_provider.py`
-- [ ] [P0][M] Add OpenRouter/OpenAI integration — Support for alternative LLM providers. Unified prompt format. `ai_providers/openrouter_provider.py`, `ai_providers/openai_provider.py`
+- [x] [P0][M] Add Claude Code integration — ✅ Complete: Full CLI integration with subprocess management, JSON parsing, and task execution `ai_providers/claude_code_provider.py`
+- [x] [P0][M] Add Anthropic API integration — ✅ Complete: Direct Messages API integration with streaming support and task execution `ai_providers/anthropic_provider.py`
+- [x] [P0][M] Add OpenRouter/OpenAI integration — ✅ Complete: Both providers implemented with multi-model support and function calling `ai_providers/openrouter_provider.py`, `ai_providers/openai_provider.py`
 
 #### Agent Execution Engine (7 tasks)
-- [ ] [P0][L] Implement agent execution loop — Main loop: fetch task → plan → execute → test → commit → update TODO → repeat. `ai_agent_manager.py:AgentExecutionLoop`
-- [ ] [P0][M] Add planning phase — Agent analyzes task, creates step-by-step plan. User can approve/modify plan before execution. `ai_agent_manager.py:PlanningPhase`
-- [ ] [P0][M] Implement code execution phase — Agent executes plan: edits files, runs commands, installs packages. Sandbox for safety. `ai_agent_manager.py:ExecutionPhase`
-- [ ] [P0][M] Add testing phase — Automatically run relevant tests after changes. Require tests to pass before commit. `ai_agent_manager.py:TestingPhase`
-- [ ] [P0][M] Create commit automation — Auto-generate commit messages following conventional commits. Include task reference. `ai_agent_manager.py:CommitPhase`
-- [ ] [P0][M] Add documentation phase — Agent updates docs, adds code comments, updates README if needed. `ai_agent_manager.py:DocumentationPhase`
+- [x] [P0][L] Implement agent execution loop — ✅ Complete: Full async execution loop with all phases in AIAgent.run() and process_task() methods `ai_agent_manager.py:AgentExecutionLoop`
+- [x] [P0][M] Add planning phase — ✅ Complete: Planning phase with AI provider integration in planning_phase() method `ai_agent_manager.py:PlanningPhase`
+- [x] [P0][M] Implement code execution phase — ✅ Complete: Code execution with sandbox support in execution_phase() method `ai_agent_manager.py:ExecutionPhase`
+- [x] [P0][M] Add testing phase — ✅ Complete: Automated testing with pass/fail validation in testing_phase() method `ai_agent_manager.py:TestingPhase`
+- [x] [P0][M] Create commit automation — ✅ Complete: Auto-commit with conventional commits and rollback snapshots in commit_phase() method `ai_agent_manager.py:CommitPhase`
+- [x] [P0][M] Add documentation phase — ✅ Complete: Documentation updates integrated in documentation_phase() method `ai_agent_manager.py:DocumentationPhase`
 - [x] [P0][S] Implement TODO updater — ✅ Complete: Full updater with mark_task_complete(), mark_task_in_progress(), add_task(), bulk operations, completion stats, section management. Preserves formatting and adds completion notes. `src/pokertool/todo_updater.py`
 
 ### 3. Safety & Quality Controls (10 tasks)
 
 #### Safety Mechanisms (5 tasks)
 - [x] [P0][M] Implement sandbox execution — ✅ Complete: AgentSandbox restricts file access to project directory, is_path_allowed(), validate_file_operation(). `src/pokertool/agent_sandbox.py`
-- [ ] [P0][M] Add approval workflow — Optional manual approval before commits. Show diff preview. One-click approve/reject. `components/improve/ApprovalModal.tsx`
+- [x] [P0][M] Add approval workflow — ✅ Complete: Full approval modal with diff preview, file changes, test status, and approve/reject actions `components/improve/ApprovalModal.tsx`
 - [x] [P0][S] Create rollback mechanism — ✅ Complete: Full RollbackManager with create_snapshot(), rollback_to_commit(), revert_last_n_commits(), get_agent_commits(), diff viewing, cherry-pick support, safety checks. `src/pokertool/improve_rollback.py`
 - [x] [P0][M] Add rate limiting — ✅ Complete: Token bucket rate limiter with per-provider limits (minute/hour/day), check_limit(), wait_if_needed(), get_remaining_requests(), configurable burst sizes. Prevents API quota exhaustion. `src/pokertool/rate_limiter.py`
 - [x] [P0][M] Implement cost tracking — ✅ Complete: CostTracker component with budget alerts, running total, progress bar. `components/improve/CostTracker.tsx`
 
 #### Quality Assurance (5 tasks)
 - [x] [P0][M] Add pre-commit validation — ✅ Complete: PreCommitValidator with black, mypy, flake8 integration, validate_all(), run_formatters(). `src/pokertool/pre_commit_validator.py`
-- [ ] [P0][M] Implement test requirement — Require new code to include tests. Verify test coverage doesn't decrease. `ai_agent_manager.py:TestCoverageCheck`
+- [x] [P0][M] Implement test requirement — ✅ Complete: Full TestCoverageChecker with Python/frontend coverage, delta checking, and test file requirements `src/pokertool/test_coverage_checker.py`
 - [ ] [P0][S] Add code review agent — Optional 4th agent that reviews commits from other 3 agents. `ai_agent_manager.py:CodeReviewAgent`
-- [ ] [P0][M] Create quality metrics dashboard — Track: tasks completed, tests added, coverage %, commits, lines changed. `components/improve/QualityDashboard.tsx`
+- [x] [P0][M] Create quality metrics dashboard — ✅ Complete: Comprehensive dashboard with tasks, tests, coverage, commits, lines, priority breakdown, timing, and success rate `components/improve/QualityDashboard.tsx`
 - [x] [P0][M] Add error recovery — ✅ Complete: ErrorRecoveryManager with retry_with_backoff decorator, failure tracking, should_skip_task(), exponential backoff (2x), configurable max retries. `src/pokertool/error_recovery.py`
 
 ### 4. Task Management Integration (8 tasks)
 
 #### TODO.md Integration (8 tasks)
-- [ ] [P0][M] Create task editor modal — Rich text editor for adding tasks to TODO.md. Support markdown formatting. `components/improve/TaskEditorModal.tsx`
+- [x] [P0][M] Create task editor modal — ✅ Complete: Full-featured editor with title, description, priority/effort selectors, file path, validation, and live preview `components/improve/TaskEditorModal.tsx`
 - [x] [P0][S] Add task templates — ✅ Complete: TaskTemplates with feature/bugfix/refactor/test/docs templates. `components/improve/TaskTemplates.tsx`
-- [ ] [P0][M] Implement bulk task import — Import multiple tasks from text, CSV, or other TODO files. Auto-format to TODO.md style. `backend: task_importer.py`
+- [x] [P0][M] Implement bulk task import — ✅ Complete: Full TaskImporter supporting text, CSV, JSON, and TODO.md formats with auto-detection and validation `backend: task_importer.py`
 - [x] [P0][S] Add priority/effort selectors — ✅ Complete: PrioritySelector and EffortSelector components with P0-P3/S/M/L. `components/improve/PrioritySelector.tsx`
 - [ ] [P0][M] Create task dependency graph — Visualize task dependencies. Auto-order tasks by dependencies. `components/improve/TaskDependencyGraph.tsx`
 - [x] [P0][S] Add task search & filter — ✅ Complete: TaskSearch with keyword search, filter chips, real-time filtering. `components/improve/TaskSearch.tsx`
