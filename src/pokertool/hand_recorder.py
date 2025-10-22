@@ -313,6 +313,56 @@ class HandRecorder:
             logger.error(f"Error completing hand: {e}", exc_info=True)
             self.state = HandRecorderState.COMPLETED
 
+    def _format_hand_for_vectordb(self, hand: Any) -> str:
+        """
+        Format hand history as natural language text for vector embedding.
+
+        Args:
+            hand: HandHistory object
+
+        Returns:
+            str: Natural language description of the hand
+        """
+        # Create human-readable hand description
+        parts = []
+
+        # Basic info
+        parts.append(f"Hand {hand.hand_id} at {hand.table_name} on {hand.site}")
+        parts.append(f"Blinds: {hand.small_blind}/{hand.big_blind}")
+
+        # Hero info
+        if hand.hero_name and hand.hero_cards:
+            cards_str = ', '.join(hand.hero_cards) if hand.hero_cards else 'unknown'
+            parts.append(f"Hero ({hand.hero_name}) dealt {cards_str}")
+
+        # Players
+        parts.append(f"{len(hand.players)} players in hand")
+
+        # Board
+        if hand.board_cards:
+            board_str = ' '.join(hand.board_cards)
+            parts.append(f"Board: {board_str}")
+
+        # Pot and result
+        parts.append(f"Final pot: {hand.pot_size}")
+        if hand.winners:
+            winners_str = ', '.join(hand.winners)
+            parts.append(f"Winners: {winners_str}")
+
+        # Hero outcome
+        if hand.hero_result:
+            parts.append(f"Hero result: {hand.hero_result} ({hand.hero_net:+.2f})")
+
+        # Stage reached
+        stage_str = hand.final_stage.value if hasattr(hand.final_stage, 'value') else str(hand.final_stage)
+        parts.append(f"Hand reached {stage_str}")
+
+        # Actions summary
+        if hand.actions:
+            parts.append(f"{len(hand.actions)} actions recorded")
+
+        return '. '.join(parts) + '.'
+
     def reset(self) -> None:
         """Reset the hand recorder to idle state."""
         self.state = HandRecorderState.IDLE
