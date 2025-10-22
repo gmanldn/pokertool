@@ -262,6 +262,7 @@ class ProductionDatabase:
             timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             user_hash VARCHAR(32),
             session_id VARCHAR(32),
+            confidence_score REAL CHECK(confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0)),
             metadata JSONB DEFAULT '{}',
             -- Enhanced constraints for PostgreSQL
             CONSTRAINT valid_hand_format CHECK(

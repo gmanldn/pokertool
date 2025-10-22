@@ -86,13 +86,14 @@ class SecureDatabase:
         """Initialize database schema with proper security constraints."""
         schema = """
         CREATE TABLE IF NOT EXISTS poker_hands (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            hand_text TEXT NOT NULL CHECK(length(hand_text) <= 50), 
-            board_text TEXT CHECK(board_text IS NULL OR length(board_text) <= 50), 
-            analysis_result TEXT, 
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, 
-            user_hash TEXT, 
-            session_id TEXT, 
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            hand_text TEXT NOT NULL CHECK(length(hand_text) <= 50),
+            board_text TEXT CHECK(board_text IS NULL OR length(board_text) <= 50),
+            analysis_result TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            user_hash TEXT,
+            session_id TEXT,
+            confidence_score REAL CHECK(confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0)),
             CONSTRAINT valid_hand_format CHECK(hand_text GLOB '[AKQJT2-9][shdc][AKQJT2-9][shdc]' OR
                 hand_text GLOB '[AKQJT2-9][shdc][AKQJT2-9][shdc] [AKQJT2-9][shdc][AKQJT2-9][shdc]')
         );
@@ -226,10 +227,18 @@ class SecureDatabase:
             log.error('Failed to log security event: %s', e)
 
     @retry_on_failure(max_retries=3)
-    def save_hand_analysis(self, hand: str, board: Optional[str], result: str, 
-                          session_id: Optional[str] = None) -> int:
+    def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
+                          session_id: Optional[str] = None,
+                          confidence_score: Optional[float] = None) -> int:
         """
         Securely save hand analysis with input validation.
+
+        Args:
+            hand: The hand to analyze
+            board: The board cards
+            result: The analysis result
+            session_id: Optional session identifier
+            confidence_score: Detection confidence (0.0-1.0), None if unknown
 
         Returns:
             The ID of the inserted record
@@ -249,15 +258,22 @@ class SecureDatabase:
         if board and not self._validate_board_format(board):
             raise ValueError(f'Invalid board format: {board}')
 
+        # Validate confidence score
+        if confidence_score is not None:
+            if not isinstance(confidence_score, (int, float)):
+                raise ValueError(f'Confidence score must be numeric, got {type(confidence_score)}')
+            if not (0.0 <= confidence_score <= 1.0):
+                raise ValueError(f'Confidence score must be between 0.0 and 1.0, got {confidence_score}')
+
         user_hash = self._generate_user_hash()
 
         with db_guard('saving hand analysis'):
             with self._get_connection() as conn:
                 cursor = conn.execute(
                     """INSERT INTO poker_hands
-                    (hand_text, board_text, analysis_result, user_hash, session_id)
-                    VALUES (?, ?, ?, ?, ?)""",
-                    (hand, board, result, user_hash, session_id)
+                    (hand_text, board_text, analysis_result, user_hash, session_id, confidence_score)
+                    VALUES (?, ?, ?, ?, ?, ?)""",
+                    (hand, board, result, user_hash, session_id, confidence_score)
                 )
                 conn.commit()
                 return cursor.lastrowid
@@ -272,7 +288,7 @@ class SecureDatabase:
         with db_guard('fetching recent hands'):
             with self._get_connection() as conn:
                 cursor = conn.execute(
-                    """SELECT id, hand_text, board_text, analysis_result, timestamp
+                    """SELECT id, hand_text, board_text, analysis_result, timestamp, confidence_score
                     FROM poker_hands
                     ORDER BY timestamp DESC
                     LIMIT ? OFFSET ?""",

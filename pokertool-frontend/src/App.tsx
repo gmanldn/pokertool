@@ -49,6 +49,7 @@ const ScrapingAccuracy = lazy(() => import('./components/ScrapingAccuracy').then
 const BackendStatus = lazy(() => import('./pages/BackendStatus'));
 const TodoList = lazy(() => import('./components/TodoList').then(module => ({ default: module.TodoList })));
 const SmartHelper = lazy(() => import('./pages/SmartHelper'));
+const Improve = lazy(() => import('./pages/Improve'));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -164,6 +165,7 @@ function AppContent() {
                   <Route path="/active-learning" element={<ErrorBoundary fallbackType="general"><ActiveLearning /></ErrorBoundary>} />
                   <Route path="/scraping-accuracy" element={<ErrorBoundary fallbackType="general"><ScrapingAccuracy /></ErrorBoundary>} />
                   <Route path="/smarthelper" element={<ErrorBoundary fallbackType="general"><SmartHelper /></ErrorBoundary>} />
+                  <Route path="/improve" element={<ErrorBoundary fallbackType="general"><Improve /></ErrorBoundary>} />
                 </Routes>
               </Suspense>
             </main>
