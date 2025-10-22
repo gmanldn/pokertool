@@ -299,27 +299,26 @@ if __name__ == '__main__':
     region3 = np.random.randint(0, 255, (50, 100, 3), dtype=np.uint8)  # Different
     
     # Mock OCR function
-    call_count = 0
+    call_count = [0]  # Use list to avoid nonlocal issue at module level
     def mock_ocr(region):
-        nonlocal call_count
-        call_count += 1
-        return f"Result_{call_count}"
+        call_count[0] += 1
+        return f"Result_{call_count[0]}"
     
     # Test 1: First access (cache miss)
     result1, cached1 = cache.get(region1, 'player_name', mock_ocr)
-    print(f"Test 1: result={result1}, cached={cached1}, ocr_calls={call_count}")
-    
+    print(f"Test 1: result={result1}, cached={cached1}, ocr_calls={call_count[0]}")
+
     # Test 2: Same region (cache hit)
     result2, cached2 = cache.get(region2, 'player_name', mock_ocr)
-    print(f"Test 2: result={result2}, cached={cached2}, ocr_calls={call_count}")
-    
+    print(f"Test 2: result={result2}, cached={cached2}, ocr_calls={call_count[0]}")
+
     # Test 3: Different region (cache miss)
     result3, cached3 = cache.get(region3, 'player_name', mock_ocr)
-    print(f"Test 3: result={result3}, cached={cached3}, ocr_calls={call_count}")
-    
+    print(f"Test 3: result={result3}, cached={cached3}, ocr_calls={call_count[0]}")
+
     # Test 4: First region again (cache hit)
     result4, cached4 = cache.get(region1, 'player_name', mock_ocr)
-    print(f"Test 4: result={result4}, cached={cached4}, ocr_calls={call_count}")
+    print(f"Test 4: result={result4}, cached={cached4}, ocr_calls={call_count[0]}")
     
     # Show metrics
     metrics = cache.get_metrics()
