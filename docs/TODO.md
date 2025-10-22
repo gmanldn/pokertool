@@ -302,7 +302,7 @@ Conventions
 - [ ] [P0][M] Reduce detection latency to <50ms per frame — Profile hot paths, optimize image processing. Target 20+ FPS. `src/pokertool/modules/poker_screen_scraper_betfair.py`
 - [ ] [P0][S] Add detection FPS counter and monitoring — Display FPS in HUD. Log performance metrics. `src/pokertool/performance_telemetry.py`
 - [ ] [P0][M] Implement adaptive ROI sizing — Dynamically adjust ROI sizes based on detection confidence. `src/pokertool/modules/poker_screen_scraper.py`
-- [ ] [P0][S] Add detection cache to avoid reprocessing — Cache detection results for unchanged regions. `src/pokertool/modules/poker_screen_scraper_betfair.py:300-350`
+- [x] [P0][S] Add detection cache to avoid reprocessing — ✅ Complete: DetectionCache implements LRU cache with TTL (2s default) for detection results, image region hashing with MD5, and automatic expiration. Max 100 entries. File: `src/pokertool/detection_cache.py` (43 lines).
 - [ ] [P1][M] Optimize image preprocessing pipeline — Reduce preprocessing time by 50%. Use GPU if available. `src/pokertool/ocr_ensemble.py`
 - [ ] [P1][S] Add parallel detection for independent regions — Detect cards/pot/players in parallel threads. `src/pokertool/async_scraper_executor.py`
 - [ ] [P1][M] Implement detection result validation — Cross-validate detection results. Reject physically impossible states. `src/pokertool/modules/poker_screen_scraper.py:validation`
