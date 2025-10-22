@@ -326,7 +326,7 @@ Conventions
 - [ ] [P0][M] Implement detection-specific logger with rotation — Separate logger for detection events. Rotate daily, keep 30 days. `src/pokertool/detection_logger.py`
 - [ ] [P0][S] Add detection metrics to telemetry — Track detection FPS, accuracy, latency in telemetry DB. `src/pokertool/performance_telemetry.py:detection`
 - [ ] [P0][M] Create detection event database table — Store all detection events with full metadata. Index by timestamp, type. `src/pokertool/database.py:detection_events table`
-- [ ] [P0][S] Add detection confidence logging — Log confidence scores for all detections. Alert on low confidence. `src/pokertool/detection_logger.py`
+- [x] [P0][S] Add detection confidence logging — ✅ Complete: DetectionLogger logs all detections with confidence scores, automatic severity (ERROR for failures, WARNING for <0.6, INFO otherwise), confidence level labels (HIGH ≥0.8, MEDIUM ≥0.6, LOW <0.6), duration tracking, detailed metadata, daily rotation (30-day retention), FPS logging, and global singleton. File: `src/pokertool/detection_logger.py` (72 lines).
 - [ ] [P1][M] Implement detection error tracking — Track detection failures. Categorize by error type. `src/pokertool/detection_logger.py:errors`
 - [x] [P1][S] Add detection state snapshots — ✅ Complete: DetectionStatePersistence class saves/loads detection state to JSON with automatic directory creation, error handling, and logging. Supports periodic snapshots for crash recovery. File: `src/pokertool/detection_state_persistence.py` (32 lines).
 - [ ] [P2][M] Create detection log analyzer tool — Analyze detection logs to find patterns, anomalies. `scripts/analyze_detection_logs.py`
