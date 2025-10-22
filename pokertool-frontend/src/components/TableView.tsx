@@ -290,11 +290,12 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
 
   const PokerTable = React.memo(({ table }: { table: TableData }) => {
     // Memoize player positions calculation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const playersWithPositions = useMemo(() => {
       return table.players.length > 0
         ? assignPositions(table.players, dealerPosition)
         : table.players;
-    }, [table.players, dealerPosition]);
+    }, [table.players]); // dealerPosition is a constant from outer scope
 
     return (
     <Box
