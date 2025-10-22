@@ -306,7 +306,7 @@ Conventions
 - [ ] [P1][M] Optimize image preprocessing pipeline — Reduce preprocessing time by 50%. Use GPU if available. `src/pokertool/ocr_ensemble.py`
 - [ ] [P1][S] Add parallel detection for independent regions — Detect cards/pot/players in parallel threads. `src/pokertool/async_scraper_executor.py`
 - [ ] [P1][M] Implement detection result validation — Cross-validate detection results. Reject physically impossible states. `src/pokertool/modules/poker_screen_scraper.py:validation`
-- [ ] [P1][S] Add detection confidence thresholds — Only emit events for detections above confidence threshold (configurable). `src/pokertool/modules/poker_screen_scraper_betfair.py`
+- [x] [P1][S] Add detection confidence thresholds — ✅ Complete: ConfidenceThresholds dataclass with type-specific thresholds (card: 0.7/0.9, pot: 0.6/0.85, player: 0.65/0.88, button: 0.75/0.92, action: 0.70/0.90, board: 0.72/0.91), environment variable configuration, should_emit_event(), is_high_confidence(), get_confidence_level() helpers, and global singleton. File: `src/pokertool/detection_config.py` (154 lines).
 - [ ] [P2][M] Create detection performance dashboard — Real-time dashboard showing FPS, latency, accuracy per detection type. `pokertool-frontend/src/pages/DetectionPerformance.tsx`
 - [ ] [P2][L] Implement GPU-accelerated detection — Use CUDA/OpenCL for image processing. Benchmark vs CPU. `src/pokertool/gpu_detection.py`
 
