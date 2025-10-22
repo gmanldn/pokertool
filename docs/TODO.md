@@ -84,7 +84,7 @@ Conventions
 - [ ] [P0][M] Implement test requirement — Require new code to include tests. Verify test coverage doesn't decrease. `ai_agent_manager.py:TestCoverageCheck`
 - [ ] [P0][S] Add code review agent — Optional 4th agent that reviews commits from other 3 agents. `ai_agent_manager.py:CodeReviewAgent`
 - [ ] [P0][M] Create quality metrics dashboard — Track: tasks completed, tests added, coverage %, commits, lines changed. `components/improve/QualityDashboard.tsx`
-- [ ] [P0][M] Add error recovery — Automatic retry on failures. Exponential backoff. Skip task after 3 failures. `ai_agent_manager.py:ErrorRecovery`
+- [x] [P0][M] Add error recovery — ✅ Complete: ErrorRecoveryManager with retry_with_backoff decorator, failure tracking, should_skip_task(), exponential backoff (2x), configurable max retries. `src/pokertool/error_recovery.py`
 
 ### 4. Task Management Integration (8 tasks)
 
