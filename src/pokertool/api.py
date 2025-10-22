@@ -946,6 +946,9 @@ This API implements comprehensive security measures including:
                 {'name': 'admin', 'description': 'Administrative endpoints (admin only)'},
                 {'name': 'AI & LangChain', 'description': 'AI-powered hand analysis and conversational poker coaching'}
             ],
+            docs_url='/api/docs',
+            redoc_url='/api/redoc',
+            openapi_url='/api/openapi.json',
             swagger_ui_parameters={
                 'docExpansion': 'none',
                 'filter': True,
@@ -2711,53 +2714,3 @@ run = main
 
 if __name__ == '__main__':
     raise SystemExit(main())
-
-        # Detection Metrics API Endpoint (added for monitoring)
-        @self.app.get('/api/detection/metrics', tags=['detection'], summary='Get Detection Metrics')
-        async def get_detection_metrics():
-            """
-            Get comprehensive detection accuracy and performance metrics.
-            
-            Returns metrics for all detection types including:
-            - Success rates
-            - Average confidence scores  
-            - Performance timings
-            - Error counts
-            """
-            try:
-                from .detection_accuracy_tracker import get_accuracy_tracker
-                tracker = get_accuracy_tracker()
-                summary = tracker.get_summary()
-                
-                return {
-                    'status': 'success',
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'metrics': summary
-                }
-            except Exception as e:
-                logger.error(f"Error fetching detection metrics: {e}")
-                return {
-                    'status': 'error',
-                    'message': str(e),
-                    'timestamp': datetime.utcnow().isoformat()
-                }
-        
-        @self.app.get('/api/detection/fps', tags=['detection'], summary='Get Detection FPS')
-        async def get_detection_fps():
-            """Get current detection FPS and performance metrics."""
-            try:
-                from .detection_fps_counter import get_fps_counter
-                fps_counter = get_fps_counter()
-                
-                return {
-                    'fps': fps_counter.get_fps(),
-                    'avg_frame_time_ms': fps_counter.get_avg_frame_time_ms(),
-                    'timestamp': datetime.utcnow().isoformat()
-                }
-            except Exception as e:
-                logger.error(f"Error fetching FPS metrics: {e}")
-                return {
-                    'fps': 0.0,
-                    'avg_frame_time_ms': 0.0,
-                    'error': str(e)
-                }
