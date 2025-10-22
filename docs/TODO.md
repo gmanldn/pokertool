@@ -611,7 +611,7 @@ Conventions
 
 #### Backend Recommendation Engine (10 tasks)
 - [ ] [P0][L] Create SmartHelper recommendation engine — Core engine calculating optimal actions. `src/pokertool/smarthelper_engine.py`
-- [ ] [P0][M] Add POST /api/smarthelper/recommend endpoint — Return action, amount, frequencies, reasoning, confidence. `src/pokertool/api.py:smarthelper_routes`
+- [x] [P0][M] Add POST /api/smarthelper/recommend endpoint — ✅ Complete: POST /api/smarthelper/recommend endpoint fully implemented in api_smarthelper.py. Returns action, amount, GTO frequencies, reasoning, confidence score, factor-based decision reasoning, and net confidence calculation. Includes request/response models with comprehensive validation. Files: `src/pokertool/api_smarthelper.py:174-230`
 - [ ] [P0][M] Implement decision tree logic — Structured decision-making flow. `smarthelper_engine.py:DecisionTree`
 - [ ] [P0][S] Add confidence calculation algorithm — Multi-factor confidence scoring. `smarthelper_engine.py:calculate_confidence`
 - [ ] [P1][M] Create factor weight configuration — Configurable weights for each decision factor. `smarthelper_engine.py:FactorWeights`
