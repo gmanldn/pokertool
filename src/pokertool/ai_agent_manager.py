@@ -48,6 +48,11 @@ class AgentConfig:
     require_tests: bool = True
     require_approval: bool = False
     auto_commit: bool = True
+    fallback_providers: List[BaseAIProvider] = None  # Fallback chain if primary fails
+
+    def __post_init__(self):
+        if self.fallback_providers is None:
+            self.fallback_providers = []
 
 
 class AIAgent:
@@ -195,13 +200,45 @@ class AIAgent:
             self.error(f"Task processing failed: {e}")
             return False
 
+    async def _try_with_fallback(self, operation_name: str, operation_func):
+        """Try operation with primary provider, fallback to alternatives if it fails"""
+        providers_to_try = [self.config.provider] + self.config.fallback_providers
+
+        last_error = None
+        for i, provider in enumerate(providers_to_try):
+            try:
+                is_fallback = i > 0
+                if is_fallback:
+                    self.output(f"⚠️  Trying fallback provider {i}: {provider.__class__.__name__}")
+
+                result = await operation_func(provider)
+
+                if is_fallback:
+                    self.output(f"✅ Fallback provider succeeded")
+
+                return result
+
+            except Exception as e:
+                last_error = e
+                self.error(f"{operation_name} failed with {provider.__class__.__name__}: {e}")
+                if i < len(providers_to_try) - 1:
+                    self.output(f"Attempting fallback...")
+                continue
+
+        # All providers failed
+        raise Exception(f"{operation_name} failed with all providers. Last error: {last_error}")
+
     async def planning_phase(self, task: Task) -> Optional[str]:
-        """Generate execution plan"""
+        """Generate execution plan with provider fallback"""
         self.set_phase(AgentPhase.PLANNING, f"Planning: {task.title}")
 
         try:
-            # TODO: Use AI provider to generate plan
-            plan = f"Plan for {task.title}"
+            async def plan_with_provider(provider):
+                plan = f"Plan for {task.title}"
+                # TODO: Use provider to generate actual plan
+                return plan
+
+            plan = await self._try_with_fallback("Planning", plan_with_provider)
             self.output(f"📋 Plan created:\n{plan}")
             return plan
         except Exception as e:
