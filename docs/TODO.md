@@ -599,7 +599,7 @@ Conventions
 - [ ] [P0][S] Add equity factor scoring — Real-time equity vs opponent range (+6 points). `ReasoningPanel.tsx:EquityFactor`
 - [ ] [P0][S] Add opponent factor scoring — Opponent tendency analysis (-2 points if tight). `ReasoningPanel.tsx:OpponentFactor`
 - [ ] [P0][M] Implement net confidence calculation — Sum all factors to show total score (+17). `ReasoningPanel.tsx:NetConfidence`
-- [ ] [P0][S] Add color-coded factor display — Green for positive, red for negative factors. `ReasoningPanel.module.css`
+- [x] [P0][S] Add color-coded factor display — ✅ Complete: Created comprehensive CSS module with 5-tier color-coded scoring (very positive: #4caf50, positive: #8bc34a, neutral: #ffc107, negative: #ff9800, very negative: #f44336). Includes styled factor cards with hover effects, expandable details, confidence badges, animations (pulse, slide-in), responsive design, and dark mode support. Files: `pokertool-frontend/src/components/smarthelper/ReasoningPanel.module.css` (260 lines), `ReasoningPanel.module.css.d.ts`
 - [ ] [P1][M] Create expandable factor details — Click to see detailed explanation of each factor. `ReasoningPanel.tsx:FactorExpansion`
 - [ ] [P1][S] Add stack size factor — Deep vs short stack considerations. `backend: factor_scorer.py:stack_factor`
 - [ ] [P1][S] Add board texture factor — Wet/dry board impact on decision. `backend: factor_scorer.py:texture_factor`
