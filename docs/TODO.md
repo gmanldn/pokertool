@@ -41,12 +41,12 @@ Conventions
 - [ ] [P0][M] Add kill/pause controls — Individual stop/pause buttons per agent. Emergency stop all button. `Improve.tsx:AgentControls`
 
 #### Terminal Integration (7 tasks)
-- [ ] [P0][M] Integrate xterm.js library — Install and configure xterm.js v5+ with addons (fit, webgl, search). `pokertool-frontend/package.json`, `Improve.tsx:TerminalSetup`
+- [x] [P0][M] Integrate xterm.js library — ✅ Complete: Installed @xterm/xterm, integrated into Improve.tsx terminals. `pokertool-frontend/src/pages/Improve.tsx`
 - [ ] [P0][M] Create WebSocket terminal bridge — Backend WebSocket endpoint `/ws/improve/terminal/{agent_id}` for bidirectional terminal communication. `src/pokertool/api_improve.py:terminal_websocket`
-- [ ] [P0][S] Add terminal output formatting — ANSI color support, clickable file paths, timestamp prefixes. `components/improve/TerminalFormatter.tsx`
-- [ ] [P0][S] Implement terminal scrollback — 10,000 line scrollback buffer per terminal. Clear terminal button. `Improve.tsx:TerminalScrollback`
+- [x] [P0][S] Add terminal output formatting — ✅ Complete: ANSI color parsing, clickable paths, timestamp prefixes. `pokertool-frontend/src/utils/terminalFormatter.ts`
+- [x] [P0][S] Implement terminal scrollback — ✅ Complete: 10,000 line buffer, integrated into terminal components. `Improve.tsx:TerminalScrollback`
 - [ ] [P0][M] Add terminal copy/paste — Right-click context menu for copy. Ctrl+C to copy selection. `components/improve/TerminalContextMenu.tsx`
-- [ ] [P0][S] Create terminal search — Ctrl+F to search terminal output. Highlight matches. `Improve.tsx:TerminalSearch`
+- [x] [P0][S] Create terminal search — ✅ Complete: Ctrl+F search with xterm addon, highlight matches. `Improve.tsx:TerminalSearch`
 - [x] [P0][M] Add terminal logging — ✅ Complete: Full ImproveLogger with rotating/timed handlers, log_terminal_output(), log_agent_action(), log_error(), compress_old_logs(), tail_log(), search_logs(). Daily rotation, 30-day retention. `src/pokertool/improve_logger.py`
 
 ### 2. AI Agent Orchestration (15 tasks)
@@ -77,7 +77,7 @@ Conventions
 - [ ] [P0][M] Add approval workflow — Optional manual approval before commits. Show diff preview. One-click approve/reject. `components/improve/ApprovalModal.tsx`
 - [x] [P0][S] Create rollback mechanism — ✅ Complete: Full RollbackManager with create_snapshot(), rollback_to_commit(), revert_last_n_commits(), get_agent_commits(), diff viewing, cherry-pick support, safety checks. `src/pokertool/improve_rollback.py`
 - [x] [P0][M] Add rate limiting — ✅ Complete: Token bucket rate limiter with per-provider limits (minute/hour/day), check_limit(), wait_if_needed(), get_remaining_requests(), configurable burst sizes. Prevents API quota exhaustion. `src/pokertool/rate_limiter.py`
-- [ ] [P0][M] Implement cost tracking — Track API usage costs. Show running total. Alert when exceeding budget. `components/improve/CostTracker.tsx`
+- [x] [P0][M] Implement cost tracking — ✅ Complete: CostTracker component with budget alerts, running total, progress bar. `components/improve/CostTracker.tsx`
 
 #### Quality Assurance (5 tasks)
 - [x] [P0][M] Add pre-commit validation — ✅ Complete: PreCommitValidator with black, mypy, flake8 integration, validate_all(), run_formatters(). `src/pokertool/pre_commit_validator.py`
@@ -90,12 +90,12 @@ Conventions
 
 #### TODO.md Integration (8 tasks)
 - [ ] [P0][M] Create task editor modal — Rich text editor for adding tasks to TODO.md. Support markdown formatting. `components/improve/TaskEditorModal.tsx`
-- [ ] [P0][S] Add task templates — Quick templates for common task types (feature, bug fix, refactor, test, docs). `TaskEditorModal.tsx:Templates`
+- [x] [P0][S] Add task templates — ✅ Complete: TaskTemplates with feature/bugfix/refactor/test/docs templates. `components/improve/TaskTemplates.tsx`
 - [ ] [P0][M] Implement bulk task import — Import multiple tasks from text, CSV, or other TODO files. Auto-format to TODO.md style. `backend: task_importer.py`
-- [ ] [P0][S] Add priority/effort selectors — Dropdowns for setting P0-P3 priority and S/M/L effort. Auto-suggest based on description. `TaskEditorModal.tsx:PriorityEffort`
+- [x] [P0][S] Add priority/effort selectors — ✅ Complete: PrioritySelector and EffortSelector components with P0-P3/S/M/L. `components/improve/PrioritySelector.tsx`
 - [ ] [P0][M] Create task dependency graph — Visualize task dependencies. Auto-order tasks by dependencies. `components/improve/TaskDependencyGraph.tsx`
-- [ ] [P0][S] Add task search & filter — Search TODO.md by keyword, priority, status. Filter to show specific categories. `Improve.tsx:TaskSearch`
-- [ ] [P0][M] Implement task analytics — Show task completion rate, average time per task, priority distribution. `components/improve/TaskAnalytics.tsx`
+- [x] [P0][S] Add task search & filter — ✅ Complete: TaskSearch with keyword search, filter chips, real-time filtering. `components/improve/TaskSearch.tsx`
+- [x] [P0][M] Implement task analytics — ✅ Complete: TaskAnalytics dashboard with completion rate, avg time, priority distribution. `components/improve/TaskAnalytics.tsx`
 - [ ] [P0][M] Add TODO.md real-time sync — Watch file for external changes. Refresh UI automatically. Warn on conflicts. `backend: todo_file_watcher.py`
 
 ### 5. Multi-Provider Support (12 tasks)
