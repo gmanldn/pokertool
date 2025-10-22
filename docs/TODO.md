@@ -382,7 +382,7 @@ Conventions
 - [ ] [P2][S] Implement custom query builder UI — Visual query builder for complex filters. `pokertool-frontend/src/components/QueryBuilder.tsx`
 
 #### Data Quality (10 tasks)
-- [ ] [P0][M] Add data validation on insert — Validate all data before inserting. Reject invalid data. `src/pokertool/database.py:validate_insert`
+- [x] [P0][M] Add data validation on insert — ✅ Complete: Created comprehensive data_validation.py module (480 lines) with HandValidator, AnalysisValidator, SessionValidator, MetadataValidator, and ComprehensiveValidator. Validates cards, hands, boards, analysis text, session IDs, metadata before insertion. Integrated into ProductionDatabase and PokerDatabase save_hand_analysis methods. Prevents data corruption with detailed error messages. File: `src/pokertool/data_validation.py`, integrated in `database.py`.
 - [ ] [P0][S] Implement duplicate detection — Detect and skip duplicate hands. `src/pokertool/database.py:dedup`
 - [ ] [P0][M] Create data consistency checks — Regular checks for data integrity. Fix inconsistencies. `scripts/check_data_consistency.py`
 - [ ] [P0][S] Add data migration tools — Tools to migrate data between schema versions. `scripts/migrate_database.py`
