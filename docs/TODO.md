@@ -644,7 +644,7 @@ Conventions
 - [ ] [P2][S] Add factor weight customization — Adjust importance of decision factors. `SmartHelperSettings.tsx:FactorWeights`
 - [ ] [P2][M] Create recommendation history settings — History length and retention. `SmartHelperSettings.tsx:HistorySettings`
 - [ ] [P3][M] Add voice settings — Configure voice announcements. `SmartHelperSettings.tsx:VoiceSettings`
-- [ ] [P3][S] Implement preference import/export — Share settings between devices. `utils/settingsExporter.ts`
+- [x] [P3][S] Implement preference import/export — ✅ Complete: Created settingsExporter.ts with export/import to JSON file, clipboard copy/paste, shareable URL generation, named profiles in localStorage, and selective category merging. Updated SmartHelperSettings component with import/export UI buttons, menu, and snackbar notifications. File: `pokertool-frontend/src/utils/settingsExporter.ts` (319 lines), `SmartHelperSettings.tsx`.
 
 ### 6. Backend Infrastructure (20 tasks)
 
