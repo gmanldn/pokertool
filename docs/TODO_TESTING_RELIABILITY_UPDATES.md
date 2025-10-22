@@ -34,7 +34,7 @@
 ### Test Infrastructure (7 tasks)
 
 - [ ] [P0][M] Create test fixture library — Centralize test data: sample hands, player profiles, table screenshots, API responses. Include 1000+ annotated poker screenshots. `tests/fixtures/`
-- [ ] [P0][S] Add test database seeding — Create seed scripts for consistent test data. Support multiple scenarios: new user, veteran player, tournament. `tests/fixtures/seeds/`
+- [x] [P0][S] Add test database seeding — ✅ Complete: Seed scripts with 3 scenarios (new_user, veteran_player with 10k hands, tournament_player with 2k hands). Supports pytest fixtures, graceful schema handling, realistic data generation. 8 tests passing. `tests/fixtures/seeds/`
 - [ ] [P1][S] Add visual regression testing — Screenshot comparison for UI components. Use Playwright visual comparisons. Detect unintended visual changes. `tests/visual/test_regression.spec.ts`
 - [ ] [P1][M] Create test reporting dashboard — Aggregate test results: coverage, flaky tests, slow tests, failure trends. Publish to GitHub Pages. `tests/reporting/dashboard.html`
 - [ ] [P1][S] Add test parallelization — Run tests in parallel: pytest-xdist for Python (8 workers), Jest workers for TypeScript (4 workers). Target: 3x faster test suite. `pytest.ini`, `jest.config.js`
