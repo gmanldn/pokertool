@@ -121,6 +121,115 @@ class SmartHelperEngine:
 
     def __init__(self):
         self.weights = FactorWeights()
+        self._cache: Dict[str, Tuple[SmartHelperRecommendation, float]] = {}
+        self._cache_ttl = 5.0  # 5 second TTL
+        self._recommendation_log: List[Dict[str, Any]] = []
+
+    def _generate_cache_key(self, game_state: GameState) -> str:
+        """Generate cache key from game state"""
+        import hashlib
+        import json
+
+        # Create a deterministic representation of the game state
+        state_dict = {
+            'hero_cards': sorted(game_state.hero_cards) if game_state.hero_cards else None,
+            'hero_position': game_state.hero_position,
+            'hero_stack': round(game_state.hero_stack, 2),
+            'community_cards': sorted(game_state.community_cards),
+            'pot_size': round(game_state.pot_size, 2),
+            'bet_to_call': round(game_state.bet_to_call, 2),
+            'street': game_state.street.value,
+            'opponents': [
+                {
+                    'position': opp.position,
+                    'stack': round(opp.stack, 2)
+                }
+                for opp in sorted(game_state.opponents, key=lambda o: o.position)
+            ]
+        }
+
+        # Generate hash
+        state_str = json.dumps(state_dict, sort_keys=True)
+        return hashlib.md5(state_str.encode()).hexdigest()
+
+    def _get_cached_recommendation(self, cache_key: str) -> Optional[SmartHelperRecommendation]:
+        """Get cached recommendation if valid"""
+        if cache_key in self._cache:
+            recommendation, timestamp = self._cache[cache_key]
+            import time
+            age = time.time() - timestamp
+            if age < self._cache_ttl:
+                logger.debug(f"Cache hit for key {cache_key[:8]}... (age: {age:.1f}s)")
+                return recommendation
+            else:
+                # Expired - remove from cache
+                del self._cache[cache_key]
+                logger.debug(f"Cache expired for key {cache_key[:8]}...")
+        return None
+
+    def _cache_recommendation(self, cache_key: str, recommendation: SmartHelperRecommendation):
+        """Cache a recommendation"""
+        import time
+        self._cache[cache_key] = (recommendation, time.time())
+        logger.debug(f"Cached recommendation for key {cache_key[:8]}...")
+
+    def _validate_recommendation(self, recommendation: SmartHelperRecommendation, game_state: GameState) -> bool:
+        """Validate recommendation for sanity checks"""
+        # Check 1: Amount should not exceed hero's stack
+        if recommendation.amount and recommendation.amount > game_state.hero_stack:
+            logger.warning(f"Invalid recommendation: amount ${recommendation.amount:.2f} exceeds stack ${game_state.hero_stack:.2f}")
+            return False
+
+        # Check 2: Cannot fold if bet_to_call is 0
+        if recommendation.action == PokerAction.FOLD and game_state.bet_to_call == 0:
+            logger.warning("Invalid recommendation: folding when no bet to call")
+            return False
+
+        # Check 3: Cannot check if facing a bet
+        if recommendation.action == PokerAction.CHECK and game_state.bet_to_call > 0:
+            logger.warning("Invalid recommendation: checking when facing a bet")
+            return False
+
+        # Check 4: Bet/raise amounts should be reasonable
+        if recommendation.amount:
+            if recommendation.amount < 0:
+                logger.warning(f"Invalid recommendation: negative amount ${recommendation.amount:.2f}")
+                return False
+            if recommendation.amount > game_state.pot_size * 10:
+                logger.warning(f"Invalid recommendation: excessive bet ${recommendation.amount:.2f} (pot: ${game_state.pot_size:.2f})")
+                return False
+
+        # Check 5: Confidence should be in valid range
+        if not (0 <= recommendation.confidence <= 100):
+            logger.warning(f"Invalid recommendation: confidence {recommendation.confidence} out of range")
+            return False
+
+        return True
+
+    def _log_recommendation(self, recommendation: SmartHelperRecommendation, game_state: GameState):
+        """Log recommendation for analysis"""
+        log_entry = {
+            'timestamp': recommendation.timestamp,
+            'street': game_state.street.value,
+            'action': recommendation.action.value,
+            'amount': recommendation.amount,
+            'confidence': recommendation.confidence,
+            'net_confidence': recommendation.net_confidence,
+            'pot_size': game_state.pot_size,
+            'bet_to_call': game_state.bet_to_call,
+            'hero_stack': game_state.hero_stack,
+            'num_factors': len(recommendation.factors)
+        }
+        self._recommendation_log.append(log_entry)
+
+        # Keep only last 100 recommendations
+        if len(self._recommendation_log) > 100:
+            self._recommendation_log = self._recommendation_log[-100:]
+
+        logger.info(
+            f"Recommendation: {recommendation.action.value} "
+            f"(confidence: {recommendation.confidence:.1f}%, net: {recommendation.net_confidence:+.1f})"
+        )
 
     def recommend(self, game_state: GameState) -> SmartHelperRecommendation:
         """
@@ -132,6 +241,12 @@ class SmartHelperEngine:
         Returns:
             Complete SmartHelper recommendation
         """
+        # Check cache first
+        cache_key = self._generate_cache_key(game_state)
+        cached = self._get_cached_recommendation(cache_key)
+        if cached:
+            return cached
+
         logger.info(f"Generating recommendation for {game_state.street} street")
 
         # Calculate all factors
@@ -153,7 +268,7 @@ class SmartHelperEngine:
         confidence = min(100.0, max(0.0, 50.0 + (net_confidence * 3)))
 
         import time
-        return SmartHelperRecommendation(
+        recommendation = SmartHelperRecommendation(
             action=action,
             amount=amount,
             gto_frequencies=gto_frequencies,
@@ -163,6 +278,30 @@ class SmartHelperEngine:
             net_confidence=net_confidence,
             timestamp=int(time.time() * 1000)
         )
+
+        # Validate recommendation
+        if not self._validate_recommendation(recommendation, game_state):
+            logger.error("Validation failed - returning conservative recommendation")
+            # Return safe fallback (check or fold)
+            fallback_action = PokerAction.CHECK if game_state.bet_to_call == 0 else PokerAction.FOLD
+            recommendation = SmartHelperRecommendation(
+                action=fallback_action,
+                amount=None,
+                gto_frequencies=GTOFrequencies(),
+                strategic_reasoning="Conservative play due to validation error",
+                confidence=50.0,
+                factors=[],
+                net_confidence=0.0,
+                timestamp=int(time.time() * 1000)
+            )
+
+        # Log recommendation
+        self._log_recommendation(recommendation, game_state)
+
+        # Cache recommendation
+        self._cache_recommendation(cache_key, recommendation)
+
+        return recommendation
 
     def _calculate_factors(self, game_state: GameState) -> List[DecisionFactor]:
         """Calculate all decision factors"""
