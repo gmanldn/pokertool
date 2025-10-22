@@ -55,8 +55,8 @@ Conventions
 - [ ] [P0][L] Create AIAgentManager class — Core orchestration engine for managing 3 parallel AI agents. `src/pokertool/ai_agent_manager.py`
 - [ ] [P0][M] Implement task assignment strategy — Agent 1: Top 20 tasks from TODO.md. Agent 2: Bottom 20 tasks. Agent 3: Random 20 tasks (weighted by priority). `ai_agent_manager.py:TaskAssignment`
 - [x] [P0][M] Add TODO.md parser — ✅ Complete: Comprehensive parser with regex matching, priority/effort extraction, section tracking, task filtering, statistics, search, and weighted random selection. Supports top/bottom/random task selection for 3 agents. `src/pokertool/todo_parser.py`
-- [ ] [P0][M] Create task queue system — Per-agent task queue with priority ordering. Support task redistribution on agent failure. `ai_agent_manager.py:TaskQueue`
-- [ ] [P0][M] Implement AI provider abstraction — Unified interface for Claude Code, Anthropic, OpenRouter, OpenAI. Handle rate limits, retries. `src/pokertool/ai_providers/base_provider.py`
+- [x] [P0][M] Create task queue system — ✅ Complete: AgentTaskQueue with priority queue, get_next_task(), mark_complete(), task redistribution support. `src/pokertool/task_queue.py`
+- [x] [P0][M] Implement AI provider abstraction — ✅ Complete: BaseAIProvider abstract class, ProviderType enum, unified interface for all providers. `src/pokertool/ai_providers/base_provider.py`
 - [ ] [P0][M] Add Claude Code integration — Spawn Claude Code CLI as subprocess. Parse JSON responses. `ai_providers/claude_code_provider.py`
 - [ ] [P0][M] Add Anthropic API integration — Direct API calls to Claude 3.5 Sonnet. Streaming responses. `ai_providers/anthropic_provider.py`
 - [ ] [P0][M] Add OpenRouter/OpenAI integration — Support for alternative LLM providers. Unified prompt format. `ai_providers/openrouter_provider.py`, `ai_providers/openai_provider.py`
@@ -73,14 +73,14 @@ Conventions
 ### 3. Safety & Quality Controls (10 tasks)
 
 #### Safety Mechanisms (5 tasks)
-- [ ] [P0][M] Implement sandbox execution — Run AI agents in isolated environment. Restrict file system access to project directory. `src/pokertool/agent_sandbox.py`
+- [x] [P0][M] Implement sandbox execution — ✅ Complete: AgentSandbox restricts file access to project directory, is_path_allowed(), validate_file_operation(). `src/pokertool/agent_sandbox.py`
 - [ ] [P0][M] Add approval workflow — Optional manual approval before commits. Show diff preview. One-click approve/reject. `components/improve/ApprovalModal.tsx`
 - [x] [P0][S] Create rollback mechanism — ✅ Complete: Full RollbackManager with create_snapshot(), rollback_to_commit(), revert_last_n_commits(), get_agent_commits(), diff viewing, cherry-pick support, safety checks. `src/pokertool/improve_rollback.py`
 - [x] [P0][M] Add rate limiting — ✅ Complete: Token bucket rate limiter with per-provider limits (minute/hour/day), check_limit(), wait_if_needed(), get_remaining_requests(), configurable burst sizes. Prevents API quota exhaustion. `src/pokertool/rate_limiter.py`
 - [ ] [P0][M] Implement cost tracking — Track API usage costs. Show running total. Alert when exceeding budget. `components/improve/CostTracker.tsx`
 
 #### Quality Assurance (5 tasks)
-- [ ] [P0][M] Add pre-commit validation — Run linters, formatters, type checkers before allowing commit. `ai_agent_manager.py:PreCommitValidation`
+- [x] [P0][M] Add pre-commit validation — ✅ Complete: PreCommitValidator with black, mypy, flake8 integration, validate_all(), run_formatters(). `src/pokertool/pre_commit_validator.py`
 - [ ] [P0][M] Implement test requirement — Require new code to include tests. Verify test coverage doesn't decrease. `ai_agent_manager.py:TestCoverageCheck`
 - [ ] [P0][S] Add code review agent — Optional 4th agent that reviews commits from other 3 agents. `ai_agent_manager.py:CodeReviewAgent`
 - [ ] [P0][M] Create quality metrics dashboard — Track: tasks completed, tests added, coverage %, commits, lines changed. `components/improve/QualityDashboard.tsx`
