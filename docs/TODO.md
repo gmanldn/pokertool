@@ -76,7 +76,7 @@ Conventions
 - [ ] [P0][M] Implement sandbox execution — Run AI agents in isolated environment. Restrict file system access to project directory. `src/pokertool/agent_sandbox.py`
 - [ ] [P0][M] Add approval workflow — Optional manual approval before commits. Show diff preview. One-click approve/reject. `components/improve/ApprovalModal.tsx`
 - [x] [P0][S] Create rollback mechanism — ✅ Complete: Full RollbackManager with create_snapshot(), rollback_to_commit(), revert_last_n_commits(), get_agent_commits(), diff viewing, cherry-pick support, safety checks. `src/pokertool/improve_rollback.py`
-- [ ] [P0][M] Add rate limiting — Prevent API quota exhaustion. Configurable requests per minute per provider. `ai_agent_manager.py:RateLimiter`
+- [x] [P0][M] Add rate limiting — ✅ Complete: Token bucket rate limiter with per-provider limits (minute/hour/day), check_limit(), wait_if_needed(), get_remaining_requests(), configurable burst sizes. Prevents API quota exhaustion. `src/pokertool/rate_limiter.py`
 - [ ] [P0][M] Implement cost tracking — Track API usage costs. Show running total. Alert when exceeding budget. `components/improve/CostTracker.tsx`
 
 #### Quality Assurance (5 tasks)

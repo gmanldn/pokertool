@@ -1,247 +1,123 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
-Rate Limiting Module
-====================
+Rate Limiter for AI Provider API Calls
 
-Comprehensive rate limiting for API endpoints to prevent abuse and ensure
-fair resource allocation.
-
-Module: pokertool.rate_limiter
-Version: 1.0.0
+Prevents API quota exhaustion with configurable rate limits,
+token bucket algorithm, and per-provider tracking.
 """
 
 import time
-from typing import Dict, Optional, Tuple
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from collections import defaultdict
-import threading
+from threading import Lock
+from typing import Dict, Optional
+from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass
 class RateLimitConfig:
     """Configuration for rate limiting"""
-    max_requests: int          # Maximum requests
-    window_seconds: int        # Time window in seconds
-    block_duration: int = 300  # Block duration in seconds (5 min default)
+    requests_per_minute: int
+    requests_per_hour: int
+    requests_per_day: int
+    burst_size: int = 10
 
 
-@dataclass
-class RateLimitRecord:
-    """Record of rate limit tracking"""
-    requests: list = field(default_factory=list)
-    blocked_until: Optional[datetime] = None
-    total_blocked: int = 0
+class TokenBucket:
+    """Token bucket algorithm for rate limiting"""
+
+    def __init__(self, rate: float, capacity: int):
+        self.rate = rate
+        self.capacity = capacity
+        self.tokens = capacity
+        self.last_update = time.time()
+        self.lock = Lock()
+
+    def consume(self, tokens: int = 1) -> bool:
+        with self.lock:
+            now = time.time()
+            elapsed = now - self.last_update
+            self.tokens = min(self.capacity, self.tokens + elapsed * self.rate)
+            self.last_update = now
+            if self.tokens >= tokens:
+                self.tokens -= tokens
+                return True
+            return False
+
+    def wait_time(self, tokens: int = 1) -> float:
+        with self.lock:
+            if self.tokens >= tokens:
+                return 0.0
+            return (tokens - self.tokens) / self.rate
 
 
 class RateLimiter:
-    """
-    Token bucket rate limiter with configurable limits
-    """
+    """Rate limiter for AI provider API calls"""
+
+    DEFAULT_LIMITS = {
+        "claude-code": RateLimitConfig(50, 1000, 10000, 10),
+        "anthropic": RateLimitConfig(50, 1000, 10000, 10),
+        "openrouter": RateLimitConfig(60, 3000, 50000, 20),
+        "openai": RateLimitConfig(60, 3500, 10000, 15),
+    }
 
     def __init__(self):
-        self._limits: Dict[str, RateLimitConfig] = {}
-        self._records: Dict[str, Dict[str, RateLimitRecord]] = defaultdict(
-            lambda: defaultdict(RateLimitRecord)
-        )
-        self._lock = threading.Lock()
+        self.buckets: Dict[str, Dict[str, TokenBucket]] = {}
+        self.lock = Lock()
 
-    def configure(self, endpoint: str, max_requests: int, window_seconds: int, block_duration: int = 300):
-        """
-        Configure rate limit for an endpoint
-
-        Args:
-            endpoint: API endpoint identifier
-            max_requests: Maximum requests allowed
-            window_seconds: Time window in seconds
-            block_duration: Block duration in seconds after limit exceeded
-        """
-        self._limits[endpoint] = RateLimitConfig(
-            max_requests=max_requests,
-            window_seconds=window_seconds,
-            block_duration=block_duration
-        )
-
-    def check_limit(self, endpoint: str, identifier: str) -> Tuple[bool, Optional[str]]:
-        """
-        Check if request is within rate limit
-
-        Args:
-            endpoint: API endpoint
-            identifier: User/IP identifier
-
-        Returns:
-            Tuple of (allowed: bool, error_message: Optional[str])
-        """
-        if endpoint not in self._limits:
-            return True, None
-
-        config = self._limits[endpoint]
-
-        with self._lock:
-            record = self._records[endpoint][identifier]
-            now = datetime.now()
-
-            # Check if currently blocked
-            if record.blocked_until and now < record.blocked_until:
-                remaining = (record.blocked_until - now).seconds
-                return False, f"Rate limit exceeded. Try again in {remaining} seconds."
-
-            # Remove old requests outside window
-            cutoff = now - timedelta(seconds=config.window_seconds)
-            record.requests = [req for req in record.requests if req > cutoff]
-
-            # Check if limit exceeded
-            if len(record.requests) >= config.max_requests:
-                record.blocked_until = now + timedelta(seconds=config.block_duration)
-                record.total_blocked += 1
-                return False, f"Rate limit exceeded ({config.max_requests} requests per {config.window_seconds}s). Blocked for {config.block_duration}s."
-
-            # Allow request
-            record.requests.append(now)
-            return True, None
-
-    def get_stats(self, endpoint: Optional[str] = None) -> Dict:
-        """
-        Get rate limiting statistics
-
-        Args:
-            endpoint: Optional specific endpoint, or all if None
-
-        Returns:
-            Dictionary of statistics
-        """
-        with self._lock:
-            if endpoint:
-                if endpoint not in self._records:
-                    return {}
-
-                stats = {
-                    "endpoint": endpoint,
-                    "config": self._limits.get(endpoint),
-                    "users": {}
-                }
-
-                for identifier, record in self._records[endpoint].items():
-                    stats["users"][identifier] = {
-                        "recent_requests": len(record.requests),
-                        "blocked_until": record.blocked_until.isoformat() if record.blocked_until else None,
-                        "total_blocked": record.total_blocked
-                    }
-
-                return stats
+    def _get_bucket(self, provider: str, window: str) -> TokenBucket:
+        if provider not in self.buckets:
+            self.buckets[provider] = {}
+        if window not in self.buckets[provider]:
+            config = self.DEFAULT_LIMITS.get(provider, self.DEFAULT_LIMITS["anthropic"])
+            if window == "minute":
+                rate, capacity = config.requests_per_minute / 60.0, config.burst_size
+            elif window == "hour":
+                rate, capacity = config.requests_per_hour / 3600.0, config.requests_per_hour
             else:
-                stats = {}
-                for ep in self._records:
-                    stats[ep] = self.get_stats(ep)
-                return stats
+                rate, capacity = config.requests_per_day / 86400.0, config.requests_per_day
+            self.buckets[provider][window] = TokenBucket(rate, int(capacity))
+        return self.buckets[provider][window]
 
-    def reset(self, endpoint: Optional[str] = None, identifier: Optional[str] = None):
-        """
-        Reset rate limits
-
-        Args:
-            endpoint: Optional endpoint to reset (all if None)
-            identifier: Optional user/IP to reset (all if None)
-        """
-        with self._lock:
-            if endpoint and identifier:
-                if endpoint in self._records:
-                    if identifier in self._records[endpoint]:
-                        del self._records[endpoint][identifier]
-            elif endpoint:
-                if endpoint in self._records:
-                    self._records[endpoint].clear()
-            else:
-                self._records.clear()
-
-
-class AdaptiveRateLimiter:
-    """
-    Adaptive rate limiter that adjusts limits based on system load
-    """
-
-    def __init__(self, base_limiter: RateLimiter):
-        self.base_limiter = base_limiter
-        self._system_load = 0.0  # 0.0 to 1.0
-
-    def set_system_load(self, load: float):
-        """Set current system load (0.0 to 1.0)"""
-        self._system_load = max(0.0, min(1.0, load))
-
-    def check_limit(self, endpoint: str, identifier: str) -> Tuple[bool, Optional[str]]:
-        """
-        Check limit with adaptive scaling based on system load
-
-        Higher system load = stricter rate limits
-        """
-        if endpoint not in self.base_limiter._limits:
+    def check_limit(self, provider: str) -> tuple:
+        with self.lock:
+            for window in ["minute", "hour", "day"]:
+                bucket = self._get_bucket(provider, window)
+                if not bucket.consume(1):
+                    return False, f"Rate limit exceeded for {window}. Wait {bucket.wait_time(1):.1f}s"
             return True, None
 
-        config = self.base_limiter._limits[endpoint]
+    def wait_if_needed(self, provider: str, max_wait: float = 60.0) -> bool:
+        allowed, _ = self.check_limit(provider)
+        if allowed:
+            return True
+        max_wait_time = max(self._get_bucket(provider, w).wait_time(1) for w in ["minute", "hour", "day"])
+        if max_wait_time > max_wait:
+            return False
+        time.sleep(max_wait_time)
+        return True
 
-        # Adjust max_requests based on system load
-        # At 0% load: 100% of limit
-        # At 50% load: 75% of limit
-        # At 100% load: 50% of limit
-        scale_factor = 1.0 - (self._system_load * 0.5)
-        adjusted_max = int(config.max_requests * scale_factor)
+    def get_remaining_requests(self, provider: str) -> Dict[str, int]:
+        return {window: int(self._get_bucket(provider, window).tokens) for window in ["minute", "hour", "day"]}
 
-        # Temporarily adjust config
-        original_max = config.max_requests
-        config.max_requests = max(1, adjusted_max)
+    def reset_provider(self, provider: str):
+        with self.lock:
+            if provider in self.buckets:
+                del self.buckets[provider]
 
-        result = self.base_limiter.check_limit(endpoint, identifier)
-
-        # Restore original
-        config.max_requests = original_max
-
-        return result
-
-
-# Global rate limiter instance
-_global_rate_limiter = RateLimiter()
-
-
-def configure_rate_limit(endpoint: str, max_requests: int, window_seconds: int, block_duration: int = 300):
-    """Configure global rate limit"""
-    _global_rate_limiter.configure(endpoint, max_requests, window_seconds, block_duration)
-
-
-def check_rate_limit(endpoint: str, identifier: str) -> Tuple[bool, Optional[str]]:
-    """Check against global rate limiter"""
-    return _global_rate_limiter.check_limit(endpoint, identifier)
+    def get_stats(self) -> Dict:
+        stats = {}
+        for provider in self.buckets:
+            config = self.DEFAULT_LIMITS.get(provider, self.DEFAULT_LIMITS["anthropic"])
+            stats[provider] = {
+                "remaining": self.get_remaining_requests(provider),
+                "limits": {"minute": config.requests_per_minute, "hour": config.requests_per_hour, "day": config.requests_per_day}
+            }
+        return stats
 
 
-def get_rate_limit_stats(endpoint: Optional[str] = None) -> Dict:
-    """Get rate limit statistics"""
-    return _global_rate_limiter.get_stats(endpoint)
+_global_limiter: Optional[RateLimiter] = None
 
-
-def reset_rate_limits(endpoint: Optional[str] = None, identifier: Optional[str] = None):
-    """Reset rate limits"""
-    _global_rate_limiter.reset(endpoint, identifier)
-
-
-# Pre-configured rate limits for common scenarios
-RATE_LIMITS = {
-    "api_general": RateLimitConfig(max_requests=100, window_seconds=60),      # 100/min
-    "api_auth": RateLimitConfig(max_requests=5, window_seconds=60),           # 5/min (stricter)
-    "api_analysis": RateLimitConfig(max_requests=30, window_seconds=60),      # 30/min
-    "api_ml_prediction": RateLimitConfig(max_requests=20, window_seconds=60), # 20/min
-    "api_database": RateLimitConfig(max_requests=50, window_seconds=60),      # 50/min
-    "api_websocket": RateLimitConfig(max_requests=200, window_seconds=60),    # 200/min
-}
-
-
-def setup_default_rate_limits():
-    """Setup default rate limits"""
-    for endpoint, config in RATE_LIMITS.items():
-        configure_rate_limit(
-            endpoint,
-            config.max_requests,
-            config.window_seconds,
-            config.block_duration
-        )
+def get_rate_limiter() -> RateLimiter:
+    global _global_limiter
+    if _global_limiter is None:
+        _global_limiter = RateLimiter()
+    return _global_limiter
