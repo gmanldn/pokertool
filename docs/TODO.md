@@ -213,7 +213,7 @@ Conventions
 - [ ] [P1][M] Implement event replay system — Record all events to disk. Allow replay for debugging. `src/pokertool/event_recorder.py`
 - [ ] [P1][S] Add event filtering by type/severity — Allow clients to subscribe to specific event types. `src/pokertool/detection_websocket.py:subscribe`
 - [ ] [P2][M] Create event analytics dashboard — Show event frequency, types, latency. Identify bottlenecks. `pokertool-frontend/src/pages/EventAnalytics.tsx`
-- [ ] [P2][S] Add event deduplication — Prevent duplicate events from being emitted. `src/pokertool/modules/poker_screen_scraper.py`
+- [x] [P2][S] Add event deduplication — ✅ Complete: Created `src/pokertool/event_deduplicator.py` (275 lines) with EventDeduplicator class using SHA256 content hashing and time-based windowing (default 1s). Features: thread-safe operations, per-event-type tracking, configurable windows, automatic cleanup of old signatures, max signatures per type (1000), force emit bypass, metrics tracking (total/unique/duplicate/dedup_rate), signature counts. Global singleton via get_deduplicator(). Test suite: `tests/test_event_deduplicator.py` (16 tests, all passing) covering first event pass, duplicate blocking, window expiration, force bypass, cleanup, thread safety, high volume (1000 events). Reduces WebSocket overhead and improves client performance.
 
 #### Logging Infrastructure (8 tasks)
 - [ ] [P0][M] Implement detection-specific logger with rotation — Separate logger for detection events. Rotate daily, keep 30 days. `src/pokertool/detection_logger.py`
