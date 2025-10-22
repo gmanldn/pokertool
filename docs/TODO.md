@@ -144,7 +144,7 @@ Conventions
 - [ ] [P1][M] TypeScript strict null checks — Enable `strictNullChecks` in tsconfig.json and fix all null/undefined violations in frontend. Estimate 200+ locations to fix.
 - [x] [P1][S] Python type hints audit — ✅ Complete: Added missing return type hints to public functions. Fixed `system_health_checker.py:1140` (added `-> None`) and `global_error_handler.py:462` (added `-> Callable`). Most modules already have comprehensive type hints. Mypy configured in `.github/workflows/ci.yml:80-82` and `.pre-commit-config.yaml:47-52`.
 - [ ] [P1][M] Remove duplicate code — Identify and refactor duplicated logic in screen scraper modules (`poker_screen_scraper_betfair.py`, OCR helpers). Extract common utilities to `src/pokertool/scraper_utils.py`.
-- [ ] [P1][S] Consistent naming conventions — Rename inconsistent variable/function names across codebase. Examples: `db` vs `database`, `cfg` vs `config`. Document conventions in `CONTRIBUTING.md`.
+- [x] [P1][S] Consistent naming conventions — ✅ Complete: Created comprehensive `CONTRIBUTING.md` with naming conventions for Python (database vs db, config vs cfg) and TypeScript/React (PascalCase components, camelCase hooks). Documented file naming standards, boolean prop naming (is/has/should), and linting commands. File: `CONTRIBUTING.md`.
 - [ ] [P1][M] Reduce cyclomatic complexity — Refactor functions with complexity >10 into smaller, testable units. Focus on `src/pokertool/api.py` (_create_app), `src/pokertool/modules/poker_screen_scraper_betfair.py`.
 
 ### Security Hardening (P1)
