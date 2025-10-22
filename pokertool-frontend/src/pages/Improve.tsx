@@ -20,6 +20,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormLabel,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -41,6 +45,15 @@ interface AgentStatus {
 }
 
 type AIProvider = 'claude-code' | 'anthropic' | 'openrouter' | 'openai';
+type TaskPriority = 'P0' | 'P1' | 'P2' | 'P3';
+type TaskSize = 'S' | 'M' | 'L';
+
+interface NewTask {
+  description: string;
+  priority: TaskPriority;
+  size: TaskSize;
+  file?: string;
+}
 
 // SuperAdmin password hash - SHA-256 hash of the password
 const SUPERADMIN_PASSWORD_HASH = 'afcf0cafd8f0161edc400dc94d14892a3da4862423863be5f6be6b530ca59416';
@@ -68,6 +81,15 @@ const Improve: React.FC = () => {
   ]);
   const [isRunning, setIsRunning] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+
+  // Task creator state
+  const [showTaskCreator, setShowTaskCreator] = useState(false);
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskPriority, setTaskPriority] = useState<TaskPriority>('P0');
+  const [taskSize, setTaskSize] = useState<TaskSize>('M');
+  const [taskFile, setTaskFile] = useState('');
+  const [bulkTasksText, setBulkTasksText] = useState('');
+  const [isBulkMode, setIsBulkMode] = useState(false);
 
   // SuperAdmin authentication state
   const [isSuperAdminEnabled, setIsSuperAdminEnabled] = useState(false);
@@ -157,6 +179,76 @@ const Improve: React.FC = () => {
     setShowAuthDialog(false);
     setAuthPassword('');
     setAuthError('');
+  };
+
+  // Task creator handlers
+  const handleOpenTaskCreator = () => {
+    setShowTaskCreator(true);
+  };
+
+  const handleCloseTaskCreator = () => {
+    setShowTaskCreator(false);
+    setTaskDescription('');
+    setTaskPriority('P0');
+    setTaskSize('M');
+    setTaskFile('');
+    setBulkTasksText('');
+    setIsBulkMode(false);
+  };
+
+  const handleSaveTask = async () => {
+    if (isBulkMode) {
+      // Parse bulk tasks
+      const tasks = bulkTasksText.split('\n').filter(line => line.trim());
+      if (tasks.length === 0) {
+        alert('Please enter at least one task');
+        return;
+      }
+
+      // Send bulk tasks to backend
+      try {
+        const response = await fetch('/api/improve/add-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasks: tasks.map(t => ({ description: t, priority: taskPriority, size: taskSize, file: taskFile })) })
+        });
+
+        if (response.ok) {
+          alert(`Successfully added ${tasks.length} tasks to TODO.md`);
+          handleCloseTaskCreator();
+        } else {
+          alert('Failed to add tasks. Check console for details.');
+        }
+      } catch (error) {
+        console.error('Error adding bulk tasks:', error);
+        alert('Error adding tasks: ' + error);
+      }
+    } else {
+      // Single task mode
+      if (!taskDescription.trim()) {
+        alert('Please enter a task description');
+        return;
+      }
+
+      // Send single task to backend
+      try {
+        const response = await fetch('/api/improve/add-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasks: [{ description: taskDescription, priority: taskPriority, size: taskSize, file: taskFile }] })
+        });
+
+        if (response.ok) {
+          alert('Task added successfully to TODO.md');
+          handleCloseTaskCreator();
+        } else {
+          alert('Failed to add task. Check console for details.');
+        }
+      } catch (error) {
+        console.error('Error adding task:', error);
+        alert('Error adding task: ' + error);
+      }
+    }
   };
 
   // Start agents
@@ -273,7 +365,7 @@ const Improve: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<AddIcon />}
-              onClick={() => alert('Task creator coming soon!')}
+              onClick={handleOpenTaskCreator}
               disabled={!isSuperAdminEnabled}
             >
               Add New Task(s)
@@ -505,6 +597,120 @@ const Improve: React.FC = () => {
           </Button>
           <Button onClick={handleSuperAdminAuth} variant="contained" color="primary">
             Authenticate
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Task Creator Dialog */}
+      <Dialog open={showTaskCreator} onClose={handleCloseTaskCreator} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Add New Task(s) to TODO.md
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            {/* Mode selector */}
+            <FormControl component="fieldset" sx={{ mb: 3 }}>
+              <FormLabel component="legend">Task Mode</FormLabel>
+              <RadioGroup
+                row
+                value={isBulkMode ? 'bulk' : 'single'}
+                onChange={(e) => setIsBulkMode(e.target.value === 'bulk')}
+              >
+                <FormControlLabel value="single" control={<Radio />} label="Single Task" />
+                <FormControlLabel value="bulk" control={<Radio />} label="Bulk Tasks" />
+              </RadioGroup>
+            </FormControl>
+
+            {isBulkMode ? (
+              /* Bulk mode */
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Enter one task per line. Priority and size will be applied to all tasks.
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={8}
+                  label="Tasks (one per line)"
+                  value={bulkTasksText}
+                  onChange={(e) => setBulkTasksText(e.target.value)}
+                  placeholder="Create user authentication system&#10;Add password reset functionality&#10;Implement 2FA support"
+                  sx={{ mb: 2 }}
+                />
+              </Box>
+            ) : (
+              /* Single mode */
+              <TextField
+                fullWidth
+                label="Task Description"
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                placeholder="e.g., Create user authentication system"
+                sx={{ mb: 2 }}
+              />
+            )}
+
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              {/* Priority selector */}
+              <Grid item xs={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Priority</InputLabel>
+                  <Select
+                    value={taskPriority}
+                    label="Priority"
+                    onChange={(e) => setTaskPriority(e.target.value as TaskPriority)}
+                  >
+                    <MenuItem value="P0">P0 - Critical</MenuItem>
+                    <MenuItem value="P1">P1 - High</MenuItem>
+                    <MenuItem value="P2">P2 - Medium</MenuItem>
+                    <MenuItem value="P3">P3 - Low</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Size selector */}
+              <Grid item xs={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Size</InputLabel>
+                  <Select
+                    value={taskSize}
+                    label="Size"
+                    onChange={(e) => setTaskSize(e.target.value as TaskSize)}
+                  >
+                    <MenuItem value="S">S - Small (1-2 hrs)</MenuItem>
+                    <MenuItem value="M">M - Medium (2-8 hrs)</MenuItem>
+                    <MenuItem value="L">L - Large (1-3 days)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* File/component path */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="File/Component Path (optional)"
+                  value={taskFile}
+                  onChange={(e) => setTaskFile(e.target.value)}
+                  placeholder="e.g., src/components/auth/Login.tsx"
+                  helperText="Specify the file or component this task relates to"
+                />
+              </Grid>
+            </Grid>
+
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>Format:</strong> Tasks will be added to TODO.md with the format:<br />
+                <code>- [ ] [P{taskPriority}][{taskSize}] {'{'}description{'}'} — {'{'}file{'}'}</code>
+              </Typography>
+            </Alert>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseTaskCreator} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleSaveTask} variant="contained" color="primary">
+            {isBulkMode ? 'Add Tasks' : 'Add Task'}
           </Button>
         </DialogActions>
       </Dialog>

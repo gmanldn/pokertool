@@ -2628,6 +2628,14 @@ This API implements comprehensive security measures including:
         except ImportError as e:
             logger.warning(f"SmartHelper router not available: {e}")
 
+        # Include Improve router
+        try:
+            from pokertool.api_improve import router as improve_router
+            self.app.include_router(improve_router)
+            logger.info("Improve router integrated successfully")
+        except ImportError as e:
+            logger.warning(f"Improve router not available: {e}")
+
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None
 

@@ -193,6 +193,3 @@ class APIKeyValidator {
 
 // Export singleton instance
 export const apiKeyValidator = new APIKeyValidator();
-
-// Export types
-export type { ValidationResult };

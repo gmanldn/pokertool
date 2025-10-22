@@ -32,7 +32,7 @@ Conventions
 
 #### Main Improve Tab Interface (8 tasks)
 - [ ] [P0][M] Create Improve tab with "I" icon — New main navigation tab for AI development automation. Icon: Info/Intelligence symbol. `pokertool-frontend/src/pages/Improve.tsx`
-- [ ] [P0][M] Add TODO task creator interface — Top section with button "Add New Task(s)" that opens modal for adding tasks to `docs/TODO.md`. Support single task or bulk task import. `Improve.tsx:TaskCreator`
+- [x] ✅ [P0][M] Add TODO task creator interface — Top section with button "Add New Task(s)" that opens modal for adding tasks to `docs/TODO.md`. Support single task or bulk task import. `Improve.tsx:TaskCreator`. **Complete:** Modal with single/bulk mode, priority/size selectors, API endpoint `/api/improve/add-tasks` implemented.
 - [ ] [P0][M] Implement AI provider selector — Dropdown to choose AI provider: Claude Code (default), Anthropic API, OpenRouter, OpenAI. Store selection in localStorage. `Improve.tsx:ProviderSelector`
 - [ ] [P0][S] Add API key input field — Secure input for API keys (masked, encrypted in localStorage). Show different fields based on provider. Validate keys before use. `Improve.tsx:APIKeyInput`
 - [ ] [P0][M] Create three embedded terminal windows — Split view with 3 terminal emulators using xterm.js. Resizable panels. Each terminal tracks separate AI agent. `Improve.tsx:TerminalGrid`

@@ -200,3 +200,85 @@ async def stop_all_agents():
     except Exception as e:
         logger.error(f"Error stopping all agents: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/add-tasks")
+async def add_tasks_to_todo(tasks: list):
+    """
+    Add tasks to TODO.md file
+
+    Request body:
+    {
+        "tasks": [
+            {
+                "description": "Task description",
+                "priority": "P0",
+                "size": "M",
+                "file": "path/to/file.py" (optional)
+            }
+        ]
+    }
+    """
+    try:
+        # Get the repo root directory (3 levels up from src/pokertool)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.join(current_dir, "..", "..")
+        todo_path = os.path.join(repo_root, "docs", "TODO.md")
+
+        # Read existing TODO.md
+        if os.path.exists(todo_path):
+            with open(todo_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        else:
+            content = "# TODO\n\n## Improve Tab Tasks\n\n"
+
+        # Prepare new tasks
+        new_tasks_lines = []
+        for task in tasks:
+            description = task.get('description', '')
+            priority = task.get('priority', 'P2')
+            size = task.get('size', 'M')
+            file_path = task.get('file', '')
+
+            if file_path:
+                task_line = f"- [ ] [{priority}][{size}] {description} — `{file_path}`"
+            else:
+                task_line = f"- [ ] [{priority}][{size}] {description}"
+
+            new_tasks_lines.append(task_line)
+
+        # Find a good place to insert tasks (after the first heading)
+        lines = content.split('\n')
+        insert_index = 0
+
+        # Find first heading and insert after it
+        for i, line in enumerate(lines):
+            if line.startswith('# '):
+                insert_index = i + 1
+                break
+
+        # Add blank line if needed
+        if insert_index < len(lines) and lines[insert_index].strip():
+            lines.insert(insert_index, '')
+            insert_index += 1
+
+        # Insert new tasks
+        for task_line in new_tasks_lines:
+            lines.insert(insert_index, task_line)
+            insert_index += 1
+
+        # Write back to TODO.md
+        with open(todo_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines))
+
+        logger.info(f"Added {len(tasks)} task(s) to TODO.md")
+
+        return JSONResponse({
+            "status": "success",
+            "tasks_added": len(tasks),
+            "message": f"Successfully added {len(tasks)} task(s) to TODO.md"
+        })
+
+    except Exception as e:
+        logger.error(f"Error adding tasks to TODO.md: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
