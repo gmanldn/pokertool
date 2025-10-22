@@ -400,7 +400,7 @@ Conventions
 - [ ] [P0][S] Add hover states to all interactive elements — Clear feedback on hover. `pokertool-frontend/src/styles/global.css`
 - [ ] [P0][M] Create smooth micro-animations — Subtle animations for actions. Delight users. `pokertool-frontend/src/styles/animations.ts`
 - [ ] [P0][S] Implement proper loading states — Skeleton loaders, spinners. No blank screens. `pokertool-frontend/src/components/Loading.tsx`
-- [ ] [P0][M] Add empty states with helpful messages — Guide users when no data. "No hands yet. Start playing!" `pokertool-frontend/src/components/EmptyState.tsx`
+- [x] [P0][M] Add empty states with helpful messages — ✅ Complete: Created EmptyState component (310 lines) with 8 variants (no-hands, no-sessions, no-stats, no-analysis, no-results, error, offline, loading) providing context-specific guidance. Integrated into Dashboard (shows when handsPlayed === 0) and TableView (shows when tables.length === 0). Features customizable icons, titles, messages, and action buttons with consistent styling. File: `pokertool-frontend/src/components/EmptyState.tsx`
 - [ ] [P1][M] Redesign navigation with better hierarchy — Clear structure. Easy to find features. `pokertool-frontend/src/components/Navigation.tsx`
 - [ ] [P1][S] Add icons to all menu items — Visual cues for navigation. `pokertool-frontend/src/components/Navigation.tsx:icons`
 - [ ] [P1][M] Implement card-based layouts — Modern card design for content sections. `pokertool-frontend/src/components/Card.tsx`
