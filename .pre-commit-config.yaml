@@ -77,6 +77,14 @@ repos:
         pass_filenames: false
         verbose: true
 
+      - id: check-unused-imports
+        name: check for unused imports (Python)
+        entry: bash -c 'python3 -m autoflake --check --remove-all-unused-imports --recursive src/pokertool/ || echo "⚠️  Unused imports detected. Run: autoflake --remove-all-unused-imports --in-place --recursive src/pokertool/"'
+        language: system
+        types: [python]
+        pass_filenames: false
+        verbose: true
+
   # JavaScript/TypeScript formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
