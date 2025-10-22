@@ -96,6 +96,7 @@ class SecureDatabase:
             confidence_score REAL CHECK(confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0)),
             bet_size_ratio REAL CHECK(bet_size_ratio IS NULL OR bet_size_ratio >= 0.0),
             pot_size REAL CHECK(pot_size IS NULL OR pot_size >= 0.0),
+            player_position TEXT CHECK(player_position IS NULL OR player_position IN ('BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'MP', 'MP+1', 'MP+2', 'HJ', 'CO')),
             CONSTRAINT valid_hand_format CHECK(hand_text GLOB '[AKQJT2-9][shdc][AKQJT2-9][shdc]' OR
                 hand_text GLOB '[AKQJT2-9][shdc][AKQJT2-9][shdc] [AKQJT2-9][shdc][AKQJT2-9][shdc]')
         );
@@ -233,7 +234,8 @@ class SecureDatabase:
                           session_id: Optional[str] = None,
                           confidence_score: Optional[float] = None,
                           bet_size_ratio: Optional[float] = None,
-                          pot_size: Optional[float] = None) -> int:
+                          pot_size: Optional[float] = None,
+                          player_position: Optional[str] = None) -> int:
         """
         Securely save hand analysis with input validation.
 
@@ -245,6 +247,7 @@ class SecureDatabase:
             confidence_score: Detection confidence (0.0-1.0), None if unknown
             bet_size_ratio: Bet size as ratio of pot (bet/pot), None if no bet
             pot_size: Total pot size, None if unknown
+            player_position: Player position (BTN, SB, BB, UTG, etc.), None if unknown
 
         Returns:
             The ID of the inserted record
@@ -285,15 +288,24 @@ class SecureDatabase:
             if pot_size < 0.0:
                 raise ValueError(f'Pot size must be non-negative, got {pot_size}')
 
+        # Validate player position
+        valid_positions = {'BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'MP', 'MP+1', 'MP+2', 'HJ', 'CO'}
+        if player_position is not None:
+            if not isinstance(player_position, str):
+                raise ValueError(f'Player position must be string, got {type(player_position)}')
+            if player_position not in valid_positions:
+                raise ValueError(f'Invalid player position: {player_position}. Must be one of {valid_positions}')
+
         user_hash = self._generate_user_hash()
 
         with db_guard('saving hand analysis'):
             with self._get_connection() as conn:
                 cursor = conn.execute(
                     """INSERT INTO poker_hands
-                    (hand_text, board_text, analysis_result, user_hash, session_id, confidence_score, bet_size_ratio, pot_size)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (hand, board, result, user_hash, session_id, confidence_score, bet_size_ratio, pot_size)
+                    (hand_text, board_text, analysis_result, user_hash, session_id, confidence_score,
+                     bet_size_ratio, pot_size, player_position)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (hand, board, result, user_hash, session_id, confidence_score, bet_size_ratio, pot_size, player_position)
                 )
                 conn.commit()
                 return cursor.lastrowid
@@ -309,7 +321,7 @@ class SecureDatabase:
             with self._get_connection() as conn:
                 cursor = conn.execute(
                     """SELECT id, hand_text, board_text, analysis_result, timestamp,
-                              confidence_score, bet_size_ratio, pot_size
+                              confidence_score, bet_size_ratio, pot_size, player_position
                     FROM poker_hands
                     ORDER BY timestamp DESC
                     LIMIT ? OFFSET ?""",

@@ -68,7 +68,7 @@ Conventions
 - [ ] [P0][M] Add testing phase — Automatically run relevant tests after changes. Require tests to pass before commit. `ai_agent_manager.py:TestingPhase`
 - [ ] [P0][M] Create commit automation — Auto-generate commit messages following conventional commits. Include task reference. `ai_agent_manager.py:CommitPhase`
 - [ ] [P0][M] Add documentation phase — Agent updates docs, adds code comments, updates README if needed. `ai_agent_manager.py:DocumentationPhase`
-- [ ] [P0][S] Implement TODO updater — Mark completed tasks with [x] in TODO.md. Update progress counts. `ai_agent_manager.py:TodoUpdater`
+- [x] [P0][S] Implement TODO updater — ✅ Complete: Full updater with mark_task_complete(), mark_task_in_progress(), add_task(), bulk operations, completion stats, section management. Preserves formatting and adds completion notes. `src/pokertool/todo_updater.py`
 
 ### 3. Safety & Quality Controls (10 tasks)
 
@@ -455,7 +455,7 @@ Conventions
 #### New Data Capture (12 tasks)
 - [x] [P0][M] Add detection confidence scores to database — ✅ Complete: Added confidence_score column (REAL, 0.0-1.0) to poker_hands table in both PostgreSQL and SQLite. Updated save_hand_analysis() to accept optional confidence_score parameter with validation. Updated get_recent_hands() to include confidence in results. Created migration script for existing databases. Files: `src/pokertool/database.py:265,367-424,440-457,553-576`, `src/pokertool/storage.py:96,230-279,291`, `src/pokertool/migrations/add_confidence_score.py`
 - [ ] [P0][S] Store complete detection timeline — Save all detection events per hand. Replay capability. `src/pokertool/database.py:detection_timeline`
-- [ ] [P0][M] Add player position to all hand records — Store position for every action. Position-based queries. `src/pokertool/database.py:player_position`
+- [x] [P0][M] Add player position to all hand records — ✅ Complete: Added player_position column (VARCHAR(10)/TEXT with CHECK constraint) to poker_hands table in both PostgreSQL and SQLite. Validates positions: BTN, SB, BB, UTG, UTG+1, UTG+2, MP, MP+1, MP+2, HJ, CO. Updated save_hand_analysis() to accept optional player_position parameter with validation. Updated get_recent_hands() to include position data. Created migration script for existing databases. Files: `src/pokertool/database.py:268,373,425-430,475,485,592,618`, `src/pokertool/storage.py:99,238,291-297,324`, `src/pokertool/migrations/add_player_position.py`
 - [ ] [P0][S] Store board texture classifications — Save board as wet/dry/coordinated. Analyze by texture. `src/pokertool/database.py:board_texture`
 - [x] [P0][M] Add bet sizing ratios to database — ✅ Complete: Added bet_size_ratio and pot_size columns (REAL, >= 0.0) to poker_hands table in both PostgreSQL and SQLite. Updated save_hand_analysis() to accept optional bet_size_ratio and pot_size parameters with validation. Updated get_recent_hands() to include bet sizing data in results. Created migration script for existing databases. Files: `src/pokertool/database.py:266-267,370-447,463-482,578-606`, `src/pokertool/storage.py:97-98,234-299,311-320`, `src/pokertool/migrations/add_bet_sizing_columns.py`
 - [ ] [P1][M] Store opponent range estimates — Save estimated ranges for opponents. Track range evolution. `src/pokertool/database.py:opponent_ranges`
