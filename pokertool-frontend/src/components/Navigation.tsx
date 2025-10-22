@@ -285,6 +285,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: '🧠 SmartHelper', icon: <Psychology />, path: '/smarthelper' },
     { text: 'Backend', icon: <DeveloperBoard />, path: '/backend' },
     { text: 'TODO', icon: <ChecklistIcon />, path: '/todo' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
@@ -298,7 +299,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     { text: 'Settings', icon: <Settings />, path: '/settings' },
     { text: 'Model Calibration', icon: <TrendingUp />, path: '/model-calibration' },
     { text: 'Opponent Fusion', icon: <People />, path: '/opponent-fusion' },
-    { text: 'Active Learning', icon: <Psychology />, path: '/active-learning' },
+    { text: 'Active Learning', icon: <Biotech />, path: '/active-learning' },
     { text: 'Scraping Accuracy', icon: <Biotech />, path: '/scraping-accuracy' },
     { text: 'System Status', icon: <SettingsApplications />, path: '/system-status' },
   ];

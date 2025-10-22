@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Grid,
   Paper,
@@ -94,12 +94,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  useEffect(() => {
-    // Process real-time updates from WebSocket
-    const latestStatsMessage = messages
+  // Memoize latest stats message to avoid recomputation
+  const latestStatsMessage = useMemo(() => {
+    return messages
       .filter(msg => msg.type === 'stats_update')
       .pop();
-    
+  }, [messages]);
+
+  useEffect(() => {
+    // Process real-time updates from WebSocket
     if (latestStatsMessage) {
       setStats(prevStats => ({
         ...prevStats,
@@ -107,18 +110,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
       }));
       setLastUpdate(new Date());
     }
-  }, [messages]);
+  }, [latestStatsMessage]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setLoading(true);
     // Simulate refresh
     setTimeout(() => {
       setLoading(false);
       setLastUpdate(new Date());
     }, 1000);
-  };
+  }, []);
 
-  const profitChartData = {
+  // Memoize chart data to prevent recreation on every render
+  const profitChartData = useMemo(() => ({
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
@@ -129,9 +133,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         tension: 0.4,
       },
     ],
-  };
+  }), [theme.palette.primary.main]);
 
-  const gameTypeData = {
+  const gameTypeData = useMemo(() => ({
     labels: ['Cash Games', 'Tournaments', 'Sit & Go'],
     datasets: [
       {
@@ -143,7 +147,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         ],
       },
     ],
-  };
+  }), [theme.palette.primary.main, theme.palette.secondary.main, theme.palette.warning.main]);
 
   interface StatCardProps {
     title: string;
@@ -153,7 +157,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
     color?: string;
   }
 
-  const StatCard = ({ title, value, icon, trend, color }: StatCardProps) => (
+  // Memoize StatCard to prevent unnecessary re-renders
+  const StatCard = React.memo(({ title, value, icon, trend, color }: StatCardProps) => (
     <Card
       sx={{
         height: '100%',
@@ -204,7 +209,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         </Box>
       </CardContent>
     </Card>
-  );
+  ));
 
   return (
     <Box sx={{ flexGrow: 1, p: isMobile ? 2 : 3 }}>

@@ -28,6 +28,7 @@ import './styles/mobile.css';
 import { Navigation } from './components/Navigation';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
+import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
 
 // Lazy load route components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -47,6 +48,7 @@ const ActiveLearning = lazy(() => import('./components/ActiveLearning').then(mod
 const ScrapingAccuracy = lazy(() => import('./components/ScrapingAccuracy').then(module => ({ default: module.ScrapingAccuracy })));
 const BackendStatus = lazy(() => import('./pages/BackendStatus'));
 const TodoList = lazy(() => import('./components/TodoList').then(module => ({ default: module.TodoList })));
+const SmartHelper = lazy(() => import('./pages/SmartHelper'));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -161,6 +163,7 @@ function AppContent() {
                   <Route path="/opponent-fusion" element={<ErrorBoundary fallbackType="general"><OpponentFusion /></ErrorBoundary>} />
                   <Route path="/active-learning" element={<ErrorBoundary fallbackType="general"><ActiveLearning /></ErrorBoundary>} />
                   <Route path="/scraping-accuracy" element={<ErrorBoundary fallbackType="general"><ScrapingAccuracy /></ErrorBoundary>} />
+                  <Route path="/smarthelper" element={<ErrorBoundary fallbackType="general"><SmartHelper /></ErrorBoundary>} />
                 </Routes>
               </Suspense>
             </main>
@@ -175,9 +178,11 @@ function AppContent() {
 // Main App component with Redux Provider
 function App() {
   return (
-    <Provider store={store}>
-      <AppContent />
-    </Provider>
+    <GlobalErrorBoundary>
+      <Provider store={store}>
+        <AppContent />
+      </Provider>
+    </GlobalErrorBoundary>
   );
 }
 

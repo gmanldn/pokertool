@@ -7,7 +7,7 @@
  * - Chart display preferences
  * - Notification preferences
  */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -21,7 +21,12 @@ import {
   ToggleButton,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Button,
+  Menu,
+  MenuItem,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import {
   Settings,
@@ -29,8 +34,18 @@ import {
   Psychology,
   BarChart,
   Notifications,
-  Visibility
+  Visibility,
+  Download,
+  Upload,
+  MoreVert
 } from '@mui/icons-material';
+import {
+  exportSettings,
+  importSettings,
+  copySettingsToClipboard,
+  importSettingsFromClipboard,
+  exportSettingsAsURL
+} from '../../utils/settingsExporter';
 
 export interface SmartHelperConfig {
   // Strategy Settings
@@ -94,6 +109,13 @@ export const SmartHelperSettings: React.FC<SmartHelperSettingsProps> = React.mem
     ...defaultConfig,
     ...initialConfig
   });
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateConfig = (updates: Partial<SmartHelperConfig>) => {
     const newConfig = { ...config, ...updates };
@@ -101,6 +123,62 @@ export const SmartHelperSettings: React.FC<SmartHelperSettingsProps> = React.mem
     if (onConfigChange) {
       onConfigChange(newConfig);
     }
+  };
+
+  const handleExport = () => {
+    exportSettings(config);
+    setSnackbar({ open: true, message: 'Settings exported successfully!', severity: 'success' });
+    setAnchorEl(null);
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const importedSettings = await importSettings(file);
+      updateConfig(importedSettings);
+      setSnackbar({ open: true, message: 'Settings imported successfully!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Failed to import settings',
+        severity: 'error'
+      });
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    try {
+      await copySettingsToClipboard(config);
+      setSnackbar({ open: true, message: 'Settings copied to clipboard!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Failed to copy settings', severity: 'error' });
+    }
+    setAnchorEl(null);
+  };
+
+  const handleImportFromClipboard = async () => {
+    try {
+      const importedSettings = await importSettingsFromClipboard();
+      updateConfig(importedSettings);
+      setSnackbar({ open: true, message: 'Settings imported from clipboard!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Failed to import from clipboard', severity: 'error' });
+    }
+    setAnchorEl(null);
+  };
+
+  const handleCopyShareableURL = () => {
+    const url = exportSettingsAsURL(config);
+    navigator.clipboard.writeText(url);
+    setSnackbar({ open: true, message: 'Shareable URL copied to clipboard!', severity: 'success' });
+    setAnchorEl(null);
   };
 
   return (
@@ -119,7 +197,66 @@ export const SmartHelperSettings: React.FC<SmartHelperSettingsProps> = React.mem
         <Typography variant="subtitle1" fontWeight="bold" color="white">
           SmartHelper Settings
         </Typography>
+        <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            style={{ display: 'none' }}
+            onChange={handleImport}
+          />
+          <Button
+            size="small"
+            startIcon={<Upload />}
+            onClick={() => fileInputRef.current?.click()}
+            sx={{ minWidth: 'auto', px: 1 }}
+          >
+            Import
+          </Button>
+          <Button
+            size="small"
+            startIcon={<Download />}
+            onClick={handleExport}
+            sx={{ minWidth: 'auto', px: 1 }}
+          >
+            Export
+          </Button>
+          <Button
+            size="small"
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+            sx={{ minWidth: 'auto', px: 0.5 }}
+          >
+            <MoreVert />
+          </Button>
+        </Box>
       </Box>
+
+      {/* Import/Export Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem onClick={handleCopyToClipboard}>Copy to Clipboard</MenuItem>
+        <MenuItem onClick={handleImportFromClipboard}>Paste from Clipboard</MenuItem>
+        <Divider />
+        <MenuItem onClick={handleCopyShareableURL}>Copy Shareable URL</MenuItem>
+      </Menu>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       {/* Strategy Settings */}
       <Accordion

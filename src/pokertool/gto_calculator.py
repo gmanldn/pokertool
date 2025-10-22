@@ -416,7 +416,7 @@ class GTOCalculator:
             description = "1/2 pot"
 
         # Cap at remaining stack
-        if size > stack_remaining:
+        if size >= stack_remaining:
             size = stack_remaining
             description = "all-in"
 

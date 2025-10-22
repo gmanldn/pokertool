@@ -460,3 +460,311 @@ Conventions
 - Keep this file short and actionable. Move deep design docs and specifications to `docs/` and link from task bullets.
 - When a task spans multiple PRs, add a short progress note after the bullet or split into sub-bullets with clear acceptance criteria.
 - Prefer linking directly to code (`path:line`) or tests to anchor context.
+## SmartHelper - Real-Time Poker Decision Assistant (200 Tasks)
+
+**Last Updated:** 2025-10-22  
+**Status:** Active Development  
+**Overview:** Transform AI Chat into SmartHelper - a sophisticated real-time poker assistant with instant action recommendations, strategic reasoning, micro-analytics, and GTO integration.
+
+### 1. SmartHelper Core Features (40 tasks)
+
+#### Real-Time Action Recommendations (15 tasks)
+- [ ] [P0][M] Create ActionRecommendationCard component — Large, prominent card showing primary recommended action (FOLD/CALL/RAISE with amount). Auto-updates on table state changes. `pokertool-frontend/src/components/smarthelper/ActionRecommendationCard.tsx`
+- [ ] [P0][S] Add GTO frequency display — Show action frequencies as colored pie segments (Raise: 65%, Call: 25%, Fold: 10%). `ActionRecommendationCard.tsx:FrequencyPie`
+- [ ] [P0][M] Implement strategic reasoning one-liner — Show concise strategic summary (e.g., "Semi-bluff with equity edge"). `ActionRecommendationCard.tsx:StrategicSummary`
+- [ ] [P0][M] Add real-time recommendation updates — WebSocket subscription to table state, debounced recalculation (300ms). `hooks/useSmartHelperRecommendation.ts`
+- [ ] [P0][S] Create recommendation confidence meter — Visual bar showing 0-100% confidence in recommendation. `ActionRecommendationCard.tsx:ConfidenceMeter`
+- [ ] [P1][M] Add alternative action suggestions — Show 2nd and 3rd best actions with their frequencies. `ActionRecommendationCard.tsx:AlternativeActions`
+- [ ] [P1][S] Implement action animation transitions — Smooth transitions when recommendation changes. CSS animations. `ActionRecommendationCard.module.css`
+- [ ] [P1][M] Add action history timeline — Show last 5 recommendations with timestamps. `components/smarthelper/ActionHistory.tsx`
+- [ ] [P1][S] Create action copy-to-clipboard — One-click copy of recommendation for notes. `ActionRecommendationCard.tsx:CopyButton`
+- [ ] [P2][M] Add voice announcement option — Text-to-speech for action recommendations (optional). `utils/voiceAnnouncer.ts`
+- [ ] [P2][S] Implement action hotkey bindings — Keyboard shortcuts for quick actions (F: fold, C: call, R: raise). `hooks/useActionHotkeys.ts`
+- [ ] [P2][M] Add recommendation strength indicator — Color-coded border (green: strong, yellow: uncertain, red: marginal). `ActionRecommendationCard.tsx:StrengthBorder`
+- [ ] [P2][S] Create action statistics tracking — Track how often each action is recommended. `utils/actionStatsTracker.ts`
+- [ ] [P3][M] Add session-based recommendation tuning — Learn from user's action choices to personalize. `backend: smarthelper_personalizer.py`
+- [ ] [P3][L] Implement multi-street lookahead — Show recommendations for current + future streets. `components/smarthelper/MultiStreetProjection.tsx`
+
+#### Factor Scoring & Reasoning (15 tasks)
+- [ ] [P0][M] Create ReasoningPanel component — Display factor-weight scoring system with visual breakdown. `pokertool-frontend/src/components/smarthelper/ReasoningPanel.tsx`
+- [ ] [P0][S] Add pot odds factor scoring — Calculate and display pot odds contribution (+8 points). `ReasoningPanel.tsx:PotOddsFactor`
+- [ ] [P0][S] Add position factor scoring — Score position advantage/disadvantage (+5/-3 points). `ReasoningPanel.tsx:PositionFactor`
+- [ ] [P0][S] Add equity factor scoring — Real-time equity vs opponent range (+6 points). `ReasoningPanel.tsx:EquityFactor`
+- [ ] [P0][S] Add opponent factor scoring — Opponent tendency analysis (-2 points if tight). `ReasoningPanel.tsx:OpponentFactor`
+- [ ] [P0][M] Implement net confidence calculation — Sum all factors to show total score (+17). `ReasoningPanel.tsx:NetConfidence`
+- [ ] [P0][S] Add color-coded factor display — Green for positive, red for negative factors. `ReasoningPanel.module.css`
+- [ ] [P1][M] Create expandable factor details — Click to see detailed explanation of each factor. `ReasoningPanel.tsx:FactorExpansion`
+- [ ] [P1][S] Add stack size factor — Deep vs short stack considerations. `backend: factor_scorer.py:stack_factor`
+- [ ] [P1][S] Add board texture factor — Wet/dry board impact on decision. `backend: factor_scorer.py:texture_factor`
+- [ ] [P1][S] Add pot commitment factor — Analyze pot:stack ratio. `backend: factor_scorer.py:commitment_factor`
+- [ ] [P1][M] Implement historical accuracy tracking — Show how accurate past recommendations were. `ReasoningPanel.tsx:AccuracyHistory`
+- [ ] [P2][M] Add ICM factor (tournaments) — Independent Chip Model calculations. `backend: factor_scorer.py:icm_factor`
+- [ ] [P2][S] Add table dynamics factor — Multi-player dynamics analysis. `backend: factor_scorer.py:dynamics_factor`
+- [ ] [P3][L] Create custom factor weights — Allow users to adjust factor importance. `components/smarthelper/FactorWeightEditor.tsx`
+
+#### Backend Recommendation Engine (10 tasks)
+- [ ] [P0][L] Create SmartHelper recommendation engine — Core engine calculating optimal actions. `src/pokertool/smarthelper_engine.py`
+- [ ] [P0][M] Add POST /api/smarthelper/recommend endpoint — Return action, amount, frequencies, reasoning, confidence. `src/pokertool/api.py:smarthelper_routes`
+- [ ] [P0][M] Implement decision tree logic — Structured decision-making flow. `smarthelper_engine.py:DecisionTree`
+- [ ] [P0][S] Add confidence calculation algorithm — Multi-factor confidence scoring. `smarthelper_engine.py:calculate_confidence`
+- [ ] [P1][M] Create factor weight configuration — Configurable weights for each decision factor. `smarthelper_engine.py:FactorWeights`
+- [ ] [P1][M] Add caching for recommendations — Cache recommendations for identical game states (5s TTL). `smarthelper_engine.py:RecommendationCache`
+- [ ] [P1][S] Implement recommendation validation — Sanity checks on recommendations. `smarthelper_engine.py:validate_recommendation`
+- [ ] [P2][M] Add recommendation logging — Log all recommendations for analysis. `smarthelper_engine.py:log_recommendation`
+- [ ] [P2][M] Create recommendation A/B testing — Compare different algorithms. `smarthelper_engine.py:ABTestManager`
+- [ ] [P3][L] Add machine learning model integration — Train ML model on historical data. `smarthelper_ml_model.py`
+
+### 2. Micro Analytics & Visualizations (30 tasks)
+
+#### Equity Chart (8 tasks)
+- [ ] [P0][M] Create EquityChart component — Real-time line graph showing equity evolution. `pokertool-frontend/src/components/smarthelper/EquityChart.tsx`
+- [ ] [P0][S] Add preflop equity calculation — Calculate starting hand equity. `hooks/useRealTimeEquity.ts:preflop`
+- [ ] [P0][S] Add flop equity recalculation — Update equity when flop appears. `hooks/useRealTimeEquity.ts:flop`
+- [ ] [P0][S] Add turn/river equity updates — Continuous equity tracking. `hooks/useRealTimeEquity.ts:turn_river`
+- [ ] [P1][M] Implement range-based equity — Equity vs opponent's estimated range. `backend: equity_calculator.py:range_equity`
+- [ ] [P1][S] Add equity confidence bands — Show min/max equity with shaded area. `EquityChart.tsx:ConfidenceBands`
+- [ ] [P2][M] Create equity history comparison — Compare current hand to historical averages. `EquityChart.tsx:HistoricalOverlay`
+- [ ] [P3][M] Add Monte Carlo simulation visualization — Show equity distribution. `EquityChart.tsx:MonteCarloViz`
+
+#### Pot Odds Visual (7 tasks)
+- [ ] [P0][M] Create PotOddsVisual component — Circular odds calculator with visual segments. `pokertool-frontend/src/components/smarthelper/PotOddsVisual.tsx`
+- [ ] [P0][S] Add pot size display — Center number showing total pot. `PotOddsVisual.tsx:PotDisplay`
+- [ ] [P0][S] Add bet-to-call display — Amount needed to call. `PotOddsVisual.tsx:CallAmount`
+- [ ] [P0][S] Calculate pot odds ratio — Display as "3.5:1" format. `PotOddsVisual.tsx:OddsRatio`
+- [ ] [P0][S] Calculate break-even equity — Show required win % to call. `PotOddsVisual.tsx:BreakEven`
+- [ ] [P1][M] Add implied odds calculation — Consider future betting rounds. `backend: pot_odds_calculator.py:implied_odds`
+- [ ] [P2][S] Create pot odds history — Show odds evolution through hand. `PotOddsVisual.tsx:OddsHistory`
+
+#### Position Stats Card (7 tasks)
+- [ ] [P0][M] Create PositionStatsCard component — Show your stats from current position. `pokertool-frontend/src/components/smarthelper/PositionStatsCard.tsx`
+- [ ] [P0][S] Display VPIP from position — % of hands played from this position. `PositionStatsCard.tsx:VPIP`
+- [ ] [P0][S] Display PFR from position — % of hands raised from this position. `PositionStatsCard.tsx:PFR`
+- [ ] [P0][S] Display aggression from position — Aggression factor from this position. `PositionStatsCard.tsx:Aggression`
+- [ ] [P1][S] Add win rate from position — Historical win rate. `PositionStatsCard.tsx:WinRate`
+- [ ] [P1][M] Compare to optimal stats — Show how your stats compare to GTO. `PositionStatsCard.tsx:GTOComparison`
+- [ ] [P2][M] Add positional heatmap — Visual grid showing stats by position. `components/smarthelper/PositionHeatmap.tsx`
+
+#### Opponent Tendency Heatmap (8 tasks)
+- [ ] [P0][M] Create OpponentTendencyHeatmap component — Visual grid of opponent stats. `pokertool-frontend/src/components/smarthelper/OpponentTendencyHeatmap.tsx`
+- [ ] [P0][S] Track fold-to-cbet % — Opponent's fold rate to continuation bets. `backend: opponent_profiler.py:fold_to_cbet`
+- [ ] [P0][S] Track 3-bet % — Opponent's 3-betting frequency. `backend: opponent_profiler.py:three_bet_freq`
+- [ ] [P0][S] Track fold-to-3bet % — Opponent's fold rate to 3-bets. `backend: opponent_profiler.py:fold_to_3bet`
+- [ ] [P0][S] Track aggression factor — Opponent's overall aggression. `backend: opponent_profiler.py:aggression`
+- [ ] [P1][M] Add opponent range estimation — Estimate opponent's likely holdings. `backend: opponent_profiler.py:estimate_range`
+- [ ] [P1][S] Color-code tendency cells — Green (exploitable), yellow (standard), red (dangerous). `OpponentTendencyHeatmap.module.css`
+- [ ] [P2][M] Add multi-opponent comparison — Compare all active opponents side-by-side. `components/smarthelper/MultiOpponentCompare.tsx`
+
+### 3. GTO Integration (25 tasks)
+
+#### GTO Solver Integration (10 tasks)
+- [ ] [P0][L] Integrate GTO solver library — Add PioSolver or SimplePostflop library. `src/pokertool/gto_calculator.py:GtoSolver`
+- [ ] [P0][M] Create GTO frequency calculator — Calculate optimal action frequencies. `gto_calculator.py:calculate_frequencies`
+- [ ] [P0][M] Add range-based GTO calculations — Optimal play vs opponent ranges. `gto_calculator.py:range_gto`
+- [ ] [P0][S] Cache GTO solutions — Cache common game states (Redis, 24h TTL). `gto_calculator.py:GtoCache`
+- [ ] [P1][M] Implement simplified GTO for live play — Fast approximation algorithms. `gto_calculator.py:fast_gto_approx`
+- [ ] [P1][M] Add position-based GTO adjustments — Different strategies by position. `gto_calculator.py:position_gto`
+- [ ] [P1][S] Create GTO vs exploitative toggle — Switch between GTO and exploitative recommendations. `components/smarthelper/StrategyToggle.tsx`
+- [ ] [P2][M] Add tournament GTO adaptations — ICM-adjusted GTO strategies. `gto_calculator.py:tournament_gto`
+- [ ] [P2][L] Implement multi-way pot GTO — 3+ player GTO calculations. `gto_calculator.py:multiway_gto`
+- [ ] [P3][L] Create GTO trainer mode — Practice GTO decisions with feedback. `components/GTOTrainerEnhanced.tsx`
+
+#### Range Analysis (10 tasks)
+- [ ] [P0][M] Create RangeAnalyzer component — Visual range grid (AA to 22, AK to 72o). `pokertool-frontend/src/components/smarthelper/RangeAnalyzer.tsx`
+- [ ] [P0][M] Implement hero range builder — Select and edit your perceived range. `RangeAnalyzer.tsx:HeroRangeBuilder`
+- [ ] [P0][M] Implement villain range estimator — Estimate opponent's range based on actions. `backend: opponent_profiler.py:estimate_range`
+- [ ] [P0][S] Add range vs range equity — Calculate range-on-range equity. `backend: equity_calculator.py:range_vs_range`
+- [ ] [P1][M] Create range narrowing logic — Update ranges based on betting actions. `backend: opponent_profiler.py:narrow_range`
+- [ ] [P1][S] Add range visualization — Color-code hands by strength/frequency. `RangeAnalyzer.tsx:RangeColorizer`
+- [ ] [P1][M] Implement preflop range charts — Load standard preflop ranges by position. `backend: gto_calculator.py:preflop_ranges`
+- [ ] [P2][M] Add postflop range evolution — Show how ranges change street-by-street. `components/smarthelper/RangeEvolution.tsx`
+- [ ] [P2][M] Create range comparison tool — Compare hero range vs villain range. `RangeAnalyzer.tsx:RangeComparison`
+- [ ] [P3][L] Add custom range saving — Save and load custom ranges. `backend: range_storage.py`
+
+#### Exploitative Adjustments (5 tasks)
+- [ ] [P0][M] Implement exploitative strategy engine — Adjust GTO based on opponent tendencies. `src/pokertool/exploitative_engine.py`
+- [ ] [P1][M] Add tightness/looseness adjustments — Adjust for tight/loose opponents. `exploitative_engine.py:tightness_adjust`
+- [ ] [P1][M] Add passiveness/aggression adjustments — Exploit passive/aggressive players. `exploitative_engine.py:aggression_adjust`
+- [ ] [P2][M] Create exploitation recommendations — Specific advice on how to exploit opponent. `components/smarthelper/ExploitationAdvice.tsx`
+- [ ] [P3][L] Add dynamic exploitation — Real-time adjustments as opponent adapts. `exploitative_engine.py:dynamic_exploit`
+
+### 4. Real-Time Updates & Performance (15 tasks)
+
+#### WebSocket Integration (8 tasks)
+- [ ] [P0][M] Create SmartHelper WebSocket channel — Dedicated channel for SmartHelper updates. `src/pokertool/api.py:smarthelper_websocket`
+- [ ] [P0][S] Implement table state subscription — Subscribe to table state changes. `hooks/useSmartHelperRecommendation.ts:subscribe`
+- [ ] [P0][S] Add debounced recommendation updates — Prevent excessive recalculations (300ms debounce). `hooks/useSmartHelperRecommendation.ts:debounce`
+- [ ] [P0][S] Implement optimistic UI updates — Show estimated recommendations immediately. `hooks/useSmartHelperRecommendation.ts:optimistic`
+- [ ] [P1][M] Add WebSocket reconnection handling — Graceful reconnection with state recovery. `hooks/useSmartHelperWebSocket.ts:reconnect`
+- [ ] [P1][S] Implement message queuing — Queue updates during disconnection. `hooks/useSmartHelperWebSocket.ts:queue`
+- [ ] [P2][M] Add WebSocket compression — Compress large recommendation payloads. `api.py:websocket_compression`
+- [ ] [P2][S] Create connection status indicator — Show WebSocket connection state. `components/smarthelper/ConnectionStatus.tsx`
+
+#### Performance Optimization (7 tasks)
+- [ ] [P0][M] Implement recommendation caching — Cache identical game states (5s TTL). `backend: smarthelper_engine.py:cache`
+- [ ] [P0][S] Add lazy loading for components — Lazy load heavy charts and visualizations. `SmartHelper.tsx:lazy_imports`
+- [ ] [P1][M] Optimize chart rendering — Use Canvas instead of SVG for large datasets. `EquityChart.tsx:canvas_optimization`
+- [ ] [P1][S] Add React.memo to all components — Prevent unnecessary re-renders. `components/smarthelper/*.tsx:memo`
+- [ ] [P1][M] Implement virtual scrolling — For action history and large data lists. `components/smarthelper/VirtualActionHistory.tsx`
+- [ ] [P2][M] Add Web Worker for calculations — Offload heavy calculations to worker thread. `workers/smarthelper.worker.ts`
+- [ ] [P2][S] Create performance monitoring — Track SmartHelper render times. `utils/smarthelperPerformance.ts`
+
+### 5. UI/UX Polish (30 tasks)
+
+#### Layout & Design (12 tasks)
+- [ ] [P0][M] Create MicroChartsGrid layout — Responsive grid for all analytics components. `pokertool-frontend/src/components/smarthelper/MicroChartsGrid.tsx`
+- [ ] [P0][S] Add panel collapsing — Allow users to collapse/expand sections. `MicroChartsGrid.tsx:Collapsible`
+- [ ] [P0][S] Implement panel reordering — Drag-and-drop to reorder panels. `MicroChartsGrid.tsx:DragDrop`
+- [ ] [P1][M] Create mobile-optimized layout — Vertical stacking on mobile devices. `MicroChartsGrid.module.css:mobile`
+- [ ] [P1][S] Add dark mode support — Ensure all components work in dark mode. `components/smarthelper/*.module.css:dark`
+- [ ] [P1][S] Implement panel resizing — Resize panels by dragging edges. `MicroChartsGrid.tsx:Resizable`
+- [ ] [P1][M] Create fullscreen mode — Expand SmartHelper to fullscreen. `SmartHelper.tsx:FullscreenButton`
+- [ ] [P2][M] Add customizable themes — Multiple color schemes for SmartHelper. `styles/smarthelperThemes.ts`
+- [ ] [P2][S] Create panel presets — Save and load custom layouts. `utils/layoutPresets.ts`
+- [ ] [P2][M] Implement split-screen mode — Show SmartHelper alongside table view. `SmartHelper.tsx:SplitScreenMode`
+- [ ] [P3][M] Add picture-in-picture support — Float SmartHelper in small window. `SmartHelper.tsx:PiPMode`
+- [ ] [P3][S] Create panel animations — Smooth animations for panel changes. `MicroChartsGrid.module.css:animations`
+
+#### Animations & Transitions (8 tasks)
+- [ ] [P1][S] Add recommendation change animation — Fade/slide when recommendation updates. `ActionRecommendationCard.module.css:transition`
+- [ ] [P1][S] Create factor pulse animation — Pulse factors that changed recently. `ReasoningPanel.module.css:pulse`
+- [ ] [P1][S] Add chart update transitions — Smooth data point transitions. `EquityChart.tsx:transition`
+- [ ] [P1][S] Implement loading skeletons — Skeleton screens during data loading. `components/smarthelper/SmartHelperSkeleton.tsx`
+- [ ] [P2][S] Add confidence meter animation — Animated fill for confidence bar. `ActionRecommendationCard.module.css:fill_animation`
+- [ ] [P2][S] Create success/error animations — Visual feedback for actions. `SmartHelper.tsx:ActionFeedback`
+- [ ] [P2][S] Add number counting animation — Animate number changes (e.g., equity %). `utils/numberAnimation.ts`
+- [ ] [P3][M] Implement micro-interactions — Hover effects, button feedback. `components/smarthelper/*.module.css:hover`
+
+#### User Preferences (10 tasks)
+- [ ] [P1][M] Create SmartHelper settings panel — Centralized settings for SmartHelper. `components/smarthelper/SmartHelperSettings.tsx`
+- [ ] [P1][S] Add GTO/exploitative preference — Toggle between strategies. `SmartHelperSettings.tsx:StrategyPreference`
+- [ ] [P1][S] Add confidence threshold setting — Minimum confidence to show recommendation. `SmartHelperSettings.tsx:ConfidenceThreshold`
+- [ ] [P1][S] Add chart display preferences — Choose which charts to show. `SmartHelperSettings.tsx:ChartPreferences`
+- [ ] [P1][S] Add notification preferences — Configure alerts and notifications. `SmartHelperSettings.tsx:Notifications`
+- [ ] [P2][M] Save user preferences to backend — Persist settings across sessions. `backend: smarthelper_preferences.py`
+- [ ] [P2][S] Add factor weight customization — Adjust importance of decision factors. `SmartHelperSettings.tsx:FactorWeights`
+- [ ] [P2][M] Create recommendation history settings — History length and retention. `SmartHelperSettings.tsx:HistorySettings`
+- [ ] [P3][M] Add voice settings — Configure voice announcements. `SmartHelperSettings.tsx:VoiceSettings`
+- [ ] [P3][S] Implement preference import/export — Share settings between devices. `utils/settingsExporter.ts`
+
+### 6. Backend Infrastructure (20 tasks)
+
+#### API Endpoints (10 tasks)
+- [ ] [P0][M] POST /api/smarthelper/recommend — Get action recommendation. Returns: {action, amount, frequencies, reasoning, confidence}. `src/pokertool/api.py:recommend_endpoint`
+- [ ] [P0][M] GET /api/smarthelper/factors — Get decision factors with weights. `api.py:factors_endpoint`
+- [ ] [P0][M] POST /api/smarthelper/equity — Calculate real-time equity. `api.py:equity_endpoint`
+- [ ] [P1][M] GET /api/smarthelper/ranges — Get preflop range charts. `api.py:ranges_endpoint`
+- [ ] [P1][M] POST /api/smarthelper/range-equity — Calculate range vs range equity. `api.py:range_equity_endpoint`
+- [ ] [P1][M] GET /api/smarthelper/opponent/{id} — Get opponent profile. `api.py:opponent_profile_endpoint`
+- [ ] [P1][M] GET /api/smarthelper/history — Get recommendation history. `api.py:history_endpoint`
+- [ ] [P2][M] POST /api/smarthelper/feedback — Submit recommendation feedback. `api.py:feedback_endpoint`
+- [ ] [P2][M] GET /api/smarthelper/preferences — Get user preferences. `api.py:preferences_endpoint`
+- [ ] [P2][M] PUT /api/smarthelper/preferences — Update preferences. `api.py:update_preferences_endpoint`
+
+#### Caching & Performance (5 tasks)
+- [ ] [P0][M] Implement Redis caching for recommendations — Cache common game states (5s TTL). `src/pokertool/smarthelper_cache.py`
+- [ ] [P1][M] Add response compression — Gzip large payloads. `api.py:gzip_compression`
+- [ ] [P1][S] Implement query result caching — Cache expensive queries (30s TTL). `smarthelper_cache.py:query_cache`
+- [ ] [P2][M] Add CDN caching for static GTO data — Cache range charts, preflop charts. `smarthelper_cache.py:cdn_cache`
+- [ ] [P2][M] Create cache warming strategy — Pre-cache common scenarios. `smarthelper_cache.py:cache_warmer`
+
+#### Database (5 tasks)
+- [ ] [P1][M] Create recommendation_history table — Store all recommendations. Schema: id, timestamp, game_state, recommendation, confidence, user_feedback. `src/pokertool/database.py:create_recommendation_history`
+- [ ] [P1][S] Create opponent_profiles table — Store opponent statistics. `database.py:create_opponent_profiles`
+- [ ] [P1][S] Create smarthelper_preferences table — Store user preferences. `database.py:create_smarthelper_preferences`
+- [ ] [P2][M] Add database indexes — Index on (user_id, timestamp) for fast queries. `database.py:recommendation_indexes`
+- [ ] [P2][M] Implement data retention policy — Auto-delete recommendations >90 days old. `database.py:data_retention`
+
+### 7. Testing & Quality (15 tasks)
+
+#### Unit Tests (8 tasks)
+- [ ] [P0][M] Test recommendation engine core logic — Test DecisionTree, factor scoring. `tests/test_smarthelper_engine.py`
+- [ ] [P0][M] Test GTO calculator — Test frequency calculations, range analysis. `tests/test_gto_calculator.py`
+- [ ] [P0][M] Test equity calculator — Test equity calculations for various scenarios. `tests/test_equity_calculator.py`
+- [ ] [P1][M] Test factor scorer — Test all decision factors. `tests/test_factor_scorer.py`
+- [ ] [P1][M] Test opponent profiler — Test range estimation, tendency tracking. `tests/test_opponent_profiler.py`
+- [ ] [P1][M] Test React components — Test ActionRecommendationCard, ReasoningPanel, charts. `tests/frontend/test_smarthelper_components.tsx`
+- [ ] [P2][M] Test WebSocket integration — Test real-time updates, reconnection. `tests/test_smarthelper_websocket.py`
+- [ ] [P2][M] Test caching logic — Test cache hits, misses, invalidation. `tests/test_smarthelper_cache.py`
+
+#### Integration Tests (4 tasks)
+- [ ] [P1][M] Test end-to-end recommendation flow — Frontend request → backend calculation → WebSocket update. `tests/integration/test_smarthelper_e2e.py`
+- [ ] [P1][M] Test multi-component interaction — Test chart updates when recommendation changes. `tests/integration/test_smarthelper_integration.tsx`
+- [ ] [P2][M] Test error handling — Test behavior when calculations fail. `tests/integration/test_smarthelper_errors.py`
+- [ ] [P2][M] Test performance under load — Stress test with concurrent recommendations. `tests/integration/test_smarthelper_performance.py`
+
+#### Validation & Accuracy (3 tasks)
+- [ ] [P0][L] Validate recommendation accuracy — Compare recommendations to GTO solutions. Track accuracy over 1000+ hands. `tests/validation/test_recommendation_accuracy.py`
+- [ ] [P1][M] Validate factor weights — Ensure factors contribute correctly to decisions. `tests/validation/test_factor_weights.py`
+- [ ] [P2][M] Create accuracy dashboard — Track SmartHelper accuracy over time. `components/smarthelper/AccuracyDashboard.tsx`
+
+### 8. Documentation & User Guides (10 tasks)
+
+#### User Documentation (5 tasks)
+- [ ] [P1][M] Create SmartHelper user guide — Comprehensive guide in `docs/SMARTHELPER.md`. Explain features, usage, settings.
+- [ ] [P1][S] Add SmartHelper quick start — 5-minute getting started guide. `docs/SMARTHELPER_QUICKSTART.md`
+- [ ] [P1][M] Create video tutorials — Screen recordings showing SmartHelper features. `docs/videos/smarthelper/`
+- [ ] [P2][M] Add tooltips to all components — Hover tooltips explaining features. `components/smarthelper/*.tsx:tooltips`
+- [ ] [P2][S] Create FAQ section — Common questions and answers. `docs/SMARTHELPER_FAQ.md`
+
+#### Developer Documentation (5 tasks)
+- [ ] [P1][M] Document recommendation engine API — API reference for all endpoints. `docs/api/SMARTHELPER_API.md`
+- [ ] [P1][M] Create architecture diagram — Visual diagram of SmartHelper architecture. `docs/diagrams/smarthelper_architecture.png`
+- [ ] [P2][M] Document factor scoring system — Explain how factors are calculated and weighted. `docs/FACTOR_SCORING.md`
+- [ ] [P2][S] Add code comments — Comprehensive inline documentation. `src/pokertool/smarthelper_*.py:docstrings`
+- [ ] [P3][M] Create contribution guide — Guide for adding new factors or features. `docs/SMARTHELPER_CONTRIBUTING.md`
+
+### 9. Advanced Features (15 tasks)
+
+#### Machine Learning (5 tasks)
+- [ ] [P2][L] Train ML model on historical recommendations — Learn from past decisions. `src/pokertool/smarthelper_ml_model.py`
+- [ ] [P2][M] Implement online learning — Update model as user plays. `smarthelper_ml_model.py:online_learning`
+- [ ] [P2][M] Add opponent modeling ML — Predict opponent actions with ML. `opponent_ml_model.py`
+- [ ] [P3][L] Create neural network for range estimation — Deep learning for ranges. `range_estimation_nn.py`
+- [ ] [P3][L] Implement reinforcement learning — RL for strategy optimization. `smarthelper_rl.py`
+
+#### Multi-Table Support (5 tasks)
+- [ ] [P2][M] Add multi-table tracking — Track multiple tables simultaneously. `backend: multi_table_tracker.py`
+- [ ] [P2][M] Create table switcher UI — Quick switch between tables. `components/smarthelper/TableSwitcher.tsx`
+- [ ] [P2][M] Implement priority queue — Recommend which table needs attention. `backend: table_priority_queue.py`
+- [ ] [P3][M] Add synchronized recommendations — Coordinate recommendations across tables. `backend: multi_table_sync.py`
+- [ ] [P3][L] Create multi-table dashboard — Overview of all tables. `components/smarthelper/MultiTableDashboard.tsx`
+
+#### Advanced Analytics (5 tasks)
+- [ ] [P2][M] Add session review mode — Analyze completed sessions with SmartHelper. `components/smarthelper/SessionReview.tsx`
+- [ ] [P2][M] Create leak detection — Identify common mistakes using SmartHelper data. `backend: leak_detector.py`
+- [ ] [P2][M] Add hand replayer with recommendations — Replay hands with SmartHelper commentary. `components/smarthelper/HandReplayer.tsx`
+- [ ] [P3][M] Implement decision tree visualizer — Visual tree of decision logic. `components/smarthelper/DecisionTreeViz.tsx`
+- [ ] [P3][L] Create AI coaching mode — Interactive lessons using SmartHelper. `components/smarthelper/CoachingMode.tsx`
+
+## SmartHelper Milestones
+
+**Phase 1 (Week 1):** Core Recommendations + Basic UI (40 tasks)
+- Action recommendation card
+- Factor scoring panel
+- Basic backend engine
+- API endpoints
+
+**Phase 2 (Week 2):** Micro Analytics (30 tasks)
+- Equity chart
+- Pot odds visual
+- Position stats
+- Opponent heatmap
+
+**Phase 3 (Week 3):** GTO Integration (25 tasks)
+- GTO solver integration
+- Range analysis
+- Frequency calculations
+- Exploitative adjustments
+
+**Phase 4 (Week 4):** Polish & Testing (35 tasks)
+- Real-time updates
+- UI/UX polish
+- Testing
+- Documentation
+
+**Phase 5 (Week 5+):** Advanced Features (70 tasks)
+- ML integration
+- Multi-table support
+- Advanced analytics
+- Ongoing refinement
+

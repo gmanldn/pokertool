@@ -55,6 +55,25 @@ except ImportError as e:
     mss = None
     cv2 = None
 
+# Side pot detector
+try:
+    from ..side_pot_detector import SidePotDetector
+    SIDE_POT_DETECTOR_AVAILABLE = True
+except ImportError:
+    logger.warning("Side pot detector not available")
+    SIDE_POT_DETECTOR_AVAILABLE = False
+    SidePotDetector = None
+
+# Player action detector
+try:
+    from ..player_action_detector import PlayerActionDetector, PlayerAction
+    PLAYER_ACTION_DETECTOR_AVAILABLE = True
+except ImportError:
+    logger.warning("Player action detector not available")
+    PLAYER_ACTION_DETECTOR_AVAILABLE = False
+    PlayerActionDetector = None
+    PlayerAction = None
+
 # Detection event dispatcher (optional)
 try:
     from ..detection_events import emit_detection_event
@@ -133,6 +152,11 @@ class SeatInfo:
     vpip: Optional[int] = None  # Voluntarily Put $ In Pot (%)
     af: Optional[float] = None  # Aggression Factor
     time_bank: Optional[int] = None  # Time bank seconds remaining
+    # Action tracking
+    last_action: str = ""  # fold, check, call, bet, raise, all_in
+    last_action_amount: float = 0.0  # Bet/raise amount
+    last_action_timestamp: float = 0.0  # When action occurred
+    previous_stack: float = 0.0  # Stack before action (for change detection)
     is_active_turn: bool = False  # Is it this player's turn?
     current_bet: float = 0.0  # Amount bet in current round
     status_text: str = ""  # "Active", "Sitting Out", "All In", etc.
@@ -149,6 +173,9 @@ class TableState:
 
     # Game state
     pot_size: float = 0.0
+    previous_pot_size: float = 0.0  # For pot change tracking
+    side_pots: List[float] = field(default_factory=list)  # Side pot amounts
+    total_pot: float = 0.0  # Total of main + side pots
     hero_cards: List = field(default_factory=list)
     board_cards: List = field(default_factory=list)
     seats: List[SeatInfo] = field(default_factory=list)
@@ -1332,6 +1359,24 @@ class PokerScreenScraper:
             except Exception as e:
                 logger.debug(f"OCR Ensemble initialization failed: {e}")
 
+        # Initialize side pot detector
+        self.side_pot_detector = None
+        if SIDE_POT_DETECTOR_AVAILABLE:
+            try:
+                self.side_pot_detector = SidePotDetector()
+                logger.info("💰 Side pot detector initialized")
+            except Exception as e:
+                logger.warning(f"Could not initialize side pot detector: {e}")
+
+        # Initialize player action detector
+        self.action_detector = None
+        if PLAYER_ACTION_DETECTOR_AVAILABLE:
+            try:
+                self.action_detector = PlayerActionDetector()
+                logger.info("🎯 Player action detector initialized")
+            except Exception as e:
+                logger.warning(f"Could not initialize player action detector: {e}")
+
         # Adaptive strategy selection
         self.strategy_performance = {}  # {extraction_type: {strategy: (successes, total)}}
         self.adaptive_mode_enabled = True
@@ -1829,36 +1874,91 @@ class PokerScreenScraper:
                 state.board_cards = self._extract_board_cards(image)
                 state.small_blind, state.big_blind, state.ante = self._extract_blinds(image)
 
-            # Emit detection events for successful extractions
+            # Emit detection events for successful extractions with confidence scores
             if state.pot_size > 0:
+                pot_confidence = getattr(state, 'pot_confidence', 0.9)  # Default high confidence
+                logger.debug(f"Pot detection confidence: {pot_confidence:.2f}")
+
+                # Track pot changes
+                pot_changed = abs(state.pot_size - state.previous_pot_size) > 0.01
+                pot_change = state.pot_size - state.previous_pot_size if pot_changed else 0.0
+
+                # Detect side pots if detector is available
+                if self.side_pot_detector is not None:
+                    try:
+                        all_pots = self.side_pot_detector.detect_all_pots(
+                            image=image,
+                            main_pot_amount=state.pot_size,
+                            main_pot_confidence=pot_confidence,
+                            ocr_func=lambda img: self._extract_pot_size(img)
+                        )
+
+                        # Extract side pot amounts
+                        state.side_pots = [p.amount for p in all_pots if not p.is_main_pot]
+                        state.total_pot = sum(p.amount for p in all_pots)
+
+                        if state.side_pots:
+                            logger.info(f"💰 Side pots detected: {len(state.side_pots)} pot(s), total: ${state.total_pot:.2f}")
+                    except Exception as e:
+                        logger.debug(f"Side pot detection failed: {e}")
+                        state.side_pots = []
+                        state.total_pot = state.pot_size
+                else:
+                    state.total_pot = state.pot_size
+
                 emit_detection_event(
                     event_type='pot',
-                    severity='info',
-                    message=f"Pot detected: ${state.pot_size:.2f}",
-                    data={'pot_size': state.pot_size}
+                    severity='info' if pot_confidence > 0.7 else 'warning',
+                    message=f"Pot detected: ${state.pot_size:.2f}" +
+                           (f" + {len(state.side_pots)} side pot(s)" if state.side_pots else "") +
+                           (f" = ${state.total_pot:.2f} total" if state.side_pots else "") +
+                           f" (confidence: {pot_confidence:.2%})" +
+                           (f" [+${pot_change:.2f}]" if pot_changed else ""),
+                    data={
+                        'pot_size': state.pot_size,
+                        'previous_pot_size': state.previous_pot_size,
+                        'pot_change': pot_change,
+                        'pot_changed': pot_changed,
+                        'side_pots': state.side_pots,
+                        'side_pot_count': len(state.side_pots),
+                        'total_pot': state.total_pot,
+                        'confidence': pot_confidence,
+                        'confidence_level': 'high' if pot_confidence > 0.8 else 'medium' if pot_confidence > 0.6 else 'low'
+                    }
                 )
+
+                # Update previous pot size for next iteration
+                state.previous_pot_size = state.pot_size
 
             if state.hero_cards:
                 hero_cards_str = ', '.join([str(c) for c in state.hero_cards])
+                hero_confidence = getattr(state, 'hero_cards_confidence', 0.85)
+                logger.debug(f"Hero cards detection confidence: {hero_confidence:.2f}")
                 emit_detection_event(
                     event_type='card',
-                    severity='success',
-                    message=f"Hero cards detected: {hero_cards_str}",
+                    severity='success' if hero_confidence > 0.8 else 'warning',
+                    message=f"Hero cards detected: {hero_cards_str} (confidence: {hero_confidence:.2%})",
                     data={
                         'card_count': len(state.hero_cards),
-                        'cards': [{'rank': c.rank, 'suit': c.suit} for c in state.hero_cards]
+                        'cards': [{'rank': c.rank, 'suit': c.suit} for c in state.hero_cards],
+                        'confidence': hero_confidence,
+                        'confidence_level': 'high' if hero_confidence > 0.8 else 'medium' if hero_confidence > 0.6 else 'low'
                     }
                 )
 
             if state.board_cards:
                 board_cards_str = ', '.join([str(c) for c in state.board_cards])
+                board_confidence = getattr(state, 'board_cards_confidence', 0.9)
+                logger.debug(f"Board cards detection confidence: {board_confidence:.2f}")
                 emit_detection_event(
                     event_type='card',
-                    severity='info',
-                    message=f"Board cards detected: {board_cards_str}",
+                    severity='info' if board_confidence > 0.7 else 'warning',
+                    message=f"Board cards detected: {board_cards_str} (confidence: {board_confidence:.2%})",
                     data={
                         'card_count': len(state.board_cards),
-                        'cards': [{'rank': c.rank, 'suit': c.suit} for c in state.board_cards]
+                        'cards': [{'rank': c.rank, 'suit': c.suit} for c in state.board_cards],
+                        'confidence': board_confidence,
+                        'confidence_level': 'high' if board_confidence > 0.8 else 'medium' if board_confidence > 0.6 else 'low'
                     }
                 )
 

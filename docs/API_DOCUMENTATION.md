@@ -164,6 +164,31 @@ RESTful API with FastAPI (optional dependencies).
 - `GET /stats/database`: Database statistics
 - `WS /ws/{user_id}`: WebSocket connection
 
+**Interactive API Documentation:**
+
+FastAPI provides automatic interactive documentation for all API endpoints:
+
+- **Swagger UI**: http://localhost:5001/docs
+  - Try endpoints directly in your browser
+  - View request/response schemas and examples
+  - Test authentication with JWT tokens
+  - See all available parameters and validation rules
+
+- **ReDoc**: http://localhost:5001/redoc
+  - Alternative documentation interface
+  - Clean, searchable layout
+  - Organized by endpoint tags
+
+- **OpenAPI JSON**: http://localhost:5001/openapi.json
+  - Raw OpenAPI 3.0 specification
+  - Import into Postman, Insomnia, or code generators
+
+All request/response models include:
+- Field descriptions and validation rules
+- Example values for testing
+- Error responses with codes
+- Rate limit information
+
 #### `pokertool.cli`
 Command-line interface entry point.
 

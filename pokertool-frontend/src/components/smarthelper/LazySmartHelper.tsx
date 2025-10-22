@@ -25,11 +25,11 @@ export const LazyEquityChart = lazy(() =>
 );
 
 export const LazyDecisionFactors = lazy(() =>
-  import('./DecisionFactors').then(module => ({ default: module.DecisionFactors }))
+  import('./AnimatedDecisionFactors').then(module => ({ default: module.AnimatedDecisionFactors }))
 );
 
 export const LazyPotOddsCalculator = lazy(() =>
-  import('./PotOddsCalculator').then(module => ({ default: module.PotOddsCalculator }))
+  import('./PotOddsVisual').then(module => ({ default: module.PotOddsVisual }))
 );
 
 /**
@@ -221,9 +221,9 @@ export const preloadComponent = (componentName: string) => {
     case 'EquityChart':
       return import('./EquityChart');
     case 'DecisionFactors':
-      return import('./DecisionFactors');
+      return import('./AnimatedDecisionFactors');
     case 'PotOddsCalculator':
-      return import('./PotOddsCalculator');
+      return import('./PotOddsVisual');
     default:
       return Promise.resolve();
   }
@@ -239,7 +239,7 @@ export const preloadAllSmartHelperComponents = () => {
     import('./MultiOpponentCompare'),
     import('./SmartHelperSettings'),
     import('./EquityChart'),
-    import('./DecisionFactors'),
-    import('./PotOddsCalculator')
+    import('./AnimatedDecisionFactors'),
+    import('./PotOddsVisual')
   ]);
 };

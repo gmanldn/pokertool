@@ -19,6 +19,8 @@ Provides a thread-safe bridge between synchronous detection code and the
 asynchronous WebSocket broadcaster exposed by the API module. Detection
 modules call ``emit_detection_event`` to queue events which are later
 forwarded to connected clients once the API event loop is registered.
+
+Enhanced with event type enums, validation, and comprehensive event schemas.
 """
 
 from __future__ import annotations
@@ -26,10 +28,161 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+import time
 from collections import deque
-from typing import Any, Deque, Dict, Optional
+from typing import Any, Deque, Dict, Optional, List
+from enum import Enum
+from dataclasses import dataclass, field, asdict
 
 logger = logging.getLogger(__name__)
+
+
+# Event Type Enumerations
+class DetectionEventType(str, Enum):
+    """Types of detection events."""
+    # Core detections
+    POT = "pot"
+    CARD = "card"
+    PLAYER = "player"
+    ACTION = "action"
+    BOARD = "board"
+    BUTTON = "button"
+    BLIND = "blind"
+
+    # State changes
+    STATE_CHANGE = "state_change"
+    HAND_START = "hand_start"
+    HAND_END = "hand_end"
+    STREET_CHANGE = "street_change"  # preflop -> flop -> turn -> river
+
+    # System events
+    SYSTEM = "system"
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+    # Performance events
+    PERFORMANCE = "performance"
+    FPS = "fps"
+    LATENCY = "latency"
+
+
+class EventSeverity(str, Enum):
+    """Severity levels for detection events."""
+    DEBUG = "debug"
+    INFO = "info"
+    SUCCESS = "success"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+@dataclass
+class DetectionEventData:
+    """Base class for detection event data with common fields."""
+    timestamp: float = field(default_factory=time.time)
+    confidence: Optional[float] = None
+    confidence_level: Optional[str] = None  # 'low', 'medium', 'high'
+    detection_method: Optional[str] = None
+    duration_ms: Optional[float] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {k: v for k, v in asdict(self).items() if v is not None}
+
+
+@dataclass
+class PotEventData(DetectionEventData):
+    """Data for pot detection events."""
+    pot_size: float = 0.0
+    previous_pot_size: float = 0.0
+    pot_change: float = 0.0
+    pot_changed: bool = False
+    side_pots: List[float] = field(default_factory=list)
+    side_pot_count: int = 0
+    total_pot: float = 0.0
+
+
+@dataclass
+class CardEventData(DetectionEventData):
+    """Data for card detection events."""
+    card_count: int = 0
+    cards: List[Dict[str, str]] = field(default_factory=list)  # [{'rank': 'A', 'suit': 's'}, ...]
+    card_type: str = ""  # 'hero', 'board', 'opponent'
+
+
+@dataclass
+class PlayerEventData(DetectionEventData):
+    """Data for player detection events."""
+    seat_number: Optional[int] = None
+    player_name: Optional[str] = None
+    stack_size: Optional[float] = None
+    previous_stack: Optional[float] = None
+    stack_change: Optional[float] = None
+    position: Optional[str] = None
+    is_active: bool = True
+
+
+@dataclass
+class ActionEventData(DetectionEventData):
+    """Data for player action events."""
+    seat_number: int = 0
+    action: str = ""  # fold, check, call, bet, raise, all_in
+    amount: float = 0.0
+    player_name: Optional[str] = None
+
+
+@dataclass
+class StateChangeEventData(DetectionEventData):
+    """Data for state change events."""
+    previous_state: str = ""
+    new_state: str = ""
+    reason: Optional[str] = None
+
+
+@dataclass
+class PerformanceEventData(DetectionEventData):
+    """Data for performance events."""
+    fps: Optional[float] = None
+    avg_frame_time_ms: Optional[float] = None
+    memory_mb: Optional[float] = None
+    cpu_percent: Optional[float] = None
+
+
+@dataclass
+class DetectionEventSchema:
+    """Complete schema for a detection event."""
+    type: DetectionEventType
+    severity: EventSeverity
+    message: str
+    data: Dict[str, Any] = field(default_factory=dict)
+    timestamp: float = field(default_factory=time.time)
+    event_id: Optional[str] = None
+    correlation_id: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            'type': self.type.value if isinstance(self.type, Enum) else self.type,
+            'severity': self.severity.value if isinstance(self.severity, Enum) else self.severity,
+            'message': self.message,
+            'data': self.data,
+            'timestamp': self.timestamp,
+            'event_id': self.event_id,
+            'correlation_id': self.correlation_id,
+        }
+
+    def validate(self) -> bool:
+        """Validate event schema."""
+        if not self.message:
+            logger.warning("Detection event missing message")
+            return False
+
+        if not isinstance(self.data, dict):
+            logger.warning(f"Detection event data must be dict, got {type(self.data)}")
+            return False
+
+        return True
 
 DetectionEvent = Dict[str, Any]
 
