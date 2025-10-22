@@ -593,7 +593,7 @@ Conventions
 - [ ] [P3][L] Implement multi-street lookahead — Show recommendations for current + future streets. `components/smarthelper/MultiStreetProjection.tsx`
 
 #### Factor Scoring & Reasoning (15 tasks)
-- [ ] [P0][M] Create ReasoningPanel component — Display factor-weight scoring system with visual breakdown. `pokertool-frontend/src/components/smarthelper/ReasoningPanel.tsx`
+- [x] [P0][M] Create ReasoningPanel component — ✅ Complete: Comprehensive factor-weight scoring display component (207 lines) with color-coded factors, expandable details, confidence summary, and net confidence calculation. Features: factor cards with trending icons (up/down), score chips with color coding (green for positive, red for negative), clickable expansion for detailed factor information, confidence level badges (STRONG/MODERATE/WEAK/VERY WEAK), smooth transitions, and responsive design. Integrates with CSS module for styling. File: `pokertool-frontend/src/components/smarthelper/ReasoningPanel.tsx`
 - [ ] [P0][S] Add pot odds factor scoring — Calculate and display pot odds contribution (+8 points). `ReasoningPanel.tsx:PotOddsFactor`
 - [ ] [P0][S] Add position factor scoring — Score position advantage/disadvantage (+5/-3 points). `ReasoningPanel.tsx:PositionFactor`
 - [ ] [P0][S] Add equity factor scoring — Real-time equity vs opponent range (+6 points). `ReasoningPanel.tsx:EquityFactor`
