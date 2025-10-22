@@ -77,6 +77,7 @@ export const ActionRecommendationCard: React.FC<ActionRecommendationCardProps> =
         borderRadius: 2,
         position: 'relative',
         overflow: 'hidden',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         transition: 'all 0.3s ease',
         '&:hover': {
           transform: 'translateY(-2px)',
@@ -98,22 +99,53 @@ export const ActionRecommendationCard: React.FC<ActionRecommendationCardProps> =
       )}
 
       {/* Main Action Display */}
-      <Box sx={{ textAlign: 'center', mb: 2 }}>
+      <Box sx={{
+        textAlign: 'center',
+        mb: 2,
+        animation: 'fadeInScale 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+        '@keyframes fadeInScale': {
+          '0%': { opacity: 0, transform: 'scale(0.9)' },
+          '100%': { opacity: 1, transform: 'scale(1)' }
+        }
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 1 }}>
-          <Box sx={{ color: getActionColor(action), fontSize: 40 }}>
+          <Box sx={{
+            color: getActionColor(action),
+            fontSize: 40,
+            transition: 'all 0.3s ease',
+            animation: 'iconPulse 0.6s ease-in-out',
+            '@keyframes iconPulse': {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.1)' }
+            }
+          }}>
             {getActionIcon(action)}
           </Box>
           <Typography
             variant="h3"
             fontWeight="bold"
-            sx={{ color: getActionColor(action) }}
+            sx={{
+              color: getActionColor(action),
+              transition: 'color 0.4s ease'
+            }}
           >
             {action}
           </Typography>
         </Box>
 
         {amount && (
-          <Typography variant="h5" color="white" fontWeight="medium">
+          <Typography
+            variant="h5"
+            color="white"
+            fontWeight="medium"
+            sx={{
+              transition: 'all 0.3s ease',
+              animation: 'slideUp 0.5s ease-out',
+              '@keyframes slideUp': {
+                '0%': { opacity: 0, transform: 'translateY(10px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' }
+              }
+            }}>
             {formatAmount(amount)}
           </Typography>
         )}
