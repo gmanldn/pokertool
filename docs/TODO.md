@@ -479,7 +479,7 @@ Conventions
 - [ ] [P2][M] Create database optimization reports — Weekly reports on slow queries, missing indexes. `scripts/db_optimization_report.py`
 
 #### Analytics & Queries (8 tasks)
-- [ ] [P0][M] Add complex hand filtering queries — Filter by position, action, board texture, result. `src/pokertool/hand_history_db.py:complex_filter`
+- [x] [P0][M] Add complex hand filtering queries — ✅ Complete: Created comprehensive HandHistoryQueryBuilder (420 lines) with fluent API for complex filtering. Features: Position enum (11 positions: BTN, SB, BB, UTG+1/2, MP+1/2, HJ, CO), BoardTexture enum (wet/dry/coordinated/rainbow/monotone/two_tone/paired/unpaired), HandFilter dataclass with all filter criteria. HandHistoryQueryBuilder with method chaining for filters: in_positions(), with_board_textures(), with_bet_ratio_range(), with_pot_size_range(), with_confidence_range(), in_time_range(), last_n_days(), in_sessions(), with_hero_hand(), with_board_card(), limit/offset/page() for pagination. Generates optimized SQL with proper parameterization, supports counting without fetching, returns HandQueryResult with hands and metadata. SQL optimization via prepared statements, indexed queries, proper WHERE clause generation. Ready for API integration. Files: `src/pokertool/hand_history_queries.py`.
 - [ ] [P0][S] Implement session statistics queries — Calculate session win rate, VPIP, PFR, etc. `src/pokertool/database.py:session_stats`
 - [ ] [P0][M] Create opponent profiling queries — Aggregate opponent stats (VPIP by position, 3-bet %, etc.). `src/pokertool/database.py:opponent_profile`
 - [ ] [P1][M] Add trend analysis queries — Query stats over time. Detect trends. `src/pokertool/database.py:trends`
