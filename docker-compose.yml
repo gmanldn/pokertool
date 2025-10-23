@@ -1,0 +1,77 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15-alpine
+    container_name: pokertool-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pokertool}
+      POSTGRES_USER: ${POSTGRES_USER:-pokertool}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pokertool}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pokertool-network
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pokertool-backend
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_TYPE: postgresql
+      DATABASE_HOST: database
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-pokertool}
+      DATABASE_USER: ${POSTGRES_USER:-pokertool}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      
+      # API Settings
+      API_PORT: 5001
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ENABLE_API_CACHING: ${ENABLE_API_CACHING:-true}
+      
+      # Security
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./poker_config.json:/app/poker_config.json:ro
+      - ./ranges:/app/ranges:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - pokertool-network
+    ports:
+      - "${API_PORT:-5001}:5001"
+
+  # Frontend (for production, use built files from backend)
+  # In development, run separately with npm run dev
+
+networks:
+  pokertool-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

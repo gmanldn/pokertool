@@ -1,0 +1,107 @@
+name: Build Desktop Applications
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: PokerTool-Linux-x86_64.tar.gz
+          - os: macos-latest
+            platform: macos
+            artifact: PokerTool-macOS.dmg
+          - os: windows-latest
+            platform: windows
+            artifact: PokerTool-Windows.zip
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller pillow
+
+      - name: Install UPX (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y upx
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install upx
+          fi
+        shell: bash
+
+      - name: Build with PyInstaller
+        run: pyinstaller packaging/pyinstaller/pokertool_gui.spec --clean
+
+      - name: Create DMG (macOS only)
+        if: matrix.platform == 'macos'
+        run: |
+          hdiutil create -volname "PokerTool" \
+            -srcfolder dist/PokerTool.app \
+            -ov -format UDZO \
+            dist/${{ matrix.artifact }}
+
+      - name: Create tarball (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          cd dist
+          tar -czf ${{ matrix.artifact }} PokerTool/
+
+      - name: Create ZIP (Windows only)
+        if: matrix.platform == 'windows'
+        run: |
+          cd dist
+          7z a ${{ matrix.artifact }} PokerTool/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokertool-${{ matrix.platform }}
+          path: dist/${{ matrix.artifact }}
+          retention-days: 30
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/${{ matrix.artifact }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate checksums
+        if: github.event_name == 'release'
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            certutil -hashfile dist/${{ matrix.artifact }} SHA256 > dist/${{ matrix.artifact }}.sha256
+          else
+            shasum -a 256 dist/${{ matrix.artifact }} > dist/${{ matrix.artifact }}.sha256
+          fi
+        shell: bash
+
+      - name: Upload checksums
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/${{ matrix.artifact }}.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

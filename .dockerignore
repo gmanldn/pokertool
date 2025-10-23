@@ -1,0 +1,162 @@
+# PokerTool - Enhanced Docker Build Context Exclusions
+# Reduces build context size by 80%+
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+package-lock.json
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.DS_Store
+
+# Testing
+tests/
+test_*.py
+*_test.py
+.pytest_cache/
+test_logs/
+testing-platform/
+evals/
+
+# Documentation
+docs/
+*.md
+!README.md
+*.rst
+*.txt
+!requirements.txt
+!requirements-dev.txt
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+.travis.yml
+Jenkinsfile
+
+# Logs
+logs/
+*.log
+
+# Config files that shouldn't be in image
+.env
+.env.*
+!.env.example
+poker_config.json
+poker_config.*.json
+!poker_config.example.json
+*.local
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+debug_*.png
+window_*.png
+test_*.png
+*.PNG
+*.jpg
+*.jpeg
+!assets/pokertool-icon.png
+!assets/icons/*.png
+
+# Backups & Temp
+*.backup
+*.bak
+*.old
+*.tmp
+*.temp
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Kubernetes
+k8s/
+charts/
+
+# Exports
+exports/
+
+# Model data
+model_calibration_data/
+
+# VectorCode
+VectorCode/
+
+# Walkthrough
+walkthrough/
+
+# Webview UI (built separately in Dockerfile)
+webview-ui/node_modules/
+webview-ui/build/
+
+# Standalone builds
+standalone/
+
+# Packaging artifacts
+packaging/
+dist/
+*.spec
+
+# Dead code reports
+dead_code_report.txt
+
+# Dependency reports
+docs/dependency_report.json
+
+# Task files
+tasks_left.py
+COMPLETED_TASKS*.md
+TODO_*.md
+
+# Screenshots and debug images
+debug_*.png
+test_capture.png
