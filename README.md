@@ -548,6 +548,117 @@ grep "ERROR" logs/pokertool_master.log    # Scan for error patterns
 - Test chunk loading retry mechanism with network throttling
 - Validate log file creation and rotation under load
 
+## Database
+
+PokerTool supports multiple database backends with a flexible, backward-compatible interface.
+
+### Database Options
+
+#### 1. **PokerDatabase** (Legacy/Simple)
+
+Backward compatibility wrapper for legacy code. Provides simple SQLite operations.
+
+```python
+from pokertool.database import PokerDatabase
+
+# Simple usage
+db = PokerDatabase('poker_decisions.db')
+db.save_hand_analysis("AsKh", "Qh9c2d", "Fold")
+hands = db.get_recent_hands(50)
+print(f"Total hands: {db.get_total_hands()}")
+db.close()
+
+# Context manager usage
+with PokerDatabase('poker_decisions.db') as db:
+    db.save_hand_analysis("AsKh", "Qh9c2d", "Fold")
+```
+
+**Features:**
+- ✅ Simple SQLite interface
+- ✅ Backward compatible with legacy code
+- ✅ Automatic data validation
+- ✅ Context manager support
+
+#### 2. **SecureDatabase** (Recommended)
+
+Advanced database with encryption and security features.
+
+```python
+from pokertool.storage import SecureDatabase
+
+db = SecureDatabase('poker_decisions.db')
+db.save_hand_analysis("AsKh", "Qh9c2d", "Fold",
+                     confidence_score=0.95,
+                     bet_size_ratio=0.75,
+                     pot_size=100.0,
+                     player_position="BTN")
+```
+
+**Features:**
+- ✅ Data encryption at rest
+- ✅ Security validation
+- ✅ Extended hand analysis fields
+- ✅ Better error handling
+
+#### 3. **ProductionDatabase** (Enterprise)
+
+Production-ready database with PostgreSQL support and connection pooling.
+
+```python
+from pokertool.database import get_production_db
+
+# Automatically uses PostgreSQL in production, SQLite in dev
+db = get_production_db()
+```
+
+**Features:**
+- ✅ PostgreSQL support
+- ✅ Connection pooling
+- ✅ Automatic failover
+- ✅ Transaction management
+- ✅ Query optimization
+
+### Configuration
+
+Set database type via environment variables:
+
+```bash
+# Use PostgreSQL (production)
+export POKERTOOL_DB_TYPE=postgresql
+export POKERTOOL_DB_HOST=localhost
+export POKERTOOL_DB_PORT=5432
+export POKERTOOL_DB_NAME=pokertool
+export POKERTOOL_DB_USER=your_user
+export POKERTOOL_DB_PASSWORD=your_password
+
+# Use SQLite (development) - default
+export POKERTOOL_DB_TYPE=sqlite
+```
+
+### Migration from v88.6.0 to v98.0.0
+
+If you have existing code using the old database interface, it continues to work without changes:
+
+**Your existing code (still works):**
+```python
+from pokertool.database import PokerDatabase
+db = PokerDatabase()
+# All your existing code works as-is
+```
+
+**Recommended for new code:**
+```python
+from pokertool.storage import SecureDatabase
+db = SecureDatabase('poker_decisions.db')
+# Use enhanced features
+```
+
+See [MIGRATION_GUIDE_V98.md](docs/MIGRATION_GUIDE_V98.md) for complete migration details.
+
+### Database API Reference
+
+See [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) for complete database API reference.
+
 ## Documentation
 
 - `FEATURES.md` — detailed feature grid.

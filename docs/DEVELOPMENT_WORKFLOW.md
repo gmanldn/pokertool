@@ -486,6 +486,147 @@ rm data/pokertool.db
 python -c "from pokertool.database import init_db; init_db()"
 ```
 
+## Module Organization & Imports
+
+### Package Structure (v98.0.0+)
+
+PokerTool uses organized package structure for better module management:
+
+```
+pokertool/
+├── system/          # ML and system-level modules
+│   ├── model_calibration
+│   ├── sequential_opponent_fusion
+│   └── active_learning
+├── modules/         # Poker game modules
+│   └── nash_solver
+└── ...
+```
+
+### Import Paths
+
+#### ML System Modules
+
+**Model Calibration:**
+```python
+# New path (recommended for new code)
+from pokertool.system import model_calibration
+
+# Old path (still works, backward compatible)
+from pokertool import model_calibration
+```
+
+**Sequential Opponent Fusion:**
+```python
+# New path
+from pokertool.system import sequential_opponent_fusion
+
+# Old path (still works)
+from pokertool import sequential_opponent_fusion
+```
+
+**Active Learning:**
+```python
+# New path
+from pokertool.system import active_learning
+
+# Old path (still works)
+from pokertool import active_learning
+```
+
+#### Poker Modules
+
+**Nash Solver:**
+```python
+# New path (recommended)
+from pokertool.modules import nash_solver
+
+# Old path (still works)
+from pokertool import nash_solver
+```
+
+### Migration Strategy
+
+1. **Existing code**: No changes required - old imports work
+2. **New code**: Use new import paths for clarity
+3. **Refactoring**: Gradually update imports when modifying files
+
+**Example:**
+```python
+# Old imports (still work)
+from pokertool import model_calibration
+from pokertool import nash_solver
+
+# New imports (recommended)
+from pokertool.system import model_calibration
+from pokertool.modules import nash_solver
+
+# Usage is identical
+result = model_calibration.calibrate(data)
+solution = nash_solver.solve(game_state)
+```
+
+See [MIGRATION_GUIDE_V98.md](MIGRATION_GUIDE_V98.md) for complete details.
+
+### Process Cleanup on Startup
+
+The `start.py` script automatically cleans up old pokertool processes to prevent conflicts.
+
+#### What Gets Cleaned
+
+```python
+# cleanup_old_processes() removes:
+- python.*start\.py          # Old start.py processes
+- python.*enhanced_gui        # Enhanced GUI processes
+- python.*simple_gui          # Simple GUI processes
+- python.*launch.*gui         # GUI launchers
+- python.*run_gui             # GUI runners
+- pokertool.*gui              # General GUI processes
+- node.*react-scripts         # React dev servers
+- react-scripts start         # React start commands
+```
+
+#### How It Works
+
+1. **Detection**: Scans for pokertool-related processes
+2. **Exclusion**: Never kills the current process
+3. **Termination**: Sends SIGTERM (graceful) first, then SIGKILL if needed
+4. **Logging**: Reports what was cleaned up
+
+**Example startup output:**
+```
+Cleaning up previous pokertool/GUI instances...
+  Found stuck processes: [12345, 12346]
+  Terminating PID 12345... Done
+  Terminating PID 12346... Done
+  ✓ Cleaned up 2 old processes
+```
+
+#### Benefits
+
+- ✅ No more "port already in use" errors
+- ✅ No manual process killing needed
+- ✅ Prevents resource leaks
+- ✅ Faster, cleaner startup
+
+#### Manual Cleanup (if needed)
+
+If automatic cleanup fails:
+
+```bash
+# Find pokertool processes
+ps aux | grep "pokertool\|start.py"
+
+# Kill specific process
+kill -9 <PID>
+
+# Or use pkill
+pkill -f "start.py"
+
+# Kill all React dev servers
+pkill -f "react-scripts"
+```
+
 ## Best Practices
 
 ### DO

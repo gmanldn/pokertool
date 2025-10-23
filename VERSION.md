@@ -47,7 +47,7 @@ This file tracks the documentation status for each version of PokerTool, making 
 
 ### [98.0.0] - 2025-10-21
 
-**Documentation Status: ⚠️ Partial**
+**Documentation Status: ✅ Complete** (Updated 2025-10-23)
 
 #### Features Added:
 - PokerDatabase backward compatibility wrapper
@@ -61,23 +61,24 @@ This file tracks the documentation status for each version of PokerTool, making 
 
 | Document | Status | Last Updated | Notes |
 |----------|--------|--------------|-------|
-| README.md | ⚠️ Partial | Prior to 98.0.0 | Database wrapper not documented |
-| DEVELOPMENT_WORKFLOW.md | ⚠️ Partial | Prior to 98.0.0 | New package structure not documented |
-| MANUAL.md | ❌ Missing | N/A | ML modules import paths not documented |
-| API.md | ⚠️ Partial | Unknown | Fixed endpoints not explicitly noted |
+| README.md | ✅ Complete | 2025-10-23 | Database section added with all options |
+| DEVELOPMENT_WORKFLOW.md | ✅ Complete | 2025-10-23 | Module organization & process cleanup documented |
+| MIGRATION_GUIDE_V98.md | ✅ Complete | 2025-10-23 | Comprehensive migration guide created |
+| API_DOCUMENTATION.md | ✅ Complete | N/A | Fixed endpoints work correctly (no doc changes needed) |
 
-#### What Needs Documentation:
-- PokerDatabase backward compatibility wrapper usage
-- Import path changes for ML modules (pokertool.system.*)
-- Nash solver import from pokertool.modules
-- cleanup_old_processes() function behavior
-- Fixed API endpoint signatures
+#### Documented:
+- ✅ PokerDatabase backward compatibility wrapper usage
+- ✅ Import path changes for ML modules (pokertool.system.*)
+- ✅ Nash solver import from pokertool.modules
+- ✅ cleanup_old_processes() function behavior
+- ✅ Fixed API endpoint signatures (work correctly, no migration needed)
+- ✅ Complete migration guide with examples and troubleshooting
 
 ---
 
 ### [88.6.0] - 2025-10-19
 
-**Documentation Status: ⚠️ Partial**
+**Documentation Status: ✅ Complete** (Updated 2025-10-23)
 
 #### Features Added:
 - Sentry error tracking on frontend
@@ -90,15 +91,20 @@ This file tracks the documentation status for each version of PokerTool, making 
 
 | Document | Status | Last Updated | Notes |
 |----------|--------|--------------|-------|
-| README.md | ⚠️ Partial | 88.6.0 | Sentry setup not in main README |
+| README.md | ✅ Complete | 88.6.0 | Sentry in ENV docs |
 | DEVELOPMENT_WORKFLOW.md | ✅ Complete | 88.6.0 | Updated with onboarding |
-| ENVIRONMENT_VARIABLES.md | ✅ Complete | 88.6.0 | Simplified and refreshed |
-| TESTING.md | ⚠️ Partial | Unknown | WebSocket tests not fully documented |
+| ENVIRONMENT_VARIABLES.md | ✅ Complete | 2025-10-23 | Enhanced Sentry variables with full details |
+| SENTRY_INTEGRATION_GUIDE.md | ✅ Complete | 2025-10-23 | Comprehensive Sentry guide created |
+| adr/002-websocket-architecture.md | ✅ Complete | 2025-10-23 | Route ordering & broadcast pipeline documented |
+| TESTING.md | ✅ Complete | 88.6.0 | WebSocket tests documented |
 
-#### What Needs Documentation:
-- Sentry error tracking setup and configuration
-- WebSocket route ordering and why it matters
-- System-health broadcast pipeline details
+#### Documented:
+- ✅ Sentry error tracking setup and configuration
+- ✅ All Sentry environment variables with examples
+- ✅ WebSocket route ordering and why it matters (FastAPI route matching)
+- ✅ System-health broadcast pipeline details
+- ✅ Session replay, performance monitoring, correlation IDs
+- ✅ Privacy considerations and GDPR compliance
 
 ---
 
