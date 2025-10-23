@@ -1,8 +1,8 @@
 {
   "metadata": {
     "version": "1.0.0",
-    "created": "2025-10-23T00:53:00.917254",
-    "last_updated": "2025-10-23T00:53:03.873488",
+    "created": "2025-10-23T01:08:22.990746",
+    "last_updated": "2025-10-23T01:08:29.516642",
     "node_count": 1728,
     "edge_count": 1721,
     "analyzers_run": []
@@ -18,11 +18,11 @@
       "complexity": 29,
       "loc": 396,
       "dependencies": [
-        "numpy",
+        "hashlib",
         "logging",
+        "numpy",
         "dataclasses",
-        "typing",
-        "hashlib"
+        "typing"
       ]
     },
     {
@@ -159,14 +159,14 @@
       "complexity": 43,
       "loc": 428,
       "dependencies": [
-        "asyncio",
+        "fastapi",
         "json",
         "logging",
-        "dataclasses",
+        "asyncio",
         "time",
-        "typing",
         "enum",
-        "fastapi"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -274,9 +274,9 @@
       "complexity": 8,
       "loc": 53,
       "dependencies": [
-        "typing",
         "logging",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -322,21 +322,21 @@
       "complexity": 60,
       "loc": 505,
       "dependencies": [
-        "json",
-        "functools",
-        "atexit",
+        "typing",
         "os",
-        "contextlib",
-        "logging",
-        "__future__",
-        "time",
-        "pathlib",
-        "dataclasses",
+        "json",
+        "threading",
         "sqlite3",
         "datetime",
-        "typing",
-        "threading",
-        "zlib"
+        "contextlib",
+        "logging",
+        "zlib",
+        "time",
+        "dataclasses",
+        "functools",
+        "pathlib",
+        "__future__",
+        "atexit"
       ]
     },
     {
@@ -595,8 +595,8 @@
       "complexity": 7,
       "loc": 29,
       "dependencies": [
-        "typing",
-        "subprocess"
+        "subprocess",
+        "typing"
       ]
     },
     {
@@ -627,8 +627,8 @@
       "loc": 383,
       "dependencies": [
         "pickle",
-        "numpy",
         "logging",
+        "numpy",
         "dataclasses",
         "pathlib",
         "__future__",
@@ -725,14 +725,14 @@
       "complexity": 81,
       "loc": 556,
       "dependencies": [
-        "json",
         "math",
-        "dataclasses",
+        "json",
         "datetime",
-        "pathlib",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -895,19 +895,19 @@
       "complexity": 133,
       "loc": 1308,
       "dependencies": [
-        "asyncio",
-        "json",
         "os",
-        "pokertool",
-        "logging",
-        "dataclasses",
+        "json",
+        "threading",
         "datetime",
-        "__future__",
+        "logging",
+        "pokertool",
+        "asyncio",
         "time",
-        "pathlib",
+        "dataclasses",
         "collections",
-        "typing",
-        "threading"
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -1684,18 +1684,18 @@
       "complexity": 161,
       "loc": 1276,
       "dependencies": [
+        "os",
         "pickle",
         "json",
-        "enum",
-        "numpy",
-        "os",
+        "hashlib",
         "logging",
-        "dataclasses",
         "time",
-        "pathlib",
+        "numpy",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "hashlib"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -2137,14 +2137,14 @@
       "complexity": 32,
       "loc": 547,
       "dependencies": [
+        "sys",
+        "datetime",
         "traceback",
         "logging",
-        "__future__",
-        "dataclasses",
-        "datetime",
-        "typing",
         "enum",
-        "sys"
+        "dataclasses",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -2277,10 +2277,10 @@
       "loc": 106,
       "dependencies": [
         "logging",
-        "dataclasses",
-        "time",
-        "collections",
         "statistics",
+        "time",
+        "dataclasses",
+        "collections",
         "typing"
       ]
     },
@@ -2349,12 +2349,12 @@
       "complexity": 23,
       "loc": 487,
       "dependencies": [
-        "pokertool",
-        "pydantic",
-        "logging",
-        "datetime",
         "typing",
-        "fastapi"
+        "fastapi",
+        "datetime",
+        "logging",
+        "pokertool",
+        "pydantic"
       ]
     },
     {
@@ -2753,9 +2753,9 @@
       "complexity": 9,
       "loc": 182,
       "dependencies": [
+        "os",
         "dataclasses",
-        "typing",
-        "os"
+        "typing"
       ]
     },
     {
@@ -2936,17 +2936,17 @@
       "complexity": 109,
       "loc": 761,
       "dependencies": [
+        "os",
         "json",
         "psutil",
-        "typing",
-        "os",
-        "logging",
-        "dataclasses",
-        "time",
-        "pathlib",
-        "collections",
         "threading",
-        "enum"
+        "logging",
+        "time",
+        "enum",
+        "dataclasses",
+        "collections",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -3287,9 +3287,9 @@
       "complexity": 42,
       "loc": 378,
       "dependencies": [
+        "datetime",
         "logging",
         "dataclasses",
-        "datetime",
         "__future__",
         "typing"
       ]
@@ -3348,9 +3348,9 @@
       "complexity": 4,
       "loc": 34,
       "dependencies": [
-        "typing",
+        "os",
         "logging",
-        "os"
+        "typing"
       ]
     },
     {
@@ -3501,8 +3501,8 @@
       "complexity": 5,
       "loc": 43,
       "dependencies": [
-        "typing",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -3548,10 +3548,10 @@
       "complexity": 39,
       "loc": 276,
       "dependencies": [
+        "os",
         "contextlib",
-        "typing",
         "logging",
-        "os"
+        "typing"
       ]
     },
     {
@@ -3843,18 +3843,18 @@
       "complexity": 177,
       "loc": 1256,
       "dependencies": [
-        "numpy",
+        "sys",
         "os",
-        "logging",
-        "dataclasses",
-        "time",
-        "pathlib",
-        "collections",
-        "re",
-        "typing",
         "threading",
+        "logging",
+        "re",
+        "time",
+        "numpy",
         "enum",
-        "sys"
+        "dataclasses",
+        "collections",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -4045,13 +4045,13 @@
       "loc": 302,
       "dependencies": [
         "json",
-        "logging",
-        "dataclasses",
-        "time",
-        "collections",
-        "typing",
         "threading",
-        "hashlib"
+        "hashlib",
+        "logging",
+        "time",
+        "dataclasses",
+        "collections",
+        "typing"
       ]
     },
     {
@@ -4144,17 +4144,17 @@
       "complexity": 71,
       "loc": 534,
       "dependencies": [
-        "json",
-        "functools",
         "os",
-        "logging",
-        "dataclasses",
-        "time",
-        "datetime",
-        "typing",
+        "fastapi",
+        "json",
         "threading",
+        "datetime",
         "hashlib",
-        "fastapi"
+        "logging",
+        "time",
+        "dataclasses",
+        "functools",
+        "typing"
       ]
     },
     {
@@ -4319,8 +4319,8 @@
       "loc": 132,
       "dependencies": [
         "dataclasses",
-        "typing",
-        "__future__"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -4505,10 +4505,10 @@
       "dependencies": [
         "json",
         "logging",
-        "pathlib",
         "re",
-        "typing",
-        "subprocess"
+        "subprocess",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -4545,11 +4545,11 @@
       "loc": 463,
       "dependencies": [
         "json",
-        "logging",
         "datetime",
+        "hashlib",
+        "logging",
         "redis",
-        "typing",
-        "hashlib"
+        "typing"
       ]
     },
     {
@@ -4610,18 +4610,18 @@
       "complexity": 68,
       "loc": 663,
       "dependencies": [
-        "traceback",
-        "json",
         "os",
-        "logging",
-        "__future__",
+        "json",
+        "threading",
         "datetime",
-        "pathlib",
+        "traceback",
+        "logging",
+        "enum",
         "dataclasses",
         "collections",
-        "typing",
-        "threading",
-        "enum"
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -5028,9 +5028,9 @@
       "loc": 153,
       "dependencies": [
         "json",
-        "pathlib",
         "time",
         "dataclasses",
+        "pathlib",
         "__future__",
         "typing"
       ]
@@ -5113,11 +5113,11 @@
       "complexity": 16,
       "loc": 116,
       "dependencies": [
-        "concurrent",
+        "typing",
+        "threading",
         "logging",
         "time",
-        "typing",
-        "threading"
+        "concurrent"
       ]
     },
     {
@@ -5291,11 +5291,11 @@
       "loc": 466,
       "dependencies": [
         "logging",
-        "__future__",
         "time",
         "dataclasses",
         "detection_events",
         "uuid",
+        "__future__",
         "typing"
       ]
     },
@@ -5391,12 +5391,12 @@
       "loc": 312,
       "dependencies": [
         "json",
-        "pathlib",
+        "threading",
+        "datetime",
         "time",
         "dataclasses",
-        "datetime",
-        "typing",
-        "threading"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -5476,10 +5476,10 @@
       "complexity": 6,
       "loc": 32,
       "dependencies": [
-        "queue",
-        "typing",
         "todo_parser",
-        "dataclasses"
+        "queue",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -5527,13 +5527,13 @@
       "loc": 594,
       "dependencies": [
         "json",
-        "numpy",
-        "dataclasses",
         "time",
-        "pathlib",
+        "numpy",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -5693,12 +5693,12 @@
       "loc": 209,
       "dependencies": [
         "json",
-        "logging",
-        "dataclasses",
-        "time",
-        "pathlib",
         "datetime",
+        "logging",
+        "time",
+        "dataclasses",
         "collections",
+        "pathlib",
         "typing"
       ]
     },
@@ -5772,9 +5772,9 @@
       "complexity": 29,
       "loc": 435,
       "dependencies": [
-        "typing",
-        "logging",
         "enum",
+        "logging",
+        "typing",
         "dataclasses"
       ]
     },
@@ -5895,14 +5895,14 @@
       "loc": 279,
       "dependencies": [
         "os",
+        "threading",
+        "datetime",
+        "hashlib",
         "logging",
-        "pathlib",
         "time",
         "dataclasses",
-        "datetime",
-        "typing",
-        "threading",
-        "hashlib"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -5979,12 +5979,12 @@
       "complexity": 40,
       "loc": 252,
       "dependencies": [
-        "json",
         "math",
-        "dataclasses",
+        "json",
         "time",
-        "__future__",
+        "dataclasses",
         "pathlib",
+        "__future__",
         "typing"
       ]
     },
@@ -6107,8 +6107,8 @@
       "loc": 571,
       "dependencies": [
         "datetime",
-        "typing",
-        "pathlib"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -6318,8 +6318,8 @@
       "loc": 344,
       "dependencies": [
         "typing",
-        "logging",
         "numpy",
+        "logging",
         "dataclasses"
       ]
     },
@@ -6473,10 +6473,10 @@
       "complexity": 34,
       "loc": 271,
       "dependencies": [
-        "typing",
         "logging",
         "enum",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -6557,13 +6557,13 @@
       "complexity": 95,
       "loc": 591,
       "dependencies": [
-        "numpy",
         "logging",
-        "dataclasses",
         "re",
+        "numpy",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -6803,11 +6803,11 @@
       "complexity": 33,
       "loc": 306,
       "dependencies": [
-        "pathlib",
-        "dataclasses",
         "re",
-        "typing",
-        "enum"
+        "enum",
+        "dataclasses",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -6924,10 +6924,10 @@
       "complexity": 67,
       "loc": 519,
       "dependencies": [
-        "json",
         "math",
-        "dataclasses",
+        "json",
         "time",
+        "dataclasses",
         "collections",
         "typing"
       ]
@@ -7159,9 +7159,9 @@
       "loc": 205,
       "dependencies": [
         "json",
-        "pathlib",
         "time",
         "dataclasses",
+        "pathlib",
         "__future__",
         "typing"
       ]
@@ -7300,14 +7300,14 @@
       "complexity": 62,
       "loc": 643,
       "dependencies": [
-        "json",
-        "logging",
         "math",
-        "dataclasses",
+        "json",
         "datetime",
+        "logging",
         "statistics",
-        "typing",
-        "enum"
+        "enum",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -7599,9 +7599,9 @@
       "loc": 328,
       "dependencies": [
         "datetime",
-        "typing",
+        "sqlalchemy",
         "logging",
-        "sqlalchemy"
+        "typing"
       ]
     },
     {
@@ -7799,16 +7799,16 @@
       "complexity": 71,
       "loc": 633,
       "dependencies": [
-        "importlib",
-        "json",
+        "sys",
         "os",
-        "pathlib",
-        "dataclasses",
-        "time",
+        "json",
         "platform",
-        "typing",
+        "time",
         "subprocess",
-        "sys"
+        "dataclasses",
+        "importlib",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -7976,10 +7976,10 @@
       "dependencies": [
         "json",
         "logging",
+        "storage",
         "pathlib",
         "__future__",
-        "typing",
-        "storage"
+        "typing"
       ]
     },
     {
@@ -8140,10 +8140,10 @@
       "complexity": 15,
       "loc": 280,
       "dependencies": [
-        "dataclasses",
-        "typing",
         "compliance",
-        "__future__"
+        "dataclasses",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -8409,15 +8409,15 @@
       "loc": 187,
       "dependencies": [
         "json",
-        "logging",
-        "dataclasses",
+        "threading",
         "datetime",
+        "tracemalloc",
+        "logging",
+        "time",
+        "dataclasses",
         "pathlib",
         "__future__",
-        "time",
-        "tracemalloc",
-        "typing",
-        "threading"
+        "typing"
       ]
     },
     {
@@ -8496,12 +8496,12 @@
       "loc": 586,
       "dependencies": [
         "json",
-        "logging",
-        "dataclasses",
         "datetime",
+        "logging",
+        "enum",
+        "dataclasses",
         "pathlib",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -8827,12 +8827,12 @@
       "complexity": 59,
       "loc": 483,
       "dependencies": [
-        "logging",
-        "dataclasses",
         "datetime",
+        "logging",
+        "enum",
+        "dataclasses",
         "__future__",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -8950,10 +8950,10 @@
       "complexity": 46,
       "loc": 511,
       "dependencies": [
-        "dataclasses",
-        "typing",
         "math",
-        "__future__"
+        "dataclasses",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -9057,14 +9057,14 @@
       "complexity": 85,
       "loc": 498,
       "dependencies": [
+        "typing",
         "json",
-        "core",
-        "dataclasses",
         "time",
-        "__future__",
+        "dataclasses",
+        "core",
         "pathlib",
-        "statistics",
-        "typing"
+        "__future__",
+        "statistics"
       ]
     },
     {
@@ -9184,13 +9184,13 @@
       "complexity": 50,
       "loc": 379,
       "dependencies": [
-        "numpy",
-        "concurrent",
-        "logging",
-        "dataclasses",
-        "time",
         "typing",
-        "enum"
+        "logging",
+        "time",
+        "numpy",
+        "enum",
+        "dataclasses",
+        "concurrent"
       ]
     },
     {
@@ -9370,9 +9370,9 @@
       "loc": 280,
       "dependencies": [
         "random",
-        "functools",
         "logging",
         "time",
+        "functools",
         "typing"
       ]
     },
@@ -9702,9 +9702,9 @@
       "complexity": 17,
       "loc": 179,
       "dependencies": [
-        "typing",
-        "logging",
         "numpy",
+        "logging",
+        "typing",
         "dataclasses"
       ]
     },
@@ -9807,8 +9807,8 @@
       "complexity": 113,
       "loc": 964,
       "dependencies": [
-        "json",
         "math",
+        "json",
         "dataclasses",
         "pathlib",
         "__future__",
@@ -9983,11 +9983,11 @@
       "loc": 281,
       "dependencies": [
         "json",
-        "requests",
-        "tkinter",
+        "threading",
         "datetime",
+        "tkinter",
         "typing",
-        "threading"
+        "requests"
       ]
     },
     {
@@ -10046,10 +10046,10 @@
       "complexity": 92,
       "loc": 621,
       "dependencies": [
-        "typing",
-        "copy",
         "hud_profiles",
-        "__future__"
+        "copy",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -10101,9 +10101,9 @@
       "dependencies": [
         "json",
         "numpy",
+        "enum",
         "dataclasses",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -10310,11 +10310,11 @@
       "complexity": 32,
       "loc": 262,
       "dependencies": [
+        "sys",
         "os",
         "logging",
         "pathlib",
-        "typing",
-        "sys"
+        "typing"
       ]
     },
     {
@@ -10491,15 +10491,15 @@
       "complexity": 45,
       "loc": 491,
       "dependencies": [
-        "traceback",
-        "contextlib",
-        "logging",
-        "__future__",
-        "time",
-        "dataclasses",
-        "typing",
         "threading",
-        "enum"
+        "contextlib",
+        "traceback",
+        "logging",
+        "time",
+        "enum",
+        "dataclasses",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -10672,13 +10672,13 @@
       "complexity": 94,
       "loc": 569,
       "dependencies": [
-        "logging",
-        "dataclasses",
-        "datetime",
-        "__future__",
         "copy",
-        "typing",
-        "enum"
+        "datetime",
+        "logging",
+        "enum",
+        "dataclasses",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -10801,12 +10801,12 @@
       "complexity": 34,
       "loc": 312,
       "dependencies": [
+        "datetime",
         "logging",
+        "gzip",
         "shutil",
         "pathlib",
-        "datetime",
-        "typing",
-        "gzip"
+        "typing"
       ]
     },
     {
@@ -10903,15 +10903,15 @@
       "loc": 830,
       "dependencies": [
         "json",
-        "logging",
-        "heapq",
-        "dataclasses",
-        "datetime",
-        "pathlib",
         "sqlite3",
+        "datetime",
+        "logging",
+        "enum",
+        "dataclasses",
+        "heapq",
         "collections",
-        "typing",
-        "enum"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -11158,9 +11158,9 @@
       "loc": 223,
       "dependencies": [
         "json",
-        "pathlib",
         "time",
         "dataclasses",
+        "pathlib",
         "__future__",
         "typing"
       ]
@@ -11280,16 +11280,16 @@
       "complexity": 76,
       "loc": 801,
       "dependencies": [
-        "hashlib",
         "json",
-        "numpy",
-        "concurrent",
+        "hashlib",
         "logging",
-        "pathlib",
         "time",
+        "numpy",
+        "enum",
         "dataclasses",
-        "typing",
-        "enum"
+        "concurrent",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -11530,16 +11530,16 @@
       "complexity": 73,
       "loc": 652,
       "dependencies": [
-        "json",
-        "enum",
         "os",
-        "contextlib",
+        "json",
+        "hashlib",
         "logging",
-        "dataclasses",
+        "contextlib",
         "time",
+        "enum",
+        "dataclasses",
         "pathlib",
-        "typing",
-        "hashlib"
+        "typing"
       ]
     },
     {
@@ -11686,11 +11686,11 @@
       "complexity": 37,
       "loc": 217,
       "dependencies": [
-        "pathlib",
+        "threading",
         "datetime",
         "re",
-        "typing",
-        "threading"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -11746,20 +11746,20 @@
       "complexity": 184,
       "loc": 1218,
       "dependencies": [
-        "pickle",
-        "enum",
-        "numpy",
-        "concurrent",
-        "os",
-        "functools",
-        "json",
-        "logging",
-        "dataclasses",
-        "time",
-        "pathlib",
         "collections",
-        "typing",
-        "hashlib"
+        "os",
+        "pickle",
+        "json",
+        "hashlib",
+        "logging",
+        "time",
+        "numpy",
+        "enum",
+        "dataclasses",
+        "concurrent",
+        "functools",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -12435,17 +12435,17 @@
       "complexity": 33,
       "loc": 158,
       "dependencies": [
-        "importlib",
-        "json",
+        "sys",
         "os",
-        "logging",
-        "__future__",
-        "time",
-        "pathlib",
-        "typing",
-        "subprocess",
+        "json",
         "hashlib",
-        "sys"
+        "logging",
+        "time",
+        "subprocess",
+        "importlib",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -12616,13 +12616,13 @@
       "loc": 866,
       "dependencies": [
         "random",
-        "logging",
         "math",
-        "dataclasses",
         "datetime",
+        "logging",
         "statistics",
-        "typing",
-        "enum"
+        "enum",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -12935,11 +12935,11 @@
       "loc": 551,
       "dependencies": [
         "json",
-        "dataclasses",
         "time",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -13121,13 +13121,13 @@
       "complexity": 66,
       "loc": 638,
       "dependencies": [
-        "json",
         "os",
-        "logging",
-        "pathlib",
+        "json",
         "datetime",
-        "typing",
-        "chromadb"
+        "logging",
+        "chromadb",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -13273,8 +13273,8 @@
       "complexity": 22,
       "loc": 189,
       "dependencies": [
-        "typing",
-        "logging"
+        "logging",
+        "typing"
       ]
     },
     {
@@ -13309,11 +13309,11 @@
       "loc": 657,
       "dependencies": [
         "logging",
+        "re",
+        "enum",
         "dataclasses",
         "__future__",
-        "re",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -13490,21 +13490,21 @@
       "complexity": 272,
       "loc": 1841,
       "dependencies": [
+        "sys",
+        "webbrowser",
+        "os",
+        "enhanced_gui_components",
         "json",
         "gui_event_bus",
-        "os",
-        "tkinter",
-        "webbrowser",
-        "__future__",
-        "time",
-        "datetime",
-        "pathlib",
-        "enhanced_gui_components",
-        "gui_bootstrap",
-        "typing",
-        "subprocess",
         "threading",
-        "sys"
+        "datetime",
+        "gui_bootstrap",
+        "time",
+        "tkinter",
+        "subprocess",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -13617,10 +13617,10 @@
       "complexity": 46,
       "loc": 413,
       "dependencies": [
-        "range_generator",
-        "typing",
+        "dataclasses",
         "json",
-        "dataclasses"
+        "typing",
+        "range_generator"
       ]
     },
     {
@@ -13712,12 +13712,12 @@
       "loc": 308,
       "dependencies": [
         "hmac",
+        "fastapi",
         "starlette",
+        "hashlib",
         "time",
         "secrets",
-        "typing",
-        "hashlib",
-        "fastapi"
+        "typing"
       ]
     },
     {
@@ -13829,20 +13829,20 @@
       "complexity": 123,
       "loc": 787,
       "dependencies": [
-        "asyncio",
-        "queue",
-        "functools",
-        "weakref",
-        "concurrent",
-        "multiprocessing",
-        "atexit",
-        "contextlib",
-        "logging",
-        "dataclasses",
-        "time",
         "typing",
         "threading",
-        "enum"
+        "queue",
+        "contextlib",
+        "logging",
+        "atexit",
+        "asyncio",
+        "time",
+        "multiprocessing",
+        "enum",
+        "dataclasses",
+        "weakref",
+        "functools",
+        "concurrent"
       ]
     },
     {
@@ -14339,16 +14339,16 @@
       "loc": 656,
       "dependencies": [
         "json",
-        "numpy",
-        "logging",
-        "__future__",
-        "time",
-        "dataclasses",
-        "pathlib",
         "datetime",
+        "logging",
+        "time",
+        "numpy",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -14523,8 +14523,8 @@
       "loc": 215,
       "dependencies": [
         "dataclasses",
-        "typing",
-        "__future__"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -14577,10 +14577,10 @@
       "complexity": 66,
       "loc": 435,
       "dependencies": [
-        "typing",
-        "json",
         "enum",
-        "dataclasses"
+        "dataclasses",
+        "json",
+        "typing"
       ]
     },
     {
@@ -14761,14 +14761,14 @@
       "complexity": 49,
       "loc": 309,
       "dependencies": [
+        "typing",
         "json",
-        "__future__",
         "time",
-        "dataclasses",
         "pathlib",
-        "statistics",
+        "dataclasses",
         "uuid",
-        "typing"
+        "__future__",
+        "statistics"
       ]
     },
     {
@@ -14911,12 +14911,12 @@
       "loc": 253,
       "dependencies": [
         "json",
-        "pokertool",
         "logging",
-        "pathlib",
-        "dataclasses",
         "re",
+        "pokertool",
         "csv",
+        "dataclasses",
+        "pathlib",
         "typing"
       ]
     },
@@ -14969,11 +14969,11 @@
       "complexity": 28,
       "loc": 123,
       "dependencies": [
-        "dataclasses",
-        "time",
+        "threading",
         "datetime",
-        "typing",
-        "threading"
+        "time",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -15059,12 +15059,12 @@
       "complexity": 32,
       "loc": 459,
       "dependencies": [
-        "functools",
+        "fastapi",
         "logging",
-        "dataclasses",
-        "typing",
         "enum",
-        "fastapi"
+        "dataclasses",
+        "functools",
+        "typing"
       ]
     },
     {
@@ -15284,8 +15284,8 @@
       "complexity": 8,
       "loc": 78,
       "dependencies": [
-        "typing",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -15330,12 +15330,12 @@
       "complexity": 37,
       "loc": 499,
       "dependencies": [
-        "numpy",
         "logging",
+        "numpy",
+        "enum",
         "dataclasses",
         "__future__",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -15675,12 +15675,12 @@
       "complexity": 42,
       "loc": 490,
       "dependencies": [
-        "json",
         "os",
+        "json",
         "logging",
+        "enum",
         "dataclasses",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -15868,14 +15868,14 @@
       "complexity": 92,
       "loc": 944,
       "dependencies": [
-        "json",
         "os",
-        "logging",
-        "dataclasses",
-        "time",
+        "json",
         "datetime",
-        "pathlib",
         "sqlite3",
+        "logging",
+        "time",
+        "dataclasses",
+        "pathlib",
         "typing"
       ]
     },
@@ -16057,10 +16057,10 @@
       "complexity": 35,
       "loc": 113,
       "dependencies": [
-        "queue",
         "threading",
-        "__future__",
+        "queue",
         "collections",
+        "__future__",
         "typing"
       ]
     },
@@ -16115,10 +16115,10 @@
       "complexity": 27,
       "loc": 331,
       "dependencies": [
-        "numpy",
         "logging",
-        "dataclasses",
         "time",
+        "numpy",
+        "dataclasses",
         "typing"
       ]
     },
@@ -16217,10 +16217,10 @@
       "complexity": 45,
       "loc": 444,
       "dependencies": [
-        "dataclasses",
-        "typing",
         "cfr_plus",
-        "__future__"
+        "dataclasses",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -16341,11 +16341,11 @@
       "loc": 270,
       "dependencies": [
         "starlette",
+        "fastapi",
         "logging",
         "contextvars",
         "uuid",
-        "typing",
-        "fastapi"
+        "typing"
       ]
     },
     {
@@ -16549,16 +16549,16 @@
       "complexity": 43,
       "loc": 538,
       "dependencies": [
-        "functools",
+        "collections",
+        "threading",
+        "datetime",
         "logging",
-        "__future__",
+        "statistics",
         "time",
         "dataclasses",
-        "datetime",
-        "collections",
-        "statistics",
-        "typing",
-        "threading"
+        "functools",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -16728,10 +16728,10 @@
       "complexity": 44,
       "loc": 327,
       "dependencies": [
-        "typing",
-        "json",
         "enum",
-        "dataclasses"
+        "dataclasses",
+        "json",
+        "typing"
       ]
     },
     {
@@ -16902,10 +16902,10 @@
       "complexity": 53,
       "loc": 430,
       "dependencies": [
-        "typing",
-        "json",
         "enum",
-        "dataclasses"
+        "dataclasses",
+        "json",
+        "typing"
       ]
     },
     {
@@ -17093,16 +17093,16 @@
       "complexity": 31,
       "loc": 401,
       "dependencies": [
-        "queue",
-        "numpy",
-        "concurrent",
-        "logging",
-        "__future__",
-        "time",
-        "dataclasses",
-        "datetime",
         "typing",
-        "threading"
+        "threading",
+        "datetime",
+        "queue",
+        "logging",
+        "time",
+        "numpy",
+        "dataclasses",
+        "__future__",
+        "concurrent"
       ]
     },
     {
@@ -17222,16 +17222,16 @@
       "complexity": 195,
       "loc": 1300,
       "dependencies": [
-        "json",
         "os",
-        "logging",
-        "dataclasses",
-        "time",
-        "pathlib",
-        "collections",
-        "typing",
+        "json",
         "threading",
-        "enum"
+        "logging",
+        "time",
+        "enum",
+        "dataclasses",
+        "collections",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -17686,9 +17686,9 @@
       "complexity": 69,
       "loc": 366,
       "dependencies": [
-        "typing",
         "enum",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -17931,14 +17931,14 @@
       "loc": 554,
       "dependencies": [
         "json",
+        "sqlite3",
+        "datetime",
         "logging",
+        "enum",
+        "dataclasses",
         "pathlib",
         "__future__",
-        "dataclasses",
-        "datetime",
-        "sqlite3",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -18078,10 +18078,10 @@
       "complexity": 32,
       "loc": 237,
       "dependencies": [
-        "pokertool",
-        "typing",
         "logging",
-        "dataclasses"
+        "dataclasses",
+        "pokertool",
+        "typing"
       ]
     },
     {
@@ -18129,14 +18129,14 @@
       "complexity": 56,
       "loc": 250,
       "dependencies": [
-        "weakref",
-        "functools",
-        "concurrent",
+        "threading",
         "logging",
         "time",
-        "typing",
-        "threading",
-        "enum"
+        "weakref",
+        "enum",
+        "concurrent",
+        "functools",
+        "typing"
       ]
     },
     {
@@ -18568,10 +18568,10 @@
       "loc": 403,
       "dependencies": [
         "logging",
-        "dataclasses",
         "re",
-        "typing",
-        "enum"
+        "enum",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -18761,13 +18761,13 @@
       "complexity": 25,
       "loc": 284,
       "dependencies": [
-        "functools",
+        "sys",
         "contextlib",
         "logging",
-        "__future__",
         "time",
-        "typing",
-        "sys"
+        "functools",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -18991,8 +18991,8 @@
       "loc": 51,
       "dependencies": [
         "time",
-        "typing",
         "collections",
+        "typing",
         "threading"
       ]
     },
@@ -19026,10 +19026,10 @@
       "loc": 342,
       "dependencies": [
         "json",
-        "pathlib",
         "datetime",
-        "typing",
-        "subprocess"
+        "subprocess",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -19097,14 +19097,14 @@
       "complexity": 30,
       "loc": 348,
       "dependencies": [
-        "traceback",
-        "json",
+        "sys",
         "os",
-        "logging",
+        "json",
         "datetime",
-        "typing",
+        "traceback",
+        "logging",
         "enum",
-        "sys"
+        "typing"
       ]
     },
     {
@@ -19396,16 +19396,16 @@
       "complexity": 27,
       "loc": 308,
       "dependencies": [
-        "traceback",
-        "json",
+        "sys",
         "os",
-        "logging",
-        "pathlib",
+        "json",
         "datetime",
         "tempfile",
         "platform",
-        "typing",
-        "sys"
+        "traceback",
+        "logging",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -19534,27 +19534,27 @@
       "version": "'20.0.0'",
       "author": "'PokerTool Development Team'",
       "complexity": 235,
-      "loc": 2724,
+      "loc": 2726,
       "dependencies": [
-        "asyncio",
-        "logging",
-        "pathlib",
-        "dataclasses",
-        "thread_utils",
-        "time",
-        "error_middleware",
-        "scrape",
-        "typing",
         "threading",
+        "time",
         "enum",
-        "production_database",
-        "functools",
-        "os",
-        "secrets",
+        "error_middleware",
         "error_handling",
+        "thread_utils",
         "json",
+        "production_database",
+        "secrets",
+        "dataclasses",
+        "typing",
         "datetime",
-        "hashlib"
+        "hashlib",
+        "functools",
+        "pathlib",
+        "os",
+        "logging",
+        "asyncio",
+        "scrape"
       ]
     },
     {
@@ -19585,7 +19585,7 @@
       ],
       "is_abstract": false,
       "complexity": 0,
-      "line_number": 394
+      "line_number": 396
     },
     {
       "id": "src.pokertool.api.AuthenticationService",
@@ -19605,7 +19605,7 @@
       "decorators": [],
       "is_abstract": false,
       "complexity": 22,
-      "line_number": 405
+      "line_number": 407
     },
     {
       "id": "src.pokertool.api.ConnectionManager",
@@ -19627,7 +19627,7 @@
       "decorators": [],
       "is_abstract": false,
       "complexity": 30,
-      "line_number": 526
+      "line_number": 528
     },
     {
       "id": "src.pokertool.api.DetectionWebSocketManager",
@@ -19645,7 +19645,7 @@
       "decorators": [],
       "is_abstract": false,
       "complexity": 12,
-      "line_number": 624
+      "line_number": 626
     },
     {
       "id": "src.pokertool.api.APIServices",
@@ -19669,7 +19669,7 @@
       "decorators": [],
       "is_abstract": false,
       "complexity": 33,
-      "line_number": 696
+      "line_number": 698
     },
     {
       "id": "src.pokertool.api.PokerToolAPI",
@@ -19690,7 +19690,7 @@
       "decorators": [],
       "is_abstract": false,
       "complexity": 123,
-      "line_number": 871
+      "line_number": 873
     },
     {
       "id": "src.pokertool.api.get_detection_ws_manager",
@@ -19710,7 +19710,7 @@
         "DetectionWebSocketManager"
       ],
       "raises": [],
-      "line_number": 669
+      "line_number": 671
     },
     {
       "id": "src.pokertool.api.broadcast_detection_event",
@@ -19758,7 +19758,7 @@
         "manager.broadcast_detection"
       ],
       "raises": [],
-      "line_number": 676
+      "line_number": 678
     },
     {
       "id": "src.pokertool.api.get_api",
@@ -19778,7 +19778,7 @@
         "PokerToolAPI"
       ],
       "raises": [],
-      "line_number": 2642
+      "line_number": 2644
     },
     {
       "id": "src.pokertool.api.create_app",
@@ -19801,7 +19801,7 @@
       "raises": [
         "RuntimeError"
       ],
-      "line_number": 2649
+      "line_number": 2651
     },
     {
       "id": "src.pokertool.api.run_api_server",
@@ -19850,7 +19850,7 @@
       "raises": [
         "RuntimeError"
       ],
-      "line_number": 2661
+      "line_number": 2663
     },
     {
       "id": "src.pokertool.api.main",
@@ -19883,7 +19883,7 @@
         "logger.exception"
       ],
       "raises": [],
-      "line_number": 2703
+      "line_number": 2705
     },
     {
       "id": "src.pokertool.detection_metrics_tracker",
@@ -19895,12 +19895,12 @@
       "complexity": 36,
       "loc": 223,
       "dependencies": [
+        "threading",
         "logging",
-        "dataclasses",
         "time",
+        "dataclasses",
         "collections",
-        "typing",
-        "threading"
+        "typing"
       ]
     },
     {
@@ -20064,8 +20064,8 @@
       "complexity": 2,
       "loc": 41,
       "dependencies": [
-        "typing",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -20108,14 +20108,14 @@
       "complexity": 23,
       "loc": 164,
       "dependencies": [
-        "itertools",
+        "typing",
         "math",
-        "__future__",
+        "itertools",
         "time",
         "dataclasses",
-        "statistics",
         "collections",
-        "typing"
+        "__future__",
+        "statistics"
       ]
     },
     {
@@ -20196,10 +20196,10 @@
       "complexity": 63,
       "loc": 464,
       "dependencies": [
-        "typing",
-        "json",
         "numpy",
-        "dataclasses"
+        "dataclasses",
+        "json",
+        "typing"
       ]
     },
     {
@@ -20401,9 +20401,9 @@
       "loc": 49,
       "dependencies": [
         "time",
-        "typing",
+        "functools",
         "logging",
-        "functools"
+        "typing"
       ]
     },
     {
@@ -20480,9 +20480,9 @@
       "loc": 42,
       "dependencies": [
         "time",
-        "typing",
+        "hashlib",
         "collections",
-        "hashlib"
+        "typing"
       ]
     },
     {
@@ -20514,10 +20514,10 @@
       "complexity": 144,
       "loc": 1015,
       "dependencies": [
-        "typing",
         "logging",
         "enum",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -20714,20 +20714,20 @@
       "complexity": 148,
       "loc": 977,
       "dependencies": [
-        "json",
-        "core",
-        "ml_opponent_modeling",
-        "logging",
         "math",
-        "dataclasses",
-        "time",
-        "pathlib",
-        "typing",
-        "hud_designer",
+        "ml_opponent_modeling",
+        "json",
         "threading",
         "gto_solver",
+        "logging",
+        "hud_designer",
+        "time",
+        "storage",
+        "dataclasses",
+        "core",
         "hud_profiles",
-        "storage"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -20930,11 +20930,11 @@
       "complexity": 73,
       "loc": 421,
       "dependencies": [
+        "typing",
         "numpy",
         "dataclasses",
         "collections",
-        "statistics",
-        "typing"
+        "statistics"
       ]
     },
     {
@@ -21103,8 +21103,8 @@
       "loc": 40,
       "dependencies": [
         "json",
-        "functools",
         "logging",
+        "functools",
         "pathlib",
         "__future__",
         "typing"
@@ -21156,13 +21156,13 @@
       "complexity": 43,
       "loc": 284,
       "dependencies": [
-        "asyncio",
-        "json",
-        "os",
-        "logging",
         "sys",
-        "typing",
-        "fastapi"
+        "os",
+        "fastapi",
+        "json",
+        "logging",
+        "asyncio",
+        "typing"
       ]
     },
     {
@@ -21493,13 +21493,13 @@
       "complexity": 29,
       "loc": 329,
       "dependencies": [
-        "numpy",
+        "hashlib",
         "logging",
-        "dataclasses",
         "time",
+        "numpy",
+        "dataclasses",
         "collections",
-        "typing",
-        "hashlib"
+        "typing"
       ]
     },
     {
@@ -21623,11 +21623,11 @@
       "complexity": 22,
       "loc": 194,
       "dependencies": [
+        "sys",
         "logging",
-        "__future__",
         "argparse",
-        "typing",
-        "sys"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -21783,14 +21783,14 @@
       "complexity": 29,
       "loc": 296,
       "dependencies": [
-        "functools",
-        "logging",
-        "dataclasses",
-        "time",
-        "datetime",
-        "typing",
         "threading",
-        "enum"
+        "datetime",
+        "logging",
+        "time",
+        "enum",
+        "dataclasses",
+        "functools",
+        "typing"
       ]
     },
     {
@@ -21977,9 +21977,9 @@
       "dependencies": [
         "json",
         "logging",
+        "dataclasses",
         "pathlib",
         "__future__",
-        "dataclasses",
         "typing"
       ]
     },
@@ -22171,16 +22171,16 @@
       "complexity": 104,
       "loc": 698,
       "dependencies": [
-        "core",
-        "numpy",
         "os",
         "logging",
-        "dataclasses",
-        "pathlib",
-        "re",
         "error_handling",
-        "typing",
-        "enum"
+        "re",
+        "numpy",
+        "enum",
+        "dataclasses",
+        "core",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -22343,9 +22343,9 @@
       "loc": 214,
       "dependencies": [
         "json",
-        "pathlib",
         "time",
         "dataclasses",
+        "pathlib",
         "__future__",
         "typing"
       ]
@@ -22499,9 +22499,9 @@
       "dependencies": [
         "json",
         "itertools",
+        "enum",
         "dataclasses",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -22670,8 +22670,8 @@
       "loc": 422,
       "dependencies": [
         "math",
-        "dataclasses",
         "time",
+        "dataclasses",
         "__future__",
         "typing"
       ]
@@ -22784,24 +22784,24 @@
       "complexity": 116,
       "loc": 920,
       "dependencies": [
-        "traceback",
-        "hashlib",
-        "json",
-        "functools",
+        "sys",
         "os",
-        "contextlib",
+        "json",
         "inspect",
-        "logging",
-        "__future__",
-        "time",
-        "datetime",
-        "pathlib",
-        "dataclasses",
-        "platform",
-        "typing",
         "threading",
+        "datetime",
+        "contextlib",
+        "logging",
+        "traceback",
+        "platform",
+        "hashlib",
+        "time",
         "enum",
-        "sys"
+        "dataclasses",
+        "functools",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -23167,10 +23167,10 @@
       "complexity": 28,
       "loc": 163,
       "dependencies": [
-        "typing",
-        "logging",
+        "os",
         "enum",
-        "os"
+        "logging",
+        "typing"
       ]
     },
     {
@@ -23225,8 +23225,8 @@
       "dependencies": [
         "random",
         "json",
-        "numpy",
         "logging",
+        "numpy",
         "dataclasses",
         "pathlib",
         "typing"
@@ -23359,15 +23359,15 @@
       "complexity": 83,
       "loc": 526,
       "dependencies": [
-        "json",
         "os",
-        "contextlib",
-        "pathlib",
-        "time",
+        "json",
         "sqlite3",
+        "hashlib",
+        "contextlib",
         "error_handling",
-        "typing",
-        "hashlib"
+        "time",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -23506,13 +23506,13 @@
       "complexity": 24,
       "loc": 206,
       "dependencies": [
+        "typing",
         "json",
-        "dataclasses",
         "time",
-        "__future__",
+        "dataclasses",
         "pathlib",
-        "statistics",
-        "typing"
+        "__future__",
+        "statistics"
       ]
     },
     {
@@ -23612,9 +23612,9 @@
       "complexity": 9,
       "loc": 153,
       "dependencies": [
+        "os",
         "dataclasses",
-        "typing",
-        "os"
+        "typing"
       ]
     },
     {
@@ -23687,14 +23687,14 @@
       "complexity": 18,
       "loc": 182,
       "dependencies": [
+        "typing",
+        "textwrap",
         "json",
-        "__future__",
         "time",
         "dataclasses",
         "pathlib",
-        "textwrap",
-        "statistics",
-        "typing"
+        "__future__",
+        "statistics"
       ]
     },
     {
@@ -23810,16 +23810,16 @@
       "complexity": 75,
       "loc": 831,
       "dependencies": [
-        "logging",
-        "dataclasses",
-        "__future__",
-        "time",
-        "pathlib",
+        "sys",
         "platform",
-        "typing",
+        "logging",
+        "time",
         "subprocess",
         "enum",
-        "sys"
+        "dataclasses",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -24098,8 +24098,8 @@
       "loc": 20,
       "dependencies": [
         "traceback",
-        "typing",
-        "logging"
+        "logging",
+        "typing"
       ]
     },
     {
@@ -24153,14 +24153,14 @@
       "complexity": 31,
       "loc": 340,
       "dependencies": [
-        "asyncio",
         "json",
-        "pokertool",
-        "logging",
-        "dataclasses",
         "datetime",
-        "typing",
-        "subprocess"
+        "logging",
+        "pokertool",
+        "asyncio",
+        "subprocess",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -24214,10 +24214,10 @@
       "complexity": 39,
       "loc": 316,
       "dependencies": [
-        "pathlib",
         "datetime",
         "re",
         "todo_parser",
+        "pathlib",
         "typing"
       ]
     },
@@ -24276,14 +24276,14 @@
       "complexity": 22,
       "loc": 346,
       "dependencies": [
-        "traceback",
-        "starlette",
+        "sys",
         "os",
         "fastapi",
-        "logging",
+        "starlette",
         "datetime",
-        "typing",
-        "sys"
+        "traceback",
+        "logging",
+        "typing"
       ]
     },
     {
@@ -24507,12 +24507,12 @@
       "complexity": 67,
       "loc": 611,
       "dependencies": [
+        "math",
         "itertools",
         "logging",
-        "math",
+        "enum",
         "dataclasses",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -24832,13 +24832,13 @@
       "loc": 283,
       "dependencies": [
         "json",
-        "dataclasses",
+        "threading",
         "datetime",
-        "__future__",
-        "pathlib",
-        "typing",
+        "dataclasses",
         "decimal",
-        "threading"
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -25179,13 +25179,13 @@
       "complexity": 86,
       "loc": 791,
       "dependencies": [
-        "numpy",
-        "logging",
-        "dataclasses",
-        "time",
         "platform",
-        "typing",
-        "enum"
+        "logging",
+        "time",
+        "numpy",
+        "enum",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -25356,13 +25356,13 @@
       "complexity": 27,
       "loc": 289,
       "dependencies": [
+        "sys",
+        "datetime",
         "traceback",
         "logging",
-        "dataclasses",
-        "datetime",
-        "typing",
         "enum",
-        "sys"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -25639,14 +25639,14 @@
       "complexity": 40,
       "loc": 288,
       "dependencies": [
-        "numpy",
         "cv2",
         "logging",
-        "dataclasses",
         "time",
+        "numpy",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -25715,11 +25715,11 @@
       "loc": 163,
       "dependencies": [
         "os",
-        "dataclasses",
         "time",
+        "enum",
+        "dataclasses",
         "__future__",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -25802,10 +25802,10 @@
       "loc": 411,
       "dependencies": [
         "logging",
+        "enum",
         "dataclasses",
         "__future__",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -25874,8 +25874,8 @@
       "complexity": 1,
       "loc": 31,
       "dependencies": [
-        "typing",
         "logging",
+        "typing",
         "dataclasses"
       ]
     },
@@ -25944,9 +25944,9 @@
       "complexity": 21,
       "loc": 244,
       "dependencies": [
-        "numpy",
         "cv2",
         "logging",
+        "numpy",
         "dataclasses",
         "typing"
       ]
@@ -26000,12 +26000,12 @@
       "loc": 387,
       "dependencies": [
         "random",
-        "json",
         "math",
-        "__future__",
+        "json",
         "time",
         "dataclasses",
         "pathlib",
+        "__future__",
         "typing"
       ]
     },
@@ -26195,9 +26195,9 @@
       "complexity": 6,
       "loc": 24,
       "dependencies": [
-        "typing",
+        "os",
         "pathlib",
-        "os"
+        "typing"
       ]
     },
     {
@@ -26228,15 +26228,15 @@
       "complexity": 59,
       "loc": 614,
       "dependencies": [
-        "asyncio",
-        "typing",
+        "threading",
         "logging",
-        "__future__",
+        "asyncio",
         "time",
+        "enum",
         "dataclasses",
         "collections",
-        "threading",
-        "enum"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -27079,14 +27079,14 @@
       "complexity": 52,
       "loc": 272,
       "dependencies": [
-        "ml_opponent_modeling",
-        "dataclasses",
-        "time",
-        "__future__",
-        "statistics",
-        "collections",
         "typing",
-        "gto_solver"
+        "ml_opponent_modeling",
+        "gto_solver",
+        "time",
+        "dataclasses",
+        "collections",
+        "__future__",
+        "statistics"
       ]
     },
     {
@@ -27190,14 +27190,14 @@
       "loc": 565,
       "dependencies": [
         "json",
-        "concurrent",
-        "dataclasses",
-        "time",
-        "collections",
-        "typing",
-        "src",
         "threading",
-        "hashlib"
+        "hashlib",
+        "time",
+        "dataclasses",
+        "src",
+        "concurrent",
+        "collections",
+        "typing"
       ]
     },
     {
@@ -27446,13 +27446,13 @@
       "loc": 969,
       "dependencies": [
         "json",
-        "numpy",
         "logging",
+        "numpy",
+        "enum",
         "dataclasses",
-        "__future__",
         "collections",
-        "typing",
-        "enum"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -27797,10 +27797,10 @@
       "complexity": 54,
       "loc": 674,
       "dependencies": [
-        "typing",
         "math",
         "enum",
-        "dataclasses"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -28093,9 +28093,9 @@
       "complexity": 71,
       "loc": 433,
       "dependencies": [
-        "typing",
-        "logging",
         "enum",
+        "logging",
+        "typing",
         "dataclasses"
       ]
     },
@@ -28197,13 +28197,13 @@
       "complexity": 32,
       "loc": 402,
       "dependencies": [
-        "pokertool",
-        "requests",
         "logging",
-        "dataclasses",
+        "pokertool",
         "time",
+        "enum",
+        "dataclasses",
         "typing",
-        "enum"
+        "requests"
       ]
     },
     {
@@ -28334,12 +28334,12 @@
       "complexity": 52,
       "loc": 406,
       "dependencies": [
-        "html",
         "urllib",
+        "re",
+        "html",
+        "unicodedata",
         "pathlib",
         "__future__",
-        "re",
-        "unicodedata",
         "typing"
       ]
     },
@@ -28817,14 +28817,14 @@
       "complexity": 105,
       "loc": 676,
       "dependencies": [
-        "asyncio",
-        "pokertool",
+        "sys",
         "logging",
-        "dataclasses",
-        "typing",
+        "pokertool",
+        "asyncio",
         "subprocess",
         "enum",
-        "sys"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -28959,12 +28959,12 @@
       "complexity": 23,
       "loc": 462,
       "dependencies": [
-        "pokertool",
-        "pydantic",
-        "logging",
-        "datetime",
         "typing",
-        "fastapi"
+        "fastapi",
+        "datetime",
+        "logging",
+        "pokertool",
+        "pydantic"
       ]
     },
     {
@@ -29567,16 +29567,16 @@
       "complexity": 71,
       "loc": 527,
       "dependencies": [
+        "typing",
         "os",
+        "datetime",
         "contextlib",
         "logging",
-        "dataclasses",
-        "time",
-        "datetime",
-        "pathlib",
-        "statistics",
         "re",
-        "typing"
+        "time",
+        "dataclasses",
+        "pathlib",
+        "statistics"
       ]
     },
     {
@@ -29681,15 +29681,15 @@
       "loc": 644,
       "dependencies": [
         "random",
-        "json",
-        "numpy",
         "math",
-        "dataclasses",
+        "json",
         "datetime",
-        "pathlib",
+        "numpy",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -29882,12 +29882,12 @@
       "loc": 461,
       "dependencies": [
         "random",
-        "numpy",
-        "logging",
         "math",
-        "dataclasses",
         "datetime",
+        "logging",
         "statistics",
+        "numpy",
+        "dataclasses",
         "typing"
       ]
     },
@@ -30126,11 +30126,11 @@
       "complexity": 13,
       "loc": 123,
       "dependencies": [
-        "importlib",
+        "platform",
         "logging",
         "dataclasses",
+        "importlib",
         "__future__",
-        "platform",
         "typing"
       ]
     },
@@ -30258,10 +30258,10 @@
       "dependencies": [
         "itertools",
         "logging",
+        "enum",
         "dataclasses",
         "__future__",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -30339,16 +30339,16 @@
       "complexity": 109,
       "loc": 975,
       "dependencies": [
-        "json",
         "os",
-        "tkinter",
-        "__future__",
+        "json",
+        "threading",
+        "sqlite3",
         "datetime",
+        "tkinter",
         "dataclasses",
         "pathlib",
-        "sqlite3",
-        "typing",
-        "threading"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -30574,11 +30574,11 @@
       "complexity": 17,
       "loc": 175,
       "dependencies": [
+        "textwrap",
         "json",
         "dataclasses",
         "pathlib",
         "__future__",
-        "textwrap",
         "typing"
       ]
     },
@@ -30740,15 +30740,15 @@
       "complexity": 98,
       "loc": 945,
       "dependencies": [
-        "numpy",
-        "logging",
-        "__future__",
-        "time",
-        "dataclasses",
         "compact_live_advice_window",
-        "typing",
         "threading",
-        "enum"
+        "logging",
+        "time",
+        "numpy",
+        "enum",
+        "dataclasses",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -30921,12 +30921,12 @@
       "loc": 355,
       "dependencies": [
         "random",
-        "itertools",
         "math",
+        "gto_solver",
+        "itertools",
         "dataclasses",
         "__future__",
-        "typing",
-        "gto_solver"
+        "typing"
       ]
     },
     {
@@ -31047,9 +31047,9 @@
       "complexity": 14,
       "loc": 136,
       "dependencies": [
-        "typing",
         "os",
-        "pathlib"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -31253,10 +31253,10 @@
       "complexity": 7,
       "loc": 72,
       "dependencies": [
-        "typing",
-        "logging",
+        "os",
         "pathlib",
-        "os"
+        "logging",
+        "typing"
       ]
     },
     {
@@ -31308,19 +31308,19 @@
       "complexity": 160,
       "loc": 1116,
       "dependencies": [
-        "concurrency",
-        "core",
-        "thread_utils",
-        "numpy",
-        "concurrent",
-        "logging",
-        "pathlib",
-        "time",
-        "dataclasses",
-        "error_handling",
         "typing",
+        "thread_utils",
+        "concurrency",
         "threading",
-        "storage"
+        "logging",
+        "error_handling",
+        "time",
+        "numpy",
+        "storage",
+        "dataclasses",
+        "core",
+        "pathlib",
+        "concurrent"
       ]
     },
     {
@@ -31727,13 +31727,13 @@
       "complexity": 56,
       "loc": 265,
       "dependencies": [
-        "functools",
-        "concurrent",
-        "logging",
-        "__future__",
         "typing",
         "threading",
-        "enum"
+        "logging",
+        "enum",
+        "functools",
+        "__future__",
+        "concurrent"
       ]
     },
     {
@@ -32165,13 +32165,13 @@
       "loc": 514,
       "dependencies": [
         "starlette",
-        "logging",
-        "dataclasses",
+        "fastapi",
         "datetime",
+        "logging",
         "re",
-        "typing",
         "enum",
-        "fastapi"
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -32391,9 +32391,9 @@
       "loc": 31,
       "dependencies": [
         "logging",
-        "typing",
+        "pathlib",
         "json",
-        "pathlib"
+        "typing"
       ]
     },
     {
@@ -32423,13 +32423,13 @@
       "complexity": 86,
       "loc": 629,
       "dependencies": [
-        "numpy",
         "logging",
+        "re",
+        "numpy",
+        "enum",
         "dataclasses",
         "__future__",
-        "re",
-        "typing",
-        "enum"
+        "typing"
       ]
     },
     {
@@ -32570,9 +32570,9 @@
       "loc": 170,
       "dependencies": [
         "json",
-        "pathlib",
         "time",
         "dataclasses",
+        "pathlib",
         "__future__",
         "typing"
       ]
@@ -32658,9 +32658,9 @@
       "loc": 302,
       "dependencies": [
         "typing",
-        "re",
         "html",
-        "enum"
+        "enum",
+        "re"
       ]
     },
     {
@@ -32804,12 +32804,12 @@
       "loc": 247,
       "dependencies": [
         "hashlib",
-        "dataclasses",
-        "__future__",
-        "pathlib",
         "re",
-        "typing",
-        "enum"
+        "enum",
+        "dataclasses",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -32927,8 +32927,8 @@
       "complexity": 34,
       "loc": 359,
       "dependencies": [
-        "typing",
-        "math"
+        "math",
+        "typing"
       ]
     },
     {
@@ -33296,13 +33296,13 @@
       "complexity": 42,
       "loc": 547,
       "dependencies": [
-        "enum",
-        "numpy",
+        "hashlib",
         "logging",
-        "dataclasses",
         "time",
-        "typing",
-        "hashlib"
+        "numpy",
+        "enum",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -33426,8 +33426,8 @@
       "complexity": 3,
       "loc": 40,
       "dependencies": [
-        "logging",
-        "numpy"
+        "numpy",
+        "logging"
       ]
     },
     {
@@ -33457,10 +33457,10 @@
       "loc": 301,
       "dependencies": [
         "logging",
-        "dataclasses",
         "time",
-        "typing",
-        "enum"
+        "enum",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -33656,14 +33656,14 @@
       "complexity": 56,
       "loc": 250,
       "dependencies": [
-        "weakref",
-        "functools",
-        "concurrent",
+        "threading",
         "logging",
         "time",
-        "typing",
-        "threading",
-        "enum"
+        "weakref",
+        "enum",
+        "concurrent",
+        "functools",
+        "typing"
       ]
     },
     {
@@ -34094,13 +34094,13 @@
       "complexity": 53,
       "loc": 272,
       "dependencies": [
-        "json",
         "math",
-        "__future__",
+        "json",
+        "threading",
         "datetime",
         "pathlib",
-        "typing",
-        "threading"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -34210,14 +34210,14 @@
       "complexity": 38,
       "loc": 321,
       "dependencies": [
-        "weakref",
-        "functools",
+        "threading",
         "logging",
-        "pathlib",
         "time",
+        "weakref",
         "dataclasses",
-        "typing",
-        "threading"
+        "functools",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -34323,10 +34323,10 @@
       "complexity": 11,
       "loc": 183,
       "dependencies": [
-        "logging",
         "sqlite3",
+        "os",
         "pathlib",
-        "os"
+        "logging"
       ]
     },
     {
@@ -34479,10 +34479,10 @@
       "complexity": 17,
       "loc": 198,
       "dependencies": [
-        "logging",
         "sqlite3",
+        "os",
         "pathlib",
-        "os"
+        "logging"
       ]
     },
     {
@@ -34641,10 +34641,10 @@
       "complexity": 11,
       "loc": 183,
       "dependencies": [
-        "logging",
         "sqlite3",
+        "os",
         "pathlib",
-        "os"
+        "logging"
       ]
     },
     {
@@ -34797,11 +34797,11 @@
       "complexity": 58,
       "loc": 362,
       "dependencies": [
+        "enum",
         "dataclasses",
-        "__future__",
         "collections",
-        "typing",
-        "enum"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -35080,9 +35080,9 @@
       "dependencies": [
         "pokertool",
         "tkinter",
+        "style",
         "__future__",
-        "typing",
-        "style"
+        "typing"
       ]
     },
     {
@@ -35126,13 +35126,13 @@
       "complexity": 49,
       "loc": 535,
       "dependencies": [
+        "datetime",
         "pokertool",
         "tkinter",
         "dataclasses",
-        "datetime",
+        "style",
         "__future__",
-        "typing",
-        "style"
+        "typing"
       ]
     },
     {
@@ -35190,9 +35190,9 @@
       "dependencies": [
         "pokertool",
         "tkinter",
+        "style",
         "__future__",
-        "typing",
-        "style"
+        "typing"
       ]
     },
     {
@@ -35223,12 +35223,12 @@
       "complexity": 79,
       "loc": 600,
       "dependencies": [
+        "datetime",
         "pokertool",
         "tkinter",
+        "style",
         "__future__",
-        "datetime",
-        "typing",
-        "style"
+        "typing"
       ]
     },
     {
@@ -35272,12 +35272,12 @@
       "complexity": 42,
       "loc": 341,
       "dependencies": [
-        "logging",
-        "pathlib",
+        "sys",
         "platform",
-        "typing",
+        "logging",
         "subprocess",
-        "sys"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -35354,8 +35354,8 @@
       "dependencies": [
         "os",
         "pathlib",
-        "typing",
-        "__future__"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -35536,10 +35536,10 @@
       "complexity": 46,
       "loc": 182,
       "dependencies": [
-        "asyncio",
-        "logging",
-        "__future__",
         "datetime",
+        "logging",
+        "asyncio",
+        "__future__",
         "typing"
       ]
     },
@@ -35794,8 +35794,8 @@
       "loc": 23,
       "dependencies": [
         "abc",
-        "typing",
-        "enum"
+        "enum",
+        "typing"
       ]
     },
     {
@@ -35853,11 +35853,11 @@
       "complexity": 39,
       "loc": 250,
       "dependencies": [
-        "asyncio",
-        "json",
         "os",
-        "pokertool",
+        "json",
         "logging",
+        "pokertool",
+        "asyncio",
         "aiohttp",
         "typing"
       ]
@@ -35896,11 +35896,11 @@
       "complexity": 34,
       "loc": 205,
       "dependencies": [
-        "asyncio",
-        "json",
         "os",
-        "pokertool",
+        "json",
         "logging",
+        "pokertool",
+        "asyncio",
         "aiohttp",
         "typing"
       ]
@@ -35939,13 +35939,13 @@
       "complexity": 21,
       "loc": 178,
       "dependencies": [
-        "asyncio",
-        "json",
         "os",
-        "pokertool",
+        "json",
         "logging",
-        "typing",
-        "subprocess"
+        "pokertool",
+        "asyncio",
+        "subprocess",
+        "typing"
       ]
     },
     {
@@ -35981,11 +35981,11 @@
       "complexity": 35,
       "loc": 235,
       "dependencies": [
-        "asyncio",
-        "json",
         "os",
-        "pokertool",
+        "json",
         "logging",
+        "pokertool",
+        "asyncio",
         "aiohttp",
         "typing"
       ]
@@ -36025,8 +36025,8 @@
       "complexity": 0,
       "loc": 18,
       "dependencies": [
-        "os",
         "builtins",
+        "os",
         "pokertool"
       ]
     },
@@ -36040,10 +36040,10 @@
       "complexity": 55,
       "loc": 527,
       "dependencies": [
-        "numpy",
         "logging",
-        "dataclasses",
         "re",
+        "numpy",
+        "dataclasses",
         "typing"
       ]
     },
@@ -36118,19 +36118,19 @@
       "complexity": 89,
       "loc": 1031,
       "dependencies": [
-        "asyncio",
-        "json",
         "os",
-        "logging",
-        "shutil",
-        "dataclasses",
-        "time",
-        "socket",
-        "pathlib",
+        "json",
         "platform",
-        "typing",
+        "logging",
+        "socket",
+        "time",
+        "asyncio",
         "subprocess",
-        "enum"
+        "enum",
+        "dataclasses",
+        "shutil",
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -36289,14 +36289,14 @@
       "loc": 645,
       "dependencies": [
         "json",
-        "dataclasses",
-        "datetime",
-        "__future__",
-        "pathlib",
         "sqlite3",
+        "datetime",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -36459,11 +36459,11 @@
       "complexity": 6,
       "loc": 62,
       "dependencies": [
+        "sys",
         "os",
-        "pathlib",
-        "subprocess",
         "start",
-        "sys"
+        "subprocess",
+        "pathlib"
       ]
     },
     {
@@ -36507,14 +36507,14 @@
       "loc": 1712,
       "dependencies": [
         "hashlib",
-        "numpy",
         "logging",
-        "__future__",
         "time",
+        "numpy",
+        "enum",
         "dataclasses",
         "collections",
-        "typing",
-        "enum"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -36822,14 +36822,14 @@
       "complexity": 59,
       "loc": 300,
       "dependencies": [
-        "traceback",
-        "json",
+        "sys",
         "os",
+        "json",
         "inspect",
-        "pathlib",
-        "datetime",
         "threading",
-        "sys"
+        "datetime",
+        "traceback",
+        "pathlib"
       ]
     },
     {
@@ -36922,19 +36922,19 @@
       "loc": 1274,
       "dependencies": [
         "json",
-        "enum",
-        "functools",
-        "concurrent",
-        "numpy",
-        "logging",
-        "__future__",
-        "time",
-        "pathlib",
-        "dataclasses",
-        "collections",
-        "typing",
         "threading",
-        "hashlib"
+        "hashlib",
+        "logging",
+        "time",
+        "functools",
+        "enum",
+        "dataclasses",
+        "numpy",
+        "concurrent",
+        "collections",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -37282,16 +37282,16 @@
       "loc": 1016,
       "dependencies": [
         "json",
-        "enum",
-        "numpy",
-        "logging",
-        "pathlib",
-        "time",
-        "dataclasses",
         "datetime",
+        "hashlib",
+        "logging",
+        "time",
+        "numpy",
+        "enum",
+        "dataclasses",
         "collections",
-        "typing",
-        "hashlib"
+        "pathlib",
+        "typing"
       ]
     },
     {
@@ -37481,14 +37481,14 @@
       "complexity": 120,
       "loc": 1131,
       "dependencies": [
-        "pytesseract",
-        "numpy",
         "cv2",
         "logging",
-        "dataclasses",
         "re",
-        "typing",
-        "enum"
+        "numpy",
+        "enum",
+        "dataclasses",
+        "pytesseract",
+        "typing"
       ]
     },
     {
@@ -37713,13 +37713,13 @@
       "loc": 342,
       "dependencies": [
         "json",
-        "base64",
-        "numpy",
+        "threading",
         "logging",
         "__future__",
+        "numpy",
         "dataclasses",
-        "typing",
-        "threading"
+        "base64",
+        "typing"
       ]
     },
     {
@@ -37818,14 +37818,14 @@
         "json",
         "pickle",
         "logging",
-        "__future__",
         "time",
-        "dataclasses",
-        "pathlib",
-        "collections",
         "csv",
-        "typing",
-        "enum"
+        "enum",
+        "dataclasses",
+        "collections",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -38072,13 +38072,13 @@
       "complexity": 72,
       "loc": 546,
       "dependencies": [
+        "threading",
         "queue",
-        "numpy",
         "logging",
-        "dataclasses",
         "time",
-        "typing",
-        "threading"
+        "numpy",
+        "dataclasses",
+        "typing"
       ]
     },
     {
@@ -38238,17 +38238,17 @@
       "complexity": 111,
       "loc": 822,
       "dependencies": [
-        "json",
-        "numpy",
         "cv2",
         "os",
-        "logging",
-        "__future__",
-        "time",
-        "dataclasses",
+        "json",
         "datetime",
+        "logging",
+        "time",
+        "numpy",
         "pathlib",
+        "dataclasses",
         "uuid",
+        "__future__",
         "typing"
       ]
     },
@@ -38627,23 +38627,23 @@
       "complexity": 108,
       "loc": 1174,
       "dependencies": [
-        "traceback",
-        "gc",
+        "sys",
+        "os",
         "json",
         "pickle",
         "psutil",
-        "hashlib",
-        "os",
-        "logging",
-        "__future__",
-        "time",
-        "dataclasses",
-        "pathlib",
-        "collections",
-        "typing",
         "threading",
+        "gc",
+        "hashlib",
+        "logging",
+        "traceback",
+        "time",
         "enum",
-        "sys"
+        "dataclasses",
+        "collections",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -38906,12 +38906,12 @@
       "loc": 850,
       "dependencies": [
         "json",
-        "dataclasses",
         "datetime",
-        "__future__",
+        "enum",
+        "dataclasses",
         "pathlib",
-        "typing",
-        "enum"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -39127,13 +39127,13 @@
       "complexity": 38,
       "loc": 289,
       "dependencies": [
+        "sys",
         "queue",
-        "dataclasses",
-        "__future__",
-        "pathlib",
-        "typing",
         "enum",
-        "sys"
+        "dataclasses",
+        "pathlib",
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -39368,16 +39368,16 @@
       "complexity": 74,
       "loc": 574,
       "dependencies": [
-        "json",
-        "numpy",
         "cv2",
+        "math",
+        "json",
         "itertools",
         "logging",
-        "math",
-        "__future__",
         "time",
+        "numpy",
         "dataclasses",
         "pathlib",
+        "__future__",
         "typing"
       ]
     },
@@ -39503,11 +39503,11 @@
       "dependencies": [
         "json",
         "itertools",
+        "enum",
         "dataclasses",
-        "__future__",
         "pathlib",
-        "typing",
-        "enum"
+        "__future__",
+        "typing"
       ]
     },
     {
@@ -39683,18 +39683,18 @@
       "complexity": 608,
       "loc": 4298,
       "dependencies": [
-        "hashlib",
-        "functools",
-        "numpy",
-        "concurrent",
-        "logging",
-        "dataclasses",
-        "time",
-        "collections",
         "copy",
+        "hashlib",
+        "logging",
         "re",
-        "typing",
-        "enum"
+        "time",
+        "numpy",
+        "enum",
+        "dataclasses",
+        "functools",
+        "concurrent",
+        "collections",
+        "typing"
       ]
     },
     {

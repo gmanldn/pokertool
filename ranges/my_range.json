@@ -1,19 +1,19 @@
 {
   "name": "Custom",
   "hands": [
-    "TT",
-    "99",
-    "AKs",
-    "QQ",
-    "JJ",
     "AQs",
-    "AKo",
-    "88",
-    "AQo",
+    "AJs",
     "KK",
     "AA",
-    "AJs",
-    "KQs"
+    "99",
+    "KQs",
+    "AQo",
+    "TT",
+    "88",
+    "JJ",
+    "AKo",
+    "QQ",
+    "AKs"
   ],
   "description": "My opening range",
   "color": "#4CAF50"
