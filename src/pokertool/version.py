@@ -25,15 +25,24 @@ from datetime import datetime
 _VERSION_FILE = Path(__file__).parent.parent.parent / 'VERSION'
 
 def _read_version() -> str:
-    """Read version from VERSION file (TOML format)."""
+    """Read version from VERSION file (plain text format)."""
     if _VERSION_FILE.exists():
-        content = _VERSION_FILE.read_text()
-        # Parse TOML-like format to extract version
+        content = _VERSION_FILE.read_text().strip()
+        # Try plain text format first (e.g., "101.0.0")
+        if content and not content.startswith('#'):
+            # Remove any 'v' prefix if present
+            version = content.lstrip('v')
+            # Validate format (major.minor.patch)
+            parts = version.split('.')
+            if len(parts) == 3 and all(part.isdigit() for part in parts):
+                return version
+        
+        # Fall back to TOML format for backward compatibility
         for line in content.split('\n'):
             line = line.strip()
             if line.startswith('version ='):
                 # Extract version from line like "version = 81.0.0"
-                version = line.split('=')[1].strip()
+                version = line.split('=')[1].strip().strip('"\'')
                 return version
     return "0.0.0"
 
