@@ -33,10 +33,10 @@ Conventions
 #### Main Improve Tab Interface (8 tasks)
 - [ ] [P0][M] Create Improve tab with "I" icon — New main navigation tab for AI development automation. Icon: Info/Intelligence symbol. `pokertool-frontend/src/pages/Improve.tsx`
 - [x] ✅ [P0][M] Add TODO task creator interface — Top section with button "Add New Task(s)" that opens modal for adding tasks to `docs/TODO.md`. Support single task or bulk task import. `Improve.tsx:TaskCreator`. **Complete:** Modal with single/bulk mode, priority/size selectors, API endpoint `/api/improve/add-tasks` implemented.
-- [ ] [P0][M] Implement AI provider selector — Dropdown to choose AI provider: Claude Code (default), Anthropic API, OpenRouter, OpenAI. Store selection in localStorage. `Improve.tsx:ProviderSelector`
-- [ ] [P0][S] Add API key input field — Secure input for API keys (masked, encrypted in localStorage). Show different fields based on provider. Validate keys before use. `Improve.tsx:APIKeyInput`
+- [x] ✅ [P0][M] Implement AI provider selector — Dropdown to choose AI provider: Claude Code (default), Anthropic API, OpenRouter, OpenAI. Store selection in localStorage. `Improve.tsx:ProviderSelector`
+- [x] ✅ [P0][S] Add API key input field — Secure input for API keys (masked, encrypted in localStorage). Show different fields based on provider. Validate keys before use. `Improve.tsx:APIKeyInput`
 - [x] ✅ [P0][M] Create three embedded terminal windows — Split view with 3 terminal emulators using xterm.js. Resizable panels. Each terminal tracks separate AI agent. `Improve.tsx:TerminalGrid`. **Complete:** Integrated @xterm/xterm with FitAddon, terminal instances with VS Code theme, welcome banners, auto-resize handling, cleanup on unmount.
-- [ ] [P0][S] Add "DoActions" button — Primary action button to spawn all 3 AI agents simultaneously. Disabled state when no API key or agents already running. `Improve.tsx:DoActionsButton`
+- [x] ✅ [P0][S] Add "DoActions" button — Primary action button to spawn all 3 AI agents simultaneously. Disabled state when no API key or agents already running. `Improve.tsx:DoActionsButton`
 - [x] [P0][M] Implement agent status indicators — ✅ Complete: Live status badges with color-coded animations for all agent phases `components/improve/AgentStatusBadge.tsx`
 - [x] [P0][M] Add kill/pause controls — ✅ Complete: Individual stop/pause/resume buttons and emergency stop all functionality `Improve.tsx:AgentControls`
 
@@ -125,7 +125,7 @@ Conventions
 - [ ] [P0][M] AI-powered opponent profiling — Use LangChain to analyze opponent patterns from stored hands and generate natural language profiles with playing style, tendencies, and exploitation strategies.
 - [ ] [P0][S] Real-time hand analysis suggestions — Integrate AI analysis into HUD overlay to show contextual advice during live play (e.g., "Similar situations suggest 4-bet").
 - [ ] [P0][M] Strategy coach chatbot — Implement conversational poker coach that can answer questions like "How should I play AK from UTG?" with examples from user's hand history.
-- [ ] [P0][S] Session review AI summary — Generate end-of-session summaries using LLM: key hands, mistakes, wins, areas for improvement.
+- [x] ✅ [P0][S] Session review AI summary — Generate end-of-session summaries using LLM: key hands, mistakes, wins, areas for improvement.
 - [ ] [P0][M] Automated hand tagging — Use AI to automatically tag hands with categories (bluff, value bet, hero call, etc.) for better organization and search.
 - [x] [P0][S] AI endpoints authorization — ✅ Complete: Added RBAC permissions (USE_AI_ANALYSIS, USE_AI_CHAT, MANAGE_AI_DATA) and protected all `/api/ai/*` endpoints with authentication dependencies in `src/pokertool/api_langchain.py`. Updated RBAC role definitions in `src/pokertool/rbac.py:62-68,147-148,160`.
 
@@ -149,7 +149,7 @@ Conventions
 - [x] [P0][S] Database query optimization — ✅ Complete: Created comprehensive query profiler with EXPLAIN ANALYZE support for PostgreSQL and EXPLAIN QUERY PLAN for SQLite. Added 11 new optimized indexes including composite indexes (user_hash+timestamp, session_id+timestamp), partial indexes (recent hands, high severity events), and covering indexes to avoid table lookups. Features: query profiling against <50ms p95 target, index recommendations, efficiency scoring, automatic slow query detection and logging. File: `src/pokertool/query_profiler.py` (506 lines). Enhanced `database.py:296-330` with production-grade indexes. Indexes added: idx_hands_user_time, idx_hands_session_time, idx_hands_user_session, idx_hands_recent (partial), idx_hands_covering, idx_sessions_end (partial), idx_security_user_time, idx_security_type_time, idx_security_high_severity (partial).
 - [ ] [P0][M] Frontend bundle size reduction — Analyze webpack bundle, implement code splitting for routes, lazy load heavy components (HUD, Charts). Target: reduce initial bundle from 2.5MB to <1.5MB.
 - [x] [P0][S] API response caching layer — ✅ Complete: Implemented Redis-based caching for expensive endpoints with automatic fallback to in-memory cache. Features: configurable TTL per endpoint pattern (/api/stats/=30s, /api/ml/=60s, /api/analysis/=20s, /api/dashboard/=10s, /api/health=5s), automatic cache invalidation with pattern matching, cache key generation with MD5 parameter hashing, decorator-based caching for FastAPI endpoints (@cached_endpoint), cache hit/miss metrics tracking, thread-safe LRU in-memory cache fallback. Environment config: REDIS_HOST, REDIS_PORT, REDIS_DB, REDIS_PASSWORD, ENABLE_API_CACHING, CACHE_KEY_PREFIX. File: `src/pokertool/api_cache.py` (521 lines). API: get_api_cache(), cached_endpoint(ttl, invalidate_on), cache.invalidate_pattern(), cache.get_metrics().
-- [ ] [P1][M] React component memoization audit — Add React.memo, useMemo, useCallback to prevent unnecessary re-renders in Dashboard, TableView, and SystemStatus. Profile with React DevTools.
+- [x] ✅ [P1][M] React component memoization audit — Add React.memo, useMemo, useCallback to prevent unnecessary re-renders in Dashboard, TableView, and SystemStatus. Profile with React DevTools.
 - [x] [P1][S] Backend async optimization — ✅ Complete: FastAPI endpoints already use async/await throughout `src/pokertool/api.py`. All route handlers are async functions. Database operations use async context managers. WebSocket endpoints use async/await. Further optimization possible with asyncio.gather for parallel operations, but core async infrastructure is in place.
 
 ### Code Quality & Maintainability (P1)
@@ -334,12 +334,12 @@ Conventions
 
 #### Real-Time Logging (7 tasks)
 - [ ] [P0][M] Add live detection log stream to frontend — Show real-time detection logs in UI. Filterable, searchable. `pokertool-frontend/src/components/DetectionLogStream.tsx`
-- [ ] [P0][S] Implement log level controls in UI — Allow users to set detection log level (DEBUG/INFO/WARN/ERROR). `pokertool-frontend/src/pages/Settings.tsx:logging`
+- [x] ✅ [P0][S] Implement log level controls in UI — Allow users to set detection log level (DEBUG/INFO/WARN/ERROR). `pokertool-frontend/src/pages/Settings.tsx:logging`
 - [ ] [P0][M] Create detection event timeline visualization — Timeline showing all detection events in chronological order. `pokertool-frontend/src/components/DetectionTimeline.tsx`
 - [ ] [P1][M] Add detection log search and filtering — Search logs by type, confidence, time range. `pokertool-frontend/src/pages/DetectionLogs.tsx`
-- [ ] [P1][S] Implement log highlighting for errors — Highlight detection errors/warnings in red/yellow. `pokertool-frontend/src/components/DetectionLogStream.tsx`
+- [x] ✅ [P1][S] Implement log highlighting for errors — Highlight detection errors/warnings in red/yellow. `pokertool-frontend/src/components/DetectionLogStream.tsx`
 - [ ] [P2][M] Create detection log playback — Replay detection events from logs. Debug detection issues. `pokertool-frontend/src/components/LogPlayback.tsx`
-- [ ] [P2][S] Add log export from frontend — Download logs as CSV/JSON from UI. `pokertool-frontend/src/pages/DetectionLogs.tsx:export`
+- [x] ✅ [P2][S] Add log export from frontend — Download logs as CSV/JSON from UI. `pokertool-frontend/src/pages/DetectionLogs.tsx:export`
 
 #### Performance Logging (7 tasks)
 - [x] [P0][M] Add frame processing time logging — ✅ Complete: Created frame_performance_tracker.py (92 lines) with FramePerformanceTracker tracking last 100 frames, auto-logs slow frames >100ms, reports stats every 100 frames (avg/median/p95/min/max/FPS). Global tracker via get_tracker(). File: `src/pokertool/frame_performance_tracker.py`.
