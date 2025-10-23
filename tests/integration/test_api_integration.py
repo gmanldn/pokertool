@@ -53,7 +53,7 @@ class TestSmartHelperIntegration:
         assert "action" in data
         assert "amount" in data
         assert "gtoFrequencies" in data
-        assert "reasoning" in data
+        assert "factors" in data  # API returns 'factors' not 'reasoning'
         assert "confidence" in data
 
         # Verify action is valid
