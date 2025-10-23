@@ -256,7 +256,7 @@ Conventions
 - [ ] [P0][M] Optimize card ROI detection for different table sizes — Dynamically adjust ROIs based on table window dimensions. `src/pokertool/modules/poker_screen_scraper_betfair.py:800-900`
 - [ ] [P1][S] Add card animation detection and waiting — Detect when cards are animating, wait for animation to complete before OCR. `src/pokertool/modules/poker_screen_scraper.py`
 - [ ] [P1][M] Implement ensemble OCR for cards — Combine Tesseract + EasyOCR + template matching, use voting. `src/pokertool/ocr_ensemble.py:200-250`
-- [ ] [P1][S] Add card reflection/glare removal preprocessing — Detect and remove glare/reflections from card images before OCR. `src/pokertool/card_recognizer.py:100-130`
+- [x] ✅ [P1][S] Add card reflection/glare removal preprocessing — Detect and remove glare/reflections from card images before OCR. `src/pokertool/card_recognizer.py:100-130`
 - [ ] [P1][M] Create card detection regression test suite — 100+ screenshots with labeled ground truth. Fail if accuracy drops <98%. `tests/card_detection/`
 - [ ] [P2][M] Add support for 4-color deck detection — Detect 4-color decks (blue clubs, green spades). Add toggle in settings. `src/pokertool/card_recognizer.py`
 - [x] ✅ [P2][S] Implement card history tracking — Track which cards have been seen in current session. Detect anomalies (duplicate cards). `src/pokertool/modules/poker_screen_scraper.py`
@@ -268,7 +268,7 @@ Conventions
 - [ ] [P0][M] Implement player stack size tracking — Detect stack changes every frame. Calculate net change. Emit events on change. `src/pokertool/modules/poker_screen_scraper_betfair.py:1500-1600`
 - [ ] [P0][S] Add player action detection (fold/check/bet/raise) — Detect visual indicators of player actions. Log to database. `src/pokertool/modules/poker_screen_scraper.py`
 - [ ] [P1][M] Create player avatar detection — Extract player avatar images, use for tracking across sessions. `src/pokertool/modules/poker_screen_scraper.py`
-- [ ] [P1][S] Add player timeout detection — Detect when players are close to timing out. Emit urgent event. `src/pokertool/modules/poker_screen_scraper_betfair.py`
+- [x] ✅ [P1][S] Add player timeout detection — Detect when players are close to timing out. Emit urgent event. `src/pokertool/modules/poker_screen_scraper_betfair.py`
 - [ ] [P2][M] Implement player betting pattern visualization — Track and visualize each player's betting patterns. Show in HUD. `pokertool-frontend/src/components/PlayerStats.tsx`
 - [ ] [P2][S] Add player seat change detection — Detect when players change seats. Update position tracking. `src/pokertool/modules/poker_screen_scraper.py`
 
@@ -295,7 +295,7 @@ Conventions
 - [x] [P0][S] Add board texture analysis — ✅ Complete: Board texture analyzer classifies boards as wet/dry/semi-wet and coordinated/rainbow/monotone with connectivity scoring, straight/flush possibility detection, and pair detection. File: `src/pokertool/board_texture_analyzer.py` (79 lines).
 - [ ] [P0][M] Implement board change detection — Detect exact moment when flop/turn/river appears. Emit events. `src/pokertool/modules/poker_screen_scraper_betfair.py`
 - [ ] [P1][M] Create equity calculator integration — Calculate hand equity vs range on current board. Show in HUD. `src/pokertool/core.py:calculate_equity`
-- [ ] [P1][S] Add board card animation handling — Wait for board animations to complete before analyzing. `src/pokertool/modules/poker_screen_scraper.py`
+- [x] ✅ [P1][S] Add board card animation handling — Wait for board animations to complete before analyzing. `src/pokertool/modules/poker_screen_scraper.py`
 - [ ] [P2][M] Implement board runout analyzer — Analyze how board texture changes turn/river. Show equity evolution. `pokertool-frontend/src/components/BoardAnalysis.tsx`
 
 #### Detection Performance (10 tasks)
