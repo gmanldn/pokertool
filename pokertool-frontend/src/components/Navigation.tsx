@@ -94,6 +94,21 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const appVersion = RELEASE_VERSION;
   const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
 
+  // Helper to get color from status color type
+  const getColorFromStatus = (color: 'success' | 'error' | 'warning' | 'info'): string => {
+    switch (color) {
+      case 'success':
+        return theme.palette.success.main;
+      case 'error':
+        return theme.palette.error.main;
+      case 'warning':
+        return theme.palette.warning.main;
+      case 'info':
+      default:
+        return theme.palette.info.main;
+    }
+  };
+
   // Debounce WebSocket connection status to reduce flicker on transient disconnects
   useEffect(() => {
     const t = setTimeout(() => setDebouncedConnected(connected), 400);
@@ -510,9 +525,25 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
             </>
           )}
 
-          {/* Unified System Status Indicator */}
-          <Tooltip title={systemStatusTooltip} arrow>
+          {/* Unified System Status Indicator - Now Dynamic and Interactive */}
+          <Tooltip
+            title={systemStatusTooltip}
+            arrow
+            enterDelay={200}
+            sx={{
+              '& .MuiTooltip-tooltip': {
+                fontSize: '0.8rem',
+                maxWidth: 300,
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(0, 0, 0, 0.9)'
+                  : 'rgba(33, 33, 33, 0.95)',
+                padding: '12px',
+                lineHeight: '1.5',
+              }
+            }}
+          >
             <Box
+              onClick={() => handleNavigation('/system-status')}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -521,25 +552,83 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
                 py: 0.75,
                 borderRadius: 2,
                 backgroundColor:
-                  theme.palette.mode === 'dark'
+                  systemStatus.state === 'ready'
+                    ? theme.palette.mode === 'dark'
+                      ? 'rgba(76, 175, 80, 0.15)'
+                      : 'rgba(76, 175, 80, 0.1)'
+                    : systemStatus.state === 'degraded'
+                    ? theme.palette.mode === 'dark'
+                      ? 'rgba(255, 152, 0, 0.15)'
+                      : 'rgba(255, 152, 0, 0.1)'
+                    : theme.palette.mode === 'dark'
                     ? theme.palette.background.default
                     : theme.palette.grey[100],
                 mr: 2,
-                border: `1px solid ${theme.palette.divider}`,
+                border: `2px solid ${getColorFromStatus(systemStatus.color)}`,
+                cursor: 'pointer',
                 transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: `0 0 12px ${getColorFromStatus(systemStatus.color)}40`,
+                  transform: 'scale(1.05)',
+                },
               }}
             >
-              <Chip
-                icon={<Circle sx={{ fontSize: 8 }} />}
-                label={systemStatus.label}
-                size="small"
-                color={systemStatus.color}
-                variant="filled"
+              <Circle
                 sx={{
-                  transition: 'all 0.3s ease',
-                  fontWeight: 'bold',
+                  fontSize: 10,
+                  animation: systemStatus.state === 'ready'
+                    ? 'none'
+                    : 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                  color: getColorFromStatus(systemStatus.color),
+                  '@keyframes pulse': {
+                    '0%, 100%': {
+                      opacity: 1,
+                    },
+                    '50%': {
+                      opacity: 0.5,
+                    },
+                  },
                 }}
               />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                <Box sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+                  {systemStatus.label}
+                </Box>
+                {systemStatus.percentage !== null && (
+                  <Box
+                    sx={{
+                      fontSize: '0.75rem',
+                      opacity: 0.8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 3,
+                        backgroundColor: `${getColorFromStatus(systemStatus.color)}20`,
+                        borderRadius: 1,
+                        overflow: 'hidden',
+                        position: 'relative',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          height: '100%',
+                          width: `${systemStatus.percentage}%`,
+                          backgroundColor: getColorFromStatus(systemStatus.color),
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ color: getColorFromStatus(systemStatus.color) }}>
+                      {systemStatus.percentage}%
+                    </Box>
+                  </Box>
+                )}
+              </Box>
             </Box>
           </Tooltip>
 
