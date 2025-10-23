@@ -1,0 +1,351 @@
+name: Regression Tests
+
+on:
+  push:
+    branches: [develop, master, release/*]
+  pull_request:
+    branches: [develop, master]
+  schedule:
+    # Run full suite daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  smoke-tests:
+    name: Smoke Tests (Fast Validation)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-timeout pytest-xdist
+          pip install -r requirements.txt
+
+      - name: Run smoke tests
+        run: |
+          pytest -m smoke --timeout=60 -v --tb=short
+        env:
+          POKERTOOL_TEST_MODE: '1'
+
+      - name: Upload smoke test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: test_logs/pytest.log
+
+  unit-tests:
+    name: Unit Tests with Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-timeout pytest-xdist
+          pip install -r requirements.txt
+
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests/unit/ -v \
+            --cov=src/pokertool \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --timeout=300 \
+            -n auto
+        env:
+          POKERTOOL_TEST_MODE: '1'
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/
+
+  regression-tests:
+    name: Regression Tests (Version-Specific)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: smoke-tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for version tracking
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-timeout pytest-xdist
+          pip install -r requirements.txt
+
+      - name: Run regression tests
+        run: |
+          pytest tests/regression/ -v \
+            --timeout=300 \
+            --tb=short \
+            -n auto
+        env:
+          POKERTOOL_TEST_MODE: '1'
+
+      - name: Check version-specific tests
+        run: |
+          python scripts/check_version_tests.py || true
+        continue-on-error: true
+
+      - name: Upload regression test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-test-results
+          path: test_logs/
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: smoke-tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-timeout pytest-xdist
+          pip install -r requirements.txt
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v \
+            --timeout=300 \
+            --tb=short \
+            -m integration
+        env:
+          POKERTOOL_TEST_MODE: '1'
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: test_logs/
+
+  system-tests:
+    name: System Tests (Full Suite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [unit-tests, integration-tests]
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-timeout pytest-xdist pytest-cov
+          pip install -r requirements.txt
+
+      - name: Run system tests
+        run: |
+          pytest tests/system/ -v \
+            --timeout=300 \
+            --tb=short \
+            -m system \
+            -n auto
+        env:
+          POKERTOOL_TEST_MODE: '1'
+
+      - name: Upload system test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-test-results
+          path: test_logs/
+
+  full-suite:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [smoke-tests, unit-tests]
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[full-test]')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-timeout pytest-xdist pytest-cov
+          pip install -r requirements.txt
+
+      - name: Run complete test suite
+        run: |
+          python tests/test_everything.py --coverage --verbose
+        env:
+          POKERTOOL_TEST_MODE: '1'
+
+      - name: Generate test report
+        if: always()
+        run: |
+          python scripts/generate_test_report.py
+
+      - name: Upload full test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-test-results
+          path: |
+            test_logs/
+            logs/
+
+  coverage-check:
+    name: Coverage Requirements
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install -r requirements.txt
+
+      - name: Check coverage thresholds
+        run: |
+          pytest tests/ \
+            --cov=src/pokertool \
+            --cov-report=term-missing \
+            --cov-fail-under=90 \
+            --quiet
+        continue-on-error: true
+        env:
+          POKERTOOL_TEST_MODE: '1'
+
+      - name: Generate coverage report
+        run: |
+          python scripts/generate_regression_tests.py --report
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: test_coverage_report.md
+
+  test-quality:
+    name: Test Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pylint flake8
+
+      - name: Lint test files
+        run: |
+          flake8 tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          pylint tests/ --disable=all --enable=missing-docstring || true
+        continue-on-error: true
+
+      - name: Check test naming conventions
+        run: |
+          python scripts/check_test_conventions.py || true
+        continue-on-error: true
+
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, unit-tests, regression-tests, integration-tests]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          echo "Test suite execution complete"
+          echo "Smoke tests: ${{ needs.smoke-tests.result }}"
+          echo "Unit tests: ${{ needs.unit-tests.result }}"
+          echo "Regression tests: ${{ needs.regression-tests.result }}"
+          echo "Integration tests: ${{ needs.integration-tests.result }}"
+
+      - name: Fail if critical tests failed
+        if: needs.smoke-tests.result == 'failure'
+        run: |
+          echo "❌ Critical smoke tests failed!"
+          exit 1

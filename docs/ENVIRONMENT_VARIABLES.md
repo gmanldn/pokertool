@@ -200,10 +200,56 @@ Complete reference for all environment variables used in PokerTool.
 - **Description**: Chrome DevTools Protocol port
 - **Usage**: `export CHROME_DEBUG_PORT=9223`
 
+### `REACT_APP_SENTRY_DSN`
+- **Default**: None (Sentry disabled)
+- **Description**: Sentry error tracking DSN for frontend (React)
+- **Format**: `https://public_key@sentry.io/project_id`
+- **Usage**: `export REACT_APP_SENTRY_DSN=https://abc123@o123.ingest.sentry.io/456`
+- **Where to get it**: Sentry Project Settings → Client Keys (DSN)
+- **See**: [SENTRY_INTEGRATION_GUIDE.md](SENTRY_INTEGRATION_GUIDE.md) for complete setup
+
 ### `SENTRY_DSN`
-- **Default**: None
-- **Description**: Sentry error tracking DSN
+- **Default**: None (Backend Sentry disabled)
+- **Description**: Sentry error tracking DSN for backend (Python)
+- **Format**: `https://public_key@sentry.io/project_id`
 - **Usage**: `export SENTRY_DSN=https://key@sentry.io/project`
+- **Note**: Currently for future backend integration
+
+### `SENTRY_ENVIRONMENT`
+- **Default**: `development`
+- **Description**: Environment name for filtering errors in Sentry
+- **Values**: `production`, `staging`, `development`, or custom
+- **Usage**: `export SENTRY_ENVIRONMENT=production`
+- **Purpose**: Group and filter errors by environment
+
+### `SENTRY_RELEASE`
+- **Default**: None
+- **Description**: Release version for tracking deployments
+- **Format**: Semantic version (e.g., `v88.6.0`) or git commit hash
+- **Usage**: `export SENTRY_RELEASE=v88.6.0` or `export SENTRY_RELEASE=$(git rev-parse --short HEAD)`
+- **Purpose**: Track which version caused errors, compare releases
+
+### `SENTRY_TRACES_SAMPLE_RATE`
+- **Default**: `0.1` (10%)
+- **Description**: Percentage of transactions to track for performance monitoring
+- **Range**: `0.0` (disabled) to `1.0` (100%)
+- **Usage**: `export SENTRY_TRACES_SAMPLE_RATE=0.5` (track 50%)
+- **Recommendation**: Use 0.1-0.2 in production to balance insight vs cost
+
+### `SENTRY_REPLAYS_SESSION_SAMPLE_RATE`
+- **Default**: `0.1` (10%)
+- **Description**: Percentage of normal (non-error) sessions to replay
+- **Range**: `0.0` to `1.0`
+- **Usage**: `export SENTRY_REPLAYS_SESSION_SAMPLE_RATE=0.05` (5% of sessions)
+- **Purpose**: Record user sessions for debugging UX issues
+- **Privacy**: Consider GDPR implications, see Sentry guide
+
+### `SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE`
+- **Default**: `1.0` (100%)
+- **Description**: Percentage of error sessions to replay
+- **Range**: `0.0` to `1.0`
+- **Usage**: `export SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE=1.0` (replay all errors)
+- **Purpose**: Always capture sessions where errors occur
 
 ### `REDIS_URL`
 - **Default**: `redis://localhost:6379`
