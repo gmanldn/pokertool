@@ -1,0 +1,262 @@
+
+# Test Coverage Report
+Generated: 2025-10-23 17:11:11
+
+## Summary
+- Total modules: 239
+- Modules WITH tests: 75 (31.4%)
+- Modules WITHOUT tests: 164 (68.6%)
+
+## Modules Without Tests (Priority Order)
+
+### CRITICAL PRIORITY
+
+### CRITICAL PRIORITY
+- [ ] cli.py
+- [ ] database.py
+- [ ] enhanced_gui.py
+- [ ] gui.py
+- [ ] scrape.py
+- [ ] smarthelper_engine.py
+
+### HIGH PRIORITY
+- [ ] card_confidence_scorer.py
+- [ ] card_history_tracker.py
+- [ ] card_recognizer.py
+- [ ] detection_accuracy_tracker.py
+- [ ] detection_cache.py
+- [ ] detection_config.py
+- [ ] detection_event_batcher.py
+- [ ] detection_fallback.py
+- [ ] detection_fps_counter.py
+- [ ] detection_logger.py
+- [ ] detection_metrics_tracker.py
+- [ ] detection_sanity_checks.py
+- [ ] detection_state_persistence.py
+- [ ] detection_utils.py
+- [ ] image_preprocessing_optimizer.py
+- [ ] image_preprocessor.py
+- [ ] ocr_recognition.py
+- [ ] player_action_detector.py
+- [ ] player_detection_confidence.py
+- [ ] scraping_accuracy_system.py
+- [ ] scraping_master_system.py
+- [ ] scraping_reliability_system.py
+- [ ] scraping_speed_optimizer.py
+- [ ] smart_ocr_cache.py
+- [ ] smart_poker_detector.py
+- [ ] suit_color_detector.py
+
+### MEDIUM PRIORITY
+- [ ] cfr_plus.py
+- [ ] exploitative_engine.py
+- [ ] gto_ranges.py
+- [ ] gto_solver.py
+- [ ] live_decision_engine.py
+- [ ] ml_opponent_modeling.py
+- [ ] opponent_profiler.py
+- [ ] opponent_profiling.py
+- [ ] pattern_detector.py
+- [ ] pot_odds_calculator.py
+- [ ] pot_odds_display.py
+- [ ] qaoa_solver.py
+- [ ] range_generator.py
+- [ ] smarthelper_cache.py
+- [ ] smarthelper_websocket.py
+- [ ] variance_calculator.py
+
+### LOW PRIORITY
+- [ ] modules/accuracy_validator.py
+- [ ] adaptive_roi_sizer.py
+- [ ] migrations/add_bet_sizing_columns.py
+- [ ] migrations/add_confidence_score.py
+- [ ] migrations/add_player_position.py
+- [ ] advanced_reporting.py
+- [ ] agent_sandbox.py
+- [ ] ai_agent_manager.py
+- [ ] ai_providers/anthropic_provider.py
+- [ ] api_cache.py
+- [ ] api_improve.py
+- [ ] api_key_resolver.py
+- [ ] api_langchain.py
+- [ ] api_smarthelper.py
+- [ ] modules/autoconfirm.py
+- [ ] automation.py
+- [ ] enhanced_gui_components/autopilot_panel.py
+- [ ] backend_startup_logger.py
+- [ ] bankroll_management.py
+- [ ] ai_providers/base_provider.py
+- [ ] blocker_effects.py
+- [ ] board_texture_analyzer.py
+- [ ] modules/browser_tab_capture.py
+- [ ] button_movement_tracker.py
+- [ ] modules/chrome_devtools_scraper.py
+- [ ] circuit_breaker.py
+- [ ] ai_providers/claude_code_provider.py
+- [ ] enhanced_gui_components/coaching_section.py
+- [ ] code_review_agent.py
+- [ ] compliance.py
+- [ ] concurrency.py
+- [ ] data_validation.py
+- [ ] utils/dependency_manager.py
+- [ ] desktop_independent_scraper.py
+- [ ] detection_error_logger.py
+- [ ] enhanced_gui_config.py
+- [ ] enhanced_gui_helpers.py
+- [ ] error_handler.py
+- [ ] error_handling.py
+- [ ] error_middleware.py
+- [ ] error_recovery.py
+- [ ] event_filter.py
+- [ ] formatting_utils.py
+- [ ] frame_differencing_engine.py
+- [ ] frame_performance_tracker.py
+- [ ] game_history_blade.py
+- [ ] game_selection.py
+- [ ] gui_bootstrap.py
+- [ ] gui_event_bus.py
+- [ ] hand_history_db.py
+- [ ] hand_history_queries.py
+- [ ] hud_designer.py
+- [ ] hud_overlay.py
+- [ ] hud_profiles.py
+- [ ] improve_logger.py
+- [ ] improve_rollback.py
+- [ ] input_sanitizer.py
+- [ ] input_validator.py
+- [ ] leveling_war.py
+- [ ] enhanced_gui_components/live_table_section.py
+- [ ] modules/logger.py
+- [ ] enhanced_gui_components/manual_section.py
+- [ ] model_cache.py
+- [ ] multi_table_support.py
+- [ ] modules/ocr_engine.py
+- [ ] ai_providers/openai_provider.py
+- [ ] ai_providers/openrouter_provider.py
+- [ ] parallel_detector.py
+- [ ] path_utils.py
+- [ ] performance_telemetry.py
+- [ ] modules/poker_gui_enhanced.py
+- [ ] modules/poker_screen_scraper.py
+- [ ] modules/poker_screen_scraper_betfair.py
+- [ ] position_calculator.py
+- [ ] position_validator.py
+- [ ] modules/power_features.py
+- [ ] pre_commit_validator.py
+- [ ] production_database.py
+- [ ] query_profiler.py
+- [ ] rate_limiter.py
+- [ ] modules/reliability_monitor.py
+- [ ] retry_util.py
+- [ ] roi_tracking_system.py
+- [ ] modules/run_pokertool.py
+- [ ] scrape_fix.py
+- [ ] modules/scraper_learning_system.py
+- [ ] session_statistics.py
+- [ ] enhanced_gui_components/settings_section.py
+- [ ] side_pot_detector.py
+- [ ] utils/single_instance.py
+- [ ] smarthelper_database.py
+- [ ] startup_validator.py
+- [ ] status_window.py
+- [ ] storage.py
+- [ ] structured_logger.py
+- [ ] enhanced_gui_components/style.py
+- [ ] system_health_checker.py
+- [ ] realtime/table_updates.py
+- [ ] task_importer.py
+- [ ] task_queue.py
+- [ ] thread_cleanup.py
+- [ ] thread_manager.py
+- [ ] thread_utils.py
+- [ ] threading.py
+- [ ] threading_utils.py
+- [ ] timeout_config.py
+- [ ] timeout_detector.py
+- [ ] todo_file_watcher.py
+- [ ] todo_parser.py
+- [ ] todo_updater.py
+- [ ] tournament_support.py
+- [ ] tracing.py
+- [ ] trouble_feed.py
+- [ ] user_config.py
+- [ ] version.py
+- [ ] watchdog_timer.py
+
+
+## Modules With Tests
+- [x] active_learning.py (24 tests)
+- [x] modules/adaptive_ui_detector.py (12 tests)
+- [x] analytics_dashboard.py (2 tests)
+- [x] api.py (42 tests)
+- [x] api_client.py (32 tests)
+- [x] api_versioning.py (26 tests)
+- [x] async_scraper_executor.py (18 tests)
+- [x] bayesian_profiler.py (36 tests)
+- [x] modules/betfair_accuracy_improvements.py (35 tests)
+- [x] blind_ante_detector.py (8 tests)
+- [x] bluff_detection.py (3 tests)
+- [x] coaching_system.py (3 tests)
+- [x] community_features.py (2 tests)
+- [x] confidence_decision_api.py (31 tests)
+- [x] correlation_id_middleware.py (25 tests)
+- [x] crash_reporter.py (11 tests)
+- [x] csrf_protection.py (24 tests)
+- [x] database_optimization.py (2 tests)
+- [x] db_performance_monitor.py (32 tests)
+- [x] detection_events.py (2 tests)
+- [x] detection_state_dispatcher.py (14 tests)
+- [x] documentation_system.py (2 tests)
+- [x] ensemble_decision.py (29 tests)
+- [x] equity_calculator.py (25 tests)
+- [x] event_deduplicator.py (16 tests)
+- [x] feature_flags.py (37 tests)
+- [x] floating_advice_window.py (25 tests)
+- [x] frontend_error_monitor.py (10 tests)
+- [x] gamification.py (1 tests)
+- [x] global_error_handler.py (39 tests)
+- [x] gpu_preprocessing.py (45 tests)
+- [x] gto_calculator.py (36 tests)
+- [x] gto_deviations.py (22 tests)
+- [x] gui_memory_profiler.py (7 tests)
+- [x] hand_converter.py (5 tests)
+- [x] hand_range_analyzer.py (3 tests)
+- [x] hand_recorder.py (1 tests)
+- [x] modules/hand_replay_system.py (36 tests)
+- [x] i18n.py (6 tests)
+- [x] icm_calculator.py (22 tests)
+- [x] input_validation.py (59 tests)
+- [x] langchain_memory_service.py (17 tests)
+- [x] master_logging.py (1 tests)
+- [x] mcts_optimizer.py (15 tests)
+- [x] meta_game.py (48 tests)
+- [x] model_calibration.py (39 tests)
+- [x] modules/multi_table_segmenter.py (18 tests)
+- [x] nash_solver.py (11 tests)
+- [x] network_analysis.py (2 tests)
+- [x] neural_evaluator.py (8 tests)
+- [x] node_locker.py (7 tests)
+- [x] modules/note_taking_system.py (38 tests)
+- [x] ocr_ensemble.py (26 tests)
+- [x] performance_profiler.py (2 tests)
+- [x] platform_compatibility.py (5 tests)
+- [x] preflop_charts.py (43 tests)
+- [x] quantum_optimizer.py (36 tests)
+- [x] modules/range_construction_tool.py (40 tests)
+- [x] range_merger.py (32 tests)
+- [x] rbac.py (36 tests)
+- [x] rl_agent.py (39 tests)
+- [x] roi_tracker.py (31 tests)
+- [x] rum_metrics.py (1 tests)
+- [x] scrape_qa_harness.py (33 tests)
+- [x] modules/scraper_optimization_suite.py (49 tests)
+- [x] sequential_opponent_fusion.py (31 tests)
+- [x] session_management.py (2 tests)
+- [x] session_reviewer.py (2 tests)
+- [x] solver_api.py (29 tests)
+- [x] stats_validator.py (40 tests)
+- [x] study_mode.py (3 tests)
+- [x] synthetic_data_generator.py (29 tests)
+- [x] theme_system.py (2 tests)
+- [x] timing_analyzer.py (21 tests)
+- [x] tournament_tracker.py (2 tests)
