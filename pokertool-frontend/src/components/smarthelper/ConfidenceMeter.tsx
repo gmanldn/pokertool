@@ -77,14 +77,14 @@ export const ConfidenceMeter: React.FC<ConfidenceMeterProps> = ({
   };
 
   const color = getColor();
-  const sizeClass = `size-${size}`;
+  const sizeClass = size === 'small' ? styles.sizeSmall : size === 'large' ? styles.sizeLarge : styles.sizeMedium;
 
   return (
     <Tooltip
       title={`${clampedConfidence.toFixed(0)}% confidence in this recommendation`}
       arrow
     >
-      <Box className={`${styles.container} ${styles[sizeClass]}`}>
+      <Box className={`${styles.container} ${sizeClass}`}>
         {showIcon && (
           <Box className={styles.iconContainer}>{getIcon()}</Box>
         )}
@@ -108,7 +108,12 @@ export const ConfidenceMeter: React.FC<ConfidenceMeterProps> = ({
           <LinearProgress
             variant="determinate"
             value={clampedConfidence}
-            className={`${styles.progressBar} ${styles[`progress-${level}`]}`}
+            className={`${styles.progressBar} ${
+              level === 'high' ? styles.progressHigh :
+              level === 'medium' ? styles.progressMedium :
+              level === 'low' ? styles.progressLow :
+              styles.progressVeryLow
+            }`}
             sx={{
               '& .MuiLinearProgress-bar': {
                 backgroundColor: color,
