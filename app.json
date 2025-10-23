@@ -1,0 +1,55 @@
+{
+  "name": "PokerTool",
+  "description": "AI-Powered Poker Analysis Tool - Real-time poker analysis and decision support",
+  "repository": "https://github.com/gmanldn/pokertool",
+  "logo": "https://raw.githubusercontent.com/gmanldn/pokertool/main/assets/pokertool-icon.png",
+  "keywords": ["poker", "analysis", "ai", "machine-learning", "python"],
+  "success_url": "/",
+  "env": {
+    "DEBUG": {
+      "description": "Enable debug mode",
+      "value": "false",
+      "required": false
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level",
+      "value": "info",
+      "required": false
+    },
+    "SECRET_KEY": {
+      "description": "Secret key for session management",
+      "generator": "secret",
+      "required": true
+    },
+    "DATABASE_URL": {
+      "description": "PostgreSQL database URL",
+      "required": false
+    },
+    "REDIS_URL": {
+      "description": "Redis cache URL",
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    },
+    {
+      "plan": "heroku-redis:mini",
+      "as": "REDIS"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "stack": "heroku-22"
+}
