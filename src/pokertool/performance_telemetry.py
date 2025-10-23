@@ -785,6 +785,258 @@ def reset_cpu_tracker(detection_type: Optional[str] = None):
             _cpu_tracker_instance.reset(detection_type)
 
 
+class BottleneckIdentifier:
+    """
+    Identifies performance bottlenecks across detection operations.
+
+    Analyzes CPU usage and execution time to identify slow operations
+    that should be optimized. Provides recommendations for hot paths.
+
+    Usage:
+        identifier = BottleneckIdentifier()
+        bottlenecks = identifier.identify_bottlenecks()
+        identifier.log_bottlenecks()
+    """
+
+    def __init__(self, cpu_threshold_percent: float = 50.0, time_threshold_ms: float = 100.0):
+        """
+        Initialize bottleneck identifier.
+
+        Args:
+            cpu_threshold_percent: CPU% threshold for identifying high CPU operations
+            time_threshold_ms: Execution time threshold for identifying slow operations
+        """
+        self.cpu_threshold = cpu_threshold_percent
+        self.time_threshold = time_threshold_ms
+
+    def identify_bottlenecks(self) -> Dict[str, Any]:
+        """
+        Identify performance bottlenecks from CPU tracker data.
+
+        Returns:
+            Dict with keys:
+            - high_cpu: List of operations with high CPU usage
+            - slow_operations: List of operations with long execution times
+            - top_time_consumers: Top 5 operations by total time
+            - recommendations: List of optimization recommendations
+        """
+        cpu_tracker = get_cpu_tracker()
+        all_metrics = cpu_tracker.get_all_metrics()
+
+        if not all_metrics:
+            return {
+                'high_cpu': [],
+                'slow_operations': [],
+                'top_time_consumers': [],
+                'recommendations': []
+            }
+
+        # Identify high CPU operations
+        high_cpu = [
+            {
+                'type': det_type,
+                'cpu_percent': metrics['cpu_percent'],
+                'call_count': metrics['call_count']
+            }
+            for det_type, metrics in all_metrics.items()
+            if metrics['cpu_percent'] > self.cpu_threshold
+        ]
+        high_cpu.sort(key=lambda x: x['cpu_percent'], reverse=True)
+
+        # Identify slow operations
+        slow_operations = [
+            {
+                'type': det_type,
+                'avg_time_ms': metrics['avg_time_ms'],
+                'max_time_ms': metrics['max_time_ms'],
+                'call_count': metrics['call_count']
+            }
+            for det_type, metrics in all_metrics.items()
+            if metrics['avg_time_ms'] > self.time_threshold
+        ]
+        slow_operations.sort(key=lambda x: x['avg_time_ms'], reverse=True)
+
+        # Find top time consumers (by total time spent)
+        top_time_consumers = [
+            {
+                'type': det_type,
+                'total_time_ms': metrics['total_time_ms'],
+                'cpu_percent': metrics['cpu_percent'],
+                'call_count': metrics['call_count']
+            }
+            for det_type, metrics in all_metrics.items()
+        ]
+        top_time_consumers.sort(key=lambda x: x['total_time_ms'], reverse=True)
+        top_time_consumers = top_time_consumers[:5]  # Top 5
+
+        # Generate recommendations
+        recommendations = self._generate_recommendations(high_cpu, slow_operations, top_time_consumers)
+
+        return {
+            'high_cpu': high_cpu,
+            'slow_operations': slow_operations,
+            'top_time_consumers': top_time_consumers,
+            'recommendations': recommendations
+        }
+
+    def _generate_recommendations(self, high_cpu: List[Dict], slow_operations: List[Dict],
+                                 top_consumers: List[Dict]) -> List[str]:
+        """Generate optimization recommendations based on bottlenecks."""
+        recommendations = []
+
+        # High CPU recommendations
+        if high_cpu:
+            top_cpu = high_cpu[0]
+            recommendations.append(
+                f"HIGH CPU: '{top_cpu['type']}' uses {top_cpu['cpu_percent']:.1f}% CPU. "
+                f"Consider optimizing algorithm or using GPU acceleration."
+            )
+
+        # Slow operation recommendations
+        if slow_operations:
+            slowest = slow_operations[0]
+            recommendations.append(
+                f"SLOW OPERATION: '{slowest['type']}' takes {slowest['avg_time_ms']:.1f}ms avg. "
+                f"Consider caching, parallel processing, or algorithm optimization."
+            )
+
+        # Top time consumer recommendations
+        if top_consumers:
+            top = top_consumers[0]
+            recommendations.append(
+                f"TOP TIME CONSUMER: '{top['type']}' consumed {top['total_time_ms']:.0f}ms total. "
+                f"This is the highest priority for optimization."
+            )
+
+        # Specific detection type recommendations
+        for det_type, _ in [(op['type'], op) for op in slow_operations]:
+            if 'ocr' in det_type.lower():
+                recommendations.append(
+                    f"OCR OPTIMIZATION: Consider using faster OCR engine, reducing image resolution, "
+                    f"or implementing result caching for '{det_type}'."
+                )
+            elif 'template' in det_type.lower():
+                recommendations.append(
+                    f"TEMPLATE MATCHING: Consider reducing template count, using smaller templates, "
+                    f"or implementing hierarchical matching for '{det_type}'."
+                )
+
+        if not recommendations:
+            recommendations.append("No bottlenecks detected. Performance is within acceptable thresholds.")
+
+        return recommendations
+
+    def log_bottlenecks(self, logger_instance: Optional[logging.Logger] = None):
+        """
+        Log identified bottlenecks to logger.
+
+        Args:
+            logger_instance: Logger to use, or None for module logger
+        """
+        log = logger_instance or logger
+        bottlenecks = self.identify_bottlenecks()
+
+        log.info("=" * 60)
+        log.info("PERFORMANCE BOTTLENECK ANALYSIS")
+        log.info("=" * 60)
+
+        if bottlenecks['high_cpu']:
+            log.warning("HIGH CPU OPERATIONS:")
+            for op in bottlenecks['high_cpu']:
+                log.warning(f"  - {op['type']}: {op['cpu_percent']:.1f}% CPU ({op['call_count']} calls)")
+
+        if bottlenecks['slow_operations']:
+            log.warning("SLOW OPERATIONS:")
+            for op in bottlenecks['slow_operations']:
+                log.warning(f"  - {op['type']}: {op['avg_time_ms']:.1f}ms avg, "
+                          f"{op['max_time_ms']:.1f}ms max ({op['call_count']} calls)")
+
+        if bottlenecks['top_time_consumers']:
+            log.info("TOP TIME CONSUMERS:")
+            for op in bottlenecks['top_time_consumers']:
+                log.info(f"  - {op['type']}: {op['total_time_ms']:.0f}ms total "
+                       f"({op['cpu_percent']:.1f}% CPU, {op['call_count']} calls)")
+
+        log.info("OPTIMIZATION RECOMMENDATIONS:")
+        for rec in bottlenecks['recommendations']:
+            log.info(f"  • {rec}")
+
+        log.info("=" * 60)
+
+    def get_optimization_priority(self) -> List[Dict[str, Any]]:
+        """
+        Get prioritized list of optimizations to perform.
+
+        Returns:
+            List of dicts with keys: type, priority, reason, metric_value
+            Sorted by priority (high to low)
+        """
+        bottlenecks = self.identify_bottlenecks()
+        priorities = []
+
+        # High CPU operations get high priority
+        for op in bottlenecks['high_cpu']:
+            priorities.append({
+                'type': op['type'],
+                'priority': 'HIGH',
+                'reason': f"High CPU usage: {op['cpu_percent']:.1f}%",
+                'metric_value': op['cpu_percent']
+            })
+
+        # Slow operations get medium-high priority
+        for op in bottlenecks['slow_operations']:
+            priorities.append({
+                'type': op['type'],
+                'priority': 'MEDIUM-HIGH',
+                'reason': f"Slow execution: {op['avg_time_ms']:.1f}ms avg",
+                'metric_value': op['avg_time_ms']
+            })
+
+        # Top time consumers get medium priority (if not already high priority)
+        existing_types = {p['type'] for p in priorities}
+        for op in bottlenecks['top_time_consumers']:
+            if op['type'] not in existing_types:
+                priorities.append({
+                    'type': op['type'],
+                    'priority': 'MEDIUM',
+                    'reason': f"High total time: {op['total_time_ms']:.0f}ms",
+                    'metric_value': op['total_time_ms']
+                })
+
+        # Sort by priority
+        priority_order = {'HIGH': 0, 'MEDIUM-HIGH': 1, 'MEDIUM': 2}
+        priorities.sort(key=lambda x: (priority_order.get(x['priority'], 999), -x['metric_value']))
+
+        return priorities
+
+
+# Global bottleneck identifier instance
+_bottleneck_identifier_instance: Optional[BottleneckIdentifier] = None
+_bottleneck_identifier_lock = threading.Lock()
+
+
+def get_bottleneck_identifier() -> BottleneckIdentifier:
+    """Get or create global bottleneck identifier instance."""
+    global _bottleneck_identifier_instance
+
+    with _bottleneck_identifier_lock:
+        if _bottleneck_identifier_instance is None:
+            _bottleneck_identifier_instance = BottleneckIdentifier()
+        return _bottleneck_identifier_instance
+
+
+def identify_bottlenecks() -> Dict[str, Any]:
+    """Convenience function to identify bottlenecks using global identifier."""
+    identifier = get_bottleneck_identifier()
+    return identifier.identify_bottlenecks()
+
+
+def log_bottlenecks(logger_instance: Optional[logging.Logger] = None):
+    """Convenience function to log bottlenecks using global identifier."""
+    identifier = get_bottleneck_identifier()
+    identifier.log_bottlenecks(logger_instance)
+
+
 # Decorator for automatic function timing
 def timed(category: str, operation: Optional[str] = None, capture_args: bool = False):
     """
@@ -898,6 +1150,7 @@ __all__ = [
     'TelemetryEntry',
     'DetectionFPSCounter',
     'DetectionCPUTracker',
+    'BottleneckIdentifier',
     'timed',
     'telemetry_section',
     'telemetry_instant',
@@ -908,4 +1161,7 @@ __all__ = [
     'reset_fps_counter',
     'get_cpu_tracker',
     'reset_cpu_tracker',
+    'get_bottleneck_identifier',
+    'identify_bottlenecks',
+    'log_bottlenecks',
 ]
