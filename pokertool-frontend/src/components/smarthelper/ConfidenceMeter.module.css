@@ -1,0 +1,136 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.iconHigh {
+  color: #4caf50;
+  font-size: 20px;
+}
+
+.iconMedium {
+  color: #ff9800;
+  font-size: 20px;
+}
+
+.iconLow {
+  color: #f44336;
+  font-size: 20px;
+}
+
+.meterContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.labelContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.percentage {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.progressBar {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Size variants */
+.size-small .progressBar {
+  height: 6px;
+}
+
+.size-small .iconHigh,
+.size-small .iconMedium,
+.size-small .iconLow {
+  font-size: 16px;
+}
+
+.size-small .label,
+.size-small .percentage {
+  font-size: 0.65rem;
+}
+
+.size-large .progressBar {
+  height: 10px;
+}
+
+.size-large .iconHigh,
+.size-large .iconMedium,
+.size-large .iconLow {
+  font-size: 24px;
+}
+
+.size-large .label,
+.size-large .percentage {
+  font-size: 0.85rem;
+}
+
+/* Progress bar animations */
+.progress-high {
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.progress-medium {
+  animation: pulse-orange 2s ease-in-out infinite;
+}
+
+.progress-low,
+.progress-very-low {
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes pulse-orange {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .label {
+    color: var(--text-secondary);
+  }
+}
