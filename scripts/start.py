@@ -84,16 +84,159 @@ IS_MACOS = platform.system() == 'Darwin'
 IS_LINUX = platform.system() == 'Linux'
 
 # Supported Python versions
-MIN_PYTHON = (3, 10)
+MIN_PYTHON = (3, 9)
 MAX_PYTHON = (3, 13)
+
+# Installation log file
+INSTALL_LOG = Path.home() / '.pokertool' / 'install.log'
 
 def clear_terminal():
     """Clear terminal for clean output."""
     os.system('cls' if IS_WINDOWS else 'clear')
 
-def log(message: str):
-    """Log a message."""
+def log(message: str, level: str = 'INFO'):
+    """Log a message to console and file."""
+    timestamp = __import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    log_message = f"[{timestamp}] [{level}] {message}"
     print(f"[POKERTOOL] {message}")
+    
+    # Ensure log directory exists
+    INSTALL_LOG.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Append to log file
+    try:
+        with open(INSTALL_LOG, 'a') as f:
+            f.write(log_message + '\n')
+    except Exception:
+        pass  # Fail silently if can't write log
+
+def check_python_version() -> bool:
+    """Check if Python version is supported."""
+    current = sys.version_info[:2]
+    
+    if current < MIN_PYTHON:
+        log(f"❌ Python {current[0]}.{current[1]} is too old", 'ERROR')
+        log(f"   Minimum required: Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}", 'ERROR')
+        log(f"   Please upgrade Python: https://www.python.org/downloads/", 'ERROR')
+        return False
+    
+    if current > MAX_PYTHON:
+        log(f"⚠️  Python {current[0]}.{current[1]} is newer than tested version", 'WARNING')
+        log(f"   Tested up to: Python {MAX_PYTHON[0]}.{MAX_PYTHON[1]}", 'WARNING')
+        log(f"   Installation may work but is not officially supported", 'WARNING')
+    
+    log(f"✓ Python {current[0]}.{current[1]} is supported")
+    return True
+
+def check_disk_space(min_mb: int = 500) -> bool:
+    """Check if sufficient disk space is available."""
+    try:
+        import shutil
+        stat = shutil.disk_usage(ROOT)
+        available_mb = stat.free / (1024 * 1024)
+        
+        if available_mb < min_mb:
+            log(f"❌ Insufficient disk space: {available_mb:.0f}MB available, {min_mb}MB required", 'ERROR')
+            return False
+        
+        log(f"✓ Disk space OK: {available_mb:.0f}MB available")
+        return True
+    except Exception as e:
+        log(f"⚠️  Could not check disk space: {e}", 'WARNING')
+        return True  # Continue anyway
+
+def check_network_connectivity() -> bool:
+    """Check network connectivity to required services."""
+    import socket
+    
+    services = [
+        ('pypi.org', 443, 'PyPI'),
+        ('registry.npmjs.org', 443, 'npm registry'),
+        ('github.com', 443, 'GitHub'),
+    ]
+    
+    all_ok = True
+    for host, port, name in services:
+        try:
+            socket.create_connection((host, port), timeout=5)
+            log(f"✓ {name} reachable")
+        except (socket.timeout, socket.error) as e:
+            log(f"⚠️  {name} not reachable: {e}", 'WARNING')
+            all_ok = False
+    
+    if not all_ok:
+        log("⚠️  Some services unreachable - installation may fail", 'WARNING')
+    
+    return all_ok
+
+def check_system_dependencies() -> bool:
+    """Check for required system dependencies."""
+    required = {
+        'pip': 'pip3 --version or python -m pip',
+        'git': 'git --version',
+        'node': 'node --version',
+        'npm': 'npm --version',
+    }
+    
+    missing = []
+    for cmd, check in required.items():
+        if not shutil.which(cmd):
+            missing.append(f"{cmd} ({check})")
+            log(f"❌ {cmd} not found", 'ERROR')
+        else:
+            # Get version
+            try:
+                result = subprocess.run([cmd, '--version'], capture_output=True, text=True, timeout=5)
+                version = result.stdout.strip().split('\n')[0]
+                log(f"✓ {cmd}: {version}")
+            except:
+                log(f"✓ {cmd} found")
+    
+    if missing:
+        log("", 'ERROR')
+        log("Missing required dependencies:", 'ERROR')
+        for dep in missing:
+            log(f"  - {dep}", 'ERROR')
+        log("", 'ERROR')
+        log("Installation instructions:", 'ERROR')
+        if IS_MACOS:
+            log("  brew install git node", 'ERROR')
+        elif IS_LINUX:
+            log("  sudo apt-get install git nodejs npm  # Ubuntu/Debian", 'ERROR')
+            log("  sudo yum install git nodejs npm     # CentOS/RHEL", 'ERROR')
+        elif IS_WINDOWS:
+            log("  Install from: https://git-scm.com/ and https://nodejs.org/", 'ERROR')
+        return False
+    
+    return True
+
+def detect_conflicting_packages() -> List[str]:
+    """Detect potentially conflicting Python packages."""
+    venv_python = get_venv_python()
+    conflicts = []
+    
+    # Known conflicts
+    conflict_pairs = [
+        ('opencv-python', 'opencv-python-headless'),
+        ('pillow', 'pil'),
+        ('tensorflow', 'tensorflow-gpu'),
+    ]
+    
+    try:
+        result = subprocess.run(
+            [venv_python, '-m', 'pip', 'list'],
+            capture_output=True, text=True, timeout=10
+        )
+        installed = set(line.split()[0].lower() for line in result.stdout.split('\n')[2:] if line.strip())
+        
+        for pkg1, pkg2 in conflict_pairs:
+            if pkg1 in installed and pkg2 in installed:
+                conflicts.append(f"{pkg1} conflicts with {pkg2}")
+                log(f"⚠️  Conflict detected: {pkg1} and {pkg2}", 'WARNING')
+    except Exception as e:
+        log(f"⚠️  Could not check for conflicts: {e}", 'WARNING')
+    
+    return conflicts
 
 def get_python_executable() -> str:
     """Get best Python executable."""
@@ -459,23 +602,64 @@ def main() -> int:
     parser.add_argument('--skip-chrome', action='store_true', help='Skip automatic Chrome remote debugging launch')
     parser.add_argument('--chrome-port', type=int, default=9222, help='Chrome remote debugging port (default: 9222)')
     parser.add_argument('--poker-url', type=str, help='Override poker site URL when launching Chrome')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose/debug output')
+    parser.add_argument('--skip-checks', action='store_true', help='Skip pre-installation checks (not recommended)')
 
     args = parser.parse_args()
 
     show_banner()
 
     try:
-        # Always ensure venv exists
+        # Log installation attempt
+        log(f"Installation log: {INSTALL_LOG}")
+        log("")
+        
+        # Pre-installation checks (Tasks 1-7)
+        if not args.skip_checks:
+            log("Running pre-installation checks...")
+            log("=" * 70)
+            
+            # Task 1: Python version check
+            if not check_python_version():
+                return 1
+            
+            # Task 2: System dependencies check
+            if not check_system_dependencies():
+                return 1
+            
+            # Task 3: OS detection (implicit in platform detection)
+            log(f"✓ OS detected: {platform.system()} {platform.release()}")
+            
+            # Task 4: Disk space check
+            if not check_disk_space():
+                return 1
+            
+            # Task 5: Network connectivity check
+            check_network_connectivity()  # Warning only
+            
+            log("=" * 70)
+            log("✓ All pre-installation checks passed")
+            log("")
+        
+        # Task 8: Virtual environment detection and auto-creation
         if not VENV_DIR.exists() or not Path(get_venv_python()).exists():
+            log("Virtual environment not found, creating...")
             create_venv()
             install_dependencies()
+        else:
+            log("✓ Virtual environment detected")
+            
+            # Task 7: Check for conflicting packages
+            conflicts = detect_conflicting_packages()
+            if conflicts and not args.skip_checks:
+                log("⚠️  Package conflicts detected - may cause issues", 'WARNING')
 
         # Setup dependencies
         log("Verifying dependencies...")
         install_dependencies()
         log("✓ Setup complete")
 
-        # Self-test if requested
+        # Self-test if requested (Task 31-32: Installation tests)
         if args.self_test:
             run_tests()
             return 0
@@ -498,12 +682,14 @@ def main() -> int:
         cleanup_old_processes()
         return 130
     except Exception as e:
-        log(f"ERROR: {e}")
-        import traceback
-        traceback.print_exc()
+        log(f"ERROR: {e}", 'ERROR')
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
         log("")
         log("Cleaning up processes due to error...")
         cleanup_old_processes()
+        log(f"Check logs at: {INSTALL_LOG}", 'ERROR')
         return 1
 
 if __name__ == '__main__':

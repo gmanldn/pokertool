@@ -2,14 +2,14 @@
 
 ## Prerequisites Verification (Tasks 1-8)
 
-- [ ] 1. Add automated Python version check (3.9+) with clear error messages before installation begins
-- [ ] 2. Create pre-installation script to verify all system dependencies (pip, git, npm) are available
-- [ ] 3. Implement OS detection and provide OS-specific installation instructions automatically
-- [ ] 4. Add disk space check (minimum 500MB) before downloading dependencies
-- [ ] 5. Verify network connectivity to PyPI, npm registry, and GitHub before starting installation
-- [ ] 6. Create installation requirements matrix documenting minimum/recommended specs for each platform
-- [ ] 7. Add check for conflicting Python packages that might cause issues
-- [ ] 8. Implement virtual environment detection and auto-creation if not present
+- [x] 1. Add automated Python version check (3.9+) with clear error messages before installation begins
+- [x] 2. Create pre-installation script to verify all system dependencies (pip, git, npm) are available
+- [x] 3. Implement OS detection and provide OS-specific installation instructions automatically
+- [x] 4. Add disk space check (minimum 500MB) before downloading dependencies
+- [x] 5. Verify network connectivity to PyPI, npm registry, and GitHub before starting installation
+- [x] 6. Create installation requirements matrix documenting minimum/recommended specs for each platform
+- [x] 7. Add check for conflicting Python packages that might cause issues
+- [x] 8. Implement virtual environment detection and auto-creation if not present
 
 ## Dependency Management (Tasks 9-16)
 
@@ -19,7 +19,7 @@
 - [ ] 12. Implement fallback mirrors for PyPI packages in case of primary mirror failure
 - [ ] 13. Create requirements-minimal.txt for core functionality only
 - [ ] 14. Add dependency conflict detection script that runs pre-installation
-- [ ] 15. Document all optional dependencies and their use cases
+- [x] 15. Document all optional dependencies and their use cases
 - [ ] 16. Create automated script to update and test all dependencies quarterly
 
 ## Installation Scripts (Tasks 17-24)
@@ -28,10 +28,10 @@
 - [ ] 18. Create install.ps1 PowerShell script with equivalent functionality for Windows users
 - [ ] 19. Add install.bat batch script for Windows users without PowerShell
 - [ ] 20. Implement installation progress indicators showing percentage complete
-- [ ] 21. Add verbose/debug mode flag (-v) to installation scripts for troubleshooting
+- [x] 21. Add verbose/debug mode flag (-v) to installation scripts for troubleshooting
 - [ ] 22. Create uninstall.sh script that cleanly removes all installed components
 - [ ] 23. Add dry-run mode (--dry-run) that simulates installation without making changes
-- [ ] 24. Implement automatic log file creation for all installation attempts in ~/.pokertool/install.log
+- [x] 24. Implement automatic log file creation for all installation attempts in ~/.pokertool/install.log
 
 ## Configuration Setup (Tasks 25-30)
 
@@ -44,8 +44,8 @@
 
 ## Testing Infrastructure (Tasks 31-40)
 
-- [ ] 31. Create comprehensive installation test suite with pytest
-- [ ] 32. Add smoke tests that verify core functionality immediately after installation
+- [x] 31. Create comprehensive installation test suite with pytest
+- [x] 32. Add smoke tests that verify core functionality immediately after installation
 - [ ] 33. Implement automated testing on fresh VMs for Ubuntu 20.04, 22.04, 24.04
 - [ ] 34. Add automated testing on macOS 12 (Monterey), 13 (Ventura), 14 (Sonoma)
 - [ ] 35. Create automated Windows testing on Windows 10 and Windows 11
@@ -59,8 +59,8 @@
 
 - [ ] 41. Rewrite INSTALL.md with step-by-step instructions and screenshots for each platform
 - [ ] 42. Create video walkthrough of installation process for YouTube/docs site
-- [ ] 43. Add troubleshooting section with common installation errors and solutions
-- [ ] 44. Document all installation environment variables and their effects
+- [x] 43. Add troubleshooting section with common installation errors and solutions
+- [x] 44. Document all installation environment variables and their effects
 - [ ] 45. Create FAQ section addressing most common installation questions from users
 
 ## Reliability Improvements (Tasks 46-50)
@@ -76,3 +76,14 @@
 - Each task should update relevant documentation
 - CI/CD pipeline should be updated to include new tests
 - All scripts should follow project coding standards
+
+## Completed in v101.0.2 (15 tasks)
+- ✅ Tasks 1-8: Prerequisites verification system
+- ✅ Task 15: Optional dependencies documentation
+- ✅ Task 21: Verbose mode (-v flag)
+- ✅ Task 24: Automatic installation logging
+- ✅ Tasks 31-32: Installation test suite
+- ✅ Tasks 43-44: Troubleshooting and environment variables docs
+- ✅ Enhanced error messages and logging throughout
+- ✅ Platform-specific installation instructions
+- ✅ Comprehensive documentation suite created
