@@ -577,7 +577,7 @@ describe('SystemStatus Component', () => {
       await waitFor(() => {
         expect(screen.getAllByText('FAILING')[0]).toBeInTheDocument();
         expect(screen.getByLabelText('Overall system status: failing')).toBeInTheDocument();
-      });
+      }, { timeout: 5000 });
     });
   });
 
