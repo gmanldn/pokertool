@@ -163,7 +163,7 @@ def sanitize_input(input_str: str, max_length: int = 1000, allowed_chars: str = 
     if char_filtered != original_input:
         removed_chars = set(original_input) - set(char_filtered)
         if removed_chars:
-            log.warning('Input was sanitized, removed characters: %s', removed_chars)
+            log.warning(f'Input was sanitized, removed characters: {removed_chars}')
 
     return char_filtered.strip()
 
@@ -189,15 +189,15 @@ def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 
                     last_exception = e
                     if attempt < max_retries:
                         log.warning(
-                            "Attempt %d/%d failed for %s: %s. Retrying in %.2fs...",
-                            attempt + 1, max_retries + 1,
-                            func.__name__, e, current_delay
+                            f"Attempt {attempt + 1}/{max_retries + 1} failed for {func.__name__}: {e}. Retrying in {current_delay:.2f}s..."
                         )
                         time.sleep(current_delay)
                         current_delay *= backoff
                     else:
-                        log.error('All %d attempts failed for %s',
-                                max_retries + 1, func.__name__)
+                        log.error(
+                            f"All {max_retries + 1} attempts failed for {func.__name__}",
+                            exception=last_exception
+                        )
                         
             raise last_exception
         return wrapper
@@ -216,9 +216,9 @@ def run_safely(fn: Callable, *args, **kwargs) -> int:
     except Exception as e:  # noqa: BLE001
         # Use appropriate logging method depending on logger type
         if MASTER_LOGGING_AVAILABLE:
-            log_exception('Fatal error: %s' % e, e)
+            log_exception(f'Fatal error: {e}', e)
         else:
-            log.exception('Fatal error: %s', e)
+            log.exception(f'Fatal error: {e}')
         
         # Log error to console - web interface users will see errors in the browser
         print(f"FATAL ERROR: {e}", file=sys.stderr)
@@ -236,7 +236,7 @@ def db_guard(desc: str = 'DB operation') -> Iterator[None]:
     try:
         yield
     except Exception as e:  # noqa: BLE001
-        log.exception('%s failed: %s', desc, e)
+        log.exception(f'{desc} failed: {e}')
         raise
 
 class CircuitBreaker:
@@ -273,8 +273,7 @@ class CircuitBreaker:
 
             if self.failure_count >= self.failure_threshold:
                 self.state = 'OPEN'
-                log.error('Circuit breaker opened due to %d failures',
-                         self.failure_count)
+                log.error(f'Circuit breaker opened due to {self.failure_count} failures')
 
             raise e
 
