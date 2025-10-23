@@ -30,8 +30,6 @@ import {
   Divider,
   Tabs,
   Tab,
-  Table,
-  TableBody,
   TableCell,
   TableContainer,
   TableHead,
