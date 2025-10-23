@@ -1,465 +1,163 @@
-# Docker Compose Setup Guide
+# Docker Compose Guide for PokerTool
 
 ## Overview
 
-This guide covers setting up Docker Compose for PokerTool to enable easy orchestration of all services (backend API, frontend, database) with a single command.
-
-## Prerequisites
-
-- Docker Desktop 20.10+ or Docker Engine 20.10+
-- Docker Compose v2.0+ (included with Docker Desktop)
-- 4GB RAM minimum, 8GB recommended
-- 20GB free disk space
+This guide covers the Docker Compose setup for PokerTool, providing simplified orchestration of the multi-service application architecture.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────┐
-│         Docker Compose Stack            │
-├─────────────────────────────────────────┤
-│                                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────┐ │
-│  │ Frontend │  │ Backend  │  │  DB  │ │
-│  │  :3000   │◄─┤  :5001   │◄─┤:5432 │ │
-│  │  React   │  │  FastAPI │  │ PG   │ │
-│  └──────────┘  └──────────┘  └──────┘ │
-│       ▲              ▲                  │
-│       │              │                  │
-│       └──────┬───────┘                  │
-│              │                          │
-│         Volume Mounts                   │
-│     (logs, data, configs)              │
-└─────────────────────────────────────────┘
-```
+PokerTool uses a multi-service architecture:
+
+- **Backend Service**: Python-based poker analysis engine
+- **Frontend Service**: React-based web interface
+- **Database Service**: PostgreSQL for data persistence
+- **Redis Service**: Caching and session management
 
 ## Quick Start
 
-### 1. Create docker-compose.yml
+### Prerequisites
 
-Create a `docker-compose.yml` file in your project root:
+- Docker 20.10+ or Podman 3.0+
+- Docker Compose 2.0+ or podman-compose
+- 4GB RAM minimum
+- 10GB disk space
 
-```yaml
-version: '3.9'
-
-services:
-  # PostgreSQL Database
-  database:
-    image: postgres:15-alpine
-    container_name: pokertool-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-pokertool}
-      POSTGRES_USER: ${POSTGRES_USER:-pokertool}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pokertool}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - pokertool-network
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-
-  # Backend API
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-    container_name: pokertool-backend
-    restart: unless-stopped
-    depends_on:
-      database:
-        condition: service_healthy
-    environment:
-      # Database
-      DATABASE_TYPE: postgresql
-      DATABASE_HOST: database
-      DATABASE_PORT: 5432
-      DATABASE_NAME: ${POSTGRES_DB:-pokertool}
-      DATABASE_USER: ${POSTGRES_USER:-pokertool}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      
-      # API Settings
-      API_PORT: 5001
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      ENABLE_API_CACHING: ${ENABLE_API_CACHING:-true}
-      
-      # Security
-      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./poker_config.json:/app/poker_config.json:ro
-      - ./ranges:/app/ranges:ro
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - pokertool-network
-    ports:
-      - "${API_PORT:-5001}:5001"
-
-  # Frontend Development Server
-  frontend:
-    build:
-      context: ./pokertool-frontend
-      dockerfile: Dockerfile.dev
-    container_name: pokertool-frontend
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-    environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5001}
-      REACT_APP_WS_URL: ${REACT_APP_WS_URL:-ws://localhost:5001}
-      PORT: 3000
-    volumes:
-      - ./pokertool-frontend/src:/app/src:ro
-      - ./pokertool-frontend/public:/app/public:ro
-      - frontend_node_modules:/app/node_modules
-    networks:
-      - pokertool-network
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-
-  # Nginx Reverse Proxy (Production)
-  nginx:
-    image: nginx:alpine
-    container_name: pokertool-nginx
-    restart: unless-stopped
-    depends_on:
-      - backend
-      - frontend
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    networks:
-      - pokertool-network
-    ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
-      - "${NGINX_HTTPS_PORT:-443}:443"
-    profiles:
-      - production
-
-networks:
-  pokertool-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
-    driver: local
-  frontend_node_modules:
-    driver: local
-```
-
-### 2. Create .env File
-
-Create a `.env` file for environment variables:
+### Basic Usage
 
 ```bash
-# Database Configuration
-POSTGRES_DB=pokertool
-POSTGRES_USER=pokertool
-POSTGRES_PASSWORD=your-secure-password-here
-POSTGRES_PORT=5432
-
-# API Configuration
-API_PORT=5001
-LOG_LEVEL=INFO
-ENABLE_API_CACHING=true
-
-# Frontend Configuration
-FRONTEND_PORT=3000
-REACT_APP_API_URL=http://localhost:5001
-REACT_APP_WS_URL=ws://localhost:5001
-
-# Security
-SECRET_KEY=generate-a-secure-random-key-here
-CORS_ORIGINS=http://localhost:3000,http://localhost:80
-
-# Nginx (Production only)
-NGINX_HTTP_PORT=80
-NGINX_HTTPS_PORT=443
-```
-
-### 3. Create .env.example
-
-Create a `.env.example` file for documentation:
-
-```bash
-# Copy this file to .env and fill in your values
-# DO NOT commit .env to version control
-
-POSTGRES_DB=pokertool
-POSTGRES_USER=pokertool
-POSTGRES_PASSWORD=changeme
-POSTGRES_PORT=5432
-
-API_PORT=5001
-LOG_LEVEL=INFO
-ENABLE_API_CACHING=true
-
-FRONTEND_PORT=3000
-REACT_APP_API_URL=http://localhost:5001
-REACT_APP_WS_URL=ws://localhost:5001
-
-SECRET_KEY=change-this-in-production
-CORS_ORIGINS=http://localhost:3000
-
-NGINX_HTTP_PORT=80
-NGINX_HTTPS_PORT=443
-```
-
-### 4. Create .dockerignore
-
-Create a `.dockerignore` file to reduce build context:
-
-```
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-.venv
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
-.gitignore
-
-# Logs
-logs/
-*.log
-
-# Test
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Build
-build/
-dist/
-*.egg-info/
-
-# Documentation
-docs/
-*.md
-!README.md
-
-# CI/CD
-.github/
-.gitlab-ci.yml
-
-# Local config
-.env
-.env.local
-poker_config.json
-```
-
-## Commands
-
-### Development
-
-```bash
-# Start all services in development mode
-docker-compose up
-
-# Start in detached mode (background)
+# Start all services
 docker-compose up -d
 
 # View logs
 docker-compose logs -f
 
-# View logs for specific service
-docker-compose logs -f backend
-
 # Stop all services
-docker-compose stop
-
-# Stop and remove containers
 docker-compose down
 
-# Stop and remove containers + volumes (clean slate)
+# Stop and remove volumes
 docker-compose down -v
 ```
 
-### Production
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the project root:
 
 ```bash
-# Start with production profile
-docker-compose --profile production up -d
+# Application Settings
+APP_ENV=production
+DEBUG=false
+LOG_LEVEL=info
 
-# Build without cache
-docker-compose build --no-cache
+# Database Configuration
+POSTGRES_USER=pokertool
+POSTGRES_PASSWORD=change_this_password
+POSTGRES_DB=pokertool
+DB_HOST=db
+DB_PORT=5432
 
-# Scale services
-docker-compose up -d --scale backend=3
+# Redis Configuration
+REDIS_HOST=redis
+REDIS_PORT=6379
 
-# Update services
-docker-compose pull
-docker-compose up -d --force-recreate
+# Frontend Configuration
+REACT_APP_API_URL=http://localhost:8000
+REACT_APP_WS_URL=ws://localhost:8000/ws
+
+# Backend Configuration
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8000
+SECRET_KEY=change_this_secret_key
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+
+# Feature Flags
+ENABLE_BETFAIR=false
+ENABLE_LEARNING=true
+ENABLE_AUTO_ACTIONS=false
 ```
 
-### Maintenance
+### Volume Mounts
 
-```bash
-# Check service status
-docker-compose ps
+The compose file includes persistent volumes for:
 
-# Execute command in running container
-docker-compose exec backend bash
-docker-compose exec database psql -U pokertool
+- **Database Data**: `./data/postgres` - PostgreSQL data directory
+- **Logs**: `./logs` - Application and service logs
+- **Config**: `./config` - Configuration files
+- **Models**: `./model_calibration_data` - ML model data
+- **Exports**: `./exports` - Hand history and session exports
 
-# View resource usage
-docker-compose stats
+## Docker Compose File Structure
 
-# Inspect container
-docker-compose inspect backend
+### Development Profile
 
-# Restart specific service
-docker-compose restart backend
-```
-
-## Advanced Configuration
-
-### Multiple Profiles
-
-Create different configurations for dev/staging/prod:
-
-**docker-compose.override.yml** (development):
 ```yaml
-version: '3.9'
-
 services:
   backend:
     build:
+      context: .
+      dockerfile: Dockerfile
       target: development
-    volumes:
-      - ./src:/app/src
-    command: uvicorn pokertool.api:app --host 0.0.0.0 --port 5001 --reload
-    
-  frontend:
-    volumes:
-      - ./pokertool-frontend:/app
     environment:
-      - CHOKIDAR_USEPOLLING=true
+      - DEBUG=true
+    volumes:
+      - ./src:/app/src:ro
+      - ./logs:/app/logs
+    command: python -m uvicorn src.main:app --reload --host 0.0.0.0
 ```
 
-**docker-compose.prod.yml** (production):
-```yaml
-version: '3.9'
+### Production Profile
 
+```yaml
 services:
   backend:
-    build:
-      target: production
+    image: pokertool/backend:latest
     deploy:
-      replicas: 3
+      replicas: 2
       resources:
         limits:
           cpus: '1'
           memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    
-  frontend:
-    build:
-      dockerfile: Dockerfile.prod
+    restart: unless-stopped
 ```
 
-Use with:
-```bash
-# Development
-docker-compose up
+## Service Details
 
-# Production
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
-```
+### Backend Service
 
-### Health Checks
+- **Image**: `pokertool/backend:latest` or built locally
+- **Port**: 8000 (API)
+- **Health Check**: `http://localhost:8000/health`
+- **Dependencies**: Database, Redis
+- **Restart Policy**: `unless-stopped`
 
-Enhanced health check for backend:
+### Frontend Service
 
-```yaml
-healthcheck:
-  test: |
-    curl -f http://localhost:5001/health && \
-    curl -f http://localhost:5001/api/status | grep -q '"status":"healthy"'
-  interval: 30s
-  timeout: 10s
-  retries: 3
-  start_period: 40s
-```
+- **Image**: `pokertool/frontend:latest` or built locally
+- **Port**: 3000 (Web UI)
+- **Health Check**: `http://localhost:3000`
+- **Dependencies**: Backend
+- **Restart Policy**: `unless-stopped`
 
-### Secrets Management
+### Database Service
 
-Use Docker secrets for sensitive data:
+- **Image**: `postgres:15-alpine`
+- **Port**: 5432 (exposed for debugging)
+- **Volume**: `postgres_data:/var/lib/postgresql/data`
+- **Health Check**: `pg_isready`
+- **Restart Policy**: `unless-stopped`
 
-```yaml
-services:
-  backend:
-    secrets:
-      - db_password
-      - api_secret_key
-    environment:
-      DATABASE_PASSWORD_FILE: /run/secrets/db_password
-      SECRET_KEY_FILE: /run/secrets/api_secret_key
+### Redis Service
 
-secrets:
-  db_password:
-    file: ./secrets/db_password.txt
-  api_secret_key:
-    file: ./secrets/api_secret_key.txt
-```
-
-### Resource Limits
-
-```yaml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-```
+- **Image**: `redis:7-alpine`
+- **Port**: 6379 (internal only)
+- **Volume**: `redis_data:/data`
+- **Health Check**: `redis-cli ping`
+- **Restart Policy**: `unless-stopped`
 
 ## Networking
 
-### Custom Network Configuration
+All services are connected via a custom bridge network:
 
 ```yaml
 networks:
@@ -468,226 +166,215 @@ networks:
     ipam:
       config:
         - subnet: 172.28.0.0/16
-          gateway: 172.28.0.1
 ```
 
-### External Network
+Service DNS names:
+- Backend: `backend` or `api`
+- Frontend: `frontend` or `web`
+- Database: `db` or `postgres`
+- Redis: `redis` or `cache`
 
-Connect to existing network:
+## Health Checks
+
+Each service includes health checks:
 
 ```yaml
-networks:
-  pokertool-network:
-    external: true
-    name: shared-network
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
 ```
 
-## Volumes
+## Common Operations
 
-### Backup Volumes
+### Viewing Service Status
 
 ```bash
-# Backup database volume
-docker run --rm \
-  --volumes-from pokertool-db \
-  -v $(pwd)/backups:/backup \
-  alpine tar czf /backup/db-backup-$(date +%Y%m%d).tar.gz /var/lib/postgresql/data
-
-# Restore database volume
-docker run --rm \
-  --volumes-from pokertool-db \
-  -v $(pwd)/backups:/backup \
-  alpine tar xzf /backup/db-backup-20251023.tar.gz -C /
+docker-compose ps
 ```
 
-### Named Volumes
+### Scaling Services
 
-```yaml
-volumes:
-  postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /path/to/persistent/storage
-      o: bind
+```bash
+# Scale backend to 3 instances
+docker-compose up -d --scale backend=3
 ```
 
-## Logging
+### Accessing Service Logs
 
-### Configure Logging Driver
+```bash
+# All services
+docker-compose logs -f
 
-```yaml
-services:
-  backend:
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+# Specific service
+docker-compose logs -f backend
+
+# Last 100 lines
+docker-compose logs --tail=100 backend
 ```
 
-### Send Logs to External System
+### Executing Commands
 
-```yaml
-services:
-  backend:
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://logs.example.com:514"
-        tag: "pokertool-backend"
+```bash
+# Run command in backend
+docker-compose exec backend python manage.py migrate
+
+# Open shell in backend
+docker-compose exec backend sh
+
+# Run one-off command
+docker-compose run --rm backend python scripts/setup.py
+```
+
+### Database Operations
+
+```bash
+# Access PostgreSQL shell
+docker-compose exec db psql -U pokertool
+
+# Create database backup
+docker-compose exec db pg_dump -U pokertool pokertool > backup.sql
+
+# Restore database backup
+docker-compose exec -T db psql -U pokertool pokertool < backup.sql
+```
+
+### Rebuilding Services
+
+```bash
+# Rebuild all services
+docker-compose build
+
+# Rebuild specific service
+docker-compose build backend
+
+# Rebuild without cache
+docker-compose build --no-cache
+```
+
+## Profiles
+
+Use profiles to run different configurations:
+
+```bash
+# Development mode
+docker-compose --profile dev up
+
+# Production mode
+docker-compose --profile prod up
+
+# With monitoring
+docker-compose --profile monitoring up
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### Services Won't Start
 
-**1. Port Already in Use**
+Check logs for errors:
 ```bash
-# Find process using port
-lsof -i :5001
-# or
-netstat -tulpn | grep 5001
-
-# Kill process
-kill -9 <PID>
-```
-
-**2. Permission Denied on Volumes**
-```bash
-# Fix volume permissions
-docker-compose exec backend chown -R pokertool:pokertool /app/logs
-```
-
-**3. Services Won't Start**
-```bash
-# Check logs
 docker-compose logs backend
-
-# Rebuild without cache
-docker-compose build --no-cache backend
-
-# Check network connectivity
-docker-compose exec backend ping database
 ```
 
-**4. Database Connection Refused**
+Verify environment variables:
 ```bash
-# Wait for database to be ready
-docker-compose exec backend bash -c 'until pg_isready -h database; do sleep 1; done'
-```
-
-### Debugging
-
-```bash
-# Interactive shell in container
-docker-compose exec backend bash
-
-# Check environment variables
-docker-compose exec backend env
-
-# Test database connection
-docker-compose exec backend python -c "from sqlalchemy import create_engine; engine = create_engine('postgresql://pokertool:password@database:5432/pokertool'); print(engine.connect())"
-
-# View container details
 docker-compose config
 ```
 
-## Security Best Practices
+### Port Conflicts
 
-1. **Don't commit .env files** - Add to .gitignore
-2. **Use secrets for sensitive data** - Not environment variables
-3. **Run as non-root user** - Already configured in Dockerfile
-4. **Keep images updated** - Regular `docker-compose pull`
-5. **Scan images for vulnerabilities** - Use `docker scan`
-6. **Limit resource usage** - Set memory/CPU limits
-7. **Use read-only volumes** - Where possible
-8. **Enable security options** - AppArmor, seccomp
+Change ports in `.env`:
+```bash
+BACKEND_PORT=8001
+FRONTEND_PORT=3001
+```
+
+### Database Connection Issues
+
+Check database is healthy:
+```bash
+docker-compose ps db
+docker-compose logs db
+```
+
+Verify connection string in backend logs.
+
+### Permission Issues
+
+Fix volume permissions:
+```bash
+sudo chown -R $(id -u):$(id -g) logs/ data/
+```
+
+### Out of Memory
+
+Increase Docker memory limit or reduce service replicas.
+
+## Best Practices
+
+1. **Always use .env files** - Never hardcode secrets
+2. **Use named volumes** - For production data
+3. **Set resource limits** - Prevent resource exhaustion
+4. **Enable health checks** - For automatic recovery
+5. **Use restart policies** - For high availability
+6. **Regular backups** - Of volumes and databases
+7. **Monitor logs** - Use log aggregation in production
+8. **Update images** - Regularly pull latest versions
+
+## Security Considerations
+
+1. **Change default passwords** - Before production use
+2. **Use secrets management** - Docker secrets or external vault
+3. **Limit exposed ports** - Only expose what's necessary
+4. **Use read-only volumes** - Where possible
+5. **Run as non-root** - Inside containers
+6. **Scan images** - For vulnerabilities
+7. **Use private registries** - For proprietary images
 
 ## Performance Optimization
 
-### Build Cache
+1. **Use build cache** - Speed up builds
+2. **Multi-stage builds** - Reduce image size
+3. **Resource limits** - Prevent noisy neighbors
+4. **Connection pooling** - In database configuration
+5. **Redis caching** - For frequently accessed data
+6. **Load balancing** - With multiple backend replicas
 
-```bash
-# Use BuildKit for better caching
-DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose build
-```
+## Monitoring
 
-### Multi-stage Builds
-
-Already implemented in Dockerfile - keeps final image small.
-
-### Resource Allocation
+Add monitoring services (optional):
 
 ```yaml
-# Optimize for your hardware
 services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+  
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
 ```
-
-## CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-name: Docker Compose Test
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Create .env file
-        run: cp .env.example .env
-      
-      - name: Start services
-        run: docker-compose up -d
-      
-      - name: Wait for services
-        run: docker-compose exec -T backend bash -c 'until curl -f http://localhost:5001/health; do sleep 5; done'
-      
-      - name: Run tests
-        run: docker-compose exec -T backend pytest
-      
-      - name: View logs
-        if: failure()
-        run: docker-compose logs
-      
-      - name: Cleanup
-        if: always()
-        run: docker-compose down -v
-```
-
-## Migration from Standalone
-
-If you're currently running without Docker:
-
-1. Export current data
-2. Update configuration files
-3. Create .env from examples
-4. Run `docker-compose up -d`
-5. Import data into new containers
-6. Verify functionality
-7. Update client applications to new ports
 
 ## Next Steps
 
-- [ ] Review `DOCKER_OPTIMIZATION.md` for image size reduction
-- [ ] Check `DOCKER_PUBLISHING.md` for registry setup
-- [ ] See `KUBERNETES.md` for production orchestration
-- [ ] Review `../deployment/ONE_CLICK_DEPLOY.md` for cloud platforms
+- Review [Docker Optimization Guide](DOCKER_OPTIMIZATION.md)
+- Set up [Docker Publishing](DOCKER_PUBLISHING.md)
+- Explore [Kubernetes Deployment](KUBERNETES.md)
+- Configure [Podman Support](PODMAN_GUIDE.md)
 
-## Additional Resources
+## References
 
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
-- [Docker Security](https://docs.docker.com/engine/security/)
-- [Compose File Reference](https://docs.docker.com/compose/compose-file/)
+- [Docker Compose File Reference](https://docs.docker.com/compose/compose-file/)
+- [Best Practices for Compose](https://docs.docker.com/compose/production/)
