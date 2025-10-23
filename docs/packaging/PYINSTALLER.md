@@ -1,172 +1,93 @@
-# PyInstaller Desktop Packaging Guide
+# PyInstaller Packaging Guide
 
 ## Overview
 
-PyInstaller bundles Python applications into standalone executables for Windows, macOS, and Linux without requiring Python installation.
+This guide covers creating standalone executable packages for PokerTool using PyInstaller, enabling distribution on Windows, macOS, and Linux without requiring Python installation.
 
-## Why PyInstaller?
+## What is PyInstaller?
 
-**Advantages:**
-- ✅ Single executable distribution
-- ✅ No Python installation required
-- ✅ Supports all major platforms
-- ✅ Includes all dependencies automatically
-- ✅ Mature and stable (10+ years)
-- ✅ Good community support
+PyInstaller bundles Python applications into standalone executables that include:
+- Python interpreter
+- Application code
+- Dependencies and libraries
+- Data files and assets
+- Icon and branding
 
-**Trade-offs:**
-- ❌ Large file sizes (100-300MB)
-- ❌ Slower startup than native apps
-- ❌ Antivirus false positives possible
-- ❌ Hidden imports need manual specification
+Users can run the application without installing Python or dependencies.
 
-## Prerequisites
+## Installation
 
 ```bash
 # Install PyInstaller
 pip install pyinstaller
 
-# For enhanced icon support
-pip install pillow
+# Or install from requirements
+pip install -r requirements-packaging.txt
 
-# For UPX compression (optional)
-brew install upx  # macOS
-apt-get install upx  # Linux
-# Download from upx.github.io for Windows
+# Verify installation
+pyinstaller --version
 ```
 
-## Quick Start
+## Basic Usage
 
-### Basic Command
+### Simple Build
 
 ```bash
-# Simple one-file executable
-pyinstaller --onefile --name PokerTool src/pokertool/__main__.py
+# Basic executable
+pyinstaller src/main.py
 
-# With GUI (no console window)
-pyinstaller --onefile --windowed --name PokerTool standalone/gui_entry.py
+# Single file executable
+pyinstaller --onefile src/main.py
+
+# With custom name
+pyinstaller --onefile --name pokertool src/main.py
+```
+
+### GUI Application
+
+```bash
+# GUI app (no console window)
+pyinstaller --onefile --windowed src/main.py
 
 # With icon
-pyinstaller --onefile --windowed --icon=assets/pokertool-icon.ico --name PokerTool standalone/gui_entry.py
+pyinstaller --onefile --windowed --icon=assets/pokertool-icon.ico src/main.py
 ```
 
 ## Spec File Configuration
 
-The existing `packaging/pyinstaller/pokertool_gui.spec` needs enhancements:
-
-### Enhanced Spec File
+Create `pokertool.spec` for advanced configuration:
 
 ```python
 # -*- mode: python ; coding: utf-8 -*-
-"""
-PyInstaller spec file for PokerTool
-Builds cross-platform executable with all dependencies
-"""
 
-from pathlib import Path
-import sys
-import platform
-
-# Configuration
-APP_NAME = 'PokerTool'
-VERSION = '1.0.0'
-AUTHOR = 'PokerTool Team'
-
-# Paths
-project_root = Path(__file__).resolve().parents[2]
-src_path = project_root / 'src'
-assets_path = project_root / 'assets'
-frontend_build = project_root / 'pokertool-frontend' / 'build'
-
-# Platform-specific configuration
-IS_MACOS = platform.system() == 'Darwin'
-IS_WINDOWS = platform.system() == 'Windows'
-IS_LINUX = platform.system() == 'Linux'
-
-# Hidden imports (packages not auto-detected)
-hidden_imports = [
-    # Core dependencies
-    'cv2',
-    'numpy',
-    'PIL',
-    'pytesseract',
-    'mss',
-    'requests',
-    'websocket',
-    'sqlalchemy',
-    'fastapi',
-    'uvicorn',
-    
-    # SQLAlchemy dialects
-    'sqlalchemy.dialects.postgresql',
-    'sqlalchemy.dialects.sqlite',
-    
-    # Pydantic
-    'pydantic',
-    'pydantic.fields',
-    
-    # Starlette
-    'starlette.responses',
-    'starlette.middleware',
-    
-    # Encodings
-    'encodings.idna',
-    
-    # Platform-specific
-    'tkinter' if not IS_LINUX else None,
-]
-
-# Remove None values
-hidden_imports = [imp for imp in hidden_imports if imp is not None]
-
-# Data files to include
-datas = [
-    # Assets
-    (str(assets_path), 'assets'),
-    
-    # Frontend build
-    (str(frontend_build), 'frontend'),
-    
-    # Configuration templates
-    (str(project_root / 'poker_config.example.json'), '.'),
-    
-    # Ranges
-    (str(project_root / 'ranges'), 'ranges'),
-    
-    # Tesseract data (if available)
-    # (str(tesseract_data_path), 'tesseract'),
-]
-
-# Binaries (platform-specific)
-binaries = []
-
-# macOS: Include Tesseract binary
-if IS_MACOS:
-    import shutil
-    tesseract_bin = shutil.which('tesseract')
-    if tesseract_bin:
-        binaries.append((tesseract_bin, 'bin'))
-
-# Analysis
 block_cipher = None
 
+# Analysis - find all dependencies
 a = Analysis(
-    ['standalone/gui_entry.py'],
-    pathex=[str(src_path)],
-    binaries=binaries,
-    datas=datas,
-    hiddenimports=hidden_imports,
-    hookspath=[str(project_root / 'packaging' / 'pyinstaller' / 'hooks')],
+    ['src/main.py'],
+    pathex=[],
+    binaries=[],
+    datas=[
+        ('config', 'config'),
+        ('assets', 'assets'),
+        ('model_calibration_data', 'model_calibration_data'),
+        ('ranges', 'ranges'),
+    ],
+    hiddenimports=[
+        'pkg_resources.py2_warn',
+        'sklearn.utils._cython_blas',
+        'sklearn.neighbors.typedefs',
+        'sklearn.neighbors.quad_tree',
+        'sklearn.tree._utils',
+    ],
+    hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Exclude unused modules for size reduction
         'matplotlib',
-        'scipy',
-        'pandas',
-        'jupyter',
-        'IPython',
-        'notebook',
+        'tkinter',
+        'test',
+        'unittest',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
@@ -174,81 +95,85 @@ a = Analysis(
     noarchive=False,
 )
 
-# Filter out unnecessary files
-a.datas = [
-    (dest, src, typ) for dest, src, typ in a.datas
-    if not any([
-        dest.startswith('matplotlib'),
-        dest.endswith('.pyc'),
-        '__pycache__' in dest,
-    ])
-]
+# Process data files
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-pyz = PYZ(
-    a.pure,
-    a.zipped_data,
-    cipher=block_cipher
-)
-
-# Executable configuration
+# Create executable
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
     [],
-    exclude_binaries=True,
-    name=APP_NAME,
+    name='PokerTool',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # GUI mode
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,  # GUI app - no console
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(assets_path / 'pokertool-icon.ico') if IS_WINDOWS else 
-         str(assets_path / 'pokertool-icon.icns') if IS_MACOS else None,
-    version='version_info.txt' if IS_WINDOWS else None,
+    icon='assets/pokertool-icon.ico'  # Windows
 )
 
-# Collect files
-coll = COLLECT(
+# macOS-specific bundle
+app = BUNDLE(
     exe,
+    name='PokerTool.app',
+    icon='assets/pokertool-icon.icns',  # macOS
+    bundle_identifier='com.pokertool.app',
+    info_plist={
+        'NSPrincipalClass': 'NSApplication',
+        'NSHighResolutionCapable': 'True',
+        'CFBundleShortVersionString': '1.0.0',
+        'CFBundleVersion': '1.0.0',
+    },
+)
+```
+
+### Build with Spec File
+
+```bash
+# Build using spec file
+pyinstaller pokertool.spec
+
+# Clean build
+pyinstaller --clean pokertool.spec
+
+# Output to specific directory
+pyinstaller --distpath ./dist pokertool.spec
+```
+
+## Platform-Specific Configuration
+
+### Windows
+
+```python
+# pokertool-windows.spec
+exe = EXE(
+    pyz,
+    a.scripts,
     a.binaries,
     a.zipfiles,
     a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name=APP_NAME,
+    name='PokerTool.exe',
+    icon='assets/pokertool-icon.ico',
+    console=False,  # No console window
+    uac_admin=False,  # Don't require admin
+    version='version_info.txt',  # Version information
 )
-
-# macOS: Create .app bundle
-if IS_MACOS:
-    app = BUNDLE(
-        coll,
-        name=f'{APP_NAME}.app',
-        icon=str(assets_path / 'pokertool-icon.icns'),
-        bundle_identifier='com.pokertool.app',
-        version=VERSION,
-        info_plist={
-            'CFBundleName': APP_NAME,
-            'CFBundleDisplayName': APP_NAME,
-            'CFBundleVersion': VERSION,
-            'CFBundleShortVersionString': VERSION,
-            'NSHighResolutionCapable': 'True',
-            'LSMinimumSystemVersion': '10.15.0',
-            'NSHumanReadableCopyright': f'Copyright © 2025 {AUTHOR}',
-        },
-    )
 ```
 
-### Version Info (Windows Only)
+#### Version Information (Windows)
 
-Create `packaging/pyinstaller/version_info.txt`:
+Create `version_info.txt`:
 
 ```python
-# UTF-8
 VSVersionInfo(
   ffi=FixedFileInfo(
     filevers=(1, 0, 0, 0),
@@ -259,335 +184,358 @@ VSVersionInfo(
     fileType=0x1,
     subtype=0x0,
     date=(0, 0)
-  ),
+    ),
   kids=[
     StringFileInfo(
       [
-        StringTable(
-          u'040904B0',
-          [
-            StringStruct(u'CompanyName', u'PokerTool'),
-            StringStruct(u'FileDescription', u'PokerTool - Poker Strategy Assistant'),
-            StringStruct(u'FileVersion', u'1.0.0.0'),
-            StringStruct(u'InternalName', u'PokerTool'),
-            StringStruct(u'LegalCopyright', u'Copyright © 2025 PokerTool'),
-            StringStruct(u'OriginalFilename', u'PokerTool.exe'),
-            StringStruct(u'ProductName', u'PokerTool'),
-            StringStruct(u'ProductVersion', u'1.0.0.0')
-          ]
-        )
-      ]
-    ),
+      StringTable(
+        u'040904B0',
+        [StringStruct(u'CompanyName', u'PokerTool'),
+        StringStruct(u'FileDescription', u'AI-Powered Poker Analysis Tool'),
+        StringStruct(u'FileVersion', u'1.0.0.0'),
+        StringStruct(u'InternalName', u'PokerTool'),
+        StringStruct(u'LegalCopyright', u'Copyright © 2025 PokerTool'),
+        StringStruct(u'OriginalFilename', u'PokerTool.exe'),
+        StringStruct(u'ProductName', u'PokerTool'),
+        StringStruct(u'ProductVersion', u'1.0.0.0')])
+      ]), 
     VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
   ]
 )
 ```
 
-## Building for Each Platform
-
 ### macOS
 
-```bash
-# Build .app bundle
-pyinstaller packaging/pyinstaller/pokertool_gui.spec
-
-# Create DMG installer
-hdiutil create -volname "PokerTool" \
-  -srcfolder dist/PokerTool.app \
-  -ov -format UDZO \
-  dist/PokerTool-1.0.0-macOS.dmg
-
-# Sign the app (requires Apple Developer account)
-codesign --deep --force --verify --verbose \
-  --sign "Developer ID Application: Your Name" \
-  dist/PokerTool.app
-
-# Notarize (for Gatekeeper)
-xcrun notarytool submit dist/PokerTool-1.0.0-macOS.dmg \
-  --apple-id "your@email.com" \
-  --team-id "TEAMID" \
-  --password "app-specific-password" \
-  --wait
-
-# Staple notarization ticket
-xcrun stapler staple dist/PokerTool.app
-```
-
-### Windows
-
-```bash
-# Build executable
-pyinstaller packaging/pyinstaller/pokertool_gui.spec
-
-# Create installer with NSIS (see NATIVE_INSTALLERS.md)
-makensis packaging/nsis/pokertool-installer.nsi
-
-# Or create with Inno Setup
-iscc packaging/innosetup/pokertool-setup.iss
-
-# Sign the executable (requires code signing certificate)
-signtool sign /f certificate.pfx /p password \
-  /t http://timestamp.digicert.com \
-  dist/PokerTool/PokerTool.exe
+```python
+# pokertool-macos.spec
+app = BUNDLE(
+    exe,
+    name='PokerTool.app',
+    icon='assets/pokertool-icon.icns',
+    bundle_identifier='com.pokertool.app',
+    info_plist={
+        'CFBundleName': 'PokerTool',
+        'CFBundleDisplayName': 'PokerTool',
+        'CFBundleGetInfoString': "AI-Powered Poker Analysis",
+        'CFBundleIdentifier': 'com.pokertool.app',
+        'CFBundleVersion': '1.0.0',
+        'CFBundleShortVersionString': '1.0.0',
+        'NSHumanReadableCopyright': 'Copyright © 2025 PokerTool',
+        'NSHighResolutionCapable': 'True',
+        'NSRequiresAquaSystemAppearance': 'False',
+    },
+)
 ```
 
 ### Linux
 
-```bash
-# Build executable
-pyinstaller packaging/pyinstaller/pokertool_gui.spec
-
-# Create AppImage
-# See LINUX_PACKAGES.md for AppImage creation
-
-# Or create tarball
-cd dist
-tar -czf PokerTool-1.0.0-Linux-x86_64.tar.gz PokerTool/
-```
-
-## Size Optimization
-
-### 1. Exclude Unnecessary Modules
-
 ```python
-# In spec file
-excludes=[
-    'matplotlib',
-    'scipy',
-    'pandas',
-    'jupyter',
-    'IPython',
-    'notebook',
-    'tkinter',  # If not using GUI
-    'PyQt5',
-    'PySide2',
-]
-```
-
-### 2. Use UPX Compression
-
-```python
-# In spec file
+# pokertool-linux.spec
 exe = EXE(
-    ...,
-    upx=True,
-    upx_exclude=[
-        'vcruntime140.dll',  # Windows: Don't compress these
-        'python*.dll',
-    ],
-)
-```
-
-### 3. Strip Debug Symbols
-
-```python
-# In spec file
-exe = EXE(
-    ...,
-    strip=True,  # Linux/macOS only
-)
-```
-
-### 4. Use One-File Mode (Trade-offs)
-
-```python
-# Spec file for one-file
-exe = EXE(
-    ...,
+    pyz,
+    a.scripts,
     a.binaries,
     a.zipfiles,
     a.datas,
-    [],
-    name='PokerTool',
-    # Slower startup, but simpler distribution
+    name='pokertool',
+    debug=False,
+    strip=True,  # Strip debug symbols
+    upx=True,  # Compress with UPX
+    console=False,
 )
 ```
 
-## Handling Dependencies
+## Including Data Files
 
-### Custom Hooks
-
-Create `packaging/pyinstaller/hooks/hook-pokertool.py`:
+### Add Files and Folders
 
 ```python
-"""
-PyInstaller hook for PokerTool
-Ensures all dependencies are included
-"""
-
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
-
-# Collect all submodules
-hiddenimports = collect_submodules('pokertool')
-
-# Collect data files
-datas = collect_data_files('pokertool')
-
-# Add specific hidden imports
-hiddenimports += [
-    'pokertool.modules.poker_screen_scraper_betfair',
-    'pokertool.ml_opponent_modeling',
-    'pokertool.analytics_dashboard',
-]
+# In spec file
+datas=[
+    ('config/*.json', 'config'),
+    ('assets/icons/*.png', 'assets/icons'),
+    ('model_calibration_data', 'model_calibration_data'),
+    ('README.md', '.'),
+],
 ```
 
-### Runtime Hooks
-
-Create `packaging/pyinstaller/hooks/rthook_pokertool.py`:
+### Access Data Files at Runtime
 
 ```python
-"""
-Runtime hook for PokerTool
-Executed before the main script
-"""
-
-import sys
 import os
-from pathlib import Path
+import sys
 
-# Fix path for bundled application
-if getattr(sys, 'frozen', False):
-    # Running in PyInstaller bundle
-    bundle_dir = Path(sys._MEIPASS)
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
     
-    # Add bundle directory to path
-    sys.path.insert(0, str(bundle_dir))
+    return os.path.join(base_path, relative_path)
+
+# Usage
+config_path = resource_path('config/poker_config.json')
+icon_path = resource_path('assets/icons/card.png')
+```
+
+## Hidden Imports
+
+### Common Hidden Imports
+
+```python
+hiddenimports=[
+    # scikit-learn
+    'sklearn.utils._cython_blas',
+    'sklearn.neighbors.typedefs',
+    'sklearn.neighbors.quad_tree',
+    'sklearn.tree._utils',
     
-    # Set environment variables for dependencies
-    os.environ['TESSDATA_PREFIX'] = str(bundle_dir / 'tesseract')
+    # pandas
+    'pandas._libs.tslibs.timedeltas',
     
-    # Fix OpenCV library loading
-    cv2_path = bundle_dir / 'cv2'
-    if cv2_path.exists():
-        os.environ['PATH'] = str(cv2_path) + os.pathsep + os.environ['PATH']
+    # numpy
+    'numpy.core._methods',
+    'numpy.lib.format',
+    
+    # Other
+    'pkg_resources.py2_warn',
+    'win32timezone',  # Windows only
+],
+```
+
+### Find Missing Imports
+
+```bash
+# Run and check for import errors
+./dist/pokertool
+
+# Use --debug all for verbose output
+pyinstaller --debug all pokertool.spec
+```
+
+## Optimization
+
+### Reduce Size
+
+```python
+# Exclude unnecessary modules
+excludes=[
+    'matplotlib',
+    'tkinter',
+    'test',
+    'unittest',
+    'email',
+    'html',
+    'http',
+    'urllib',
+    'xml',
+    'pydoc',
+],
+
+# Use UPX compression
+exe = EXE(
+    ...
+    upx=True,
+    upx_exclude=['vcruntime140.dll'],  # Don't compress critical DLLs
+)
+
+# Strip debug symbols (Linux)
+strip=True,
+```
+
+### One-File vs One-Folder
+
+**One-File** (`--onefile`):
+- Single executable file
+- Slower startup (extracts to temp)
+- Simpler distribution
+- ~100-200MB
+
+**One-Folder** (default):
+- Folder with executable and dependencies
+- Faster startup
+- Larger distribution package
+- Easier to debug
+
+```bash
+# One-file build
+pyinstaller --onefile pokertool.spec
+
+# One-folder build (default)
+pyinstaller pokertool.spec
+```
+
+## Code Signing
+
+### Windows Code Signing
+
+```bash
+# Sign executable with SignTool
+signtool sign /f certificate.pfx /p password /t http://timestamp.digicert.com /v dist/PokerTool.exe
+
+# Or use PyInstaller with codesign
+pyinstaller --codesign-identity "Developer ID" pokertool.spec
+```
+
+### macOS Code Signing
+
+```bash
+# Sign application
+codesign --deep --force --verify --verbose --sign "Developer ID Application: Your Name" dist/PokerTool.app
+
+# Verify signature
+codesign --verify --verbose dist/PokerTool.app
+
+# Notarize with Apple
+xcrun altool --notarize-app --file PokerTool.app.zip \
+  --primary-bundle-id com.pokertool.app \
+  --username your@email.com \
+  --password app-specific-password
+```
+
+### Linux (Optional)
+
+```bash
+# GPG sign the binary
+gpg --detach-sign --armor dist/pokertool
+
+# Verify
+gpg --verify dist/pokertool.asc dist/pokertool
 ```
 
 ## Testing
 
-### Automated Testing Script
+### Test Checklist
 
-Create `scripts/test-pyinstaller-build.sh`:
+```bash
+# 1. Build the application
+pyinstaller --clean pokertool.spec
+
+# 2. Test on clean system
+# - No Python installed
+# - No dependencies installed
+
+# 3. Test all features
+# - Start application
+# - Load configuration
+# - Test core functionality
+# - Check file access
+# - Verify networking
+
+# 4. Check file size
+ls -lh dist/PokerTool*
+
+# 5. Test error handling
+# - Invalid config
+# - Missing files
+# - Network errors
+```
+
+### Automated Testing
+
+```python
+# test_package.py
+import subprocess
+import sys
+import os
+
+def test_executable():
+    exe_path = 'dist/PokerTool.exe' if sys.platform == 'win32' else 'dist/PokerTool'
+    
+    # Check file exists
+    assert os.path.exists(exe_path), f"Executable not found: {exe_path}"
+    
+    # Check file size
+    size_mb = os.path.getsize(exe_path) / (1024 * 1024)
+    assert size_mb < 200, f"Executable too large: {size_mb:.1f}MB"
+    
+    # Test execution
+    result = subprocess.run([exe_path, '--version'], capture_output=True, timeout=10)
+    assert result.returncode == 0, "Executable failed to run"
+    
+    print("✓ All tests passed")
+
+if __name__ == '__main__':
+    test_executable()
+```
+
+## Build Scripts
+
+### Cross-Platform Build Script
 
 ```bash
 #!/bin/bash
+# build.sh
+
 set -e
 
-echo "Testing PyInstaller build..."
+echo "Building PokerTool with PyInstaller..."
 
-# Build
-pyinstaller packaging/pyinstaller/pokertool_gui.spec --clean
+# Clean previous builds
+rm -rf build dist
 
-# Test executable
+# Determine platform
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    ./dist/PokerTool.app/Contents/MacOS/PokerTool --version
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Linux
-    ./dist/PokerTool/PokerTool --version
+    SPEC="pokertool-macos.spec"
+elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    SPEC="pokertool-windows.spec"
 else
-    # Windows
-    ./dist/PokerTool/PokerTool.exe --version
+    SPEC="pokertool-linux.spec"
 fi
 
-# Check file size
-du -h dist/PokerTool*
+# Build
+pyinstaller --clean --noconfirm "$SPEC"
 
-echo "Build test completed successfully!"
+# Test
+python test_package.py
+
+echo "Build complete!"
 ```
 
-### Manual Testing Checklist
+### Windows Build Script
 
-- [ ] Application starts without errors
-- [ ] All features functional
-- [ ] Configuration files load correctly
-- [ ] Assets (icons, images) display properly
-- [ ] Dependencies (OpenCV, Tesseract) work
-- [ ] Database connections work
-- [ ] Network requests succeed
-- [ ] File operations work (logs, configs)
-- [ ] Cross-platform compatibility verified
+```powershell
+# build.ps1
+$ErrorActionPreference = "Stop"
 
-## Troubleshooting
+Write-Host "Building PokerTool for Windows..."
 
-### Common Issues
+# Clean
+Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
 
-**1. Missing Modules**
+# Build
+pyinstaller --clean --noconfirm pokertool-windows.spec
 
-```
-ModuleNotFoundError: No module named 'xyz'
-```
+# Sign (if certificate available)
+if (Test-Path "certificate.pfx") {
+    signtool sign /f certificate.pfx /p $env:CERT_PASSWORD dist/PokerTool.exe
+}
 
-**Solution:** Add to `hiddenimports` in spec file.
+# Test
+python test_package.py
 
-**2. Missing Data Files**
-
-```
-FileNotFoundError: assets/icon.png
-```
-
-**Solution:** Add to `datas` in spec file:
-```python
-datas=[
-    ('assets/icon.png', 'assets'),
-]
-```
-
-**3. DLL/Shared Library Not Found**
-
-```
-ImportError: DLL load failed
-```
-
-**Solution:** Add to `binaries` in spec file or use hook.
-
-**4. Large File Size**
-
-**Solution:** 
-- Use `excludes` in Analysis
-- Enable UPX compression
-- Consider one-file vs one-dir trade-offs
-
-**5. Slow Startup**
-
-**Solution:**
-- Use one-dir mode instead of one-file
-- Reduce number of modules
-- Profile with `--debug=imports`
-
-### Debugging Build Issues
-
-```bash
-# Verbose output
-pyinstaller --log-level DEBUG pokertool_gui.spec
-
-# Check imports
-pyi-archive_viewer dist/PokerTool/PokerTool.exe
-
-# Test import tree
-pyi-bindepend dist/PokerTool/PokerTool.exe
+Write-Host "Build complete!"
 ```
 
 ## CI/CD Integration
 
-### GitHub Actions Workflow
+### GitHub Actions
 
 ```yaml
-name: Build PyInstaller Executables
+name: Build Executables
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    
-    runs-on: ${{ matrix.os }}
-    
+  build-windows:
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - uses: actions/setup-python@v4
         with:
@@ -598,117 +546,137 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
       
-      - name: Build with PyInstaller
-        run: pyinstaller packaging/pyinstaller/pokertool_gui.spec --clean
+      - name: Build executable
+        run: pyinstaller --clean pokertool-windows.spec
       
-      - name: Create DMG (macOS)
-        if: matrix.os == 'macos-latest'
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: PokerTool-Windows
+          path: dist/PokerTool.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
         run: |
-          hdiutil create -volname "PokerTool" \
-            -srcfolder dist/PokerTool.app \
-            -ov -format UDZO \
-            dist/PokerTool-${{ github.ref_name }}-macOS.dmg
+          pip install -r requirements.txt
+          pip install pyinstaller
       
-      - name: Create ZIP (Windows/Linux)
-        if: matrix.os != 'macos-latest'
+      - name: Build executable
+        run: pyinstaller --clean pokertool-macos.spec
+      
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          create-dmg --volname "PokerTool" \
+            --window-pos 200 120 --window-size 600 400 \
+            --icon-size 100 --app-drop-link 400 185 \
+            dist/PokerTool.dmg dist/PokerTool.app
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: PokerTool-macOS
+          path: dist/PokerTool.dmg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+      
+      - name: Build executable
+        run: pyinstaller --clean pokertool-linux.spec
+      
+      - name: Create tarball
         run: |
           cd dist
-          7z a ../PokerTool-${{ github.ref_name }}-${{ matrix.os }}.zip PokerTool/
+          tar czf PokerTool-Linux.tar.gz pokertool
       
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./PokerTool-*.{dmg,zip}
-          asset_name: PokerTool-${{ github.ref_name }}-${{ matrix.os }}
-          asset_content_type: application/octet-stream
+          name: PokerTool-Linux
+          path: dist/PokerTool-Linux.tar.gz
 ```
 
-## Auto-Update Implementation
+## Troubleshooting
 
-### Update Check Module
+### Common Issues
 
-Create `src/pokertool/updater.py`:
+#### Import Errors
+```bash
+# Find missing imports
+pyinstaller --debug imports pokertool.spec
+```
 
+#### File Not Found
 ```python
-import requests
-import platform
-from packaging import version
-
-GITHUB_RELEASES_URL = "https://api.github.com/repos/gmanldn/pokertool/releases/latest"
-CURRENT_VERSION = "1.0.0"
-
-def check_for_updates():
-    """Check if a new version is available"""
-    try:
-        response = requests.get(GITHUB_RELEASES_URL, timeout=5)
-        response.raise_for_status()
-        
-        latest_release = response.json()
-        latest_version = latest_release['tag_name'].lstrip('v')
-        
-        if version.parse(latest_version) > version.parse(CURRENT_VERSION):
-            return {
-                'available': True,
-                'version': latest_version,
-                'download_url': get_platform_download_url(latest_release),
-                'release_notes': latest_release.get('body', '')
-            }
-    except Exception as e:
-        print(f"Update check failed: {e}")
-    
-    return {'available': False}
-
-def get_platform_download_url(release):
-    """Get the correct download URL for current platform"""
-    system = platform.system()
-    assets = release.get('assets', [])
-    
-    for asset in assets:
-        name = asset['name'].lower()
-        if system == 'Darwin' and '.dmg' in name:
-            return asset['browser_download_url']
-        elif system == 'Windows' and '.exe' in name:
-            return asset['browser_download_url']
-        elif system == 'Linux' and '.tar.gz' in name:
-            return asset['browser_download_url']
-    
-    return None
+# Use resource_path function
+config = load_config(resource_path('config/default.json'))
 ```
 
-## Distribution Checklist
+#### Slow Startup (One-File)
+```bash
+# Use one-folder instead
+pyinstaller pokertool.spec  # Without --onefile
+```
 
-- [ ] Build executables for all platforms
-- [ ] Test on clean systems (no Python installed)
-- [ ] Verify all features work
-- [ ] Check file sizes are reasonable
-- [ ] Sign code (macOS, Windows)
-- [ ] Create installers
-- [ ] Write release notes
-- [ ] Upload to GitHub Releases
-- [ ] Update download links on website
-- [ ] Notify users of new version
+#### Large File Size
+```python
+# Exclude unnecessary modules
+excludes=['matplotlib', 'tkinter', 'test', 'unittest']
 
-## Size Benchmarks
+# Use UPX compression
+upx=True
+```
 
-| Platform | One-Dir | One-File | With UPX | Notes |
-|----------|---------|----------|----------|-------|
-| Windows | 180 MB | 120 MB | 90 MB | Includes all DLLs |
-| macOS | 200 MB | 140 MB | 100 MB | .app bundle |
-| Linux | 160 MB | 110 MB | 80 MB | Smallest due to shared libs |
+### Debug Mode
+
+```bash
+# Run with debug output
+pyinstaller --debug all pokertool.spec
+
+# Check what's included
+pyi-archive_viewer dist/PokerTool.exe
+```
+
+## Best Practices
+
+1. **Test on clean systems** - No Python or dependencies
+2. **Use spec files** - Better control than command line
+3. **Code sign** - Required for distribution
+4. **Minimize size** - Exclude unnecessary modules
+5. **Test thoroughly** - All features and edge cases
+6. **Version control spec** - Track changes to build config
+7. **Automate builds** - Use CI/CD pipelines
+8. **Document dependencies** - List all required libraries
 
 ## Next Steps
 
-- [ ] Review `ELECTRON.md` for alternative packaging
-- [ ] Check `TAURI.md` for lightweight option
-- [ ] See `NATIVE_INSTALLERS.md` for installer creation
-- [ ] Review `../deployment/AUTO_UPDATE.md` for update system
+- Review [Electron Packaging](ELECTRON.md)
+- Consider [Tauri Alternative](TAURI.md)
+- Explore [Native Installers](NATIVE_INSTALLERS.md)
+- Set up [Auto-Updater](../features/AUTO_UPDATER.md)
 
-## Additional Resources
+## References
 
 - [PyInstaller Documentation](https://pyinstaller.org/)
-- [PyInstaller Hooks](https://github.com/pyinstaller/pyinstaller-hooks-contrib)
-- [Signing macOS Apps](https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution)
-- [Signing Windows Apps](https://docs.microsoft.com/en-us/windows/win32/seccrypto/cryptography-tools)
+- [PyInstaller Spec Files](https://pyinstaller.org/en/stable/spec-files.html)
+- [Hooks and Runtime Hooks](https://pyinstaller.org/en/stable/hooks.html)
+- [Code Signing Guide](https://pyinstaller.org/en/stable/usage.html#code-signing)
