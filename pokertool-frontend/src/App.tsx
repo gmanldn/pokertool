@@ -41,6 +41,7 @@ const Settings = lazy(() => import('./components/Settings').then(module => ({ de
 const HUDOverlay = lazy(() => import('./components/HUDOverlay').then(module => ({ default: module.HUDOverlay })));
 const GTOTrainer = lazy(() => import('./components/GTOTrainer').then(module => ({ default: module.GTOTrainer })));
 const HandHistory = lazy(() => import('./components/HandHistory').then(module => ({ default: module.HandHistory })));
+const VersionHistory = lazy(() => import('./components/VersionHistory').then(module => ({ default: module.VersionHistory })));
 const SystemStatus = lazy(() => import('./components/SystemStatus').then(module => ({ default: module.SystemStatus })));
 const ModelCalibration = lazy(() => import('./components/ModelCalibration').then(module => ({ default: module.ModelCalibration })));
 const OpponentFusion = lazy(() => import('./components/OpponentFusion').then(module => ({ default: module.OpponentFusion })));
@@ -51,6 +52,7 @@ const TodoList = lazy(() => import('./components/TodoList').then(module => ({ de
 const SmartHelper = lazy(() => import('./pages/SmartHelper'));
 const Improve = lazy(() => import('./pages/Improve'));
 const AIChat = lazy(() => import('./pages/AIChat'));
+const AutopilotControl = lazy(() => import('./components/AutopilotControl').then(module => ({ default: module.AutopilotControl })));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -159,6 +161,7 @@ function AppContent() {
                   <Route path="/hud" element={<ErrorBoundary fallbackType="general"><HUDOverlay /></ErrorBoundary>} />
                   <Route path="/gto" element={<ErrorBoundary fallbackType="advice"><GTOTrainer /></ErrorBoundary>} />
                   <Route path="/history" element={<ErrorBoundary fallbackType="general"><HandHistory /></ErrorBoundary>} />
+                  <Route path="/version-history" element={<ErrorBoundary fallbackType="general"><VersionHistory /></ErrorBoundary>} />
                   <Route path="/settings" element={<ErrorBoundary fallbackType="general"><Settings /></ErrorBoundary>} />
                   <Route path="/model-calibration" element={<ErrorBoundary fallbackType="general"><ModelCalibration /></ErrorBoundary>} />
                   <Route path="/system-status" element={<ErrorBoundary fallbackType="general"><SystemStatus /></ErrorBoundary>} />
@@ -168,6 +171,7 @@ function AppContent() {
                   <Route path="/smarthelper" element={<ErrorBoundary fallbackType="general"><SmartHelper /></ErrorBoundary>} />
                   <Route path="/improve" element={<ErrorBoundary fallbackType="general"><Improve /></ErrorBoundary>} />
                   <Route path="/ai-chat" element={<ErrorBoundary fallbackType="general"><AIChat /></ErrorBoundary>} />
+                  <Route path="/autopilot" element={<ErrorBoundary fallbackType="general"><AutopilotControl sendMessage={sendMessage} /></ErrorBoundary>} />
                 </Routes>
               </Suspense>
             </main>
