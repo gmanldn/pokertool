@@ -300,7 +300,7 @@ Conventions
 
 #### Detection Performance (10 tasks)
 - [ ] [P0][M] Reduce detection latency to <50ms per frame — Profile hot paths, optimize image processing. Target 20+ FPS. `src/pokertool/modules/poker_screen_scraper_betfair.py`
-- [ ] [P0][S] Add detection FPS counter and monitoring — Display FPS in HUD. Log performance metrics. `src/pokertool/performance_telemetry.py`
+- [x] ✅ [P0][S] Add detection FPS counter and monitoring — ✅ Complete: DetectionFPSCounter class tracks FPS per detection type with sliding window metrics (current/avg/min/max FPS, frame count, uptime). Thread-safe with configurable window size (default: 100 frames). Global singleton via get_fps_counter(). Supports multiple detection types (cards, players, pot, etc.), metric logging, and reset functionality. Comprehensive test coverage (17 tests). Documentation: `docs/features/FPS_COUNTER.md`. Files: `src/pokertool/performance_telemetry.py:388-670`, `tests/test_fps_counter.py` (268 lines).
 - [ ] [P0][M] Implement adaptive ROI sizing — Dynamically adjust ROI sizes based on detection confidence. `src/pokertool/modules/poker_screen_scraper.py`
 - [x] [P0][S] Add detection cache to avoid reprocessing — ✅ Complete: DetectionCache implements LRU cache with TTL (2s default) for detection results, image region hashing with MD5, and automatic expiration. Max 100 entries. File: `src/pokertool/detection_cache.py` (43 lines).
 - [ ] [P1][M] Optimize image preprocessing pipeline — Reduce preprocessing time by 50%. Use GPU if available. `src/pokertool/ocr_ensemble.py`

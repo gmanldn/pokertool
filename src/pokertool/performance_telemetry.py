@@ -385,6 +385,168 @@ class PerformanceTelemetry:
                 return {'error': str(e)}
 
 
+class DetectionFPSCounter:
+    """
+    FPS counter for detection operations with per-type tracking.
+
+    Tracks frame times over a sliding window and calculates FPS metrics.
+    Thread-safe and minimal overhead.
+
+    Usage:
+        fps_counter = DetectionFPSCounter(window_size=100)
+        fps_counter.record_frame('card_detection')
+        metrics = fps_counter.get_metrics('card_detection')
+        # {'fps': 25.3, 'avg_fps': 24.8, 'min_fps': 20.1, 'max_fps': 29.5, 'frame_count': 100}
+    """
+
+    def __init__(self, window_size: int = 100):
+        """
+        Initialize FPS counter.
+
+        Args:
+            window_size: Number of frames to track in sliding window
+        """
+        self.window_size = window_size
+        self.frame_times: Dict[str, List[float]] = {}  # detection_type -> [timestamps]
+        self.lock = threading.Lock()
+        self.start_time = time.time()
+
+    def record_frame(self, detection_type: str = 'default'):
+        """
+        Record a frame for the given detection type.
+
+        Args:
+            detection_type: Type of detection (e.g., 'card_detection', 'player_detection', 'pot_detection')
+        """
+        with self.lock:
+            if detection_type not in self.frame_times:
+                self.frame_times[detection_type] = []
+
+            self.frame_times[detection_type].append(time.time())
+
+            # Keep only the last window_size frames
+            if len(self.frame_times[detection_type]) > self.window_size:
+                self.frame_times[detection_type].pop(0)
+
+    def get_metrics(self, detection_type: str = 'default') -> Dict[str, Any]:
+        """
+        Get FPS metrics for the given detection type.
+
+        Args:
+            detection_type: Type of detection to get metrics for
+
+        Returns:
+            Dict with keys: fps, avg_fps, min_fps, max_fps, frame_count, uptime_seconds
+        """
+        with self.lock:
+            if detection_type not in self.frame_times or len(self.frame_times[detection_type]) < 2:
+                return {
+                    'fps': 0.0,
+                    'avg_fps': 0.0,
+                    'min_fps': 0.0,
+                    'max_fps': 0.0,
+                    'frame_count': 0,
+                    'uptime_seconds': time.time() - self.start_time
+                }
+
+            times = self.frame_times[detection_type]
+            frame_count = len(times)
+
+            # Calculate frame deltas
+            deltas = [times[i] - times[i-1] for i in range(1, len(times))]
+
+            # Current FPS (from last frame delta)
+            current_fps = 1.0 / deltas[-1] if deltas[-1] > 0 else 0.0
+
+            # Average FPS over the window
+            total_time = times[-1] - times[0]
+            avg_fps = (frame_count - 1) / total_time if total_time > 0 else 0.0
+
+            # Min/Max FPS from deltas
+            min_fps = 1.0 / max(deltas) if deltas and max(deltas) > 0 else 0.0
+            max_fps = 1.0 / min(deltas) if deltas and min(deltas) > 0 else 0.0
+
+            return {
+                'fps': round(current_fps, 2),
+                'avg_fps': round(avg_fps, 2),
+                'min_fps': round(min_fps, 2),
+                'max_fps': round(max_fps, 2),
+                'frame_count': frame_count,
+                'uptime_seconds': round(time.time() - self.start_time, 2)
+            }
+
+    def get_all_metrics(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Get FPS metrics for all detection types.
+
+        Returns:
+            Dict mapping detection_type to metrics dict
+        """
+        with self.lock:
+            detection_types = list(self.frame_times.keys())
+
+        return {dt: self.get_metrics(dt) for dt in detection_types}
+
+    def reset(self, detection_type: Optional[str] = None):
+        """
+        Reset FPS counter for given type or all types.
+
+        Args:
+            detection_type: Type to reset, or None to reset all
+        """
+        with self.lock:
+            if detection_type:
+                if detection_type in self.frame_times:
+                    self.frame_times[detection_type] = []
+            else:
+                self.frame_times = {}
+                self.start_time = time.time()
+
+    def log_metrics(self, detection_type: Optional[str] = None, logger_instance: Optional[logging.Logger] = None):
+        """
+        Log FPS metrics to logger.
+
+        Args:
+            detection_type: Specific type to log, or None for all types
+            logger_instance: Logger to use, or None for module logger
+        """
+        log = logger_instance or logger
+
+        if detection_type:
+            metrics = self.get_metrics(detection_type)
+            log.info(f"FPS [{detection_type}]: {metrics['fps']:.1f} current, {metrics['avg_fps']:.1f} avg, "
+                    f"{metrics['min_fps']:.1f} min, {metrics['max_fps']:.1f} max ({metrics['frame_count']} frames)")
+        else:
+            all_metrics = self.get_all_metrics()
+            for dt, metrics in all_metrics.items():
+                log.info(f"FPS [{dt}]: {metrics['fps']:.1f} current, {metrics['avg_fps']:.1f} avg, "
+                        f"{metrics['min_fps']:.1f} min, {metrics['max_fps']:.1f} max ({metrics['frame_count']} frames)")
+
+
+# Global FPS counter instance
+_fps_counter_instance: Optional[DetectionFPSCounter] = None
+_fps_counter_lock = threading.Lock()
+
+
+def get_fps_counter() -> DetectionFPSCounter:
+    """Get or create global FPS counter instance."""
+    global _fps_counter_instance
+
+    with _fps_counter_lock:
+        if _fps_counter_instance is None:
+            _fps_counter_instance = DetectionFPSCounter()
+        return _fps_counter_instance
+
+
+def reset_fps_counter(detection_type: Optional[str] = None):
+    """Reset global FPS counter."""
+    global _fps_counter_instance
+
+    with _fps_counter_lock:
+        if _fps_counter_instance:
+            _fps_counter_instance.reset(detection_type)
+
+
 # Decorator for automatic function timing
 def timed(category: str, operation: Optional[str] = None, capture_args: bool = False):
     """
@@ -496,10 +658,13 @@ def shutdown_telemetry():
 __all__ = [
     'PerformanceTelemetry',
     'TelemetryEntry',
+    'DetectionFPSCounter',
     'timed',
     'telemetry_section',
     'telemetry_instant',
     'init_telemetry',
     'get_telemetry',
     'shutdown_telemetry',
+    'get_fps_counter',
+    'reset_fps_counter',
 ]
