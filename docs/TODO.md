@@ -250,7 +250,7 @@ Conventions
 
 #### OCR & Card Recognition (12 tasks)
 - [ ] [P0][M] Improve card rank detection accuracy to >99% — Train enhanced OCR model on 10,000+ labeled card images. Add confidence thresholds. `src/pokertool/card_recognizer.py`
-- [ ] [P0][S] Add suit detection fallback using color analysis — If OCR fails, detect suit by color (red=hearts/diamonds, black=spades/clubs). `src/pokertool/card_recognizer.py:150-200`
+- [x] ✅ [P0][S] Add suit detection fallback using color analysis — If OCR fails, detect suit by color (red=hearts/diamonds, black=spades/clubs). `src/pokertool/card_recognizer.py:150-200`
 - [ ] [P0][M] Implement multi-template matching for cards — Support multiple card deck styles (classic, modern, large-pip). Add template library. `src/pokertool/modules/poker_screen_scraper.py`
 - [x] [P0][S] Add card detection confidence scoring — ✅ Complete: Added automatic logging for low-confidence detections (<80%) with separate rank and suit confidence scores. Added confidence_percent property to RecognitionResult class (returns 0-100%). Enhanced both full-card template matching and rank/suit matching methods with warning logs. File: `src/pokertool/card_recognizer.py:78-86,135-140,261-266`.
 - [ ] [P0][M] Optimize card ROI detection for different table sizes — Dynamically adjust ROIs based on table window dimensions. `src/pokertool/modules/poker_screen_scraper_betfair.py:800-900`
@@ -259,12 +259,12 @@ Conventions
 - [ ] [P1][S] Add card reflection/glare removal preprocessing — Detect and remove glare/reflections from card images before OCR. `src/pokertool/card_recognizer.py:100-130`
 - [ ] [P1][M] Create card detection regression test suite — 100+ screenshots with labeled ground truth. Fail if accuracy drops <98%. `tests/card_detection/`
 - [ ] [P2][M] Add support for 4-color deck detection — Detect 4-color decks (blue clubs, green spades). Add toggle in settings. `src/pokertool/card_recognizer.py`
-- [ ] [P2][S] Implement card history tracking — Track which cards have been seen in current session. Detect anomalies (duplicate cards). `src/pokertool/modules/poker_screen_scraper.py`
+- [x] ✅ [P2][S] Implement card history tracking — Track which cards have been seen in current session. Detect anomalies (duplicate cards). `src/pokertool/modules/poker_screen_scraper.py`
 - [ ] [P2][L] Add machine learning card detector — Train CNN to detect cards directly from table screenshots. Benchmark vs OCR. `src/pokertool/ml_card_detector.py`
 
 #### Player Detection (8 tasks)
 - [ ] [P0][M] Improve player name OCR accuracy to >95% — Fine-tune OCR for common fonts used in poker clients. Handle special characters. `src/pokertool/modules/poker_screen_scraper_betfair.py:1200-1300`
-- [ ] [P0][S] Add player position detection validation — Verify detected positions match button position. Flag inconsistencies. `src/pokertool/modules/poker_screen_scraper.py:500-550`
+- [x] ✅ [P0][S] Add player position detection validation — Verify detected positions match button position. Flag inconsistencies. `src/pokertool/modules/poker_screen_scraper.py:500-550`
 - [ ] [P0][M] Implement player stack size tracking — Detect stack changes every frame. Calculate net change. Emit events on change. `src/pokertool/modules/poker_screen_scraper_betfair.py:1500-1600`
 - [ ] [P0][S] Add player action detection (fold/check/bet/raise) — Detect visual indicators of player actions. Log to database. `src/pokertool/modules/poker_screen_scraper.py`
 - [ ] [P1][M] Create player avatar detection — Extract player avatar images, use for tracking across sessions. `src/pokertool/modules/poker_screen_scraper.py`
