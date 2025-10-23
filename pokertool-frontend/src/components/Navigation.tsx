@@ -63,6 +63,7 @@ import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import type { BackendStatus } from '../hooks/useBackendLifecycle';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 import { buildApiUrl } from '../config/api';
+import { RELEASE_VERSION } from '../config/releaseVersion';
 
 interface NavigationProps {
   connected: boolean;
@@ -90,7 +91,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [debouncedConnected, setDebouncedConnected] = useState(connected);
-  const appVersion = (process.env.REACT_APP_VERSION || '').trim();
+  const appVersion = RELEASE_VERSION;
   const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
 
   // Debounce WebSocket connection status to reduce flicker on transient disconnects
@@ -381,6 +382,27 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         ))}
       </List>
       <Box sx={{ flexGrow: 1 }} />
+      <Divider />
+      {/* Version History Blade */}
+      <Box sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <InfoIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+          <Typography variant="caption" color="text.secondary">
+            Version
+          </Typography>
+        </Box>
+        <Chip
+          label={appVersion}
+          size="small"
+          variant="outlined"
+          color="primary"
+          sx={{
+            fontFamily: 'monospace',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+          }}
+        />
+      </Box>
       <Divider />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
         <IconButton onClick={toggleDarkMode} color="inherit">
