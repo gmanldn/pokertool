@@ -465,6 +465,8 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
                           callbacks: {
                             label: (context) => {
                               const value = context.parsed.x;
+                              if (value === null || value === undefined) return '';
+                              
                               const ci = advice.evConfidenceIntervals;
                               const actionKey = context.label.toLowerCase().replace('-', '');
                               const interval = ci?.[actionKey as keyof typeof ci];
@@ -485,7 +487,10 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
                           },
                           ticks: {
                             color: 'rgba(255,255,255,0.7)',
-                            callback: (value) => `${value >= 0 ? '+' : ''}${value} BB`,
+                            callback: (value) => {
+                              const numValue = typeof value === 'number' ? value : parseFloat(value as string);
+                              return `${numValue >= 0 ? '+' : ''}${numValue} BB`;
+                            },
                           },
                         },
                         y: {

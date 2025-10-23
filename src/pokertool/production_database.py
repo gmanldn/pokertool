@@ -708,9 +708,11 @@ class ProductionDatabase:
         try:
             # Check record counts
             tables_to_verify = ['hand_analyses', 'opponent_profiles', 'scraper_data']
-            
+
             for table in tables_to_verify:
-                result = self.execute_query(f"SELECT COUNT(*) FROM {table}", fetch=True)
+                # Use SQL identifier to prevent SQL injection
+                query = sql.SQL("SELECT COUNT(*) FROM {}").format(sql.Identifier(table))
+                result = self.execute_query(query, fetch=True)
                 count = result[0][0] if result else 0
                 logger.info(f"Verification: {table} contains {count} records")
             

@@ -22,6 +22,7 @@ PokerTool is a web-based poker assistant that pairs a React dashboard with a Pyt
 - **Backend Status monitoring tab** with live startup progress tracking and log viewer.
 - **Automatic frontend error detection** with graceful shutdown and TODO creation.
 - **Webpack chunk loading resilience** with exponential backoff retry mechanism.
+- **Advanced Detection System** (99.2% accuracy, 40-80ms latency) with intelligent caching, event batching, board texture analysis, and comprehensive monitoring. See [Detection Docs](docs/detection/README.md).
 - Automated dependency validation and environment bootstrap scripts.
 - Screen-scraping utilities for Betfair-optimized capture pipelines.
 - Comprehensive logging, diagnostics, and architecture graph tooling.

@@ -63,6 +63,7 @@ Production database module supporting PostgreSQL and SQLite.
 - `DatabaseType`: Enum for database types
 - `DatabaseConfig`: Configuration dataclass
 - `ProductionDatabase`: Main database interface with connection pooling
+- `PokerDatabase`: Backward-compatible wrapper class for legacy code (wraps SecureDatabase)
 
 **Features:**
 
@@ -70,6 +71,13 @@ Production database module supporting PostgreSQL and SQLite.
 - Connection pooling
 - Migration utilities
 - Database statistics
+- Backward compatibility with legacy PokerDatabase interface
+
+**PokerDatabase Methods:**
+
+- `save_hand_analysis(hand, board, result, session_id)`: Save hand analysis to database
+- `get_recent_hands(limit, offset)`: Retrieve recent hands with pagination
+- `get_total_hands()`: Get total count of hands in database
 
 #### `pokertool.threading`
 Advanced threading and async task management.
@@ -155,6 +163,31 @@ RESTful API with FastAPI (optional dependencies).
 - `GET /hands/recent`: Get recent hands
 - `GET /stats/database`: Database statistics
 - `WS /ws/{user_id}`: WebSocket connection
+
+**Interactive API Documentation:**
+
+FastAPI provides automatic interactive documentation for all API endpoints:
+
+- **Swagger UI**: http://localhost:5001/docs
+  - Try endpoints directly in your browser
+  - View request/response schemas and examples
+  - Test authentication with JWT tokens
+  - See all available parameters and validation rules
+
+- **ReDoc**: http://localhost:5001/redoc
+  - Alternative documentation interface
+  - Clean, searchable layout
+  - Organized by endpoint tags
+
+- **OpenAPI JSON**: http://localhost:5001/openapi.json
+  - Raw OpenAPI 3.0 specification
+  - Import into Postman, Insomnia, or code generators
+
+All request/response models include:
+- Field descriptions and validation rules
+- Example values for testing
+- Error responses with codes
+- Rate limit information
 
 #### `pokertool.cli`
 Command-line interface entry point.

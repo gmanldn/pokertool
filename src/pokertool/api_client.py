@@ -22,6 +22,8 @@ import time
 import logging
 from enum import Enum
 
+from pokertool.timeout_config import get_timeout_config
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,7 +113,7 @@ class PokerToolClient:
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        timeout: int = 30,
+        timeout: Optional[float] = None,
         max_retries: int = 3,
         retry_delay: float = 1.0
     ):
@@ -123,7 +125,7 @@ class PokerToolClient:
             api_key: API key for authentication (preferred)
             username: Username for JWT authentication
             password: Password for JWT authentication
-            timeout: Request timeout in seconds
+            timeout: Request timeout in seconds (None = use config default)
             max_retries: Maximum number of retry attempts
             retry_delay: Initial delay between retries in seconds
         """
@@ -131,7 +133,7 @@ class PokerToolClient:
         self.api_key = api_key
         self.username = username
         self.password = password
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else get_timeout_config().api_timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
 

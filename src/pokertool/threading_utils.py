@@ -6,6 +6,7 @@ Provides thread-safe utilities and helpers for concurrent operations.
 import threading
 import time
 import logging
+import atexit
 from enum import Enum
 from typing import Any, Callable, Optional, Dict, List
 from concurrent.futures import ThreadPoolExecutor, Future
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 # Global thread pool for PokerTool operations
 _thread_pool: Optional[ThreadPoolExecutor] = None
 _thread_pool_lock = threading.Lock()
+_shutdown_initiated = False
 
 # Thread-local storage for PokerTool state
 _local = threading.local()
@@ -99,26 +101,46 @@ class TaskPriority(Enum):
 def get_thread_pool(max_workers: int = 4) -> ThreadPoolExecutor:
     """Get or create the global thread pool."""
     global _thread_pool
-    
+
     with _thread_pool_lock:
+        if _shutdown_initiated:
+            raise RuntimeError("Cannot create thread pool - shutdown in progress")
+
         if _thread_pool is None:
             _thread_pool = ThreadPoolExecutor(
                 max_workers=max_workers,
-                thread_name_prefix="PokerTool"
+                thread_name_prefix="PokerTool-Utils"
             )
             logger.debug(f"Created thread pool with {max_workers} workers")
-    
+
     return _thread_pool
 
-def shutdown_thread_pool(wait: bool = True) -> None:
-    """Shutdown the global thread pool."""
-    global _thread_pool
-    
+def shutdown_thread_pool(wait: bool = True, timeout: Optional[float] = 5.0) -> None:
+    """
+    Shutdown the global thread pool.
+
+    Args:
+        wait: Block until all submitted tasks complete
+        timeout: Maximum time to wait for shutdown (informational only)
+    """
+    global _thread_pool, _shutdown_initiated
+
     with _thread_pool_lock:
+        if _shutdown_initiated:
+            logger.debug("Thread pool shutdown already initiated")
+            return
+
+        _shutdown_initiated = True
+
         if _thread_pool is not None:
-            _thread_pool.shutdown(wait=wait)
-            _thread_pool = None
-            logger.debug("Thread pool shut down")
+            try:
+                logger.info("Shutting down global thread pool")
+                _thread_pool.shutdown(wait=wait)
+                logger.info("Global thread pool shutdown complete")
+            except Exception as e:
+                logger.error(f"Error shutting down thread pool: {e}")
+            finally:
+                _thread_pool = None
 
 def run_in_thread(func: Callable, *args, **kwargs) -> Future:
     """Run a function in the thread pool."""
@@ -227,8 +249,18 @@ def clear_thread_local() -> None:
 # Cleanup function
 def cleanup_threading() -> None:
     """Clean up threading resources."""
-    shutdown_thread_pool()
+    logger.debug("Cleaning up threading resources")
+    shutdown_thread_pool(wait=True, timeout=5.0)
     clear_thread_local()
+    logger.debug("Threading cleanup complete")
+
+# Register cleanup handler
+def _cleanup_on_exit():
+    """Cleanup handler for atexit."""
+    logger.debug("atexit handler triggered for threading_utils")
+    cleanup_threading()
+
+atexit.register(_cleanup_on_exit)
 
 # Export commonly used items
 __all__ = [

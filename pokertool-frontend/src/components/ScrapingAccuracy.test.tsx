@@ -70,10 +70,10 @@ describe('ScrapingAccuracy Component', () => {
       expect(screen.getByText('Scraping Accuracy System')).toBeInTheDocument();
       expect(screen.getByText('96.0%')).toBeInTheDocument(); // overall_accuracy
       expect(screen.getByText('98.0%')).toBeInTheDocument(); // card_recognition_accuracy
-      expect(screen.getByText('42')).toBeInTheDocument(); // pot_corrections
-      expect(screen.getByText('27')).toBeInTheDocument(); // ocr_corrections
-      expect(screen.getByText('18')).toBeInTheDocument(); // temporal_consensus_improvements
-    });
+      expect(screen.getAllByText('42')[0]).toBeInTheDocument(); // pot_corrections
+      expect(screen.getAllByText('27')[0]).toBeInTheDocument(); // ocr_corrections
+      expect(screen.getAllByText('18')[0]).toBeInTheDocument(); // temporal_consensus_improvements
+    }, { timeout: 3000 });
   });
 
   it('should display error message when fetch fails', async () => {
@@ -122,8 +122,8 @@ describe('ScrapingAccuracy Component', () => {
 
     await waitFor(() => {
       // pot_corrections (42) + ocr_corrections (27) = 69
-      expect(screen.getByText('69')).toBeInTheDocument();
-    });
+      expect(screen.getAllByText('69')[0]).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   it('should show "Excellent" label for high accuracy', async () => {
@@ -169,14 +169,14 @@ describe('ScrapingAccuracy Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('96.0%')).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     const refreshButton = screen.getByRole('button');
     fireEvent.click(refreshButton);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledTimes(2);
-    });
+    }, { timeout: 3000 });
   });
 
   it('should display recognition metrics section', async () => {

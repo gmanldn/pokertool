@@ -45,6 +45,8 @@ pytest>=7.0.0
 pytest-cov>=4.0.0
 pytest-asyncio>=0.21.0
 pytest-benchmark>=4.0.0
+# mutmut>=2.4.0  # Requires Rust compiler - uncomment if needed for mutation testing
+hypothesis>=6.0.0
 psutil>=5.9.0
 packaging>=24.0
 

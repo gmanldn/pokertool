@@ -11,12 +11,18 @@ const outputPath = path.join(projectRoot, 'src', 'config', 'releaseVersion.ts');
 
 const readReleaseVersion = () => {
   try {
-    const content = fs.readFileSync(versionFilePath, 'utf8');
-    const match = content.match(/^\s*version\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)/m);
-    if (!match) {
-      throw new Error('Release version not found in VERSION file');
+    const content = fs.readFileSync(versionFilePath, 'utf8').trim();
+    // Try format: version = x.y.z
+    let match = content.match(/^\s*version\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)/m);
+    if (match) {
+      return match[1].trim();
     }
-    return match[1].trim();
+    // Try simple format: x.y.z
+    match = content.match(/^([0-9]+\.[0-9]+\.[0-9]+)/m);
+    if (match) {
+      return match[1].trim();
+    }
+    throw new Error('Release version not found in VERSION file');
   } catch (error) {
     console.error('[sync-version] Failed to read VERSION file:', error.message);
     process.exit(1);

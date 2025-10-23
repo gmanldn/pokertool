@@ -11,7 +11,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Grid,
   Paper,
@@ -49,6 +49,7 @@ import { WebSocketMessage } from '../hooks/useWebSocket';
 import { SessionGoalsTracker } from './SessionGoalsTracker';
 import { SessionClock } from './SessionClock';
 import { RELEASE_VERSION } from '../config/releaseVersion';
+import { NoHandsEmptyState } from './EmptyState';
 
 ChartJS.register(
   CategoryScale,
@@ -75,7 +76,7 @@ interface SessionStats {
   duration: string;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
+export const Dashboard: React.FC<DashboardProps> = React.memo(({ messages }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Use RELEASE_VERSION which is auto-synced from VERSION file in git
@@ -94,12 +95,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  useEffect(() => {
-    // Process real-time updates from WebSocket
-    const latestStatsMessage = messages
+  // Memoize latest stats message to avoid recomputation
+  const latestStatsMessage = useMemo(() => {
+    return messages
       .filter(msg => msg.type === 'stats_update')
       .pop();
-    
+  }, [messages]);
+
+  useEffect(() => {
+    // Process real-time updates from WebSocket
     if (latestStatsMessage) {
       setStats(prevStats => ({
         ...prevStats,
@@ -107,18 +111,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
       }));
       setLastUpdate(new Date());
     }
-  }, [messages]);
+  }, [latestStatsMessage]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setLoading(true);
     // Simulate refresh
     setTimeout(() => {
       setLoading(false);
       setLastUpdate(new Date());
     }, 1000);
-  };
+  }, []);
 
-  const profitChartData = {
+  // Memoize chart data to prevent recreation on every render
+  const profitChartData = useMemo(() => ({
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
@@ -129,9 +134,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         tension: 0.4,
       },
     ],
-  };
+  }), [theme.palette.primary.main]);
 
-  const gameTypeData = {
+  const gameTypeData = useMemo(() => ({
     labels: ['Cash Games', 'Tournaments', 'Sit & Go'],
     datasets: [
       {
@@ -143,7 +148,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         ],
       },
     ],
-  };
+  }), [theme.palette.primary.main, theme.palette.secondary.main, theme.palette.warning.main]);
 
   interface StatCardProps {
     title: string;
@@ -153,7 +158,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
     color?: string;
   }
 
-  const StatCard = ({ title, value, icon, trend, color }: StatCardProps) => (
+  // Memoize StatCard to prevent unnecessary re-renders
+  const StatCard = React.memo(({ title, value, icon, trend, color }: StatCardProps) => (
     <Card
       sx={{
         height: '100%',
@@ -204,12 +210,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         </Box>
       </CardContent>
     </Card>
-  );
+  ));
 
   return (
     <Box sx={{ flexGrow: 1, p: isMobile ? 2 : 3 }}>
       {loading && <LinearProgress />}
-      
+
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center" gap={2}>
           <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold">
@@ -245,6 +251,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
         </Box>
       </Box>
 
+      {/* Show empty state when no hands have been played */}
+      {stats.handsPlayed === 0 && !loading && (
+        <NoHandsEmptyState onAction={handleRefresh} />
+      )}
+
+      {/* Show dashboard content when hands have been played */}
+      {stats.handsPlayed > 0 && (
       <Grid container spacing={3}>
         {/* Session Clock */}
         <Grid item xs={12} md={6}>
@@ -452,6 +465,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ messages }) => {
           </Paper>
         </Grid>
       </Grid>
+      )}
     </Box>
   );
-};
+});
+
+Dashboard.displayName = 'Dashboard';

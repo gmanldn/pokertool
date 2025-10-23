@@ -161,38 +161,53 @@ class ProductionDatabase:
             self._init_sqlite()
 
     def _init_postgresql(self):
-        """Initialize PostgreSQL connection pool."""
-        try:
-            # Build connection string
-            conn_params = {
-                'host': self.config.host,
-                'port': self.config.port,
-                'database': self.config.database,
-                'user': self.config.user,
-                'password': self.config.password,
-                'sslmode': self.config.ssl_mode,
-                'connect_timeout': self.config.connection_timeout,
-                'application_name': 'pokertool'
-            }
+        """Initialize PostgreSQL connection pool with exponential backoff retry."""
+        max_retries = 5
+        base_delay = 1  # seconds
+        max_delay = 30  # seconds
 
-            # Remove None values
-            conn_params = {k: v for k, v in conn_params.items() if v is not None}
+        for attempt in range(max_retries):
+            try:
+                # Build connection string
+                conn_params = {
+                    'host': self.config.host,
+                    'port': self.config.port,
+                    'database': self.config.database,
+                    'user': self.config.user,
+                    'password': self.config.password,
+                    'sslmode': self.config.ssl_mode,
+                    'connect_timeout': self.config.connection_timeout,
+                    'application_name': 'pokertool'
+                }
 
-            # Create connection pool
-            self.connection_pool = psycopg2.pool.ThreadedConnectionPool(
-                self.config.min_connections,
-                self.config.max_connections,
-                **conn_params
-            )
+                # Remove None values
+                conn_params = {k: v for k, v in conn_params.items() if v is not None}
 
-            # Initialize schema
-            self._create_postgresql_schema()
+                # Create connection pool
+                self.connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                    self.config.min_connections,
+                    self.config.max_connections,
+                    **conn_params
+                )
 
-            logger.info(f"PostgreSQL connection pool initialized: {self.config.host}:{self.config.port}/{self.config.database}")
+                # Initialize schema
+                self._create_postgresql_schema()
 
-        except Exception as e:
-            logger.error(f'Failed to initialize PostgreSQL: {e}')
-            raise
+                logger.info(f"PostgreSQL connection pool initialized: {self.config.host}:{self.config.port}/{self.config.database}")
+                return  # Success!
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    # Calculate exponential backoff delay
+                    delay = min(base_delay * (2 ** attempt), max_delay)
+                    logger.warning(
+                        f'Failed to initialize PostgreSQL (attempt {attempt + 1}/{max_retries}): {e}. '
+                        f'Retrying in {delay} seconds...'
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(f'Failed to initialize PostgreSQL after {max_retries} attempts: {e}')
+                    raise
 
     def _init_sqlite(self):
         """Initialize SQLite fallback."""
@@ -201,16 +216,35 @@ class ProductionDatabase:
 
     @contextmanager
     def get_connection(self) -> Iterator[Any]:
-        """Get database connection from pool or SQLite."""
-        if self.config.db_type == DatabaseType.POSTGRESQL:
-            conn = self.connection_pool.getconn()
+        """Get database connection from pool or SQLite with retry logic."""
+        max_retries = 3
+        base_delay = 0.5  # seconds
+
+        for attempt in range(max_retries):
             try:
-                yield conn
-            finally:
-                self.connection_pool.putconn(conn)
-        else:
-            with self.sqlite_db._get_connection() as conn:
-                yield conn
+                if self.config.db_type == DatabaseType.POSTGRESQL:
+                    conn = self.connection_pool.getconn()
+                    try:
+                        yield conn
+                        return  # Success!
+                    finally:
+                        self.connection_pool.putconn(conn)
+                else:
+                    with self.sqlite_db._get_connection() as conn:
+                        yield conn
+                        return  # Success!
+
+            except (psycopg2.OperationalError if psycopg2 else Exception, OSError) as e:
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    logger.warning(
+                        f'Database connection failed (attempt {attempt + 1}/{max_retries}): {e}. '
+                        f'Retrying in {delay:.1f} seconds...'
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(f'Database connection failed after {max_retries} attempts: {e}')
+                    raise
 
     def _create_postgresql_schema(self):
         """Create PostgreSQL schema with enhanced features."""
@@ -228,6 +262,10 @@ class ProductionDatabase:
             timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             user_hash VARCHAR(32),
             session_id VARCHAR(32),
+            confidence_score REAL CHECK(confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0)),
+            bet_size_ratio REAL CHECK(bet_size_ratio IS NULL OR bet_size_ratio >= 0.0),
+            pot_size REAL CHECK(pot_size IS NULL OR pot_size >= 0.0),
+            player_position VARCHAR(10) CHECK(player_position IS NULL OR player_position IN ('BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'MP', 'MP+1', 'MP+2', 'HJ', 'CO')),
             metadata JSONB DEFAULT '{}',
             -- Enhanced constraints for PostgreSQL
             CONSTRAINT valid_hand_format CHECK(
@@ -259,18 +297,41 @@ class ProductionDatabase:
             metadata JSONB DEFAULT '{}'
         );
 
-        -- Performance indexes
+        -- Performance indexes (optimized for <50ms p95 query times)
+        -- Single-column indexes
         CREATE INDEX IF NOT EXISTS idx_hands_timestamp ON poker_hands(timestamp DESC);
         CREATE INDEX IF NOT EXISTS idx_hands_user_hash ON poker_hands(user_hash);
         CREATE INDEX IF NOT EXISTS idx_hands_session ON poker_hands(session_id);
         CREATE INDEX IF NOT EXISTS idx_hands_metadata ON poker_hands USING GIN(metadata);
 
+        -- Composite indexes for common query patterns
+        CREATE INDEX IF NOT EXISTS idx_hands_user_time ON poker_hands(user_hash, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_hands_session_time ON poker_hands(session_id, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_hands_user_session ON poker_hands(user_hash, session_id);
+
+        -- Partial index for recent hands (last 30 days) - faster for common queries
+        CREATE INDEX IF NOT EXISTS idx_hands_recent ON poker_hands(timestamp DESC)
+            WHERE timestamp > NOW() - INTERVAL '30 days';
+
+        -- Covering index for common SELECT queries (avoids table lookups)
+        CREATE INDEX IF NOT EXISTS idx_hands_covering ON poker_hands(user_hash, timestamp DESC)
+            INCLUDE (hand_text, board_text, session_id);
+
+        -- Session indexes
         CREATE INDEX IF NOT EXISTS idx_sessions_start ON game_sessions(start_time DESC);
         CREATE INDEX IF NOT EXISTS idx_sessions_metadata ON game_sessions USING GIN(metadata);
+        CREATE INDEX IF NOT EXISTS idx_sessions_end ON game_sessions(end_time DESC) WHERE end_time IS NOT NULL;
 
+        -- Security log indexes
         CREATE INDEX IF NOT EXISTS idx_security_timestamp ON security_log(timestamp DESC);
         CREATE INDEX IF NOT EXISTS idx_security_type ON security_log(event_type);
         CREATE INDEX IF NOT EXISTS idx_security_user ON security_log(user_hash);
+        CREATE INDEX IF NOT EXISTS idx_security_user_time ON security_log(user_hash, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_security_type_time ON security_log(event_type, timestamp DESC);
+
+        -- Partial index for high severity security events
+        CREATE INDEX IF NOT EXISTS idx_security_high_severity ON security_log(timestamp DESC, severity)
+            WHERE severity >= 3;
         """
 
         with self.get_connection() as conn:
@@ -305,13 +366,70 @@ class ProductionDatabase:
 
     @retry_on_failure(max_retries=3)
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
-                          session_id: Optional[str] = None, metadata: Optional[Dict] = None) -> int:
-        """Save hand analysis with enhanced metadata support."""
+                          session_id: Optional[str] = None, metadata: Optional[Dict] = None,
+                          confidence_score: Optional[float] = None,
+                          bet_size_ratio: Optional[float] = None,
+                          pot_size: Optional[float] = None,
+                          player_position: Optional[str] = None) -> int:
+        """
+        Save hand analysis with enhanced metadata support.
+
+        Args:
+            hand: The hand to analyze
+            board: The board cards
+            result: The analysis result
+            session_id: Optional session identifier
+            metadata: Optional metadata dictionary
+            confidence_score: Detection confidence (0.0-1.0), None if unknown
+            bet_size_ratio: Bet size as ratio of pot (bet/pot), None if no bet
+            pot_size: Total pot size, None if unknown
+            player_position: Player position (BTN, SB, BB, UTG, etc.), None if unknown
+
+        Returns:
+            The ID of the inserted record
+        """
         self._rate_limit_check('save_hand', 50)
 
         from .error_handling import sanitize_input
+        from .data_validation import validate_before_insert, ValidationError
 
-        # Sanitize inputs
+        # Comprehensive validation before insert
+        try:
+            validate_before_insert(hand, board, result, session_id, metadata)
+        except ValidationError as e:
+            logger.error(f"Data validation failed: {e}")
+            raise ValueError(f"Invalid data for insertion: {e}")
+
+        # Validate confidence score
+        if confidence_score is not None:
+            if not isinstance(confidence_score, (int, float)):
+                raise ValueError(f'Confidence score must be numeric, got {type(confidence_score)}')
+            if not (0.0 <= confidence_score <= 1.0):
+                raise ValueError(f'Confidence score must be between 0.0 and 1.0, got {confidence_score}')
+
+        # Validate bet size ratio
+        if bet_size_ratio is not None:
+            if not isinstance(bet_size_ratio, (int, float)):
+                raise ValueError(f'Bet size ratio must be numeric, got {type(bet_size_ratio)}')
+            if bet_size_ratio < 0.0:
+                raise ValueError(f'Bet size ratio must be non-negative, got {bet_size_ratio}')
+
+        # Validate pot size
+        if pot_size is not None:
+            if not isinstance(pot_size, (int, float)):
+                raise ValueError(f'Pot size must be numeric, got {type(pot_size)}')
+            if pot_size < 0.0:
+                raise ValueError(f'Pot size must be non-negative, got {pot_size}')
+
+        # Validate player position
+        valid_positions = {'BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'MP', 'MP+1', 'MP+2', 'HJ', 'CO'}
+        if player_position is not None:
+            if not isinstance(player_position, str):
+                raise ValueError(f'Player position must be string, got {type(player_position)}')
+            if player_position not in valid_positions:
+                raise ValueError(f'Invalid player position: {player_position}. Must be one of {valid_positions}')
+
+        # Sanitize inputs (after validation)
         hand = sanitize_input(hand, max_length=50)
         if board:
             board = sanitize_input(board, max_length=50)
@@ -326,15 +444,18 @@ class ProductionDatabase:
                     with conn.cursor() as cursor:
                         cursor.execute(
                             """INSERT INTO poker_hands
-                            (hand_text, board_text, analysis_result, user_hash, session_id, metadata)
-                            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-                            (hand, board, result, user_hash, session_id, metadata_json)
+                            (hand_text, board_text, analysis_result, user_hash, session_id,
+                             confidence_score, bet_size_ratio, pot_size, player_position, metadata)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                            (hand, board, result, user_hash, session_id, confidence_score,
+                             bet_size_ratio, pot_size, player_position, metadata_json)
                         )
                         result_id = cursor.fetchone()[0]
                         conn.commit()
                         return result_id
             else:
-                return self.sqlite_db.save_hand_analysis(hand, board, result, session_id)
+                return self.sqlite_db.save_hand_analysis(hand, board, result, session_id,
+                                                        confidence_score, bet_size_ratio, pot_size, player_position)
 
     def get_recent_hands(self, limit: int = 100, offset: int = 0,
                         user_hash: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -350,7 +471,8 @@ class ProductionDatabase:
                     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                         if user_hash:
                             cursor.execute(
-                                """SELECT id, hand_text, board_text, analysis_result, timestamp, metadata
+                                """SELECT id, hand_text, board_text, analysis_result, timestamp,
+                                          confidence_score, bet_size_ratio, pot_size, player_position, metadata
                                 FROM poker_hands
                                 WHERE user_hash = %s
                                 ORDER BY timestamp DESC
@@ -359,7 +481,8 @@ class ProductionDatabase:
                             )
                         else:
                             cursor.execute(
-                                """SELECT id, hand_text, board_text, analysis_result, timestamp, metadata
+                                """SELECT id, hand_text, board_text, analysis_result, timestamp,
+                                          confidence_score, bet_size_ratio, pot_size, player_position, metadata
                                 FROM poker_hands
                                 ORDER BY timestamp DESC
                                 LIMIT %s OFFSET %s""",
@@ -462,9 +585,38 @@ class PokerDatabase:
         self.db = SecureDatabase(db_path)
 
     def save_hand_analysis(self, hand: str, board: Optional[str], result: str,
-                          session_id: Optional[str] = None) -> int:
-        """Save hand analysis to database."""
-        return self.db.save_hand_analysis(hand, board, result, session_id)
+                          session_id: Optional[str] = None,
+                          confidence_score: Optional[float] = None,
+                          bet_size_ratio: Optional[float] = None,
+                          pot_size: Optional[float] = None,
+                          player_position: Optional[str] = None) -> int:
+        """
+        Save hand analysis to database with validation.
+
+        Args:
+            hand: The hand to analyze
+            board: The board cards
+            result: The analysis result
+            session_id: Optional session identifier
+            confidence_score: Detection confidence (0.0-1.0), None if unknown
+            bet_size_ratio: Bet size as ratio of pot (bet/pot), None if no bet
+            pot_size: Total pot size, None if unknown
+            player_position: Player position (BTN, SB, BB, UTG, etc.), None if unknown
+
+        Returns:
+            The ID of the inserted record
+        """
+        from .data_validation import validate_before_insert, ValidationError
+
+        # Validate before insert
+        try:
+            validate_before_insert(hand, board, result, session_id, None)
+        except ValidationError as e:
+            logger.error(f"Data validation failed: {e}")
+            raise ValueError(f"Invalid data for insertion: {e}")
+
+        return self.db.save_hand_analysis(hand, board, result, session_id,
+                                         confidence_score, bet_size_ratio, pot_size, player_position)
 
     def get_recent_hands(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """Get recent hands from database."""

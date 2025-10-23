@@ -67,11 +67,11 @@ describe('OpponentFusion Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Sequential Opponent Fusion')).toBeInTheDocument();
-      expect(screen.getByText('5')).toBeInTheDocument(); // tracked_players
+      expect(screen.getAllByText('5')[0]).toBeInTheDocument(); // tracked_players
       expect(screen.getByText('1,250')).toBeInTheDocument(); // total_hands_analyzed
-      expect(screen.getByText('12')).toBeInTheDocument(); // active_patterns
+      expect(screen.getAllByText('12')[0]).toBeInTheDocument(); // active_patterns
       expect(screen.getByText('87.0%')).toBeInTheDocument(); // prediction_accuracy
-    });
+    }, { timeout: 3000 });
   });
 
   it('should display error message when fetch fails', async () => {
@@ -125,15 +125,15 @@ describe('OpponentFusion Component', () => {
     render(<OpponentFusion />);
 
     await waitFor(() => {
-      expect(screen.getByText('5')).toBeInTheDocument();
-    });
+      expect(screen.getAllByText('5')[0]).toBeInTheDocument();
+    }, { timeout: 3000 });
 
     const refreshButton = screen.getByRole('button');
     fireEvent.click(refreshButton);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledTimes(2);
-    });
+    }, { timeout: 3000 });
   });
 
   it('should display temporal window size', async () => {

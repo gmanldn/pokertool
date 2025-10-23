@@ -8,16 +8,29 @@ This guide helps you set up PokerTool from absolutely nothing, including install
 
 ### 🍎 macOS
 ```bash
-./first_run_mac.sh
+# Run from project root
+./scripts/first_run_mac.sh
+
+# Or from scripts directory
+cd scripts && ./first_run_mac.sh
 ```
 
 ### 🐧 Linux
 ```bash
-./first_run_linux.sh
+# Run from project root
+./scripts/first_run_linux.sh
+
+# Or from scripts directory
+cd scripts && ./first_run_linux.sh
 ```
 
 ### 🪟 Windows
 ```powershell
+# Run from project root
+.\scripts\first_run_windows.ps1
+
+# Or from scripts directory
+cd scripts
 .\first_run_windows.ps1
 ```
 
@@ -25,7 +38,7 @@ This guide helps you set up PokerTool from absolutely nothing, including install
 
 ## What These Scripts Do
 
-The first-run scripts perform a complete bootstrap:
+The first-run scripts are located in the `scripts/` directory and automatically navigate to the project root before executing. They perform a complete bootstrap:
 
 1. ✅ **Check for Python 3.8+**
    - If not found, automatically installs Python
@@ -80,7 +93,8 @@ brew install python@3.11
 # Install dependencies
 brew install tesseract node
 
-# Run PokerTool
+# Navigate to project root and run PokerTool
+cd /path/to/pokertool
 python3 start.py
 ```
 
@@ -113,6 +127,7 @@ sudo apt-get install -y python3 python3-pip python3-venv \
     build-essential python3-dev tesseract-ocr \
     libopencv-dev python3-opencv
 
+cd /path/to/pokertool
 python3 start.py
 ```
 
@@ -121,6 +136,7 @@ python3 start.py
 sudo dnf install -y python3 python3-pip python3-devel \
     gcc gcc-c++ make tesseract opencv-devel
 
+cd /path/to/pokertool
 python3 start.py
 ```
 
@@ -129,6 +145,7 @@ python3 start.py
 sudo pacman -S python python-pip base-devel \
     tesseract opencv python-opencv
 
+cd /path/to/pokertool
 python3 start.py
 ```
 
@@ -553,5 +570,5 @@ After successful installation:
 
 ---
 
-**Last Updated:** October 2, 2025  
-**PokerTool Version:** 28.0.0
+**Last Updated:** October 21, 2025
+**PokerTool Version:** 100.0.0

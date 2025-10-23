@@ -463,7 +463,7 @@ def handle_errors(
     error_code: Optional[str] = None,
     category: ErrorCategory = ErrorCategory.UNKNOWN,
     user_message: Optional[str] = None
-):
+) -> Callable:
     """
     Decorator to handle errors in functions.
 

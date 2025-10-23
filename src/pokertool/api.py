@@ -74,7 +74,7 @@ try:
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
     from fastapi.responses import JSONResponse
     from fastapi.websockets import WebSocketState
-    from pydantic import BaseModel, Field, validator
+    from pydantic import BaseModel, Field, field_validator
     from slowapi import Limiter, _rate_limit_exceeded_handler
     from slowapi.util import get_remote_address
     from slowapi.errors import RateLimitExceeded
@@ -124,6 +124,7 @@ from .production_database import get_production_db
 from .scrape import get_scraper_status, run_screen_scraper, stop_screen_scraper
 from .thread_utils import get_thread_pool, TaskPriority
 from .error_handling import SecurityError, retry_on_failure
+from .error_middleware import register_error_handlers
 
 if TYPE_CHECKING:  # pragma: no cover - for type hints only
     from .analytics_dashboard import AnalyticsDashboard, UsageEvent, PrivacySettings
@@ -171,7 +172,23 @@ if FASTAPI_AVAILABLE:
         to_call: Optional[float] = Field(None, description='Amount to call', ge=0)
         num_players: Optional[int] = Field(None, description='Number of active players', ge=2, le=10)
 
-        @validator('hand')
+        model_config = {
+            "json_schema_extra": {
+                "examples": [
+                    {
+                        "hand": "AsKh",
+                        "board": "AdKcQh",
+                        "position": "BTN",
+                        "pot_size": 100.0,
+                        "to_call": 25.0,
+                        "num_players": 6
+                    }
+                ]
+            }
+        }
+
+        @field_validator('hand')
+        @classmethod
         def validate_hand(cls, v):
             """Validate hand format."""
             import re
@@ -179,7 +196,8 @@ if FASTAPI_AVAILABLE:
                 raise ValueError('Invalid hand format')
             return v
 
-        @validator('board')
+        @field_validator('board')
+        @classmethod
         def validate_board(cls, v):
             """Validate board format."""
             if v is None:
@@ -198,6 +216,27 @@ if FASTAPI_AVAILABLE:
         recommendation: Optional[str] = None
         metadata: Dict[str, Any] = Field(default_factory=dict)
         timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+        model_config = {
+            "json_schema_extra": {
+                "examples": [
+                    {
+                        "hand": "AsKh",
+                        "board": "AdKcQh",
+                        "analysis": "Strong top two pair with nut flush draw. Villain likely has weaker kings or flush draws.",
+                        "equity": 0.78,
+                        "recommendation": "Bet 75% pot for value",
+                        "metadata": {
+                            "user_id": "user123",
+                            "position": "BTN",
+                            "pot_size": 100.0,
+                            "api_version": "1.0.0"
+                        },
+                        "timestamp": "2025-10-22T12:34:56Z"
+                    }
+                ]
+            }
+        }
 
     class RUMMetricPayload(BaseModel):
         """Payload describing a single frontend performance metric."""
@@ -235,6 +274,19 @@ if FASTAPI_AVAILABLE:
         password: str = Field(..., min_length=8)
         role: UserRole = UserRole.USER
 
+        model_config = {
+            "json_schema_extra": {
+                "examples": [
+                    {
+                        "username": "pokerpro123",
+                        "email": "pokerpro@example.com",
+                        "password": "SecurePass123!",
+                        "role": "user"
+                    }
+                ]
+            }
+        }
+
     class Token(BaseModel):
         """Token response model."""
         access_token: str
@@ -242,12 +294,43 @@ if FASTAPI_AVAILABLE:
         expires_in: int
         user_role: UserRole
 
+        model_config = {
+            "json_schema_extra": {
+                "examples": [
+                    {
+                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "token_type": "bearer",
+                        "expires_in": 3600,
+                        "user_role": "user"
+                    }
+                ]
+            }
+        }
+
     class ScraperStatus(BaseModel):
         """Screen scraper status model."""
         initialized: bool
         running: bool
         available: bool
         last_state: Optional[Dict[str, Any]] = None
+
+        model_config = {
+            "json_schema_extra": {
+                "examples": [
+                    {
+                        "initialized": True,
+                        "running": True,
+                        "available": True,
+                        "last_state": {
+                            "table_name": "NL100 6-max",
+                            "players": 6,
+                            "pot": 45.50,
+                            "last_update": "2025-10-22T12:34:56Z"
+                        }
+                    }
+                ]
+            }
+        }
 
     class DatabaseStats(BaseModel):
         """Database statistics model."""
@@ -865,12 +948,18 @@ This API implements comprehensive security measures including:
                 {'name': 'admin', 'description': 'Administrative endpoints (admin only)'},
                 {'name': 'AI & LangChain', 'description': 'AI-powered hand analysis and conversational poker coaching'}
             ],
+            docs_url='/api/docs',
+            redoc_url='/api/redoc',
+            openapi_url='/api/openapi.json',
             swagger_ui_parameters={
                 'docExpansion': 'none',
                 'filter': True,
                 'syntaxHighlight.theme': 'monokai'
             }
         )
+
+        # Register centralized error handlers
+        register_error_handlers(self.app)
 
         self._setup_sentry()
         self._setup_tracing()
@@ -1165,13 +1254,34 @@ This API implements comprehensive security measures including:
         self._health_cache_at = 0.0
         self._health_cache_ttl = float(os.getenv('SYSTEM_HEALTH_TTL_SECONDS', '5'))
 
-        @self.app.get('/health', tags=['health'], summary='Health Check')
-        async def health_check():
-            """
-            Basic health check endpoint to verify API is running.
+        @self.app.get(
+            '/health',
+            tags=['health'],
+            summary='Basic Health Check',
+            description='''
+            Quick health check endpoint to verify the API is running.
 
-            Returns a simple status message with timestamp.
-            """
+            Returns a simple status message with timestamp. No authentication required.
+
+            Use `/api/system/health` for detailed system health including database,
+            cache, and component status.
+            ''',
+            responses={
+                200: {
+                    "description": "API is healthy",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "status": "healthy",
+                                "timestamp": "2025-10-22T12:34:56Z"
+                            }
+                        }
+                    }
+                }
+            }
+        )
+        async def health_check():
+            """Basic health check endpoint to verify API is running."""
             return {'status': 'healthy', 'timestamp': datetime.utcnow()}
 
         # Backend Startup Status Endpoints
@@ -1647,7 +1757,37 @@ This API implements comprehensive security measures including:
                 }
 
         # Authentication endpoints
-        @self.app.post('/auth/token', response_model=Token, tags=['auth'], summary='Login')
+        @self.app.post(
+            '/auth/token',
+            response_model=Token,
+            tags=['auth'],
+            summary='Authenticate User',
+            description='''
+            Authenticate a user with username and password credentials.
+
+            Returns a JWT access token that should be included in the Authorization header
+            for subsequent API requests as: `Bearer <token>`
+
+            **Rate Limit:** 10 requests per minute per IP
+            ''',
+            responses={
+                200: {
+                    "description": "Successfully authenticated",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                "token_type": "bearer",
+                                "expires_in": 3600,
+                                "user_role": "user"
+                            }
+                        }
+                    }
+                },
+                401: {"description": "Invalid credentials"},
+                429: {"description": "Rate limit exceeded"}
+            }
+        )
         @self.services.limiter.limit('10/minute')
         async def login(request: Request, username: str, password: str):
             user = self.services.auth_service.get_user_by_credentials(username, password)
@@ -1674,9 +1814,46 @@ This API implements comprehensive security measures including:
             return {'message': f'User {user.username} created successfully', 'user_id': user.user_id}
 
         # Hand analysis endpoints
-        @self.app.post('/analyze/hand', response_model=HandAnalysisResponse)
+        @self.app.post(
+            '/analyze/hand',
+            response_model=HandAnalysisResponse,
+            tags=['analysis'],
+            summary='Analyze Poker Hand',
+            description='''
+            Analyze a poker hand and get GTO-based recommendations.
+
+            Provide your hole cards, optionally the board, and game context (position, pot size, etc.)
+            to receive detailed analysis including equity calculations, hand strength assessment,
+            and strategic recommendations.
+
+            **Authentication Required:** Bearer token
+
+            **Rate Limit:** 100 requests per minute
+            ''',
+            responses={
+                200: {
+                    "description": "Hand analysis completed successfully",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "hand": "AsKh",
+                                "board": "AdKcQh",
+                                "analysis": "Strong top two pair with nut flush draw",
+                                "equity": 0.78,
+                                "recommendation": "Bet 75% pot for value",
+                                "metadata": {"user_id": "user123", "position": "BTN"},
+                                "timestamp": "2025-10-22T12:34:56Z"
+                            }
+                        }
+                    }
+                },
+                400: {"description": "Invalid hand or board format"},
+                401: {"description": "Authentication required"},
+                500: {"description": "Analysis failed"}
+            }
+        )
         @self.services.limiter.limit('100/minute')
-        async def analyze_hand(request, analysis_request: HandAnalysisRequest, 
+        async def analyze_hand(request, analysis_request: HandAnalysisRequest,
                               user: APIUser = Depends(get_current_user)):
 
             # Import analysis function
@@ -2444,6 +2621,22 @@ This API implements comprehensive security measures including:
             logger.info("LangChain AI router integrated successfully")
         except ImportError as e:
             logger.warning(f"LangChain AI router not available: {e}")
+
+        # Include SmartHelper router
+        try:
+            from pokertool.api_smarthelper import router as smarthelper_router
+            self.app.include_router(smarthelper_router)
+            logger.info("SmartHelper router integrated successfully")
+        except ImportError as e:
+            logger.warning(f"SmartHelper router not available: {e}")
+
+        # Include Improve router
+        try:
+            from pokertool.api_improve import router as improve_router
+            self.app.include_router(improve_router)
+            logger.info("Improve router integrated successfully")
+        except ImportError as e:
+            logger.warning(f"Improve router not available: {e}")
 
 # Global API instance
 _api_instance: Optional[PokerToolAPI] = None

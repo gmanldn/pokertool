@@ -120,7 +120,19 @@ if HAS_APPKIT:
             return True
 
 def setup_dock_icon():
-    """Set up macOS dock icon (if on macOS and PyObjC is available)."""
+    """
+    Set up macOS dock icon (if on macOS and PyObjC is available).
+
+    This function ensures the dock icon is always visible by:
+    1. Setting NSApplicationActivationPolicyRegular
+    2. Creating and configuring the NSApplication
+    3. Setting up a delegate to handle dock icon clicks
+    4. Loading a custom icon if available
+    5. Activating the application to make it visible in the dock
+
+    Returns:
+        NSApplication instance if successful, None otherwise
+    """
     global _status_window
 
     if not IS_MACOS or not HAS_APPKIT:
@@ -133,9 +145,18 @@ def setup_dock_icon():
         # Create status window instance
         _status_window = StatusWindow(api_url="http://localhost:5001")
 
-        # Set up NSApplication
+        # Set up NSApplication - this is the key to making the dock icon appear
         app = NSApplication.sharedApplication()
+
+        # CRITICAL: Set activation policy to Regular to ensure dock icon appears
+        # NSApplicationActivationPolicyRegular = 0 (normal application with dock icon)
+        # This must be set BEFORE any other app configuration
         app.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+
+        # Verify the activation policy was set correctly
+        current_policy = app.activationPolicy()
+        if current_policy != NSApplicationActivationPolicyRegular:
+            log(f"⚠️  Warning: Activation policy is {current_policy}, expected {NSApplicationActivationPolicyRegular}")
 
         # Set up delegate to handle dock icon clicks
         delegate = AppDelegate.alloc().init()
@@ -147,13 +168,31 @@ def setup_dock_icon():
             icon = NSImage.alloc().initWithContentsOfFile_(str(icon_path))
             if icon:
                 app.setApplicationIconImage_(icon)
+                log(f"✓ Custom dock icon loaded from {icon_path}")
+            else:
+                log(f"⚠️  Could not load custom icon from {icon_path}")
+        else:
+            log(f"ℹ️  No custom icon found at {icon_path}, using default Python icon")
 
-        # Activate the app to show in dock
+        # CRITICAL: Activate the app to make it visible in dock
+        # This forces the application to the front and ensures dock icon appears
         app.activateIgnoringOtherApps_(True)
 
+        # Set app name (appears in menu bar and dock tooltip)
+        from Foundation import NSBundle
+        bundle = NSBundle.mainBundle()
+        if bundle:
+            info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
+            if info:
+                info['CFBundleName'] = 'PokerTool'
+                info['CFBundleDisplayName'] = 'PokerTool'
+
+        log("✓ Dock icon setup completed successfully")
         return app
     except Exception as e:
         log(f"⚠️  Could not set up dock icon: {e}")
+        import traceback
+        log(f"Traceback: {traceback.format_exc()}")
         return None
 
 def clear_terminal():
@@ -274,6 +313,36 @@ def run_tests() -> int:
     log("✓ Test suite completed")
     return 0
 
+def cleanup_old_threads():
+    """Clean up any orphaned threads from previous runs."""
+    import threading
+
+    try:
+        # Get all currently running threads
+        all_threads = threading.enumerate()
+        main_thread = threading.main_thread()
+
+        # Count non-daemon threads (excluding main)
+        non_daemon_threads = [t for t in all_threads if not t.daemon and t != main_thread]
+
+        if non_daemon_threads:
+            log(f"Found {len(non_daemon_threads)} non-daemon threads from previous session")
+            for thread in non_daemon_threads:
+                log(f"  - {thread.name} (alive: {thread.is_alive()})")
+
+        # Clean up any thread manager state
+        try:
+            from pokertool.thread_manager import cleanup_dead_threads
+            cleaned = cleanup_dead_threads()
+            if cleaned > 0:
+                log(f"✓ Cleaned up {cleaned} dead threads")
+        except ImportError:
+            pass
+
+        log("✓ Thread cleanup complete")
+    except Exception as e:
+        log(f"⚠️  Thread cleanup warning: {e}")
+
 def cleanup_old_processes():
     """Kill any old pokertool/GUI processes before starting (including stuck ones)."""
     import time
@@ -282,6 +351,9 @@ def cleanup_old_processes():
     try:
         current_pid = os.getpid()
         log("Cleaning up previous pokertool/GUI instances...")
+
+        # First, clean up any orphaned threads
+        cleanup_old_threads()
 
         if IS_WINDOWS:
             # Windows: Kill any pokertool GUI processes

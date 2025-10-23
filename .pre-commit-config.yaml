@@ -59,6 +59,32 @@ repos:
         args: ['-c', '.bandit.yml']
         files: ^src/
 
+  # Secret detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package-lock.json
+
+  # Dead code detection with vulture (warning only, non-blocking)
+  - repo: local
+    hooks:
+      - id: vulture-check
+        name: vulture (dead code detection)
+        entry: bash -c 'vulture src/pokertool --min-confidence 80 --exclude tests/ || echo "⚠️  Dead code detected. See docs/DEAD_CODE_ANALYSIS.md for details. This is non-blocking."'
+        language: system
+        pass_filenames: false
+        verbose: true
+
+      - id: check-unused-imports
+        name: check for unused imports (Python)
+        entry: bash -c 'python3 -m autoflake --check --remove-all-unused-imports --recursive src/pokertool/ || echo "⚠️  Unused imports detected. Run: autoflake --remove-all-unused-imports --in-place --recursive src/pokertool/"'
+        language: system
+        types: [python]
+        pass_filenames: false
+        verbose: true
+
   # JavaScript/TypeScript formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8

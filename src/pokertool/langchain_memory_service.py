@@ -31,6 +31,17 @@ except ImportError:
     # Create a simple in-memory buffer for compatibility
     ConversationBufferMemory = None
 
+# LLM imports
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    ChatOpenAI = None
+
+try:
+    from langchain_anthropic import ChatAnthropic
+except ImportError:
+    ChatAnthropic = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -359,13 +370,15 @@ class LangChainMemoryService:
     Main service for LangChain-powered poker hand analysis.
 
     Combines vector store and conversational memory for comprehensive
-    poker analysis capabilities.
+    poker analysis capabilities with LLM integration.
     """
 
     def __init__(
         self,
         persist_directory: Optional[str] = None,
-        enable_logging: bool = True
+        enable_logging: bool = True,
+        llm_provider: Optional[str] = None,
+        api_key: Optional[str] = None
     ):
         """
         Initialize the LangChain memory service.
@@ -373,14 +386,68 @@ class LangChainMemoryService:
         Args:
             persist_directory: Directory for vector database persistence
             enable_logging: Whether to enable detailed logging
+            llm_provider: LLM provider ("openai" or "anthropic", auto-detected if None)
+            api_key: API key for LLM provider (uses env var if None)
         """
         if enable_logging:
             logging.basicConfig(level=logging.INFO)
 
         self.vector_store = PokerVectorStore(persist_directory=persist_directory)
         self.conversational_memory = PokerConversationalMemory()
-
+        
+        # Initialize LLM
+        self.llm = self._initialize_llm(llm_provider, api_key)
+        
         logger.info("LangChain Memory Service initialized")
+
+    def _initialize_llm(
+        self,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None
+    ) -> Optional[Any]:
+        """
+        Initialize the LLM based on available API keys and provider preference.
+
+        Args:
+            provider: Preferred provider ("openai" or "anthropic")
+            api_key: API key (will check env vars if not provided)
+
+        Returns:
+            Initialized LLM instance or None if not available
+        """
+        # Check environment variables for API keys
+        openai_key = api_key if provider == "openai" else os.getenv("OPENAI_API_KEY")
+        anthropic_key = api_key if provider == "anthropic" else os.getenv("ANTHROPIC_API_KEY")
+        
+        # Try to initialize based on preference or availability
+        if provider == "openai" or (provider is None and openai_key and ChatOpenAI):
+            try:
+                llm = ChatOpenAI(
+                    model="gpt-4-turbo-preview",
+                    temperature=0.7,
+                    api_key=openai_key,
+                    max_tokens=1000
+                )
+                logger.info("Initialized OpenAI GPT-4 LLM")
+                return llm
+            except Exception as e:
+                logger.warning(f"Failed to initialize OpenAI LLM: {e}")
+        
+        if provider == "anthropic" or (provider is None and anthropic_key and ChatAnthropic):
+            try:
+                llm = ChatAnthropic(
+                    model="claude-3-sonnet-20240229",
+                    temperature=0.7,
+                    api_key=anthropic_key,
+                    max_tokens=1000
+                )
+                logger.info("Initialized Anthropic Claude LLM")
+                return llm
+            except Exception as e:
+                logger.warning(f"Failed to initialize Anthropic LLM: {e}")
+        
+        logger.warning("No LLM provider available. Set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.")
+        return None
 
     def analyze_hand(
         self,
@@ -434,28 +501,111 @@ class LangChainMemoryService:
         context: Optional[str] = None
     ) -> str:
         """
-        Chat interface for poker questions.
+        Chat interface for poker questions with LLM integration.
 
         Args:
             user_query: User's question
             context: Optional additional context
 
         Returns:
-            Response (placeholder for now, will integrate with LLM)
+            AI-generated response based on query and poker knowledge
         """
-        # Find relevant hands
+        # Find relevant hands from vector store
         similar_hands = self.vector_store.query_similar_hands(user_query, n_results=3)
 
-        # Build response with context
-        response = f"Query: {user_query}\n\n"
+        # Build context for LLM
+        context_parts = []
+        
+        # Add conversation history
+        conv_context = self.conversational_memory.get_context()
+        if conv_context and conv_context != "No conversation history":
+            context_parts.append(f"Previous conversation:\n{conv_context}\n")
+        
+        # Add similar hands from history
         if similar_hands:
-            response += "Relevant hands from your history:\n"
-            for hand in similar_hands:
-                response += f"- {hand['text'][:100]}...\n"
+            context_parts.append("Relevant hands from your history:")
+            for i, hand in enumerate(similar_hands, 1):
+                hand_info = f"{i}. {hand['text']}"
+                if hand.get('metadata'):
+                    meta = hand['metadata']
+                    if 'position' in meta:
+                        hand_info += f" (Position: {meta['position']})"
+                    if 'result' in meta:
+                        hand_info += f" (Result: {meta['result']})"
+                context_parts.append(hand_info)
+            context_parts.append("")
+        
+        # Add custom context if provided
+        if context:
+            context_parts.append(f"Additional context:\n{context}\n")
+        
+        full_context = "\n".join(context_parts)
+        
+        # Generate response with LLM if available
+        if self.llm:
+            try:
+                # Create prompt for poker analysis
+                system_prompt = (
+                    "You are an expert poker coach and analyst. Provide strategic advice, "
+                    "hand analysis, and answer questions about poker strategy. Use the context "
+                    "provided from the player's hand history when relevant. Be concise but thorough."
+                )
+                
+                messages = [
+                    {"role": "system", "content": system_prompt}
+                ]
+                
+                if full_context:
+                    messages.append({"role": "system", "content": full_context})
+                
+                messages.append({"role": "user", "content": user_query})
+                
+                # Get LLM response
+                response_obj = self.llm.invoke(messages)
+                response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
+                
+                logger.info(f"Generated LLM response for query: {user_query[:50]}...")
+            except Exception as e:
+                logger.error(f"LLM invocation failed: {e}")
+                response = self._fallback_response(user_query, similar_hands, full_context)
+        else:
+            # Fallback when no LLM available
+            response = self._fallback_response(user_query, similar_hands, full_context)
 
         # Store in conversational memory
         self.conversational_memory.add_exchange(user_query, response)
 
+        return response
+    
+    def _fallback_response(
+        self,
+        query: str,
+        similar_hands: List[Dict[str, Any]],
+        context: str
+    ) -> str:
+        """
+        Generate a fallback response when LLM is not available.
+
+        Args:
+            query: User's question
+            similar_hands: Similar hands from vector store
+            context: Context string
+
+        Returns:
+            Basic response with context
+        """
+        response = f"Query: {query}\n\n"
+        response += "Note: LLM not configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY for AI analysis.\n\n"
+        
+        if similar_hands:
+            response += "Found relevant hands from your history:\n"
+            for i, hand in enumerate(similar_hands, 1):
+                response += f"{i}. {hand['text'][:150]}...\n"
+                if hand.get('metadata'):
+                    response += f"   Metadata: {json.dumps(hand['metadata'], indent=2)}\n"
+        else:
+            response += "No similar hands found in your history.\n"
+        
         return response
 
     def get_stats(self) -> Dict[str, Any]:

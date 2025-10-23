@@ -36,6 +36,7 @@ export default defineConfig({
 
   // Configure projects for major browsers
   projects: [
+    // Chrome
     {
       name: 'chromium-light',
       use: {
@@ -47,6 +48,54 @@ export default defineConfig({
       name: 'chromium-dark',
       use: {
         ...devices['Desktop Chrome'],
+        colorScheme: 'dark',
+      },
+    },
+
+    // Firefox
+    {
+      name: 'firefox-light',
+      use: {
+        ...devices['Desktop Firefox'],
+        colorScheme: 'light',
+      },
+    },
+    {
+      name: 'firefox-dark',
+      use: {
+        ...devices['Desktop Firefox'],
+        colorScheme: 'dark',
+      },
+    },
+
+    // Safari (WebKit)
+    {
+      name: 'webkit-light',
+      use: {
+        ...devices['Desktop Safari'],
+        colorScheme: 'light',
+      },
+    },
+    {
+      name: 'webkit-dark',
+      use: {
+        ...devices['Desktop Safari'],
+        colorScheme: 'dark',
+      },
+    },
+
+    // Edge
+    {
+      name: 'edge-light',
+      use: {
+        ...devices['Desktop Edge'],
+        colorScheme: 'light',
+      },
+    },
+    {
+      name: 'edge-dark',
+      use: {
+        ...devices['Desktop Edge'],
         colorScheme: 'dark',
       },
     },

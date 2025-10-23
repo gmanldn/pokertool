@@ -36,6 +36,7 @@ from __future__ import annotations
 import sqlite3
 import zlib
 import json
+import logging
 import time
 import threading
 import os
@@ -46,6 +47,8 @@ from functools import wraps
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 # Optional dependency for system metrics
 try:
@@ -303,7 +306,7 @@ class PerformanceTelemetry:
                     """, [entry.to_db_tuple() for entry in entries])
                     conn.commit()
             except Exception as e:
-                print(f"Telemetry flush error: {e}")
+                logger.error(f"Telemetry flush error: {e}", exc_info=True)
 
     def _flush_loop(self):
         """Background thread to flush buffer periodically."""
@@ -341,7 +344,7 @@ class PerformanceTelemetry:
                     conn.execute("VACUUM")
                     conn.commit()
             except Exception as e:
-                print(f"Telemetry cleanup error: {e}")
+                logger.error(f"Telemetry cleanup error: {e}", exc_info=True)
 
     def shutdown(self):
         """Shutdown telemetry system."""
@@ -380,6 +383,658 @@ class PerformanceTelemetry:
                     }
             except Exception as e:
                 return {'error': str(e)}
+
+
+class DetectionFPSCounter:
+    """
+    FPS counter for detection operations with per-type tracking.
+
+    Tracks frame times over a sliding window and calculates FPS metrics.
+    Thread-safe and minimal overhead.
+
+    Usage:
+        fps_counter = DetectionFPSCounter(window_size=100)
+        fps_counter.record_frame('card_detection')
+        metrics = fps_counter.get_metrics('card_detection')
+        # {'fps': 25.3, 'avg_fps': 24.8, 'min_fps': 20.1, 'max_fps': 29.5, 'frame_count': 100}
+    """
+
+    def __init__(self, window_size: int = 100):
+        """
+        Initialize FPS counter.
+
+        Args:
+            window_size: Number of frames to track in sliding window
+        """
+        self.window_size = window_size
+        self.frame_times: Dict[str, List[float]] = {}  # detection_type -> [timestamps]
+        self.lock = threading.Lock()
+        self.start_time = time.time()
+
+    def record_frame(self, detection_type: str = 'default'):
+        """
+        Record a frame for the given detection type.
+
+        Args:
+            detection_type: Type of detection (e.g., 'card_detection', 'player_detection', 'pot_detection')
+        """
+        with self.lock:
+            if detection_type not in self.frame_times:
+                self.frame_times[detection_type] = []
+
+            self.frame_times[detection_type].append(time.time())
+
+            # Keep only the last window_size frames
+            if len(self.frame_times[detection_type]) > self.window_size:
+                self.frame_times[detection_type].pop(0)
+
+    def get_metrics(self, detection_type: str = 'default') -> Dict[str, Any]:
+        """
+        Get FPS metrics for the given detection type.
+
+        Args:
+            detection_type: Type of detection to get metrics for
+
+        Returns:
+            Dict with keys: fps, avg_fps, min_fps, max_fps, frame_count, uptime_seconds
+        """
+        with self.lock:
+            if detection_type not in self.frame_times or len(self.frame_times[detection_type]) < 2:
+                return {
+                    'fps': 0.0,
+                    'avg_fps': 0.0,
+                    'min_fps': 0.0,
+                    'max_fps': 0.0,
+                    'frame_count': 0,
+                    'uptime_seconds': time.time() - self.start_time
+                }
+
+            times = self.frame_times[detection_type]
+            frame_count = len(times)
+
+            # Calculate frame deltas
+            deltas = [times[i] - times[i-1] for i in range(1, len(times))]
+
+            # Current FPS (from last frame delta)
+            current_fps = 1.0 / deltas[-1] if deltas[-1] > 0 else 0.0
+
+            # Average FPS over the window
+            total_time = times[-1] - times[0]
+            avg_fps = (frame_count - 1) / total_time if total_time > 0 else 0.0
+
+            # Min/Max FPS from deltas
+            min_fps = 1.0 / max(deltas) if deltas and max(deltas) > 0 else 0.0
+            max_fps = 1.0 / min(deltas) if deltas and min(deltas) > 0 else 0.0
+
+            return {
+                'fps': round(current_fps, 2),
+                'avg_fps': round(avg_fps, 2),
+                'min_fps': round(min_fps, 2),
+                'max_fps': round(max_fps, 2),
+                'frame_count': frame_count,
+                'uptime_seconds': round(time.time() - self.start_time, 2)
+            }
+
+    def get_all_metrics(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Get FPS metrics for all detection types.
+
+        Returns:
+            Dict mapping detection_type to metrics dict
+        """
+        with self.lock:
+            detection_types = list(self.frame_times.keys())
+
+        return {dt: self.get_metrics(dt) for dt in detection_types}
+
+    def reset(self, detection_type: Optional[str] = None):
+        """
+        Reset FPS counter for given type or all types.
+
+        Args:
+            detection_type: Type to reset, or None to reset all
+        """
+        with self.lock:
+            if detection_type:
+                if detection_type in self.frame_times:
+                    self.frame_times[detection_type] = []
+            else:
+                self.frame_times = {}
+                self.start_time = time.time()
+
+    def log_metrics(self, detection_type: Optional[str] = None, logger_instance: Optional[logging.Logger] = None):
+        """
+        Log FPS metrics to logger.
+
+        Args:
+            detection_type: Specific type to log, or None for all types
+            logger_instance: Logger to use, or None for module logger
+        """
+        log = logger_instance or logger
+
+        if detection_type:
+            metrics = self.get_metrics(detection_type)
+            log.info(f"FPS [{detection_type}]: {metrics['fps']:.1f} current, {metrics['avg_fps']:.1f} avg, "
+                    f"{metrics['min_fps']:.1f} min, {metrics['max_fps']:.1f} max ({metrics['frame_count']} frames)")
+        else:
+            all_metrics = self.get_all_metrics()
+            for dt, metrics in all_metrics.items():
+                log.info(f"FPS [{dt}]: {metrics['fps']:.1f} current, {metrics['avg_fps']:.1f} avg, "
+                        f"{metrics['min_fps']:.1f} min, {metrics['max_fps']:.1f} max ({metrics['frame_count']} frames)")
+
+
+# Global FPS counter instance
+_fps_counter_instance: Optional[DetectionFPSCounter] = None
+_fps_counter_lock = threading.Lock()
+
+
+def get_fps_counter() -> DetectionFPSCounter:
+    """Get or create global FPS counter instance."""
+    global _fps_counter_instance
+
+    with _fps_counter_lock:
+        if _fps_counter_instance is None:
+            _fps_counter_instance = DetectionFPSCounter()
+        return _fps_counter_instance
+
+
+def reset_fps_counter(detection_type: Optional[str] = None):
+    """Reset global FPS counter."""
+    global _fps_counter_instance
+
+    with _fps_counter_lock:
+        if _fps_counter_instance:
+            _fps_counter_instance.reset(detection_type)
+
+
+class DetectionCPUTracker:
+    """
+    CPU usage tracker for detection operations with per-type tracking.
+
+    Tracks CPU percentage and execution time for different detection types
+    (OCR, template matching, etc.) using process-level metrics.
+
+    Usage:
+        cpu_tracker = DetectionCPUTracker()
+
+        # Track CPU for a detection operation
+        with cpu_tracker.track('ocr_detection'):
+            perform_ocr()
+
+        # Get metrics
+        metrics = cpu_tracker.get_metrics('ocr_detection')
+        # {'cpu_percent': 15.3, 'total_time_ms': 1234.5, 'call_count': 50, 'avg_time_ms': 24.7}
+    """
+
+    def __init__(self, window_size: int = 100):
+        """
+        Initialize CPU tracker.
+
+        Args:
+            window_size: Number of samples to track in sliding window
+        """
+        self.window_size = window_size
+        self.cpu_samples: Dict[str, List[float]] = {}  # detection_type -> [cpu_percentages]
+        self.execution_times: Dict[str, List[float]] = {}  # detection_type -> [execution_ms]
+        self.call_counts: Dict[str, int] = {}  # detection_type -> count
+        self.lock = threading.Lock()
+        self.process = psutil.Process() if PSUTIL_AVAILABLE else None
+        self.start_time = time.time()
+
+    @contextmanager
+    def track(self, detection_type: str = 'default'):
+        """
+        Context manager to track CPU usage for a detection operation.
+
+        Args:
+            detection_type: Type of detection (e.g., 'ocr', 'template_matching', 'color_detection')
+
+        Example:
+            with cpu_tracker.track('ocr_detection'):
+                result = perform_ocr(image)
+        """
+        start_time = time.time()
+        start_cpu = self.process.cpu_percent(interval=None) if self.process else 0.0
+
+        try:
+            yield
+        finally:
+            end_time = time.time()
+            end_cpu = self.process.cpu_percent(interval=None) if self.process else 0.0
+
+            # Calculate metrics
+            execution_ms = (end_time - start_time) * 1000.0
+            cpu_percent = (start_cpu + end_cpu) / 2.0  # Average CPU during execution
+
+            # Record metrics
+            with self.lock:
+                if detection_type not in self.cpu_samples:
+                    self.cpu_samples[detection_type] = []
+                    self.execution_times[detection_type] = []
+                    self.call_counts[detection_type] = 0
+
+                self.cpu_samples[detection_type].append(cpu_percent)
+                self.execution_times[detection_type].append(execution_ms)
+                self.call_counts[detection_type] += 1
+
+                # Keep only last window_size samples
+                if len(self.cpu_samples[detection_type]) > self.window_size:
+                    self.cpu_samples[detection_type].pop(0)
+                    self.execution_times[detection_type].pop(0)
+
+    def get_metrics(self, detection_type: str = 'default') -> Dict[str, Any]:
+        """
+        Get CPU usage metrics for a specific detection type.
+
+        Args:
+            detection_type: Type of detection to get metrics for
+
+        Returns:
+            Dict with keys:
+            - cpu_percent: Average CPU % over window
+            - min_cpu_percent: Minimum CPU %
+            - max_cpu_percent: Maximum CPU %
+            - total_time_ms: Total execution time (all calls)
+            - avg_time_ms: Average execution time per call
+            - min_time_ms: Minimum execution time
+            - max_time_ms: Maximum execution time
+            - call_count: Number of calls recorded
+            - uptime_seconds: Time since tracker started
+        """
+        with self.lock:
+            if detection_type not in self.cpu_samples or not self.cpu_samples[detection_type]:
+                return {
+                    'cpu_percent': 0.0,
+                    'min_cpu_percent': 0.0,
+                    'max_cpu_percent': 0.0,
+                    'total_time_ms': 0.0,
+                    'avg_time_ms': 0.0,
+                    'min_time_ms': 0.0,
+                    'max_time_ms': 0.0,
+                    'call_count': 0,
+                    'uptime_seconds': time.time() - self.start_time
+                }
+
+            cpu_samples = self.cpu_samples[detection_type]
+            exec_times = self.execution_times[detection_type]
+            call_count = self.call_counts[detection_type]
+
+            return {
+                'cpu_percent': round(sum(cpu_samples) / len(cpu_samples), 2),
+                'min_cpu_percent': round(min(cpu_samples), 2),
+                'max_cpu_percent': round(max(cpu_samples), 2),
+                'total_time_ms': round(sum(exec_times), 2),
+                'avg_time_ms': round(sum(exec_times) / len(exec_times), 2),
+                'min_time_ms': round(min(exec_times), 2),
+                'max_time_ms': round(max(exec_times), 2),
+                'call_count': call_count,
+                'uptime_seconds': round(time.time() - self.start_time, 2)
+            }
+
+    def get_all_metrics(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Get CPU metrics for all detection types.
+
+        Returns:
+            Dict mapping detection_type to metrics dict
+        """
+        with self.lock:
+            detection_types = list(self.cpu_samples.keys())
+
+        return {dt: self.get_metrics(dt) for dt in detection_types}
+
+    def reset(self, detection_type: Optional[str] = None):
+        """
+        Reset CPU tracker for given type or all types.
+
+        Args:
+            detection_type: Type to reset, or None to reset all
+        """
+        with self.lock:
+            if detection_type:
+                if detection_type in self.cpu_samples:
+                    self.cpu_samples[detection_type] = []
+                    self.execution_times[detection_type] = []
+                    self.call_counts[detection_type] = 0
+            else:
+                self.cpu_samples = {}
+                self.execution_times = {}
+                self.call_counts = {}
+                self.start_time = time.time()
+
+    def log_metrics(self, detection_type: Optional[str] = None, logger_instance: Optional[logging.Logger] = None):
+        """
+        Log CPU metrics to logger.
+
+        Args:
+            detection_type: Specific type to log, or None for all types
+            logger_instance: Logger to use, or None for module logger
+        """
+        log = logger_instance or logger
+
+        if detection_type:
+            metrics = self.get_metrics(detection_type)
+            log.info(f"CPU [{detection_type}]: {metrics['cpu_percent']:.1f}% avg "
+                    f"({metrics['min_cpu_percent']:.1f}-{metrics['max_cpu_percent']:.1f}%), "
+                    f"{metrics['avg_time_ms']:.1f}ms avg time, {metrics['call_count']} calls")
+        else:
+            all_metrics = self.get_all_metrics()
+            for dt, metrics in all_metrics.items():
+                log.info(f"CPU [{dt}]: {metrics['cpu_percent']:.1f}% avg "
+                        f"({metrics['min_cpu_percent']:.1f}-{metrics['max_cpu_percent']:.1f}%), "
+                        f"{metrics['avg_time_ms']:.1f}ms avg time, {metrics['call_count']} calls")
+
+    def get_summary(self) -> Dict[str, Any]:
+        """
+        Get summary of CPU usage across all detection types.
+
+        Returns:
+            Dict with overall statistics
+        """
+        all_metrics = self.get_all_metrics()
+
+        if not all_metrics:
+            return {
+                'total_types': 0,
+                'total_calls': 0,
+                'avg_cpu_percent': 0.0,
+                'total_time_ms': 0.0,
+                'top_cpu_type': None,
+                'top_time_type': None
+            }
+
+        total_calls = sum(m['call_count'] for m in all_metrics.values())
+        avg_cpu = sum(m['cpu_percent'] for m in all_metrics.values()) / len(all_metrics)
+        total_time = sum(m['total_time_ms'] for m in all_metrics.values())
+
+        # Find top consumers
+        top_cpu_type = max(all_metrics.items(), key=lambda x: x[1]['cpu_percent'])[0]
+        top_time_type = max(all_metrics.items(), key=lambda x: x[1]['total_time_ms'])[0]
+
+        return {
+            'total_types': len(all_metrics),
+            'total_calls': total_calls,
+            'avg_cpu_percent': round(avg_cpu, 2),
+            'total_time_ms': round(total_time, 2),
+            'top_cpu_type': top_cpu_type,
+            'top_time_type': top_time_type
+        }
+
+
+# Global CPU tracker instance
+_cpu_tracker_instance: Optional[DetectionCPUTracker] = None
+_cpu_tracker_lock = threading.Lock()
+
+
+def get_cpu_tracker() -> DetectionCPUTracker:
+    """Get or create global CPU tracker instance."""
+    global _cpu_tracker_instance
+
+    with _cpu_tracker_lock:
+        if _cpu_tracker_instance is None:
+            _cpu_tracker_instance = DetectionCPUTracker()
+        return _cpu_tracker_instance
+
+
+def reset_cpu_tracker(detection_type: Optional[str] = None):
+    """Reset global CPU tracker."""
+    global _cpu_tracker_instance
+
+    with _cpu_tracker_lock:
+        if _cpu_tracker_instance:
+            _cpu_tracker_instance.reset(detection_type)
+
+
+class BottleneckIdentifier:
+    """
+    Identifies performance bottlenecks across detection operations.
+
+    Analyzes CPU usage and execution time to identify slow operations
+    that should be optimized. Provides recommendations for hot paths.
+
+    Usage:
+        identifier = BottleneckIdentifier()
+        bottlenecks = identifier.identify_bottlenecks()
+        identifier.log_bottlenecks()
+    """
+
+    def __init__(self, cpu_threshold_percent: float = 50.0, time_threshold_ms: float = 100.0):
+        """
+        Initialize bottleneck identifier.
+
+        Args:
+            cpu_threshold_percent: CPU% threshold for identifying high CPU operations
+            time_threshold_ms: Execution time threshold for identifying slow operations
+        """
+        self.cpu_threshold = cpu_threshold_percent
+        self.time_threshold = time_threshold_ms
+
+    def identify_bottlenecks(self) -> Dict[str, Any]:
+        """
+        Identify performance bottlenecks from CPU tracker data.
+
+        Returns:
+            Dict with keys:
+            - high_cpu: List of operations with high CPU usage
+            - slow_operations: List of operations with long execution times
+            - top_time_consumers: Top 5 operations by total time
+            - recommendations: List of optimization recommendations
+        """
+        cpu_tracker = get_cpu_tracker()
+        all_metrics = cpu_tracker.get_all_metrics()
+
+        if not all_metrics:
+            return {
+                'high_cpu': [],
+                'slow_operations': [],
+                'top_time_consumers': [],
+                'recommendations': []
+            }
+
+        # Identify high CPU operations
+        high_cpu = [
+            {
+                'type': det_type,
+                'cpu_percent': metrics['cpu_percent'],
+                'call_count': metrics['call_count']
+            }
+            for det_type, metrics in all_metrics.items()
+            if metrics['cpu_percent'] > self.cpu_threshold
+        ]
+        high_cpu.sort(key=lambda x: x['cpu_percent'], reverse=True)
+
+        # Identify slow operations
+        slow_operations = [
+            {
+                'type': det_type,
+                'avg_time_ms': metrics['avg_time_ms'],
+                'max_time_ms': metrics['max_time_ms'],
+                'call_count': metrics['call_count']
+            }
+            for det_type, metrics in all_metrics.items()
+            if metrics['avg_time_ms'] > self.time_threshold
+        ]
+        slow_operations.sort(key=lambda x: x['avg_time_ms'], reverse=True)
+
+        # Find top time consumers (by total time spent)
+        top_time_consumers = [
+            {
+                'type': det_type,
+                'total_time_ms': metrics['total_time_ms'],
+                'cpu_percent': metrics['cpu_percent'],
+                'call_count': metrics['call_count']
+            }
+            for det_type, metrics in all_metrics.items()
+        ]
+        top_time_consumers.sort(key=lambda x: x['total_time_ms'], reverse=True)
+        top_time_consumers = top_time_consumers[:5]  # Top 5
+
+        # Generate recommendations
+        recommendations = self._generate_recommendations(high_cpu, slow_operations, top_time_consumers)
+
+        return {
+            'high_cpu': high_cpu,
+            'slow_operations': slow_operations,
+            'top_time_consumers': top_time_consumers,
+            'recommendations': recommendations
+        }
+
+    def _generate_recommendations(self, high_cpu: List[Dict], slow_operations: List[Dict],
+                                 top_consumers: List[Dict]) -> List[str]:
+        """Generate optimization recommendations based on bottlenecks."""
+        recommendations = []
+
+        # High CPU recommendations
+        if high_cpu:
+            top_cpu = high_cpu[0]
+            recommendations.append(
+                f"HIGH CPU: '{top_cpu['type']}' uses {top_cpu['cpu_percent']:.1f}% CPU. "
+                f"Consider optimizing algorithm or using GPU acceleration."
+            )
+
+        # Slow operation recommendations
+        if slow_operations:
+            slowest = slow_operations[0]
+            recommendations.append(
+                f"SLOW OPERATION: '{slowest['type']}' takes {slowest['avg_time_ms']:.1f}ms avg. "
+                f"Consider caching, parallel processing, or algorithm optimization."
+            )
+
+        # Top time consumer recommendations
+        if top_consumers:
+            top = top_consumers[0]
+            recommendations.append(
+                f"TOP TIME CONSUMER: '{top['type']}' consumed {top['total_time_ms']:.0f}ms total. "
+                f"This is the highest priority for optimization."
+            )
+
+        # Specific detection type recommendations
+        for det_type, _ in [(op['type'], op) for op in slow_operations]:
+            if 'ocr' in det_type.lower():
+                recommendations.append(
+                    f"OCR OPTIMIZATION: Consider using faster OCR engine, reducing image resolution, "
+                    f"or implementing result caching for '{det_type}'."
+                )
+            elif 'template' in det_type.lower():
+                recommendations.append(
+                    f"TEMPLATE MATCHING: Consider reducing template count, using smaller templates, "
+                    f"or implementing hierarchical matching for '{det_type}'."
+                )
+
+        if not recommendations:
+            recommendations.append("No bottlenecks detected. Performance is within acceptable thresholds.")
+
+        return recommendations
+
+    def log_bottlenecks(self, logger_instance: Optional[logging.Logger] = None):
+        """
+        Log identified bottlenecks to logger.
+
+        Args:
+            logger_instance: Logger to use, or None for module logger
+        """
+        log = logger_instance or logger
+        bottlenecks = self.identify_bottlenecks()
+
+        log.info("=" * 60)
+        log.info("PERFORMANCE BOTTLENECK ANALYSIS")
+        log.info("=" * 60)
+
+        if bottlenecks['high_cpu']:
+            log.warning("HIGH CPU OPERATIONS:")
+            for op in bottlenecks['high_cpu']:
+                log.warning(f"  - {op['type']}: {op['cpu_percent']:.1f}% CPU ({op['call_count']} calls)")
+
+        if bottlenecks['slow_operations']:
+            log.warning("SLOW OPERATIONS:")
+            for op in bottlenecks['slow_operations']:
+                log.warning(f"  - {op['type']}: {op['avg_time_ms']:.1f}ms avg, "
+                          f"{op['max_time_ms']:.1f}ms max ({op['call_count']} calls)")
+
+        if bottlenecks['top_time_consumers']:
+            log.info("TOP TIME CONSUMERS:")
+            for op in bottlenecks['top_time_consumers']:
+                log.info(f"  - {op['type']}: {op['total_time_ms']:.0f}ms total "
+                       f"({op['cpu_percent']:.1f}% CPU, {op['call_count']} calls)")
+
+        log.info("OPTIMIZATION RECOMMENDATIONS:")
+        for rec in bottlenecks['recommendations']:
+            log.info(f"  • {rec}")
+
+        log.info("=" * 60)
+
+    def get_optimization_priority(self) -> List[Dict[str, Any]]:
+        """
+        Get prioritized list of optimizations to perform.
+
+        Returns:
+            List of dicts with keys: type, priority, reason, metric_value
+            Sorted by priority (high to low)
+        """
+        bottlenecks = self.identify_bottlenecks()
+        priorities = []
+
+        # High CPU operations get high priority
+        for op in bottlenecks['high_cpu']:
+            priorities.append({
+                'type': op['type'],
+                'priority': 'HIGH',
+                'reason': f"High CPU usage: {op['cpu_percent']:.1f}%",
+                'metric_value': op['cpu_percent']
+            })
+
+        # Slow operations get medium-high priority
+        for op in bottlenecks['slow_operations']:
+            priorities.append({
+                'type': op['type'],
+                'priority': 'MEDIUM-HIGH',
+                'reason': f"Slow execution: {op['avg_time_ms']:.1f}ms avg",
+                'metric_value': op['avg_time_ms']
+            })
+
+        # Top time consumers get medium priority (if not already high priority)
+        existing_types = {p['type'] for p in priorities}
+        for op in bottlenecks['top_time_consumers']:
+            if op['type'] not in existing_types:
+                priorities.append({
+                    'type': op['type'],
+                    'priority': 'MEDIUM',
+                    'reason': f"High total time: {op['total_time_ms']:.0f}ms",
+                    'metric_value': op['total_time_ms']
+                })
+
+        # Sort by priority
+        priority_order = {'HIGH': 0, 'MEDIUM-HIGH': 1, 'MEDIUM': 2}
+        priorities.sort(key=lambda x: (priority_order.get(x['priority'], 999), -x['metric_value']))
+
+        return priorities
+
+
+# Global bottleneck identifier instance
+_bottleneck_identifier_instance: Optional[BottleneckIdentifier] = None
+_bottleneck_identifier_lock = threading.Lock()
+
+
+def get_bottleneck_identifier() -> BottleneckIdentifier:
+    """Get or create global bottleneck identifier instance."""
+    global _bottleneck_identifier_instance
+
+    with _bottleneck_identifier_lock:
+        if _bottleneck_identifier_instance is None:
+            _bottleneck_identifier_instance = BottleneckIdentifier()
+        return _bottleneck_identifier_instance
+
+
+def identify_bottlenecks() -> Dict[str, Any]:
+    """Convenience function to identify bottlenecks using global identifier."""
+    identifier = get_bottleneck_identifier()
+    return identifier.identify_bottlenecks()
+
+
+def log_bottlenecks(logger_instance: Optional[logging.Logger] = None):
+    """Convenience function to log bottlenecks using global identifier."""
+    identifier = get_bottleneck_identifier()
+    identifier.log_bottlenecks(logger_instance)
 
 
 # Decorator for automatic function timing
@@ -471,7 +1126,7 @@ def init_telemetry(db_path: Path = TELEMETRY_DB_PATH) -> PerformanceTelemetry:
     with _telemetry_lock:
         if _telemetry_instance is None:
             _telemetry_instance = PerformanceTelemetry(db_path)
-            print(f"✓ Performance telemetry initialized: {db_path}")
+            logger.info(f"Performance telemetry initialized: {db_path}")
         return _telemetry_instance
 
 
@@ -493,10 +1148,20 @@ def shutdown_telemetry():
 __all__ = [
     'PerformanceTelemetry',
     'TelemetryEntry',
+    'DetectionFPSCounter',
+    'DetectionCPUTracker',
+    'BottleneckIdentifier',
     'timed',
     'telemetry_section',
     'telemetry_instant',
     'init_telemetry',
     'get_telemetry',
     'shutdown_telemetry',
+    'get_fps_counter',
+    'reset_fps_counter',
+    'get_cpu_tracker',
+    'reset_cpu_tracker',
+    'get_bottleneck_identifier',
+    'identify_bottlenecks',
+    'log_bottlenecks',
 ]

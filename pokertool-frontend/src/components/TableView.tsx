@@ -13,7 +13,7 @@ fixes:
 ---
 POKERTOOL-HEADER-END */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -43,6 +43,7 @@ import { BetSizingRecommendations } from './BetSizingRecommendations';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { buildWsUrl } from '../config/api';
 import { SendMessageFunction, JsonValue } from '../types/common';
+import { EmptyState } from './EmptyState';
 
 interface TableViewProps {
   sendMessage: SendMessageFunction;
@@ -161,10 +162,14 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
     },
   ]);
 
+  // Memoize latest message to avoid unnecessary updates
+  const latestMessage = useMemo(() => {
+    return messages && messages.length > 0 ? messages[messages.length - 1] : null;
+  }, [messages]);
+
   // Listen for table updates from WebSocket
   React.useEffect(() => {
-    if (messages && messages.length > 0) {
-      const latestMessage = messages[messages.length - 1];
+    if (latestMessage) {
 
       // Handle different message types from backend
       if (latestMessage.type === 'table_update' && latestMessage.data && typeof latestMessage.data === 'object' && latestMessage.data !== null && !Array.isArray(latestMessage.data)) {
@@ -259,7 +264,7 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
         });
       }
     }
-  }, [messages]);
+  }, [latestMessage]);
 
   const [selectedTable, setSelectedTable] = useState<string>('table-1');
   const [playerDetection] = useState(true);
@@ -276,18 +281,21 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
     });
   }, [selectedTable, sendMessage]);
 
-  const handleRefreshTable = (tableId: string) => {
+  const handleRefreshTable = useCallback((tableId: string) => {
     sendMessage({
       type: 'refresh_table',
       tableId: tableId,
     });
-  };
+  }, [sendMessage]);
 
-  const PokerTable = ({ table }: { table: TableData }) => {
-    // Assign positions to players based on dealer button
-    const playersWithPositions = table.players.length > 0
-      ? assignPositions(table.players, dealerPosition)
-      : table.players;
+  const PokerTable = React.memo(({ table }: { table: TableData }) => {
+    // Memoize player positions calculation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const playersWithPositions = useMemo(() => {
+      return table.players.length > 0
+        ? assignPositions(table.players, dealerPosition)
+        : table.players;
+    }, [table.players]); // dealerPosition is a constant from outer scope
 
     return (
     <Box
@@ -580,7 +588,7 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
       })}
     </Box>
   );
-  };
+  });
 
   return (
     <Box sx={{ p: isMobile ? 2 : 3 }}>
@@ -640,6 +648,19 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
         </Box>
       </Box>
 
+      {/* Show empty state when no tables are active */}
+      {tables.length === 0 && (
+        <EmptyState
+          title="No Active Tables"
+          message="Connect to a poker table to start playing. The system will automatically detect the table and display live game state."
+          actionLabel="Refresh"
+          onAction={() => handleRefreshTable(selectedTable)}
+          icon={<Casino sx={{ fontSize: 64, color: 'primary.main', opacity: 0.5 }} />}
+        />
+      )}
+
+      {/* Show grid content when tables exist */}
+      {tables.length > 0 && (
       <Grid container spacing={3}>
         {/* Table Selection */}
         <Grid item xs={12}>
@@ -758,6 +779,7 @@ export const TableView: React.FC<TableViewProps> = ({ sendMessage }) => {
           </Paper>
         </Grid>
       </Grid>
+      )}
     </Box>
   );
 };

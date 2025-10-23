@@ -48,12 +48,14 @@ import {
   History,
   Circle,
   Article,
+  Info as InfoIcon,
   SettingsApplications,
   TrendingUp,
   People,
   Psychology,
   Biotech,
   DeveloperBoard,
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -61,6 +63,7 @@ import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import type { BackendStatus } from '../hooks/useBackendLifecycle';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 import { buildApiUrl } from '../config/api';
+import { RELEASE_VERSION } from '../config/releaseVersion';
 
 interface NavigationProps {
   connected: boolean;
@@ -88,7 +91,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [debouncedConnected, setDebouncedConnected] = useState(connected);
-  const appVersion = (process.env.REACT_APP_VERSION || '').trim();
+  const appVersion = RELEASE_VERSION;
   const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
 
   // Debounce WebSocket connection status to reduce flicker on transient disconnects
@@ -285,8 +288,13 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: '🧠 SmartHelper', icon: <Psychology />, path: '/smarthelper' },
+    { text: '💬 AI Chat', icon: <ChatIcon />, path: '/ai-chat' },
+    { text: '🚀 Improve', icon: <InfoIcon />, path: '/improve' },
     { text: 'Backend', icon: <DeveloperBoard />, path: '/backend' },
     { text: 'TODO', icon: <ChecklistIcon />, path: '/todo' },
+    { text: '🤖 Autopilot', icon: <Psychology />, path: '/autopilot' },
+    { text: '📊 Analysis', icon: <Assessment />, path: '/analysis' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
     { text: 'Detection Log', icon: <Article />, path: '/detection-log' },
     { text: 'Statistics', icon: <Assessment />, path: '/statistics' },
@@ -295,10 +303,11 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     { text: 'HUD Overlay', icon: <Visibility />, path: '/hud' },
     { text: 'GTO Trainer', icon: <School />, path: '/gto' },
     { text: 'Hand History', icon: <History />, path: '/history' },
+    { text: 'Version History', icon: <InfoIcon />, path: '/version-history' },
     { text: 'Settings', icon: <Settings />, path: '/settings' },
     { text: 'Model Calibration', icon: <TrendingUp />, path: '/model-calibration' },
     { text: 'Opponent Fusion', icon: <People />, path: '/opponent-fusion' },
-    { text: 'Active Learning', icon: <Psychology />, path: '/active-learning' },
+    { text: 'Active Learning', icon: <Biotech />, path: '/active-learning' },
     { text: 'Scraping Accuracy', icon: <Biotech />, path: '/scraping-accuracy' },
     { text: 'System Status', icon: <SettingsApplications />, path: '/system-status' },
   ];
@@ -376,6 +385,27 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
         ))}
       </List>
       <Box sx={{ flexGrow: 1 }} />
+      <Divider />
+      {/* Version History Blade */}
+      <Box sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <InfoIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+          <Typography variant="caption" color="text.secondary">
+            Version
+          </Typography>
+        </Box>
+        <Chip
+          label={appVersion}
+          size="small"
+          variant="outlined"
+          color="primary"
+          sx={{
+            fontFamily: 'monospace',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+          }}
+        />
+      </Box>
       <Divider />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
         <IconButton onClick={toggleDarkMode} color="inherit">

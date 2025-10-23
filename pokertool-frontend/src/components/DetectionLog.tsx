@@ -47,7 +47,7 @@ export const DetectionLog: React.FC<DetectionLogProps> = ({ messages = [] }) => 
 
   const detectionEndpoint = React.useMemo(() => httpToWs(buildApiUrl('/ws/detections')), []);
   const fallbackEndpoint = React.useMemo(() => {
-    if (detectionEndpoint.includes('localhost')) {
+    if (detectionEndpoint && detectionEndpoint.includes('localhost')) {
       return detectionEndpoint.replace('localhost', '127.0.0.1');
     }
     return null;

@@ -27,6 +27,8 @@ import './styles/mobile.css';
 // Eagerly load critical components needed for initial render
 import { Navigation } from './components/Navigation';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import ErrorBoundary from './components/ErrorBoundary';
+import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
 
 // Lazy load route components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -39,6 +41,7 @@ const Settings = lazy(() => import('./components/Settings').then(module => ({ de
 const HUDOverlay = lazy(() => import('./components/HUDOverlay').then(module => ({ default: module.HUDOverlay })));
 const GTOTrainer = lazy(() => import('./components/GTOTrainer').then(module => ({ default: module.GTOTrainer })));
 const HandHistory = lazy(() => import('./components/HandHistory').then(module => ({ default: module.HandHistory })));
+const VersionHistory = lazy(() => import('./components/VersionHistory').then(module => ({ default: module.VersionHistory })));
 const SystemStatus = lazy(() => import('./components/SystemStatus').then(module => ({ default: module.SystemStatus })));
 const ModelCalibration = lazy(() => import('./components/ModelCalibration').then(module => ({ default: module.ModelCalibration })));
 const OpponentFusion = lazy(() => import('./components/OpponentFusion').then(module => ({ default: module.OpponentFusion })));
@@ -46,6 +49,11 @@ const ActiveLearning = lazy(() => import('./components/ActiveLearning').then(mod
 const ScrapingAccuracy = lazy(() => import('./components/ScrapingAccuracy').then(module => ({ default: module.ScrapingAccuracy })));
 const BackendStatus = lazy(() => import('./pages/BackendStatus'));
 const TodoList = lazy(() => import('./components/TodoList').then(module => ({ default: module.TodoList })));
+const SmartHelper = lazy(() => import('./pages/SmartHelper'));
+const Improve = lazy(() => import('./pages/Improve'));
+const AIChat = lazy(() => import('./pages/AIChat'));
+const AutopilotControl = lazy(() => import('./components/AutopilotControl').then(module => ({ default: module.AutopilotControl })));
+const AnalysisPanel = lazy(() => import('./components/AnalysisPanel').then(module => ({ default: module.AnalysisPanel })));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -143,23 +151,29 @@ function AppContent() {
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard messages={messages} />} />
-                  <Route path="/backend" element={<BackendStatus />} />
-                  <Route path="/todo" element={<TodoList />} />
-                  <Route path="/tables" element={<TableView sendMessage={sendMessage} />} />
-                  <Route path="/detection-log" element={<DetectionLog messages={messages} />} />
-                  <Route path="/statistics" element={<Statistics />} />
-                  <Route path="/bankroll" element={<BankrollManager />} />
-                  <Route path="/tournament" element={<TournamentView />} />
-                  <Route path="/hud" element={<HUDOverlay />} />
-                  <Route path="/gto" element={<GTOTrainer />} />
-                  <Route path="/history" element={<HandHistory />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/model-calibration" element={<ModelCalibration />} />
-                  <Route path="/system-status" element={<SystemStatus />} />
-                  <Route path="/opponent-fusion" element={<OpponentFusion />} />
-                  <Route path="/active-learning" element={<ActiveLearning />} />
-                  <Route path="/scraping-accuracy" element={<ScrapingAccuracy />} />
+                  <Route path="/dashboard" element={<ErrorBoundary fallbackType="general"><Dashboard messages={messages} /></ErrorBoundary>} />
+                  <Route path="/backend" element={<ErrorBoundary fallbackType="general"><BackendStatus /></ErrorBoundary>} />
+                  <Route path="/todo" element={<ErrorBoundary fallbackType="general"><TodoList /></ErrorBoundary>} />
+                  <Route path="/tables" element={<ErrorBoundary fallbackType="table"><TableView sendMessage={sendMessage} /></ErrorBoundary>} />
+                  <Route path="/detection-log" element={<ErrorBoundary fallbackType="general"><DetectionLog messages={messages} /></ErrorBoundary>} />
+                  <Route path="/statistics" element={<ErrorBoundary fallbackType="stats"><Statistics /></ErrorBoundary>} />
+                  <Route path="/bankroll" element={<ErrorBoundary fallbackType="general"><BankrollManager /></ErrorBoundary>} />
+                  <Route path="/tournament" element={<ErrorBoundary fallbackType="general"><TournamentView /></ErrorBoundary>} />
+                  <Route path="/hud" element={<ErrorBoundary fallbackType="general"><HUDOverlay /></ErrorBoundary>} />
+                  <Route path="/gto" element={<ErrorBoundary fallbackType="advice"><GTOTrainer /></ErrorBoundary>} />
+                  <Route path="/history" element={<ErrorBoundary fallbackType="general"><HandHistory /></ErrorBoundary>} />
+                  <Route path="/version-history" element={<ErrorBoundary fallbackType="general"><VersionHistory /></ErrorBoundary>} />
+                  <Route path="/settings" element={<ErrorBoundary fallbackType="general"><Settings /></ErrorBoundary>} />
+                  <Route path="/model-calibration" element={<ErrorBoundary fallbackType="general"><ModelCalibration /></ErrorBoundary>} />
+                  <Route path="/system-status" element={<ErrorBoundary fallbackType="general"><SystemStatus /></ErrorBoundary>} />
+                  <Route path="/opponent-fusion" element={<ErrorBoundary fallbackType="general"><OpponentFusion /></ErrorBoundary>} />
+                  <Route path="/active-learning" element={<ErrorBoundary fallbackType="general"><ActiveLearning /></ErrorBoundary>} />
+                  <Route path="/scraping-accuracy" element={<ErrorBoundary fallbackType="general"><ScrapingAccuracy /></ErrorBoundary>} />
+                  <Route path="/smarthelper" element={<ErrorBoundary fallbackType="general"><SmartHelper /></ErrorBoundary>} />
+                  <Route path="/improve" element={<ErrorBoundary fallbackType="general"><Improve /></ErrorBoundary>} />
+                  <Route path="/ai-chat" element={<ErrorBoundary fallbackType="general"><AIChat /></ErrorBoundary>} />
+                  <Route path="/autopilot" element={<ErrorBoundary fallbackType="general"><AutopilotControl sendMessage={sendMessage} /></ErrorBoundary>} />
+                  <Route path="/analysis" element={<ErrorBoundary fallbackType="general"><AnalysisPanel sendMessage={sendMessage} /></ErrorBoundary>} />
                 </Routes>
               </Suspense>
             </main>
@@ -174,9 +188,11 @@ function AppContent() {
 // Main App component with Redux Provider
 function App() {
   return (
-    <Provider store={store}>
-      <AppContent />
-    </Provider>
+    <GlobalErrorBoundary>
+      <Provider store={store}>
+        <AppContent />
+      </Provider>
+    </GlobalErrorBoundary>
   );
 }
 
