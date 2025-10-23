@@ -478,7 +478,25 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
                     </IconButton>
                   </Tooltip>
                 ))}
-                {/* Add System Status as 6th item */}
+                {/* Add Tables as 6th item */}
+                <Tooltip title="Tables">
+                  <IconButton
+                    color={location.pathname === '/tables' ? 'primary' : 'inherit'}
+                    onClick={() => handleNavigation('/tables')}
+                  >
+                    <TableChart />
+                  </IconButton>
+                </Tooltip>
+                {/* Add Detection Log as 7th item */}
+                <Tooltip title="Detection Log">
+                  <IconButton
+                    color={location.pathname === '/detection-log' ? 'primary' : 'inherit'}
+                    onClick={() => handleNavigation('/detection-log')}
+                  >
+                    <Article />
+                  </IconButton>
+                </Tooltip>
+                {/* Add System Status as 8th item */}
                 <Tooltip title="System Status">
                   <IconButton
                     color={location.pathname === '/system-status' ? 'primary' : 'inherit'}
