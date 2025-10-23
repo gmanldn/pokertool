@@ -1,3 +1,34 @@
+## ⚠️ Automated Log Alerts
+
+- [ ] **LOG-W-C4DF8E70D1** (2025-10-23) Warning in pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 4.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-4C5B2A58EC** (2025-10-23) Warning in pokertool.error_handling.wrapper: Attempt 2/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 2.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 2/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 2.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-E9B7FB4FE2** (2025-10-23) Warning in pokertool.error_handling.wrapper: Attempt 1/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 1.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 1/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 1.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-9D6EA7A1C2** (2025-10-23) Error in pokertool.error_handling.wrapper: All 4 attempts failed for save_hand_analysis
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from pokertool.error_handling.wrapper with message "All 4 attempts failed for save_hand_analysis". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-777B7AD01F** (2025-10-23) Warning in pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: Invalid hand format: As Kh. Retrying in 4.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: Invalid hand format: As Kh. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-610095A142** (2025-10-23) Warning in pokertool.error_handling.wrapper: Attempt 2/4 failed for save_hand_analysis: Invalid hand format: As Kh. Retrying in 2.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 2/4 failed for save_hand_analysis: Invalid hand format: As Kh. Retrying in 2.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-9E6C75AD80** (2025-10-23) Warning in pokertool.error_handling.wrapper: Attempt 1/4 failed for save_hand_analysis: Invalid hand format: As Kh. Retrying in 1.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 1/4 failed for save_hand_analysis: Invalid hand format: As Kh. Retrying in 1.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+
 # PokerTool TODO
 
 Last updated: 2025-10-22
@@ -132,8 +163,8 @@ Conventions
 ## Code Quality & Reliability (P0-P2: Foundation for Scale)
 
 ### Test Coverage & Quality (P0)
-- [ ] [P0][M] Increase core poker engine test coverage to 98%+ — Add tests for edge cases in `src/pokertool/core.py`, particularly around hand evaluation, position logic, and pot odds calculations. Target: `tests/test_core_comprehensive.py` coverage from 95% to 98%.
-- [ ] [P0][M] Database module integration tests — Add tests for transaction rollback, concurrent access, connection pool exhaustion, and database failover in `src/pokertool/database.py`. Create `tests/test_database_integration.py` with 20+ tests.
+- [x] ✅ [P0][M] Increase core poker engine test coverage to 98%+ — ✅ **COMPLETE:** Increased coverage from 87% to 99%! Added 27 new comprehensive test cases covering Rank.from_symbol() edge cases, Suit enum methods, hand evaluation edge cases (wheel straights, flushes, straight flushes, four of a kind, full house), pot odds calculations, position-relative adjustments, opponent pressure, and all advice thresholds. All 47 tests passing. Target exceeded: 99% > 98%+. `tests/test_core_comprehensive.py`
+- [x] ✅ [P0][M] Database module integration tests — ✅ **COMPLETE:** Created comprehensive database integration test suite in `tests/test_database_integration.py` with 37 test cases (exceeds 20+ requirement) covering transaction rollback, ACID properties, concurrent access (24 concurrent operations), connection pooling and recovery, database failover and retry logic, PostgreSQL and SQLite compatibility, edge cases, boundary values, and performance benchmarks. Tests validate transaction atomicity, isolation, durability, connection leaks, race condition prevention, and error recovery.
 - [x] [P0][S] API endpoint contract tests — ✅ Complete: Created comprehensive endpoint contract tests in `tests/api/test_endpoint_contracts.py` with 20+ test cases validating status codes, response schemas, error formats, authentication, CORS headers, security headers, and input validation for health, auth, and AI endpoints.
 - [ ] [P0][M] Frontend component unit test coverage to 80%+ — Add Jest/RTL tests for Dashboard, TableView, SystemStatus, and BackendStatus components. Currently at ~40%, target 80%.
 - [x] [P0][S] Smoke test expansion — ✅ Complete: Comprehensive smoke test suite already exists in `tests/test_smoke_suite.py` with 38 tests covering configuration loading, environment variables, dependency availability, module imports, directory structure, logging, security, and CI configuration.
