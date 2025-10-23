@@ -1,0 +1,94 @@
+[project]
+id = "pokertool"
+name = "PokerTool"
+version = "1.0.0"
+authors = ["PokerTool Team <team@pokertool.com>"]
+license = "MIT"
+
+[build]
+include = [
+    "src/",
+    "requirements.txt",
+    "pyproject.toml",
+    "config/",
+    "assets/",
+    "model_calibration_data/",
+    "ranges/"
+]
+
+exclude = [
+    "tests/",
+    "docs/",
+    "*.md",
+    "!README.md",
+    "!INSTALL.md",
+    ".git/",
+    ".github/",
+    "__pycache__/",
+    "*.pyc",
+    "*.pyo",
+    ".venv/",
+    "venv/",
+    "env/",
+    "node_modules/",
+    ".pytest_cache/",
+    ".coverage",
+    "htmlcov/",
+    ".vscode/",
+    ".idea/",
+    "*.log",
+    "logs/",
+    "exports/",
+    "examples/",
+    "evals/",
+    "tools/",
+    "scripts/",
+    "standalone/",
+    "packaging/",
+    "k8s/",
+    "proto/",
+    "locales/",
+    "walkthrough/",
+    "test_logs/",
+    "debug_*.png",
+    "test_*.png",
+    "window_*.png"
+]
+
+# Python buildpack configuration
+[[build.env]]
+name = "PYTHON_VERSION"
+value = "3.12"
+
+[[build.env]]
+name = "BP_CPYTHON_VERSION"
+value = "3.12.*"
+
+[[build.env]]
+name = "BP_PIP_VERSION"
+value = "latest"
+
+[[build.env]]
+name = "BP_PIP_INSTALL_ARGS"
+value = "--no-cache-dir --compile"
+
+# Application configuration
+[[build.env]]
+name = "PORT"
+value = "8000"
+
+[[build.env]]
+name = "PYTHONUNBUFFERED"
+value = "1"
+
+# Procfile equivalent
+[[build.env]]
+name = "BP_LAUNCHPOINT"
+value = "./src/main.py"
+
+[metadata]
+description = "AI-Powered Poker Analysis Tool - Real-time poker analysis and decision support"
+documentation = "https://github.com/gmanldn/pokertool"
+homepage = "https://github.com/gmanldn/pokertool"
+repository = "https://github.com/gmanldn/pokertool"
+keywords = ["poker", "analysis", "ai", "machine-learning", "poker-tool"]
