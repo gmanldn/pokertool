@@ -294,6 +294,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     { text: 'Backend', icon: <DeveloperBoard />, path: '/backend' },
     { text: 'TODO', icon: <ChecklistIcon />, path: '/todo' },
     { text: '🤖 Autopilot', icon: <Psychology />, path: '/autopilot' },
+    { text: '📊 Analysis', icon: <Assessment />, path: '/analysis' },
     { text: 'Tables', icon: <TableChart />, path: '/tables' },
     { text: 'Detection Log', icon: <Article />, path: '/detection-log' },
     { text: 'Statistics', icon: <Assessment />, path: '/statistics' },

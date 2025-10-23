@@ -53,6 +53,7 @@ const SmartHelper = lazy(() => import('./pages/SmartHelper'));
 const Improve = lazy(() => import('./pages/Improve'));
 const AIChat = lazy(() => import('./pages/AIChat'));
 const AutopilotControl = lazy(() => import('./components/AutopilotControl').then(module => ({ default: module.AutopilotControl })));
+const AnalysisPanel = lazy(() => import('./components/AnalysisPanel').then(module => ({ default: module.AnalysisPanel })));
 
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
@@ -172,6 +173,7 @@ function AppContent() {
                   <Route path="/improve" element={<ErrorBoundary fallbackType="general"><Improve /></ErrorBoundary>} />
                   <Route path="/ai-chat" element={<ErrorBoundary fallbackType="general"><AIChat /></ErrorBoundary>} />
                   <Route path="/autopilot" element={<ErrorBoundary fallbackType="general"><AutopilotControl sendMessage={sendMessage} /></ErrorBoundary>} />
+                  <Route path="/analysis" element={<ErrorBoundary fallbackType="general"><AnalysisPanel sendMessage={sendMessage} /></ErrorBoundary>} />
                 </Routes>
               </Suspense>
             </main>
