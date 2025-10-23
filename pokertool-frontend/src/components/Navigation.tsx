@@ -93,6 +93,9 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const [debouncedConnected, setDebouncedConnected] = useState(connected);
   const appVersion = RELEASE_VERSION;
   const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
+  const [startupStartTime, setStartupStartTime] = useState<number | null>(null);
+  const [isStartupTimedOut, setIsStartupTimedOut] = useState(false);
+  const STARTUP_TIMEOUT_MS = 60000; // 60 seconds timeout
 
   // Helper to get color from status color type
   const getColorFromStatus = (color: 'success' | 'error' | 'warning' | 'info'): string => {
@@ -110,8 +113,10 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   };
 
   // Debounce WebSocket connection status to reduce flicker on transient disconnects
+  // Use shorter debounce (200ms) when transitioning to online for faster green status
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedConnected(connected), 400);
+    const debounceTime = connected ? 200 : 400; // Faster transition to connected
+    const t = setTimeout(() => setDebouncedConnected(connected), debounceTime);
     return () => clearTimeout(t);
   }, [connected]);
 
@@ -119,11 +124,13 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
   const { healthData } = useSystemHealth({ enableWebSocket: true, autoFetch: true, enableCache: true });
 
   // Debounce health data to prevent flickering
+  // Use shorter debounce (200ms) when health becomes healthy for faster green status
   const [debouncedHealthStatus, setDebouncedHealthStatus] = useState<string>('unknown');
   useEffect(() => {
+    const debounceTime = healthData?.overall_status === 'healthy' ? 200 : 600; // Faster transition to healthy
     const t = setTimeout(() => {
       setDebouncedHealthStatus(healthData?.overall_status || 'unknown');
-    }, 600);
+    }, debounceTime);
     return () => clearTimeout(t);
   }, [healthData?.overall_status]);
 
@@ -208,6 +215,28 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     };
   }, [backendStatus.state]);
 
+  // Track startup timeout
+  useEffect(() => {
+    if (backendStatus.state === 'offline' || backendStatus.state === 'starting') {
+      if (startupStartTime === null) {
+        // Backend just started transitioning to offline/starting
+        setStartupStartTime(Date.now());
+        setIsStartupTimedOut(false);
+      } else {
+        // Check if startup has timed out
+        const elapsedTime = Date.now() - startupStartTime;
+        if (elapsedTime > STARTUP_TIMEOUT_MS && !isStartupTimedOut) {
+          setIsStartupTimedOut(true);
+          console.warn('[Navigation] Backend startup has timed out after 60 seconds');
+        }
+      }
+    } else if (backendStatus.state === 'online') {
+      // Backend came online, reset timeout tracking
+      setStartupStartTime(null);
+      setIsStartupTimedOut(false);
+    }
+  }, [backendStatus.state, startupStartTime, isStartupTimedOut]);
+
   // Calculate startup percentage
   const startupPercentage = useMemo(() => {
     if (!startupStatus || startupStatus.is_complete) return null;
@@ -265,11 +294,41 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     // Backend status
     details.push(`Backend: ${backendStatus.state}`);
 
+    // Add error details if backend failed
+    if (backendStatus.errorDetails) {
+      const errorType = backendStatus.errorDetails.type;
+      let errorMsg = `Error: ${errorType}`;
+      if (backendStatus.errorDetails.statusCode) {
+        errorMsg += ` (${backendStatus.errorDetails.statusCode})`;
+      }
+      details.push(errorMsg);
+      if (backendStatus.error) {
+        details.push(`Details: ${backendStatus.error}`);
+      }
+    }
+
     // Add startup progress if backend is offline
     if (backendStatus.state !== 'online' && startupStatus) {
       details.push(`Startup: ${startupStatus.steps_completed}/${startupStatus.total_steps} steps (${startupPercentage || 0}%)`);
       if (startupStatus.steps_pending) {
         details.push(`Pending: ${startupStatus.steps_pending} tasks`);
+      }
+
+      // Add expected startup time info
+      if (backendStatus.expectedStartupTime) {
+        const expectedSeconds = Math.round(backendStatus.expectedStartupTime / 1000);
+        details.push(`Expected startup time: ~${expectedSeconds}s`);
+      }
+
+      // Add timeout warning
+      if (isStartupTimedOut) {
+        details.push('⚠️ WARNING: Startup timeout (60s) exceeded!');
+        details.push('Check backend logs: python start.py');
+      } else if (startupStartTime !== null) {
+        const elapsedSeconds = Math.round((Date.now() - startupStartTime) / 1000);
+        if (elapsedSeconds > 30) {
+          details.push(`⏱️ Startup taking longer than expected (${elapsedSeconds}s)`);
+        }
       }
 
       // Add current step details
@@ -299,7 +358,7 @@ export const Navigation: React.FC<NavigationProps> = ({ connected, backendStatus
     }
 
     return details.join(' • ');
-  }, [backendStatus.state, debouncedConnected, debouncedHealthStatus, healthData, startupStatus, startupPercentage]);
+  }, [backendStatus.state, backendStatus.errorDetails, backendStatus.error, backendStatus.expectedStartupTime, debouncedConnected, debouncedHealthStatus, healthData, startupStatus, startupPercentage, isStartupTimedOut, startupStartTime]);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },

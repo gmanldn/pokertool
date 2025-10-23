@@ -145,6 +145,9 @@ export const mockBackendStatus = (state: 'online' | 'offline' | 'starting' = 'on
   state,
   startTime: Date.now(),
   version: 'v100.3.1',
+  lastChecked: new Date().toISOString(),
+  attempts: 0,
+  expectedStartupTime: 30000,
 });
 
 // Mock system health data

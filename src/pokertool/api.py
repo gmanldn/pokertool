@@ -1046,6 +1046,22 @@ This API implements comprehensive security measures including:
             health_checker.start_periodic_checks()
             logger.info("System health checker initialized and started")
 
+            # CRITICAL FIX: Auto-start the poker table detection/scraper
+            # This was the root cause of complete detection failure
+            try:
+                from pokertool.scrape import run_screen_scraper
+                logger.info("Starting automatic poker table detection (screen scraper)...")
+                scraper_result = run_screen_scraper(site='GENERIC', continuous=True, interval=1.0, enable_ocr=True)
+                if scraper_result.get('status') == 'success':
+                    logger.info("✓ Poker table detection successfully started in continuous mode")
+                    logger.info(f"  - Scraper available: {scraper_result.get('ocr_enabled')}")
+                else:
+                    logger.warning(f"⚠ Failed to start poker detection: {scraper_result.get('message')}")
+                    if scraper_result.get('dependencies_missing'):
+                        logger.warning(f"  Missing dependencies: {scraper_result.get('dependencies_missing')}")
+            except Exception as e:
+                logger.error(f"✗ Critical error starting detection system: {e}", exc_info=True)
+
             # Start periodic cleanup task
             cleanup_task = asyncio.create_task(self._periodic_cleanup())
 
@@ -1053,6 +1069,14 @@ This API implements comprehensive security measures including:
 
             # Shutdown
             logger.info("Shutting down PokerTool API background tasks...")
+
+            # Stop the detection system/scraper
+            try:
+                from pokertool.scrape import stop_screen_scraper
+                stop_result = stop_screen_scraper()
+                logger.info("✓ Poker table detection (screen scraper) stopped")
+            except Exception as e:
+                logger.warning(f"Error stopping scraper during shutdown: {e}")
 
             # Stop health checker
             await health_checker.stop_periodic_checks()

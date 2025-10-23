@@ -22,6 +22,12 @@ export interface BackendStatus {
   error?: string;
   message?: string;
   attempts: number;
+  errorDetails?: {
+    type: string; // 'network' | 'timeout' | 'api_error' | 'unknown'
+    statusCode?: number;
+    timestamp: string;
+  };
+  expectedStartupTime?: number; // milliseconds
 }
 
 async function wait(ms: number) {
@@ -50,9 +56,11 @@ export function useBackendLifecycle(pollIntervalMs: number = 15000) {
     state: 'checking',
     lastChecked: null,
     attempts: 0,
+    expectedStartupTime: 30000, // 30 seconds expected startup
   });
 
   const runningCheckRef = useRef(false);
+  const startupStartTimeRef = useRef<number | null>(null);
 
   const updateStatus = useCallback((partial: Partial<BackendStatus>) => {
     setStatus((prev) => ({
@@ -64,19 +72,51 @@ export function useBackendLifecycle(pollIntervalMs: number = 15000) {
 
   const checkHealth = useCallback(async () => {
     try {
-      await fetchJson(buildApiUrl('/health'), { cache: 'no-store' });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      await fetch(buildApiUrl('/health'), {
+        cache: 'no-store',
+        signal: controller.signal
+      }).then(async (response) => {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error(`Health check returned ${response.status}`);
+        }
+        return response.text().then(text => text ? JSON.parse(text) : {});
+      });
+
       updateStatus({
         state: 'online',
         error: undefined,
+        errorDetails: undefined,
         message: 'Backend API responded to health check.',
         lastChecked: new Date().toISOString(),
       });
       return true;
     } catch (error) {
       const err = error as Error;
+      let errorType = 'unknown';
+      let statusCode: number | undefined;
+
+      if (err.name === 'AbortError') {
+        errorType = 'timeout';
+      } else if (err.message.includes('returned')) {
+        errorType = 'api_error';
+        const match = err.message.match(/returned (\d+)/);
+        if (match) statusCode = parseInt(match[1]);
+      } else if (err.message.includes('Failed to fetch') || err.message.includes('fetch')) {
+        errorType = 'network';
+      }
+
       updateStatus({
         state: 'offline',
         error: err.message,
+        errorDetails: {
+          type: errorType,
+          statusCode,
+          timestamp: new Date().toISOString(),
+        },
         message: 'Backend health check failed.',
         lastChecked: new Date().toISOString(),
       });
@@ -124,10 +164,23 @@ export function useBackendLifecycle(pollIntervalMs: number = 15000) {
     try {
       const healthy = await checkHealth();
       if (healthy) {
+        // Backend came online - reset startup timer
+        if (startupStartTimeRef.current !== null) {
+          const elapsedTime = Date.now() - startupStartTimeRef.current;
+          console.log(`[BackendLifecycle] Backend became online after ${elapsedTime}ms`);
+          startupStartTimeRef.current = null;
+        }
         return;
       }
 
+      // Track startup start time on first check failure
+      if (startupStartTimeRef.current === null) {
+        startupStartTimeRef.current = Date.now();
+      }
+
       await startBackend();
+      // After starting, wait a bit then check again
+      await wait(1000);
       await checkHealth();
     } finally {
       runningCheckRef.current = false;
