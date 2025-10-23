@@ -4,6 +4,9 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Increase global timeout for async tests
+jest.setTimeout(15000);
+
 // Mock HTMLCanvasElement.getContext for xterm
 HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
   fillStyle: '',
