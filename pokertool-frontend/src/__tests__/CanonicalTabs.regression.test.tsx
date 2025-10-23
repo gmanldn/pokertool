@@ -30,9 +30,10 @@ import '@testing-library/jest-dom';
  * 3. AI Chat
  * 4. Improve
  * 5. Backend
- * 6. Tables        <- CRITICAL: Must always be visible
- * 7. Detection Log <- CRITICAL: Must always be visible
- * 8. System Status
+ * 6. Tables          <- CRITICAL: Must always be visible
+ * 7. Detection Log   <- CRITICAL: Must always be visible
+ * 8. Version History <- CRITICAL: Must always be visible
+ * 9. System Status
  */
 
 describe('CANONICAL TABS - REGRESSION PREVENTION SUITE', () => {
@@ -151,21 +152,80 @@ describe('CANONICAL TABS - REGRESSION PREVENTION SUITE', () => {
   });
 
   /**
+   * CRITICAL TESTS: Version History Tab
+   * These tests ensure the Version History tab is NEVER removed from navigation
+   */
+  describe('Version History Tab - CRITICAL REGRESSION TESTS', () => {
+    it('Version History tab MUST always be present in navigation', () => {
+      renderWithProviders(<App />, { route: '/dashboard' });
+
+      const versionHistoryItem = screen.getByText(/version history/i);
+      expect(versionHistoryItem).toBeInTheDocument();
+      expect(versionHistoryItem).toBeVisible();
+    });
+
+    it('Version History route MUST be accessible', async () => {
+      renderWithProviders(<App />, { route: '/version-history' });
+
+      await waitFor(() => {
+        expect(screen.getByRole('banner')).toBeInTheDocument();
+      });
+    });
+
+    it('Version History tab MUST be clickable from Dashboard', async () => {
+      renderWithProviders(<App />, { route: '/dashboard' });
+
+      const versionHistoryItem = screen.getByText(/version history/i);
+      fireEvent.click(versionHistoryItem);
+
+      await waitFor(() => {
+        expect(screen.getByText(/version history/i)).toBeInTheDocument();
+      });
+    });
+
+    it('Version History MUST remain visible in navigation after clicking', async () => {
+      renderWithProviders(<App />, { route: '/dashboard' });
+
+      const versionHistoryItem = screen.getByText(/version history/i);
+      fireEvent.click(versionHistoryItem);
+
+      await waitFor(() => {
+        // Version History should still be in the navigation
+        expect(screen.getByText(/version history/i)).toBeInTheDocument();
+      });
+    });
+
+    it('Version History MUST be visible in mobile drawer', async () => {
+      renderWithProviders(<App />, { route: '/dashboard' });
+
+      // Open drawer on mobile
+      const menuButton = screen.getByRole('button', { name: /menu/i });
+      fireEvent.click(menuButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/version history/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  /**
    * CANONICAL TAB INTERACTION TESTS
    * These tests ensure canonical tabs work correctly together
    */
   describe('Canonical Tabs - Interaction Tests', () => {
-    it('Both Tables and Detection Log MUST be visible simultaneously', () => {
+    it('All three critical tabs (Tables, Detection Log, Version History) MUST be visible simultaneously', () => {
       renderWithProviders(<App />, { route: '/dashboard' });
 
       const tablesItem = screen.getByText(/^Tables$/i);
       const detectionLogItem = screen.getByText(/detection log/i);
+      const versionHistoryItem = screen.getByText(/version history/i);
 
       expect(tablesItem).toBeInTheDocument();
       expect(detectionLogItem).toBeInTheDocument();
+      expect(versionHistoryItem).toBeInTheDocument();
     });
 
-    it('MUST be able to navigate between Tables and Detection Log', async () => {
+    it('MUST be able to navigate between Tables, Detection Log, and Version History', async () => {
       renderWithProviders(<App />, { route: '/dashboard' });
 
       // Navigate to Tables
@@ -180,6 +240,13 @@ describe('CANONICAL TABS - REGRESSION PREVENTION SUITE', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/detection log/i)).toBeInTheDocument();
+      });
+
+      // Navigate to Version History
+      fireEvent.click(screen.getByText(/version history/i));
+
+      await waitFor(() => {
+        expect(screen.getByText(/version history/i)).toBeInTheDocument();
       });
 
       // Navigate back to Tables
@@ -250,7 +317,7 @@ describe('CANONICAL TABS - REGRESSION PREVENTION SUITE', () => {
     it('All canonical tabs MUST be in the menu items array', async () => {
       renderWithProviders(<App />, { route: '/dashboard' });
 
-      // Check all 8 canonical tabs
+      // Check all 9 canonical tabs
       const canonicalTabTexts = [
         'Dashboard',
         '🧠 SmartHelper',
@@ -259,6 +326,7 @@ describe('CANONICAL TABS - REGRESSION PREVENTION SUITE', () => {
         'Backend',
         /^Tables$/i,
         /detection log/i,
+        /version history/i,
         'System Status',
       ];
 
@@ -269,7 +337,7 @@ describe('CANONICAL TABS - REGRESSION PREVENTION SUITE', () => {
       }
     });
 
-    it('Tables and Detection Log MUST appear together in mobile drawer', async () => {
+    it('Tables, Detection Log, and Version History MUST appear together in mobile drawer', async () => {
       renderWithProviders(<App />, { route: '/dashboard' });
 
       // Open mobile drawer
@@ -279,13 +347,16 @@ describe('CANONICAL TABS - REGRESSION PREVENTION SUITE', () => {
       await waitFor(() => {
         const tablesItem = screen.getByText(/^Tables$/i);
         const detectionLogItem = screen.getByText(/detection log/i);
+        const versionHistoryItem = screen.getByText(/version history/i);
 
         expect(tablesItem).toBeInTheDocument();
         expect(detectionLogItem).toBeInTheDocument();
+        expect(versionHistoryItem).toBeInTheDocument();
 
-        // They should be near each other in the drawer
+        // They should be in the drawer
         const drawer = tablesItem.closest('[role="presentation"]');
         expect(drawer).toContainElement(detectionLogItem);
+        expect(drawer).toContainElement(versionHistoryItem);
       });
     });
   });
