@@ -34,7 +34,7 @@ exports[`Dashboard Snapshot Tests renders correctly in loading state 1`] = `
         <span
           class="MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"
         >
-          Last Update: 3:37:33 AM
+          Last Update: 3:42:59 AM
         </span>
       </div>
       <button
@@ -154,7 +154,7 @@ exports[`Dashboard Snapshot Tests renders correctly with no messages 1`] = `
         <span
           class="MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"
         >
-          Last Update: 3:37:33 AM
+          Last Update: 3:42:59 AM
         </span>
       </div>
       <button
@@ -274,7 +274,7 @@ exports[`Dashboard Snapshot Tests renders correctly with sample messages 1`] = `
         <span
           class="MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"
         >
-          Last Update: 3:37:33 AM
+          Last Update: 3:42:59 AM
         </span>
       </div>
       <button
