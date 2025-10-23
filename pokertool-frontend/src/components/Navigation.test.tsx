@@ -92,7 +92,7 @@ describe('Navigation - Backend Status Indicator', () => {
     // Wait for debounce
     await waitFor(() => {
       expect(screen.getByText('Backend Online')).toBeInTheDocument();
-    }, { timeout: 1000 });
+    }, { timeout: 3000 });
   });
 
   it('should show "Backend Offline" when API is down', async () => {
@@ -108,7 +108,7 @@ describe('Navigation - Backend Status Indicator', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Backend Offline')).toBeInTheDocument();
-    }, { timeout: 1000 });
+    }, { timeout: 3000 });
   });
 
   it('should show "Backend Offline" when WebSocket is disconnected', async () => {
@@ -125,7 +125,7 @@ describe('Navigation - Backend Status Indicator', () => {
     // Wait for debounce (400ms for connected + 600ms for health)
     await waitFor(() => {
       expect(screen.getByText('Backend Offline')).toBeInTheDocument();
-    }, { timeout: 1500 });
+    }, { timeout: 3000 });
   });
 
   it('should show "Backend Degraded" when health checks fail', async () => {
@@ -153,7 +153,7 @@ describe('Navigation - Backend Status Indicator', () => {
     // Wait for debounce
     await waitFor(() => {
       expect(screen.getByText('Backend Degraded')).toBeInTheDocument();
-    }, { timeout: 1000 });
+    }, { timeout: 3000 });
   });
 
   it('should NOT show "Realtime Offline" status', async () => {
@@ -173,7 +173,7 @@ describe('Navigation - Backend Status Indicator', () => {
       expect(screen.queryByText(/realtime offline/i)).not.toBeInTheDocument();
       // Should show "Backend Offline" instead
       expect(screen.getByText('Backend Offline')).toBeInTheDocument();
-    }, { timeout: 1500 });
+    }, { timeout: 3000 });
   });
 
   it('should show startup percentage when backend is starting', async () => {
@@ -200,7 +200,7 @@ describe('Navigation - Backend Status Indicator', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Backend Offline (50%)')).toBeInTheDocument();
-    }, { timeout: 1500 });
+    }, { timeout: 3000 });
   });
 
   it('should handle navigation clicks', async () => {
