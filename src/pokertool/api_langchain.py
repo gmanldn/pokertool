@@ -434,6 +434,138 @@ async def clear_memory(
         raise HTTPException(status_code=500, detail=f"Memory clear failed: {str(e)}")
 
 
+# Opponent Profiling Endpoints
+
+class OpponentProfileRequest(BaseModel):
+    """Request model for opponent profile generation."""
+    vpip: float = Field(..., ge=0, le=100, description="Voluntarily Put $ In Pot %")
+    pfr: float = Field(..., ge=0, le=100, description="Preflop Raise %")
+    threebet: float = Field(default=0.0, ge=0, le=100, description="3-Bet %")
+    fold_to_cbet: float = Field(default=0.0, ge=0, le=100, description="Fold to C-Bet %")
+    fold_to_threebet: float = Field(default=0.0, ge=0, le=100, description="Fold to 3-Bet %")
+    aggression: float = Field(default=1.0, ge=0, description="Aggression Factor")
+    hands_played: int = Field(..., ge=1, description="Number of hands played")
+    hand_history: Optional[List[Dict[str, Any]]] = Field(None, description="Recent hand history")
+    use_mock: bool = Field(False, description="Use mock LLM for testing")
+
+
+class OpponentProfileResponse(BaseModel):
+    """Response model for opponent profile."""
+    player_type: str
+    playing_style: str
+    tendencies: List[str]
+    exploitation_strategy: str
+    confidence: str
+    stats: Dict[str, Any]
+
+
+@router.post("/profile/generate", response_model=OpponentProfileResponse, dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
+async def generate_opponent_profile(
+    request: OpponentProfileRequest
+) -> OpponentProfileResponse:
+    """
+    Generate AI-powered opponent profile from statistics.
+
+    Uses LangChain to create natural language profiles describing opponent
+    playing style, key tendencies, and recommended exploitation strategies.
+
+    Args:
+        request: Opponent statistics and optional hand history
+
+    Returns:
+        Detailed opponent profile with AI-generated insights
+
+    Example:
+        ```json
+        {
+            "vpip": 45.0,
+            "pfr": 32.0,
+            "threebet": 12.0,
+            "fold_to_cbet": 35.0,
+            "fold_to_threebet": 45.0,
+            "aggression": 2.8,
+            "hands_played": 150,
+            "use_mock": true
+        }
+        ```
+    """
+    try:
+        from pokertool.opponent_profiler import OpponentProfiler, OpponentStats
+
+        # Create opponent stats object
+        stats = OpponentStats(
+            vpip=request.vpip,
+            pfr=request.pfr,
+            threebet=request.threebet,
+            fold_to_cbet=request.fold_to_cbet,
+            fold_to_threebet=request.fold_to_threebet,
+            aggression=request.aggression,
+            hands_played=request.hands_played
+        )
+
+        # Generate profile
+        profiler = OpponentProfiler()
+        profile = profiler.generate_ai_profile(
+            stats=stats,
+            hand_history=request.hand_history,
+            use_mock=request.use_mock
+        )
+
+        logger.info(f"Generated opponent profile: {profile['player_type']}")
+
+        return OpponentProfileResponse(**profile)
+
+    except Exception as e:
+        logger.error(f"Opponent profile generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Profile generation failed: {str(e)}")
+
+
+@router.get("/profile/{player_id}", response_model=OpponentProfileResponse, dependencies=[Depends(require_permission(Permission.USE_AI_ANALYSIS))])
+async def get_opponent_profile(
+    player_id: str
+) -> OpponentProfileResponse:
+    """
+    Get opponent profile by player ID.
+
+    Retrieves cached profile or generates new one from stored stats.
+
+    Args:
+        player_id: Unique player identifier
+
+    Returns:
+        Opponent profile
+
+    Example:
+        GET /api/ai/profile/player_12345
+    """
+    try:
+        # TODO: Implement player stats retrieval from database
+        # For now, return mock profile
+        from pokertool.opponent_profiler import OpponentProfiler, OpponentStats
+
+        # Mock stats - in production, fetch from database
+        stats = OpponentStats(
+            vpip=28.0,
+            pfr=22.0,
+            threebet=8.0,
+            fold_to_cbet=42.0,
+            fold_to_threebet=55.0,
+            aggression=2.1,
+            hands_played=75
+        )
+
+        profiler = OpponentProfiler()
+        profile = profiler.generate_ai_profile(stats=stats, use_mock=True)
+
+        logger.info(f"Retrieved profile for player {player_id}")
+
+        return OpponentProfileResponse(**profile)
+
+    except Exception as e:
+        logger.error(f"Failed to retrieve profile for {player_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Profile retrieval failed: {str(e)}")
+
+
 # Health check for AI services
 @router.get("/health")
 async def ai_health_check() -> Dict[str, Any]:
