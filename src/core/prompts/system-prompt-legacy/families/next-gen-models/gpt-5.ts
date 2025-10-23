@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/prompts/system-prompt-legacy/families/next-gen-models/gpt-5.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/prompts/system-prompt-legacy/families/next-gen-models/gpt-5.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { McpHub } from "@services/mcp/McpHub"
 import { BrowserSettings } from "@shared/BrowserSettings"
 import { FocusChainSettings } from "@shared/FocusChainSettings"
@@ -31,7 +31,7 @@ TOOL USE
 
 You have access to a set of tools that are executed upon the user's approval. You can use one tool per message, and will receive the result of that tool use in the user's response. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.
 
-# Tool Use Formatting
+// Tool Use Formatting
 
 Tool use is formatted using XML-style tags. The tool name is enclosed in opening and closing tags, and each parameter is similarly enclosed within its own set of tags. Here's the structure:
 
@@ -56,7 +56,7 @@ Checklist here (optional)
 
 Always adhere to this format for the tool use to ensure proper parsing and execution.
 
-# Tools
+// Tools
 
 ## execute_command
 Description: Request to execute a CLI command on the system. Use this when you need to perform system operations or run specific commands to accomplish any step in the user's task. You must tailor your command to the user's system and provide a clear explanation of what the command does. For command chaining, use the appropriate chaining syntax for the user's shell. Prefer to execute complex CLI commands over creating executable scripts, as they are more flexible and easier to run. Commands will be executed in the current working directory: ${cwd.toPosix()}
@@ -392,7 +392,7 @@ Usage:
 <load_mcp_documentation>
 </load_mcp_documentation>
 
-# Tool Use Examples
+// Tool Use Examples
 
 ## Example 1: Requesting to execute a command
 
@@ -550,7 +550,7 @@ ${
 </arguments>
 </use_mcp_tool>
 
-# Tool Use Guidelines
+// Tool Use Guidelines
 
 1. In <thinking> tags, assess what information you already have and what information you need to proceed with the task.
 2. Choose the most appropriate tool based on the task and the tool descriptions provided. Assess if you need additional information to proceed, and which of the available tools would be most effective for gathering this information. For example using the list_files tool is more effective than running a command like \`ls\` in the terminal. It's critical that you think about each available tool and use the one that best fits the current step in the task.
@@ -594,7 +594,7 @@ MCP SERVERS
 
 The Model Context Protocol (MCP) enables communication between the system and locally running MCP servers that provide additional tools and resources to extend your capabilities.
 
-# Connected MCP Servers
+// Connected MCP Servers
 
 When a server is connected, you can use the server's tools via the \`use_mcp_tool\` tool, and access the server's resources via the \`access_mcp_resource\` tool.
 
@@ -645,7 +645,7 @@ EDITING FILES
 
 You have access to two tools for working with files: **write_to_file** and **replace_in_file**. Understanding their roles and selecting the right one for the job will help ensure efficient and accurate modifications.
 
-# write_to_file
+// write_to_file
 
 ## Purpose
 
@@ -664,7 +664,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
 - If you only need to make small changes to an existing file, consider using replace_in_file instead to avoid unnecessarily rewriting the entire file.
 - While write_to_file should not be your default choice, don't hesitate to use it when the situation truly calls for it.
 
-# replace_in_file
+// replace_in_file
 
 ## Purpose
 
@@ -681,7 +681,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
 - More efficient for minor edits, since you don't need to supply the entire file content.  
 - Reduces the chance of errors that can occur when overwriting large files.
 
-# Choosing the Appropriate Tool
+// Choosing the Appropriate Tool
 
 - **Default to replace_in_file** for most changes. It's the safer, more precise option that minimizes potential issues.
 - **Use write_to_file** when:
@@ -691,7 +691,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
   - The file is relatively small and the changes affect most of its content
   - You're generating boilerplate or template files
 
-# Auto-formatting Considerations
+// Auto-formatting Considerations
 
 - After using either write_to_file or replace_in_file, the user's editor may automatically format the file
 - This auto-formatting may modify the file contents, for example:
@@ -705,7 +705,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
 - The write_to_file and replace_in_file tool responses will include the final state of the file after any auto-formatting
 - Use this final state as your reference point for any subsequent edits. This is ESPECIALLY important when crafting SEARCH blocks for replace_in_file which require the content to match what's in the file exactly.
 
-# Workflow Tips
+// Workflow Tips
 
 1. Before editing, assess the scope of your changes and decide which tool to use.
 2. For targeted edits, apply replace_in_file with carefully crafted SEARCH/REPLACE blocks. If you need multiple changes, you can stack multiple SEARCH/REPLACE blocks within a single replace_in_file call.

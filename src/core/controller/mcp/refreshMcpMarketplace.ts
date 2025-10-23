@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/mcp/refreshMcpMarketplace.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/mcp/refreshMcpMarketplace.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import type { EmptyRequest } from "@shared/proto/cline/common"
 import { McpMarketplaceCatalog } from "@shared/proto/cline/mcp"
 import type { Controller } from "../index"
@@ -21,19 +21,19 @@ import type { Controller } from "../index"
  * @returns MCP marketplace catalog
  */
 export async function refreshMcpMarketplace(controller: Controller, _request: EmptyRequest): Promise<McpMarketplaceCatalog> {
-    try {
-        // Call the RPC variant which returns the result directly
-        const catalog = await controller.silentlyRefreshMcpMarketplaceRPC()
+	try {
+		// Call the RPC variant which returns the result directly
+		const catalog = await controller.silentlyRefreshMcpMarketplaceRPC()
 
-        if (catalog) {
-            // Types are structurally identical, use direct type assertion
-            return catalog as McpMarketplaceCatalog
-        }
+		if (catalog) {
+			// Types are structurally identical, use direct type assertion
+			return catalog as McpMarketplaceCatalog
+		}
 
-        // Return empty catalog if nothing was fetched
-        return McpMarketplaceCatalog.create({ items: [] })
-    } catch (error) {
-        console.error("Failed to refresh MCP marketplace:", error)
-        return McpMarketplaceCatalog.create({ items: [] })
-    }
+		// Return empty catalog if nothing was fetched
+		return McpMarketplaceCatalog.create({ items: [] })
+	} catch (error) {
+		console.error("Failed to refresh MCP marketplace:", error)
+		return McpMarketplaceCatalog.create({ items: [] })
+	}
 }

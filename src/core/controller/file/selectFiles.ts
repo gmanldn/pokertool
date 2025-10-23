@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/file/selectFiles.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/file/selectFiles.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { selectFiles as selectFilesIntegration } from "@integrations/misc/process-files"
 import { BooleanRequest, StringArrays } from "@shared/proto/cline/common"
 import { Controller } from ".."
@@ -21,12 +21,12 @@ import { Controller } from ".."
  * @returns Two arrays of image data URLs and other file paths
  */
 export async function selectFiles(_controller: Controller, request: BooleanRequest): Promise<StringArrays> {
-    try {
-        const { images, files } = await selectFilesIntegration(request.value)
-        return StringArrays.create({ values1: images, values2: files })
-    } catch (error) {
-        console.error("Error selecting images & files:", error)
-        // Return empty array on error
-        return StringArrays.create({ values1: [], values2: [] })
-    }
+	try {
+		const { images, files } = await selectFilesIntegration(request.value)
+		return StringArrays.create({ values1: images, values2: files })
+	} catch (error) {
+		console.error("Error selecting images & files:", error)
+		// Return empty array on error
+		return StringArrays.create({ values1: [], values2: [] })
+	}
 }

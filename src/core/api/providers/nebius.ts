@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/api/providers/nebius.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/api/providers/nebius.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { Anthropic } from "@anthropic-ai/sdk"
 import { type ModelInfo, type NebiusModelId, nebiusDefaultModelId, nebiusModels } from "@shared/api"
 import OpenAI from "openai"

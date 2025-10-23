@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/models/refreshVercelAiGatewayModels.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/models/refreshVercelAiGatewayModels.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { ensureCacheDirectoryExists, GlobalFileNames } from "@core/storage/disk"
 import { EmptyRequest } from "@shared/proto/cline/common"
 import { OpenRouterCompatibleModelInfo, OpenRouterModelInfo } from "@shared/proto/cline/models"
@@ -26,77 +26,77 @@ import { Controller } from ".."
  * @returns Response containing Vercel AI Gateway models
  */
 export async function refreshVercelAiGatewayModels(
-    _controller: Controller,
-    _request: EmptyRequest,
+	_controller: Controller,
+	_request: EmptyRequest,
 ): Promise<OpenRouterCompatibleModelInfo> {
-    const vercelAiGatewayModelsFilePath = path.join(await ensureCacheDirectoryExists(), GlobalFileNames.vercelAiGatewayModels)
+	const vercelAiGatewayModelsFilePath = path.join(await ensureCacheDirectoryExists(), GlobalFileNames.vercelAiGatewayModels)
 
-    let models: Record<string, OpenRouterModelInfo> = {}
+	let models: Record<string, OpenRouterModelInfo> = {}
 
-    try {
-        const response = await axios.get("https://ai-gateway.vercel.sh/v1/models")
+	try {
+		const response = await axios.get("https://ai-gateway.vercel.sh/v1/models")
 
-        if (response.data?.data) {
-            const rawModels = response.data.data
-            const parsePrice = (price: any) => {
-                if (price) {
-                    return parseFloat(price) * 1_000_000
-                }
-                return undefined
-            }
+		if (response.data?.data) {
+			const rawModels = response.data.data
+			const parsePrice = (price: any) => {
+				if (price) {
+					return parseFloat(price) * 1_000_000
+				}
+				return undefined
+			}
 
-            for (const rawModel of rawModels) {
-                if (rawModel.type === "embedding") {
-                    continue
-                }
+			for (const rawModel of rawModels) {
+				if (rawModel.type === "embedding") {
+					continue
+				}
 
-                const modelInfo = OpenRouterModelInfo.create({
-                    maxTokens: rawModel.max_tokens ?? 0,
-                    contextWindow: rawModel.context_window ?? 0,
-                    inputPrice: parsePrice(rawModel.pricing?.input) ?? 0,
-                    outputPrice: parsePrice(rawModel.pricing?.output) ?? 0,
-                    cacheWritesPrice: parsePrice(rawModel.pricing?.input_cache_write) ?? 0,
-                    cacheReadsPrice: parsePrice(rawModel.pricing?.input_cache_read) ?? 0,
-                    supportsImages: true, // assume all models support images since vercel ai doesn't give this info
-                    supportsPromptCache: !!(rawModel.pricing?.input_cache_read && rawModel.pricing?.input_cache_write),
-                    description: rawModel.description ?? "",
-                })
+				const modelInfo = OpenRouterModelInfo.create({
+					maxTokens: rawModel.max_tokens ?? 0,
+					contextWindow: rawModel.context_window ?? 0,
+					inputPrice: parsePrice(rawModel.pricing?.input) ?? 0,
+					outputPrice: parsePrice(rawModel.pricing?.output) ?? 0,
+					cacheWritesPrice: parsePrice(rawModel.pricing?.input_cache_write) ?? 0,
+					cacheReadsPrice: parsePrice(rawModel.pricing?.input_cache_read) ?? 0,
+					supportsImages: true, // assume all models support images since vercel ai doesn't give this info
+					supportsPromptCache: !!(rawModel.pricing?.input_cache_read && rawModel.pricing?.input_cache_write),
+					description: rawModel.description ?? "",
+				})
 
-                models[rawModel.id] = modelInfo
-            }
+				models[rawModel.id] = modelInfo
+			}
 
-            await fs.writeFile(vercelAiGatewayModelsFilePath, JSON.stringify(models))
-            console.log("Vercel AI Gateway models fetched and saved", JSON.stringify(models).slice(0, 300))
-        } else {
-            console.error("Invalid response from Vercel AI Gateway API")
-        }
-    } catch (error) {
-        console.error("Error fetching Vercel AI Gateway models:", error)
+			await fs.writeFile(vercelAiGatewayModelsFilePath, JSON.stringify(models))
+			console.log("Vercel AI Gateway models fetched and saved", JSON.stringify(models).slice(0, 300))
+		} else {
+			console.error("Invalid response from Vercel AI Gateway API")
+		}
+	} catch (error) {
+		console.error("Error fetching Vercel AI Gateway models:", error)
 
-        // If we failed to fetch models, try to read cached models
-        const cachedModels = await readVercelAiGatewayModels()
-        if (cachedModels) {
-            models = cachedModels
-        }
-    }
+		// If we failed to fetch models, try to read cached models
+		const cachedModels = await readVercelAiGatewayModels()
+		if (cachedModels) {
+			models = cachedModels
+		}
+	}
 
-    return OpenRouterCompatibleModelInfo.create({ models })
+	return OpenRouterCompatibleModelInfo.create({ models })
 }
 
 /**
  * Reads cached Vercel AI Gateway models from disk
  */
 async function readVercelAiGatewayModels(): Promise<Record<string, OpenRouterModelInfo> | undefined> {
-    const vercelAiGatewayModelsFilePath = path.join(await ensureCacheDirectoryExists(), GlobalFileNames.vercelAiGatewayModels)
-    const fileExists = await fileExistsAtPath(vercelAiGatewayModelsFilePath)
-    if (fileExists) {
-        try {
-            const fileContents = await fs.readFile(vercelAiGatewayModelsFilePath, "utf8")
-            return JSON.parse(fileContents)
-        } catch (error) {
-            console.error("Error reading cached Vercel AI Gateway models:", error)
-            return undefined
-        }
-    }
-    return undefined
+	const vercelAiGatewayModelsFilePath = path.join(await ensureCacheDirectoryExists(), GlobalFileNames.vercelAiGatewayModels)
+	const fileExists = await fileExistsAtPath(vercelAiGatewayModelsFilePath)
+	if (fileExists) {
+		try {
+			const fileContents = await fs.readFile(vercelAiGatewayModelsFilePath, "utf8")
+			return JSON.parse(fileContents)
+		} catch (error) {
+			console.error("Error reading cached Vercel AI Gateway models:", error)
+			return undefined
+		}
+	}
+	return undefined
 }

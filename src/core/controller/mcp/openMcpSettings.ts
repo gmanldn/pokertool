@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/mcp/openMcpSettings.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/mcp/openMcpSettings.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { openFile as openFileIntegration } from "@integrations/misc/open-file"
 import { Empty, EmptyRequest } from "@shared/proto/cline/common"
 import { Controller } from ".."
@@ -21,9 +21,9 @@ import { Controller } from ".."
  * @returns Empty response
  */
 export async function openMcpSettings(controller: Controller, _request: EmptyRequest): Promise<Empty> {
-    const mcpSettingsFilePath = await controller.mcpHub?.getMcpSettingsFilePath()
-    if (mcpSettingsFilePath) {
-        await openFileIntegration(mcpSettingsFilePath)
-    }
-    return Empty.create()
+	const mcpSettingsFilePath = await controller.mcpHub?.getMcpSettingsFilePath()
+	if (mcpSettingsFilePath) {
+		await openFileIntegration(mcpSettingsFilePath)
+	}
+	return Empty.create()
 }

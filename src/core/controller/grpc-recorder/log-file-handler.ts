@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/grpc-recorder/log-file-handler.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/grpc-recorder/log-file-handler.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { writeFile } from "@utils/fs"
 import fs from "fs/promises"
 import * as path from "path"
@@ -18,13 +18,13 @@ import { GrpcSessionLog } from "@/core/controller/grpc-recorder/types"
 const LOG_FILE_PREFIX = "grpc_recorded_session"
 
 export class LogFileHandlerNoops implements ILogFileHandler {
-    async initialize(_initialData: GrpcSessionLog): Promise<void> {}
-    async write(_sessionLog: GrpcSessionLog): Promise<void> {}
+	async initialize(_initialData: GrpcSessionLog): Promise<void> {}
+	async write(_sessionLog: GrpcSessionLog): Promise<void> {}
 }
 
 export interface ILogFileHandler {
-    initialize(initialData: GrpcSessionLog): Promise<void>
-    write(sessionLog: GrpcSessionLog): Promise<void>
+	initialize(initialData: GrpcSessionLog): Promise<void>
+	write(sessionLog: GrpcSessionLog): Promise<void>
 }
 
 /**
@@ -35,35 +35,35 @@ export interface ILogFileHandler {
  * - Saves logs in JSON format.
  */
 export class LogFileHandler implements ILogFileHandler {
-    private logFilePath: string
+	private logFilePath: string
 
-    constructor() {
-        const fileName = this.getFileName()
-        const workspaceFolder = process.env.DEV_WORKSPACE_FOLDER ?? process.cwd()
-        const folderPath = path.join(workspaceFolder, "tests", "specs")
-        this.logFilePath = path.join(folderPath, fileName)
-    }
+	constructor() {
+		const fileName = this.getFileName()
+		const workspaceFolder = process.env.DEV_WORKSPACE_FOLDER ?? process.cwd()
+		const folderPath = path.join(workspaceFolder, "tests", "specs")
+		this.logFilePath = path.join(folderPath, fileName)
+	}
 
-    public getFilePath(): string {
-        return this.logFilePath
-    }
+	public getFilePath(): string {
+		return this.logFilePath
+	}
 
-    public getFileName(): string {
-        const envFileName = path.basename(process.env.GRPC_RECORDER_FILE_NAME || "").replace(/[^a-zA-Z0-9-_]/g, "_")
-        if (envFileName && envFileName.trim().length > 0) {
-            return `${LOG_FILE_PREFIX}_${envFileName}.json`
-        }
+	public getFileName(): string {
+		const envFileName = path.basename(process.env.GRPC_RECORDER_FILE_NAME || "").replace(/[^a-zA-Z0-9-_]/g, "_")
+		if (envFileName && envFileName.trim().length > 0) {
+			return `${LOG_FILE_PREFIX}_${envFileName}.json`
+		}
 
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
-        return `${LOG_FILE_PREFIX}_${timestamp}.json`
-    }
+		const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
+		return `${LOG_FILE_PREFIX}_${timestamp}.json`
+	}
 
-    public async initialize(initialData: GrpcSessionLog): Promise<void> {
-        await fs.mkdir(path.dirname(this.logFilePath), { recursive: true })
-        await writeFile(this.logFilePath, JSON.stringify(initialData, null, 2), "utf8")
-    }
+	public async initialize(initialData: GrpcSessionLog): Promise<void> {
+		await fs.mkdir(path.dirname(this.logFilePath), { recursive: true })
+		await writeFile(this.logFilePath, JSON.stringify(initialData, null, 2), "utf8")
+	}
 
-    public async write(sessionLog: GrpcSessionLog): Promise<void> {
-        await writeFile(this.logFilePath, JSON.stringify(sessionLog, null, 2), "utf8")
-    }
+	public async write(sessionLog: GrpcSessionLog): Promise<void> {
+		await writeFile(this.logFilePath, JSON.stringify(sessionLog, null, 2), "utf8")
+	}
 }

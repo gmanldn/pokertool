@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/prompts/system-prompt/components/editing_files.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/prompts/system-prompt/components/editing_files.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { SystemPromptSection } from "../templates/placeholders"
 import { TemplateEngine } from "../templates/TemplateEngine"
 import type { PromptVariant, SystemPromptContext } from "../types"
@@ -18,7 +18,7 @@ const EDITING_FILES_TEMPLATE_TEXT = `EDITING FILES
 
 You have access to two tools for working with files: **write_to_file** and **replace_in_file**. Understanding their roles and selecting the right one for the job will help ensure efficient and accurate modifications.
 
-# write_to_file
+// write_to_file
 
 ## Purpose
 
@@ -37,7 +37,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
 - If you only need to make small changes to an existing file, consider using replace_in_file instead to avoid unnecessarily rewriting the entire file.
 - While write_to_file should not be your default choice, don't hesitate to use it when the situation truly calls for it.
 
-# replace_in_file
+// replace_in_file
 
 ## Purpose
 
@@ -54,7 +54,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
 - More efficient for minor edits, since you don't need to supply the entire file content.  
 - Reduces the chance of errors that can occur when overwriting large files.
 
-# Choosing the Appropriate Tool
+// Choosing the Appropriate Tool
 
 - **Default to replace_in_file** for most changes. It's the safer, more precise option that minimizes potential issues.
 - **Use write_to_file** when:
@@ -64,7 +64,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
   - The file is relatively small and the changes affect most of its content
   - You're generating boilerplate or template files
 
-# Auto-formatting Considerations
+// Auto-formatting Considerations
 
 - After using either write_to_file or replace_in_file, the user's editor may automatically format the file
 - This auto-formatting may modify the file contents, for example:
@@ -78,7 +78,7 @@ You have access to two tools for working with files: **write_to_file** and **rep
 - The write_to_file and replace_in_file tool responses will include the final state of the file after any auto-formatting
 - Use this final state as your reference point for any subsequent edits. This is ESPECIALLY important when crafting SEARCH blocks for replace_in_file which require the content to match what's in the file exactly.
 
-# Workflow Tips
+// Workflow Tips
 
 1. Before editing, assess the scope of your changes and decide which tool to use.
 2. For targeted edits, apply replace_in_file with carefully crafted SEARCH/REPLACE blocks. If you need multiple changes, you can stack multiple SEARCH/REPLACE blocks within a single replace_in_file call.

@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/models/refreshRequestyModels.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/models/refreshRequestyModels.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { EmptyRequest } from "@shared/proto/cline/common"
 import { OpenRouterCompatibleModelInfo, OpenRouterModelInfo } from "@shared/proto/cline/models"
 import axios from "axios"
@@ -23,47 +23,47 @@ import { Controller } from ".."
  * @returns Response containing the Requesty models
  */
 export async function refreshRequestyModels(controller: Controller, _: EmptyRequest): Promise<OpenRouterCompatibleModelInfo> {
-    const parsePrice = (price: any) => {
-        if (price) {
-            return parseFloat(price) * 1_000_000
-        }
-        return undefined
-    }
+	const parsePrice = (price: any) => {
+		if (price) {
+			return parseFloat(price) * 1_000_000
+		}
+		return undefined
+	}
 
-    const models: Record<string, OpenRouterModelInfo> = {}
-    try {
-        const apiKey = controller.stateManager.getSecretKey("requestyApiKey")
-        const baseUrl = controller.stateManager.getGlobalSettingsKey("requestyBaseUrl")
+	const models: Record<string, OpenRouterModelInfo> = {}
+	try {
+		const apiKey = controller.stateManager.getSecretKey("requestyApiKey")
+		const baseUrl = controller.stateManager.getGlobalSettingsKey("requestyBaseUrl")
 
-        const resolvedUrl = toRequestyServiceUrl(baseUrl)
-        const url = new URL(`${resolvedUrl.pathname}/models`, resolvedUrl).toString()
+		const resolvedUrl = toRequestyServiceUrl(baseUrl)
+		const url = new URL(`${resolvedUrl.pathname}/models`, resolvedUrl).toString()
 
-        const headers = {
-            Authorization: `Bearer ${apiKey}`,
-        }
-        const response = await axios.get(url, { headers })
-        if (response.data?.data) {
-            for (const model of response.data.data) {
-                const modelInfo: OpenRouterModelInfo = OpenRouterModelInfo.create({
-                    maxTokens: model.max_output_tokens || undefined,
-                    contextWindow: model.context_window,
-                    supportsImages: model.supports_vision || undefined,
-                    supportsPromptCache: model.supports_caching || undefined,
-                    inputPrice: parsePrice(model.input_price) || 0,
-                    outputPrice: parsePrice(model.output_price) || 0,
-                    cacheWritesPrice: parsePrice(model.caching_price) || 0,
-                    cacheReadsPrice: parsePrice(model.cached_price) || 0,
-                    description: model.description,
-                })
-                models[model.id] = modelInfo
-            }
-            console.log("Requesty models fetched", models)
-        } else {
-            console.error("Invalid response from Requesty API")
-        }
-    } catch (error) {
-        console.error("Error fetching Requesty models:", error)
-    }
+		const headers = {
+			Authorization: `Bearer ${apiKey}`,
+		}
+		const response = await axios.get(url, { headers })
+		if (response.data?.data) {
+			for (const model of response.data.data) {
+				const modelInfo: OpenRouterModelInfo = OpenRouterModelInfo.create({
+					maxTokens: model.max_output_tokens || undefined,
+					contextWindow: model.context_window,
+					supportsImages: model.supports_vision || undefined,
+					supportsPromptCache: model.supports_caching || undefined,
+					inputPrice: parsePrice(model.input_price) || 0,
+					outputPrice: parsePrice(model.output_price) || 0,
+					cacheWritesPrice: parsePrice(model.caching_price) || 0,
+					cacheReadsPrice: parsePrice(model.cached_price) || 0,
+					description: model.description,
+				})
+				models[model.id] = modelInfo
+			}
+			console.log("Requesty models fetched", models)
+		} else {
+			console.error("Invalid response from Requesty API")
+		}
+	} catch (error) {
+		console.error("Error fetching Requesty models:", error)
+	}
 
-    return OpenRouterCompatibleModelInfo.create({ models })
+	return OpenRouterCompatibleModelInfo.create({ models })
 }

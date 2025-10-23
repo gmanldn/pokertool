@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/ui/subscribeToPartialMessage.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/ui/subscribeToPartialMessage.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { EmptyRequest } from "@shared/proto/cline/common"
 import { ClineMessage } from "@shared/proto/cline/ui"
 import { getRequestRegistry, StreamingResponseHandler } from "../grpc-handler"
@@ -26,23 +26,23 @@ const activePartialMessageSubscriptions = new Set<StreamingResponseHandler<Cline
  * @param requestId The ID of the request (passed by the gRPC handler)
  */
 export async function subscribeToPartialMessage(
-    _controller: Controller,
-    _request: EmptyRequest,
-    responseStream: StreamingResponseHandler<ClineMessage>,
-    requestId?: string,
+	_controller: Controller,
+	_request: EmptyRequest,
+	responseStream: StreamingResponseHandler<ClineMessage>,
+	requestId?: string,
 ): Promise<void> {
-    // Add this subscription to the active subscriptions
-    activePartialMessageSubscriptions.add(responseStream)
+	// Add this subscription to the active subscriptions
+	activePartialMessageSubscriptions.add(responseStream)
 
-    // Register cleanup when the connection is closed
-    const cleanup = () => {
-        activePartialMessageSubscriptions.delete(responseStream)
-    }
+	// Register cleanup when the connection is closed
+	const cleanup = () => {
+		activePartialMessageSubscriptions.delete(responseStream)
+	}
 
-    // Register the cleanup function with the request registry if we have a requestId
-    if (requestId) {
-        getRequestRegistry().registerRequest(requestId, cleanup, { type: "partial_message_subscription" }, responseStream)
-    }
+	// Register the cleanup function with the request registry if we have a requestId
+	if (requestId) {
+		getRequestRegistry().registerRequest(requestId, cleanup, { type: "partial_message_subscription" }, responseStream)
+	}
 }
 
 /**
@@ -50,19 +50,19 @@ export async function subscribeToPartialMessage(
  * @param partialMessage The ClineMessage to send
  */
 export async function sendPartialMessageEvent(partialMessage: ClineMessage): Promise<void> {
-    // Send the event to all active subscribers
-    const promises = Array.from(activePartialMessageSubscriptions).map(async (responseStream) => {
-        try {
-            await responseStream(
-                partialMessage,
-                false, // Not the last message
-            )
-        } catch (error) {
-            console.error("Error sending partial message event:", error)
-            // Remove the subscription if there was an error
-            activePartialMessageSubscriptions.delete(responseStream)
-        }
-    })
+	// Send the event to all active subscribers
+	const promises = Array.from(activePartialMessageSubscriptions).map(async (responseStream) => {
+		try {
+			await responseStream(
+				partialMessage,
+				false, // Not the last message
+			)
+		} catch (error) {
+			console.error("Error sending partial message event:", error)
+			// Remove the subscription if there was an error
+			activePartialMessageSubscriptions.delete(responseStream)
+		}
+	})
 
-    await Promise.all(promises)
+	await Promise.all(promises)
 }

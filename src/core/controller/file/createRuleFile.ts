@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/file/createRuleFile.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/file/createRuleFile.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { refreshClineRulesToggles } from "@core/context/instructions/user-instructions/cline-rules"
 import { createRuleFile as createRuleFileImpl } from "@core/context/instructions/user-instructions/rule-helpers"
 import { getWorkspaceBasename } from "@core/workspace"
@@ -29,58 +29,58 @@ import { openFile } from "./openFile"
  * @throws Error if operation fails
  */
 export async function createRuleFile(controller: Controller, request: RuleFileRequest): Promise<RuleFile> {
-    if (
-        typeof request.isGlobal !== "boolean" ||
-        !request.filename ||
-        typeof request.filename !== "string" ||
-        !request.type ||
-        typeof request.type !== "string"
-    ) {
-        console.error("createRuleFile: Missing or invalid parameters", {
-            isGlobal: typeof request.isGlobal === "boolean" ? request.isGlobal : `Invalid: ${typeof request.isGlobal}`,
-            filename: typeof request.filename === "string" ? request.filename : `Invalid: ${typeof request.filename}`,
-            type: typeof request.type === "string" ? request.type : `Invalid: ${typeof request.type}`,
-        })
-        throw new Error("Missing or invalid parameters")
-    }
+	if (
+		typeof request.isGlobal !== "boolean" ||
+		!request.filename ||
+		typeof request.filename !== "string" ||
+		!request.type ||
+		typeof request.type !== "string"
+	) {
+		console.error("createRuleFile: Missing or invalid parameters", {
+			isGlobal: typeof request.isGlobal === "boolean" ? request.isGlobal : `Invalid: ${typeof request.isGlobal}`,
+			filename: typeof request.filename === "string" ? request.filename : `Invalid: ${typeof request.filename}`,
+			type: typeof request.type === "string" ? request.type : `Invalid: ${typeof request.type}`,
+		})
+		throw new Error("Missing or invalid parameters")
+	}
 
-    const cwd = await getCwd(getDesktopDir())
-    const { filePath, fileExists } = await createRuleFileImpl(request.isGlobal, request.filename, cwd, request.type)
+	const cwd = await getCwd(getDesktopDir())
+	const { filePath, fileExists } = await createRuleFileImpl(request.isGlobal, request.filename, cwd, request.type)
 
-    if (!filePath) {
-        throw new Error("Failed to create file.")
-    }
+	if (!filePath) {
+		throw new Error("Failed to create file.")
+	}
 
-    const fileTypeName = request.type === "workflow" ? "workflow" : "rule"
+	const fileTypeName = request.type === "workflow" ? "workflow" : "rule"
 
-    if (fileExists) {
-        const message = `${fileTypeName} file "${request.filename}" already exists.`
-        HostProvider.window.showMessage({
-            type: ShowMessageType.WARNING,
-            message,
-        })
-        // Still open it for editing
-        await openFile(controller, { value: filePath })
-    } else {
-        if (request.type === "workflow") {
-            await refreshWorkflowToggles(controller, cwd)
-        } else {
-            await refreshClineRulesToggles(controller, cwd)
-        }
-        await controller.postStateToWebview()
+	if (fileExists) {
+		const message = `${fileTypeName} file "${request.filename}" already exists.`
+		HostProvider.window.showMessage({
+			type: ShowMessageType.WARNING,
+			message,
+		})
+		// Still open it for editing
+		await openFile(controller, { value: filePath })
+	} else {
+		if (request.type === "workflow") {
+			await refreshWorkflowToggles(controller, cwd)
+		} else {
+			await refreshClineRulesToggles(controller, cwd)
+		}
+		await controller.postStateToWebview()
 
-        await openFile(controller, { value: filePath })
+		await openFile(controller, { value: filePath })
 
-        const message = `Created new ${request.isGlobal ? "global" : "workspace"} ${fileTypeName} file: ${request.filename}`
-        HostProvider.window.showMessage({
-            type: ShowMessageType.INFORMATION,
-            message,
-        })
-    }
+		const message = `Created new ${request.isGlobal ? "global" : "workspace"} ${fileTypeName} file: ${request.filename}`
+		HostProvider.window.showMessage({
+			type: ShowMessageType.INFORMATION,
+			message,
+		})
+	}
 
-    return RuleFile.create({
-        filePath: filePath,
-        displayName: getWorkspaceBasename(filePath, "Controller.createRuleFile"),
-        alreadyExists: fileExists,
-    })
+	return RuleFile.create({
+		filePath: filePath,
+		displayName: getWorkspaceBasename(filePath, "Controller.createRuleFile"),
+		alreadyExists: fileExists,
+	})
 }

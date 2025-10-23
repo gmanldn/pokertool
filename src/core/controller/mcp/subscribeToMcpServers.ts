@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/mcp/subscribeToMcpServers.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/mcp/subscribeToMcpServers.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { EmptyRequest } from "@shared/proto/cline/common"
 import { McpServers } from "@shared/proto/cline/mcp"
 import { convertMcpServersToProtoMcpServers } from "@shared/proto-conversions/mcp/mcp-server-conversion"
@@ -27,42 +27,42 @@ const activeMcpServersSubscriptions = new Set<StreamingResponseHandler<McpServer
  * @param requestId The ID of the request (passed by the gRPC handler)
  */
 export async function subscribeToMcpServers(
-    controller: Controller,
-    _request: EmptyRequest,
-    responseStream: StreamingResponseHandler<McpServers>,
-    requestId?: string,
+	controller: Controller,
+	_request: EmptyRequest,
+	responseStream: StreamingResponseHandler<McpServers>,
+	requestId?: string,
 ): Promise<void> {
-    // Add this subscription to the active subscriptions
-    activeMcpServersSubscriptions.add(responseStream)
+	// Add this subscription to the active subscriptions
+	activeMcpServersSubscriptions.add(responseStream)
 
-    // Register cleanup when the connection is closed
-    const cleanup = () => {
-        activeMcpServersSubscriptions.delete(responseStream)
-    }
+	// Register cleanup when the connection is closed
+	const cleanup = () => {
+		activeMcpServersSubscriptions.delete(responseStream)
+	}
 
-    // Register the cleanup function with the request registry if we have a requestId
-    if (requestId) {
-        getRequestRegistry().registerRequest(requestId, cleanup, { type: "mcpServers_subscription" }, responseStream)
-    }
+	// Register the cleanup function with the request registry if we have a requestId
+	if (requestId) {
+		getRequestRegistry().registerRequest(requestId, cleanup, { type: "mcpServers_subscription" }, responseStream)
+	}
 
-    // Send initial state if available
-    if (controller.mcpHub) {
-        const mcpServers = controller.mcpHub.getServers()
-        if (mcpServers.length > 0) {
-            try {
-                const protoServers = McpServers.create({
-                    mcpServers: convertMcpServersToProtoMcpServers(mcpServers),
-                })
-                await responseStream(
-                    protoServers,
-                    false, // Not the last message
-                )
-            } catch (error) {
-                console.error("Error sending initial MCP servers:", error)
-                activeMcpServersSubscriptions.delete(responseStream)
-            }
-        }
-    }
+	// Send initial state if available
+	if (controller.mcpHub) {
+		const mcpServers = controller.mcpHub.getServers()
+		if (mcpServers.length > 0) {
+			try {
+				const protoServers = McpServers.create({
+					mcpServers: convertMcpServersToProtoMcpServers(mcpServers),
+				})
+				await responseStream(
+					protoServers,
+					false, // Not the last message
+				)
+			} catch (error) {
+				console.error("Error sending initial MCP servers:", error)
+				activeMcpServersSubscriptions.delete(responseStream)
+			}
+		}
+	}
 }
 
 /**
@@ -70,19 +70,19 @@ export async function subscribeToMcpServers(
  * @param mcpServers The MCP servers to send
  */
 export async function sendMcpServersUpdate(mcpServers: McpServers): Promise<void> {
-    // Send the event to all active subscribers
-    const promises = Array.from(activeMcpServersSubscriptions).map(async (responseStream) => {
-        try {
-            await responseStream(
-                mcpServers,
-                false, // Not the last message
-            )
-        } catch (error) {
-            console.error("Error sending MCP servers update:", error)
-            // Remove the subscription if there was an error
-            activeMcpServersSubscriptions.delete(responseStream)
-        }
-    })
+	// Send the event to all active subscribers
+	const promises = Array.from(activeMcpServersSubscriptions).map(async (responseStream) => {
+		try {
+			await responseStream(
+				mcpServers,
+				false, // Not the last message
+			)
+		} catch (error) {
+			console.error("Error sending MCP servers update:", error)
+			// Remove the subscription if there was an error
+			activeMcpServersSubscriptions.delete(responseStream)
+		}
+	})
 
-    await Promise.all(promises)
+	await Promise.all(promises)
 }

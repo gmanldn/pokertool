@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/task/focus-chain/index.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/task/focus-chain/index.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { FocusChainSettings } from "@shared/FocusChainSettings"
 import * as chokidar from "chokidar"
 import * as fs from "fs/promises"
@@ -169,7 +169,7 @@ export class FocusChainManager {
     public generateFocusChainInstructions(): string {
         // Prompt for initial list creation
         const listInstructionsInitial = `\n
-# TODO LIST CREATION REQUIRED - ACT MODE ACTIVATED\n
+// TODO LIST CREATION REQUIRED - ACT MODE ACTIVATED\n
 \n
 **You've just switched from PLAN MODE to ACT MODE!**\n
 \n
@@ -303,7 +303,7 @@ ${this.taskState.currentFocusChainChecklist}
         // When in plan mode, lists are optional. TODO - May want to improve this soft prompt approach in a future version
         else if (this.mode === "plan") {
             return `\n
-# Todo List (Optional - Plan Mode)\n
+// Todo List (Optional - Plan Mode)\n
 \n
 While in PLAN MODE, if you've outlined concrete steps or requirements for the user, you may include a preliminary todo list using the task_progress parameter.\n
 Reminder on how to use the task_progress parameter:\n
@@ -313,13 +313,13 @@ ${listInstrunctionsReminder}`
             const isEarlyInTask = this.taskState.apiRequestCount < 10
             if (isEarlyInTask) {
                 return `\n
-# TODO LIST RECOMMENDED
+// TODO LIST RECOMMENDED
 When starting a new task, it is recommended to create a todo list.
 \n
 ${listInstructionsRecommended}\n`
             } else {
                 return `\n
-# TODO LIST \n
+// TODO LIST \n
 You've made ${this.taskState.apiRequestCount} API requests without a todo list. Consider creating one to track remaining work.\n
 \n
 ${listInstrunctionsReminder}\n`

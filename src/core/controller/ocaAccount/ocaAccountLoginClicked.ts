@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/ocaAccount/ocaAccountLoginClicked.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/ocaAccount/ocaAccountLoginClicked.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { EmptyRequest, String as ProtoString } from "@shared/proto/cline/common"
 import { OcaAuthService } from "@/services/auth/oca/OcaAuthService"
 import { Controller } from "../index"
@@ -23,5 +23,5 @@ import { Controller } from "../index"
  * @returns The login URL as a string.
  */
 export async function ocaAccountLoginClicked(_controller: Controller, _: EmptyRequest): Promise<ProtoString> {
-    return await OcaAuthService.getInstance().createAuthRequest()
+	return await OcaAuthService.getInstance().createAuthRequest()
 }

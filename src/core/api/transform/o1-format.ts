@@ -1,24 +1,24 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/api/transform/o1-format.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/api/transform/o1-format.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
 const o1SystemPrompt = (systemPrompt: string) => `
-# System Prompt
+// System Prompt
 
 ${systemPrompt}
 
-# Instructions for Formulating Your Response
+// Instructions for Formulating Your Response
 
 You must respond to the user's request by using at least one tool call. When formulating your response, follow these guidelines:
 
@@ -44,7 +44,7 @@ Remember:
 - Provide clear explanations in your normal text about what actions you're taking and why you're using particular tools.
 - Act as if the tool calls will be executed immediately after your message, and your next response will have access to their results.
 
-# Tool Descriptions and XML Formats
+// Tool Descriptions and XML Formats
 
 1. execute_command:
 <execute_command>
@@ -103,7 +103,7 @@ Your final result description here
 </attempt_completion>
 Description: Once you've completed the task, use this tool to present the result to the user. They may respond with feedback if they are not satisfied with the result, which you can use to make improvements and try again.
 
-# Examples
+// Examples
 
 Here are some examples of how to structure your responses with tool calls:
 

@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/web/fetchOpenGraphData.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/web/fetchOpenGraphData.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { StringRequest } from "@shared/proto/cline/common"
 import { OpenGraphData } from "@shared/proto/cline/web"
 import { fetchOpenGraphData as fetchOGData } from "../../../integrations/misc/link-preview"
@@ -23,16 +23,16 @@ import { Controller } from ".."
  * @returns Promise resolving to OpenGraphData
  */
 export async function fetchOpenGraphData(_controller: Controller, request: StringRequest): Promise<OpenGraphData> {
-    try {
-        const url = request.value || ""
-        // Fetch open graph data using the existing utility
-        const ogData = await fetchOGData(url)
+	try {
+		const url = request.value || ""
+		// Fetch open graph data using the existing utility
+		const ogData = await fetchOGData(url)
 
-        // Convert domain model to proto model
-        return convertDomainOpenGraphDataToProto(ogData)
-    } catch (error) {
-        console.error(`Error fetching Open Graph data: ${request.value}`, error)
-        // Return empty OpenGraphData object
-        return OpenGraphData.create({})
-    }
+		// Convert domain model to proto model
+		return convertDomainOpenGraphDataToProto(ogData)
+	} catch (error) {
+		console.error(`Error fetching Open Graph data: ${request.value}`, error)
+		// Return empty OpenGraphData object
+		return OpenGraphData.create({})
+	}
 }

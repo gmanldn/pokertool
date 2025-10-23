@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/ui/subscribeToMcpButtonClicked.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/ui/subscribeToMcpButtonClicked.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { Empty, EmptyRequest } from "@shared/proto/cline/common"
 import { getRequestRegistry, StreamingResponseHandler } from "../grpc-handler"
 import { Controller } from "../index"
@@ -25,26 +25,26 @@ const activeMcpButtonClickedSubscriptions = new Map<string, StreamingResponseHan
  * @param requestId The ID of the request (passed by the gRPC handler)
  */
 export async function subscribeToMcpButtonClicked(
-    controller: Controller,
-    _request: EmptyRequest,
-    responseStream: StreamingResponseHandler<Empty>,
-    requestId?: string,
+	controller: Controller,
+	_request: EmptyRequest,
+	responseStream: StreamingResponseHandler<Empty>,
+	requestId?: string,
 ): Promise<void> {
-    const controllerId = controller.id
-    console.log(`[DEBUG] set up mcpButtonClicked subscription for controller ${controllerId}`)
+	const controllerId = controller.id
+	console.log(`[DEBUG] set up mcpButtonClicked subscription for controller ${controllerId}`)
 
-    // Add this subscription to the active subscriptions with the controller ID
-    activeMcpButtonClickedSubscriptions.set(controllerId, responseStream)
+	// Add this subscription to the active subscriptions with the controller ID
+	activeMcpButtonClickedSubscriptions.set(controllerId, responseStream)
 
-    // Register cleanup when the connection is closed
-    const cleanup = () => {
-        activeMcpButtonClickedSubscriptions.delete(controllerId)
-    }
+	// Register cleanup when the connection is closed
+	const cleanup = () => {
+		activeMcpButtonClickedSubscriptions.delete(controllerId)
+	}
 
-    // Register the cleanup function with the request registry if we have a requestId
-    if (requestId) {
-        getRequestRegistry().registerRequest(requestId, cleanup, { type: "mcpButtonClicked_subscription" }, responseStream)
-    }
+	// Register the cleanup function with the request registry if we have a requestId
+	if (requestId) {
+		getRequestRegistry().registerRequest(requestId, cleanup, { type: "mcpButtonClicked_subscription" }, responseStream)
+	}
 }
 
 /**
@@ -52,23 +52,23 @@ export async function subscribeToMcpButtonClicked(
  * @param controllerId The ID of the controller to send the event to
  */
 export async function sendMcpButtonClickedEvent(controllerId: string): Promise<void> {
-    // Get the subscription for this specific controller
-    const responseStream = activeMcpButtonClickedSubscriptions.get(controllerId)
+	// Get the subscription for this specific controller
+	const responseStream = activeMcpButtonClickedSubscriptions.get(controllerId)
 
-    if (!responseStream) {
-        console.error(`[DEBUG] No active subscription for controller ${controllerId}`)
-        return
-    }
+	if (!responseStream) {
+		console.error(`[DEBUG] No active subscription for controller ${controllerId}`)
+		return
+	}
 
-    try {
-        const event = Empty.create({})
-        await responseStream(
-            event,
-            false, // Not the last message
-        )
-    } catch (error) {
-        console.error(`Error sending mcpButtonClicked event to controller ${controllerId}:`, error)
-        // Remove the subscription if there was an error
-        activeMcpButtonClickedSubscriptions.delete(controllerId)
-    }
+	try {
+		const event = Empty.create({})
+		await responseStream(
+			event,
+			false, // Not the last message
+		)
+	} catch (error) {
+		console.error(`Error sending mcpButtonClicked event to controller ${controllerId}:`, error)
+		// Remove the subscription if there was an error
+		activeMcpButtonClickedSubscriptions.delete(controllerId)
+	}
 }

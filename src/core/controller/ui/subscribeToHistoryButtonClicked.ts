@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/ui/subscribeToHistoryButtonClicked.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/ui/subscribeToHistoryButtonClicked.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { Empty } from "@shared/proto/cline/common"
 import { WebviewProviderType, WebviewProviderTypeRequest } from "@shared/proto/cline/ui"
 import { getRequestRegistry, StreamingResponseHandler } from "../grpc-handler"
@@ -26,27 +26,27 @@ const activeHistoryButtonClickedSubscriptions = new Map<StreamingResponseHandler
  * @param requestId The ID of the request (passed by the gRPC handler)
  */
 export async function subscribeToHistoryButtonClicked(
-    _controller: Controller,
-    request: WebviewProviderTypeRequest,
-    responseStream: StreamingResponseHandler<Empty>,
-    requestId?: string,
+	_controller: Controller,
+	request: WebviewProviderTypeRequest,
+	responseStream: StreamingResponseHandler<Empty>,
+	requestId?: string,
 ): Promise<void> {
-    // Extract the provider type from the request
-    const providerType = request.providerType
-    console.log(`[DEBUG] set up history button subscription for ${WebviewProviderType[providerType]} webview`)
+	// Extract the provider type from the request
+	const providerType = request.providerType
+	console.log(`[DEBUG] set up history button subscription for ${WebviewProviderType[providerType]} webview`)
 
-    // Add this subscription to the active subscriptions with its provider type
-    activeHistoryButtonClickedSubscriptions.set(responseStream, providerType)
+	// Add this subscription to the active subscriptions with its provider type
+	activeHistoryButtonClickedSubscriptions.set(responseStream, providerType)
 
-    // Register cleanup when the connection is closed
-    const cleanup = () => {
-        activeHistoryButtonClickedSubscriptions.delete(responseStream)
-    }
+	// Register cleanup when the connection is closed
+	const cleanup = () => {
+		activeHistoryButtonClickedSubscriptions.delete(responseStream)
+	}
 
-    // Register the cleanup function with the request registry if we have a requestId
-    if (requestId) {
-        getRequestRegistry().registerRequest(requestId, cleanup, { type: "history_button_clicked_subscription" }, responseStream)
-    }
+	// Register the cleanup function with the request registry if we have a requestId
+	if (requestId) {
+		getRequestRegistry().registerRequest(requestId, cleanup, { type: "history_button_clicked_subscription" }, responseStream)
+	}
 }
 
 /**
@@ -54,25 +54,25 @@ export async function subscribeToHistoryButtonClicked(
  * @param webviewType Optional filter to send only to a specific webview type
  */
 export async function sendHistoryButtonClickedEvent(webviewType?: WebviewProviderType): Promise<void> {
-    // Send the event to all active subscribers matching the webview type (if specified)
-    const promises = Array.from(activeHistoryButtonClickedSubscriptions.entries()).map(async ([responseStream, providerType]) => {
-        // Skip subscribers of different types if webview type is specified
-        if (webviewType !== undefined && webviewType !== providerType) {
-            return
-        }
+	// Send the event to all active subscribers matching the webview type (if specified)
+	const promises = Array.from(activeHistoryButtonClickedSubscriptions.entries()).map(async ([responseStream, providerType]) => {
+		// Skip subscribers of different types if webview type is specified
+		if (webviewType !== undefined && webviewType !== providerType) {
+			return
+		}
 
-        try {
-            const event = Empty.create({})
-            await responseStream(
-                event,
-                false, // Not the last message
-            )
-        } catch (error) {
-            console.error(`Error sending history button clicked event to ${WebviewProviderType[providerType]}:`, error)
-            // Remove the subscription if there was an error
-            activeHistoryButtonClickedSubscriptions.delete(responseStream)
-        }
-    })
+		try {
+			const event = Empty.create({})
+			await responseStream(
+				event,
+				false, // Not the last message
+			)
+		} catch (error) {
+			console.error(`Error sending history button clicked event to ${WebviewProviderType[providerType]}:`, error)
+			// Remove the subscription if there was an error
+			activeHistoryButtonClickedSubscriptions.delete(responseStream)
+		}
+	})
 
-    await Promise.all(promises)
+	await Promise.all(promises)
 }

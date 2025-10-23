@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/browser/discoverBrowser.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/browser/discoverBrowser.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { discoverChromeInstances } from "@services/browser/BrowserDiscovery"
 import { BrowserSession } from "@services/browser/BrowserSession"
 import { BrowserConnection } from "@shared/proto/cline/browser"
@@ -23,36 +23,36 @@ import { Controller } from "../index"
  * @returns The browser connection result
  */
 export async function discoverBrowser(controller: Controller, _request: EmptyRequest): Promise<BrowserConnection> {
-    try {
-        const discoveredHost = await discoverChromeInstances()
+	try {
+		const discoveredHost = await discoverChromeInstances()
 
-        if (discoveredHost) {
-            // Don't update the remoteBrowserHost state when auto-discovering
-            // This way we don't override the user's preference
+		if (discoveredHost) {
+			// Don't update the remoteBrowserHost state when auto-discovering
+			// This way we don't override the user's preference
 
-            // Test the connection to get the endpoint
-            const browserSettings = controller.stateManager.getGlobalSettingsKey("browserSettings")
-            const browserSession = new BrowserSession(controller.context, browserSettings)
-            const result = await browserSession.testConnection(discoveredHost)
+			// Test the connection to get the endpoint
+			const browserSettings = controller.stateManager.getGlobalSettingsKey("browserSettings")
+			const browserSession = new BrowserSession(controller.context, browserSettings)
+			const result = await browserSession.testConnection(discoveredHost)
 
-            return BrowserConnection.create({
-                success: true,
-                message: `Successfully discovered and connected to Chrome at ${discoveredHost}`,
-                endpoint: result.endpoint || "",
-            })
-        } else {
-            return BrowserConnection.create({
-                success: false,
-                message:
-                    "No Chrome instances found. Make sure Chrome is running with remote debugging enabled (--remote-debugging-port=9222).",
-                endpoint: "",
-            })
-        }
-    } catch (error) {
-        return BrowserConnection.create({
-            success: false,
-            message: `Error discovering browser: ${error instanceof Error ? error.message : String(error)}`,
-            endpoint: "",
-        })
-    }
+			return BrowserConnection.create({
+				success: true,
+				message: `Successfully discovered and connected to Chrome at ${discoveredHost}`,
+				endpoint: result.endpoint || "",
+			})
+		} else {
+			return BrowserConnection.create({
+				success: false,
+				message:
+					"No Chrome instances found. Make sure Chrome is running with remote debugging enabled (--remote-debugging-port=9222).",
+				endpoint: "",
+			})
+		}
+	} catch (error) {
+		return BrowserConnection.create({
+			success: false,
+			message: `Error discovering browser: ${error instanceof Error ? error.message : String(error)}`,
+			endpoint: "",
+		})
+	}
 }

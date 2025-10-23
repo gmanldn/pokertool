@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/hosts/vscode/commandUtils.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/hosts/vscode/commandUtils.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import pWaitFor from "p-wait-for"
 import * as vscode from "vscode"
 import { ExtensionRegistryInfo } from "@/registry"
@@ -25,53 +25,53 @@ import { convertVscodeDiagnostics } from "./hostbridge/workspace/getDiagnostics"
  * @returns Context object with controller, selected text, file info, and problems
  */
 export async function getContextForCommand(
-    range?: vscode.Range,
-    vscodeDiagnostics?: vscode.Diagnostic[],
+	range?: vscode.Range,
+	vscodeDiagnostics?: vscode.Diagnostic[],
 ): Promise<
-    | undefined
-    | {
-            controller: Controller
-            commandContext: CommandContext
-      }
+	| undefined
+	| {
+			controller: Controller
+			commandContext: CommandContext
+	  }
 > {
-    const activeWebview = await focusChatInput()
-    if (!activeWebview) {
-        return
-    }
-    // Use the controller from the last active instance
-    const controller = activeWebview.controller
+	const activeWebview = await focusChatInput()
+	if (!activeWebview) {
+		return
+	}
+	// Use the controller from the last active instance
+	const controller = activeWebview.controller
 
-    const editor = vscode.window.activeTextEditor
-    if (!editor) {
-        return
-    }
-    // Use provided range if available, otherwise use current selection
-    // (vscode command passes an argument in the first param by default, so we need to ensure it's a Range object)
-    const textRange = range instanceof vscode.Range ? range : editor.selection
-    const selectedText = editor.document.getText(textRange)
+	const editor = vscode.window.activeTextEditor
+	if (!editor) {
+		return
+	}
+	// Use provided range if available, otherwise use current selection
+	// (vscode command passes an argument in the first param by default, so we need to ensure it's a Range object)
+	const textRange = range instanceof vscode.Range ? range : editor.selection
+	const selectedText = editor.document.getText(textRange)
 
-    const filePath = editor.document.uri.fsPath
-    const language = editor.document.languageId
-    const diagnostics = convertVscodeDiagnostics(vscodeDiagnostics || [])
-    const commandContext: CommandContext = {
-        selectedText,
-        filePath,
-        diagnostics,
-        language,
-    }
-    return { controller, commandContext }
+	const filePath = editor.document.uri.fsPath
+	const language = editor.document.languageId
+	const diagnostics = convertVscodeDiagnostics(vscodeDiagnostics || [])
+	const commandContext: CommandContext = {
+		selectedText,
+		filePath,
+		diagnostics,
+		language,
+	}
+	return { controller, commandContext }
 }
 
 export async function focusChatInput(): Promise<WebviewProvider | undefined> {
-    await vscode.commands.executeCommand(ExtensionRegistryInfo.commands.FocusChatInput)
+	await vscode.commands.executeCommand(ExtensionRegistryInfo.commands.FocusChatInput)
 
-    // Wait for a webview instance to become available after focusing
-    await pWaitFor(() => !!WebviewProvider.getLastActiveInstance())
-    const activeWebview = WebviewProvider.getLastActiveInstance()
-    if (!activeWebview) {
-        console.error("No active webview to receive command")
-        return
-    }
+	// Wait for a webview instance to become available after focusing
+	await pWaitFor(() => !!WebviewProvider.getLastActiveInstance())
+	const activeWebview = WebviewProvider.getLastActiveInstance()
+	if (!activeWebview) {
+		console.error("No active webview to receive command")
+		return
+	}
 
-    return activeWebview
+	return activeWebview
 }

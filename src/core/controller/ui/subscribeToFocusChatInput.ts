@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/ui/subscribeToFocusChatInput.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/ui/subscribeToFocusChatInput.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { Empty, StringRequest } from "@shared/proto/cline/common"
 import { getRequestRegistry, StreamingResponseHandler } from "../grpc-handler"
 import type { Controller } from "../index"
@@ -25,28 +25,28 @@ const focusChatInputSubscriptions = new Map<string, StreamingResponseHandler<Emp
  * @param requestId The ID of the request
  */
 export async function subscribeToFocusChatInput(
-    _controller: Controller,
-    request: StringRequest,
-    responseStream: StreamingResponseHandler<Empty>,
-    requestId?: string,
+	_controller: Controller,
+	request: StringRequest,
+	responseStream: StreamingResponseHandler<Empty>,
+	requestId?: string,
 ): Promise<void> {
-    const clientId = request.value
-    if (!clientId) {
-        throw new Error("Client ID is required for focusChatInput subscription")
-    }
+	const clientId = request.value
+	if (!clientId) {
+		throw new Error("Client ID is required for focusChatInput subscription")
+	}
 
-    // Store this subscription with its client ID
-    focusChatInputSubscriptions.set(clientId, responseStream)
+	// Store this subscription with its client ID
+	focusChatInputSubscriptions.set(clientId, responseStream)
 
-    // Register cleanup when the connection is closed
-    const cleanup = () => {
-        focusChatInputSubscriptions.delete(clientId)
-    }
+	// Register cleanup when the connection is closed
+	const cleanup = () => {
+		focusChatInputSubscriptions.delete(clientId)
+	}
 
-    // Register the cleanup function with the request registry if we have a requestId
-    if (requestId) {
-        getRequestRegistry().registerRequest(requestId, cleanup, { type: "focus_chat_input_subscription" }, responseStream)
-    }
+	// Register the cleanup function with the request registry if we have a requestId
+	if (requestId) {
+		getRequestRegistry().registerRequest(requestId, cleanup, { type: "focus_chat_input_subscription" }, responseStream)
+	}
 }
 
 /**
@@ -54,21 +54,21 @@ export async function subscribeToFocusChatInput(
  * @param clientId The ID of the client to send the event to
  */
 export async function sendFocusChatInputEvent(clientId: string): Promise<void> {
-    const responseStream = focusChatInputSubscriptions.get(clientId)
-    if (!responseStream) {
-        console.warn(`No subscription found for client ID: ${clientId}`)
-        return
-    }
+	const responseStream = focusChatInputSubscriptions.get(clientId)
+	if (!responseStream) {
+		console.warn(`No subscription found for client ID: ${clientId}`)
+		return
+	}
 
-    try {
-        const event = Empty.create({})
-        await responseStream(
-            event,
-            false, // Not the last message
-        )
-    } catch (error) {
-        console.error(`Error sending focus chat input event to client ${clientId}:`, error)
-        // Remove the subscription if there was an error
-        focusChatInputSubscriptions.delete(clientId)
-    }
+	try {
+		const event = Empty.create({})
+		await responseStream(
+			event,
+			false, // Not the last message
+		)
+	} catch (error) {
+		console.error(`Error sending focus chat input event to client ${clientId}:`, error)
+		// Remove the subscription if there was an error
+		focusChatInputSubscriptions.delete(clientId)
+	}
 }

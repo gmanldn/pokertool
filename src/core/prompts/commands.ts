@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/prompts/commands.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/prompts/commands.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { getShell } from "@utils/shell"
 
 export const newTaskToolResponse = () =>
@@ -245,35 +245,35 @@ First, determine the language(s) used in the codebase, then execute these comman
 ${
     isPowerShell
         ? `
-# Discover project structure and file types
+// Discover project structure and file types
 Get-ChildItem -Recurse -Include "*.py","*.js","*.ts","*.java","*.cpp","*.go" | Select-Object -First 30 | Select-Object FullName
 
-# Find all class and function definitions
+// Find all class and function definitions
 Get-ChildItem -Recurse -Include "*.py","*.js","*.ts","*.java","*.cpp","*.go" | Select-String -Pattern "class|function|def|interface|struct"
 
-# Analyze import patterns and dependencies
+// Analyze import patterns and dependencies
 Get-ChildItem -Recurse -Include "*.py","*.js","*.ts","*.java","*.cpp" | Select-String -Pattern "import|from|require|#include" | Sort-Object | Get-Unique
 
-# Find dependency manifests
+// Find dependency manifests
 Get-ChildItem -Recurse -Include "requirements*.txt","package.json","Cargo.toml","pom.xml","Gemfile","go.mod" | Get-Content
 
-# Identify technical debt and TODOs
+// Identify technical debt and TODOs
 Get-ChildItem -Recurse -Include "*.py","*.js","*.ts","*.java","*.cpp","*.go" | Select-String -Pattern "TODO|FIXME|XXX|HACK|NOTE"
 `
         : `
-# Discover project structure and file types
+// Discover project structure and file types
 find . -type f -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.java" -o -name "*.cpp" -o -name "*.go" | head -30 | cat
 
-# Find all class and function definitions
+// Find all class and function definitions
 grep -r "class\|function\|def\|interface\|struct\|func\|type.*struct\|type.*interface" --include="*.py" --include="*.js" --include="*.ts" --include="*.java" --include="*.cpp" --include="*.go" . | cat
 
-# Analyze import patterns and dependencies
+// Analyze import patterns and dependencies
 grep -r "import\|from\|require\|#include" --include="*.py" --include="*.js" --include="*.ts" --include="*.java" --include="*.cpp" . | sort | uniq | cat
 
-# Find dependency manifests
+// Find dependency manifests
 find . -name "requirements*.txt" -o -name "package.json" -o -name "Cargo.toml" -o -name "pom.xml" -o -name "Gemfile" -o -name "go.mod" | xargs cat
 
-# Identify technical debt and TODOs
+// Identify technical debt and TODOs
 grep -r "TODO\|FIXME\|XXX\|HACK\|NOTE" --include="*.py" --include="*.js" --include="*.ts" --include="*.java" --include="*.cpp" --include="*.go" . | cat
 `
 }
@@ -300,7 +300,7 @@ Create a structured markdown document containing your complete implementation pl
 Your implementation plan must be saved as implementation_plan.md, and *must* be structured as follows:
 
 
-# Implementation Plan
+// Implementation Plan
 
 [Overview]
 Single sentence describing the overall goal.
@@ -367,53 +367,53 @@ The implementation agent should use these commands to read specific sections of 
 ${
     isPowerShell
         ? `
-# Read Overview section
+// Read Overview section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Overview\\]').LineNumber; $end = ($content | Select-String -Pattern '\\[Types\\]').LineNumber; $content[($start-1)..($end-2)]
 
-# Read Types section
+// Read Types section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Types\\]').LineNumber; $end = ($content | Select-String -Pattern '\\[Files\\]').LineNumber; $content[($start-1)..($end-2)]
 
-# Read Files section
+// Read Files section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Files\\]').LineNumber; $end = ($content | Select-String -Pattern '\\[Functions\\]').LineNumber; $content[($start-1)..($end-2)]
 
-# Read Functions section
+// Read Functions section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Functions\\]').LineNumber; $end = ($content | Select-String -Pattern '\\[Classes\\]').LineNumber; $content[($start-1)..($end-2)]
 
-# Read Classes section
+// Read Classes section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Classes\\]').LineNumber; $end = ($content | Select-String -Pattern '\\[Dependencies\\]').LineNumber; $content[($start-1)..($end-2)]
 
-# Read Dependencies section
+// Read Dependencies section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Dependencies\\]').LineNumber; $end = ($content | Select-String -Pattern '\\[Testing\\]').LineNumber; $content[($start-1)..($end-2)]
 
-# Read Testing section
+// Read Testing section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Testing\\]').LineNumber; $end = ($content | Select-String -Pattern '\\[Implementation Order\\]').LineNumber; $content[($start-1)..($end-2)]
 
-# Read Implementation Order section
+// Read Implementation Order section
 $content = Get-Content implementation_plan.md; $start = ($content | Select-String -Pattern '\\[Implementation Order\\]').LineNumber; $content[($start-1)..($content.Length-1)]
 `
         : `
-# Read Overview section
+// Read Overview section
 sed -n '/\[Overview\]/,/\[Types\]/p' implementation_plan.md | head -n 1 | cat
 
-# Read Types section  
+// Read Types section  
 sed -n '/\[Types\]/,/\[Files\]/p' implementation_plan.md | head -n 1 | cat
 
-# Read Files section
+// Read Files section
 sed -n '/\[Files\]/,/\[Functions\]/p' implementation_plan.md | head -n 1 | cat
 
-# Read Functions section
+// Read Functions section
 sed -n '/\[Functions\]/,/\[Classes\]/p' implementation_plan.md | head -n 1 | cat
 
-# Read Classes section
+// Read Classes section
 sed -n '/\[Classes\]/,/\[Dependencies\]/p' implementation_plan.md | head -n 1 | cat
 
-# Read Dependencies section
+// Read Dependencies section
 sed -n '/\[Dependencies\]/,/\[Testing\]/p' implementation_plan.md | head -n 1 | cat
 
-# Read Testing section
+// Read Testing section
 sed -n '/\[Testing\]/,/\[Implementation Order\]/p' implementation_plan.md | head -n 1 | cat
 
-# Read Implementation Order section
+// Read Implementation Order section
 sed -n '/\[Implementation Order\]/,$p' implementation_plan.md | cat
 `
 }

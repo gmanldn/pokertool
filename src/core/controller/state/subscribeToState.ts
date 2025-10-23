@@ -1,23 +1,26 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/state/subscribeToState.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
-import { EmptyRequest } from "@shared/proto/cline/common"
-import { State } from "@shared/proto/cline/state"
-import { ExtensionState } from "@/shared/ExtensionMessage"
-import { getRequestRegistry, StreamingResponseHandler } from "../grpc-handler"
-import { Controller } from "../index"
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/state/subscribeToState.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
+import { EmptyRequest } from "@shared/proto/cline/common";
+import { State } from "@shared/proto/cline/state";
+import { ExtensionState } from "@/shared/ExtensionMessage";
+import { getRequestRegistry, StreamingResponseHandler } from "../grpc-handler";
+import { Controller } from "../index";
 
 // Keep track of active state subscriptions by controller ID
-const activeStateSubscriptions = new Map<string, StreamingResponseHandler<State>>()
+const activeStateSubscriptions = new Map<
+	string,
+	StreamingResponseHandler<State>
+>();
 
 /**
  * Subscribe to state updates
@@ -27,36 +30,41 @@ const activeStateSubscriptions = new Map<string, StreamingResponseHandler<State>
  * @param requestId The ID of the request (passed by the gRPC handler)
  */
 export async function subscribeToState(
-    controller: Controller,
-    _request: EmptyRequest,
-    responseStream: StreamingResponseHandler<State>,
-    requestId?: string,
+	controller: Controller,
+	_request: EmptyRequest,
+	responseStream: StreamingResponseHandler<State>,
+	requestId?: string,
 ): Promise<void> {
-    const controllerId = controller.id
+	const controllerId = controller.id;
 
-    // Send the initial state
-    const initialState = await controller.getStateToPostToWebview()
-    const initialStateJson = JSON.stringify(initialState)
+	// Send the initial state
+	const initialState = await controller.getStateToPostToWebview();
+	const initialStateJson = JSON.stringify(initialState);
 
-    //console.log(`[DEBUG] set up state subscription for controller ${controllerId}`)
+	//console.log(`[DEBUG] set up state subscription for controller ${controllerId}`)
 
-    await responseStream({
-        stateJson: initialStateJson,
-    })
+	await responseStream({
+		stateJson: initialStateJson,
+	});
 
-    // Add this subscription to the active subscriptions with the controller ID
-    activeStateSubscriptions.set(controllerId, responseStream)
+	// Add this subscription to the active subscriptions with the controller ID
+	activeStateSubscriptions.set(controllerId, responseStream);
 
-    // Register cleanup when the connection is closed
-    const cleanup = () => {
-        activeStateSubscriptions.delete(controllerId)
-        //console.log(`[DEBUG] Cleaned up state subscription for controller ${controllerId}`)
-    }
+	// Register cleanup when the connection is closed
+	const cleanup = () => {
+		activeStateSubscriptions.delete(controllerId);
+		//console.log(`[DEBUG] Cleaned up state subscription for controller ${controllerId}`)
+	};
 
-    // Register the cleanup function with the request registry if we have a requestId
-    if (requestId) {
-        getRequestRegistry().registerRequest(requestId, cleanup, { type: "state_subscription" }, responseStream)
-    }
+	// Register the cleanup function with the request registry if we have a requestId
+	if (requestId) {
+		getRequestRegistry().registerRequest(
+			requestId,
+			cleanup,
+			{ type: "state_subscription" },
+			responseStream,
+		);
+	}
 }
 
 /**
@@ -64,27 +72,35 @@ export async function subscribeToState(
  * @param controllerId The ID of the controller to send the state to
  * @param state The state to send
  */
-export async function sendStateUpdate(controllerId: string, state: ExtensionState): Promise<void> {
-    // Get the subscription for this specific controller
-    const responseStream = activeStateSubscriptions.get(controllerId)
+export async function sendStateUpdate(
+	controllerId: string,
+	state: ExtensionState,
+): Promise<void> {
+	// Get the subscription for this specific controller
+	const responseStream = activeStateSubscriptions.get(controllerId);
 
-    if (!responseStream) {
-        console.log(`[DEBUG] No active state subscription for controller ${controllerId}`)
-        return
-    }
+	if (!responseStream) {
+		console.log(
+			`[DEBUG] No active state subscription for controller ${controllerId}`,
+		);
+		return;
+	}
 
-    try {
-        const stateJson = JSON.stringify(state)
-        await responseStream(
-            {
-                stateJson,
-            },
-            false, // Not the last message
-        )
-        //console.log(`[DEBUG] sending followup state to controller ${controllerId}`, stateJson.length, "chars")
-    } catch (error) {
-        console.error(`Error sending state update to controller ${controllerId}:`, error)
-        // Remove the subscription if there was an error
-        activeStateSubscriptions.delete(controllerId)
-    }
+	try {
+		const stateJson = JSON.stringify(state);
+		await responseStream(
+			{
+				stateJson,
+			},
+			false, // Not the last message
+		);
+		//console.log(`[DEBUG] sending followup state to controller ${controllerId}`, stateJson.length, "chars")
+	} catch (error) {
+		console.error(
+			`Error sending state update to controller ${controllerId}:`,
+			error,
+		);
+		// Remove the subscription if there was an error
+		activeStateSubscriptions.delete(controllerId);
+	}
 }

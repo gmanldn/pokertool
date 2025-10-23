@@ -1,15 +1,15 @@
-# POKERTOOL-HEADER-START
-# ---
-# schema: pokerheader.v1
-# project: pokertool
-# file: src/core/controller/ui/subscribeToSettingsButtonClicked.ts
-# version: v28.0.0
-# last_commit: '2025-09-23T08:41:38+01:00'
-# fixes:
-# - date: '2025-09-25'
-#   summary: Enhanced enterprise documentation and comprehensive unit tests added
-# ---
-# POKERTOOL-HEADER-END
+// POKERTOOL-HEADER-START
+// ---
+// schema: pokerheader.v1
+// project: pokertool
+// file: src/core/controller/ui/subscribeToSettingsButtonClicked.ts
+// version: v28.0.0
+// last_commit: '2025-09-23T08:41:38+01:00'
+// fixes:
+// - date: '2025-09-25'
+//   summary: Enhanced enterprise documentation and comprehensive unit tests added
+// ---
+// POKERTOOL-HEADER-END
 import { Empty } from "@shared/proto/cline/common"
 import { WebviewProviderType, WebviewProviderTypeRequest } from "@shared/proto/cline/ui"
 import { getRequestRegistry, StreamingResponseHandler } from "../grpc-handler"
@@ -26,26 +26,26 @@ const subscriptions = new Map<StreamingResponseHandler<Empty>, WebviewProviderTy
  * @param requestId The ID of the request (passed by the gRPC handler)
  */
 export async function subscribeToSettingsButtonClicked(
-    _controller: Controller,
-    request: WebviewProviderTypeRequest,
-    responseStream: StreamingResponseHandler<Empty>,
-    requestId?: string,
+	_controller: Controller,
+	request: WebviewProviderTypeRequest,
+	responseStream: StreamingResponseHandler<Empty>,
+	requestId?: string,
 ): Promise<void> {
-    const providerType = request.providerType
-    console.log(`[DEBUG] set up settings button subscription for ${WebviewProviderType[providerType]} webview`)
+	const providerType = request.providerType
+	console.log(`[DEBUG] set up settings button subscription for ${WebviewProviderType[providerType]} webview`)
 
-    // Store the subscription with its provider type
-    subscriptions.set(responseStream, providerType)
+	// Store the subscription with its provider type
+	subscriptions.set(responseStream, providerType)
 
-    // Register cleanup when the connection is closed
-    const cleanup = () => {
-        subscriptions.delete(responseStream)
-    }
+	// Register cleanup when the connection is closed
+	const cleanup = () => {
+		subscriptions.delete(responseStream)
+	}
 
-    // Register the cleanup function with the request registry if we have a requestId
-    if (requestId) {
-        getRequestRegistry().registerRequest(requestId, cleanup, { type: "settings_button_clicked_subscription" }, responseStream)
-    }
+	// Register the cleanup function with the request registry if we have a requestId
+	if (requestId) {
+		getRequestRegistry().registerRequest(requestId, cleanup, { type: "settings_button_clicked_subscription" }, responseStream)
+	}
 }
 
 /**
@@ -53,21 +53,21 @@ export async function subscribeToSettingsButtonClicked(
  * @param webviewType The type of webview that triggered the event
  */
 export async function sendSettingsButtonClickedEvent(webviewType?: WebviewProviderType): Promise<void> {
-    // Process all subscriptions, filtering based on the source
-    const promises = Array.from(subscriptions.entries()).map(async ([responseStream, providerType]) => {
-        // If webviewType is provided, only send to subscribers of the same type
-        if (webviewType !== undefined && webviewType !== providerType) {
-            return // Skip subscribers of different types
-        }
+	// Process all subscriptions, filtering based on the source
+	const promises = Array.from(subscriptions.entries()).map(async ([responseStream, providerType]) => {
+		// If webviewType is provided, only send to subscribers of the same type
+		if (webviewType !== undefined && webviewType !== providerType) {
+			return // Skip subscribers of different types
+		}
 
-        try {
-            const event = Empty.create({})
-            await responseStream(event, false) // Not the last message
-        } catch (error) {
-            console.error(`Error sending settings button clicked event to ${WebviewProviderType[providerType]}:`, error)
-            subscriptions.delete(responseStream)
-        }
-    })
+		try {
+			const event = Empty.create({})
+			await responseStream(event, false) // Not the last message
+		} catch (error) {
+			console.error(`Error sending settings button clicked event to ${WebviewProviderType[providerType]}:`, error)
+			subscriptions.delete(responseStream)
+		}
+	})
 
-    await Promise.all(promises)
+	await Promise.all(promises)
 }
