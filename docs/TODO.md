@@ -1,5 +1,9 @@
 ## ⚠️ Automated Log Alerts
 
+- [ ] **LOG-W-890B2F48EB** (2025-10-23) Warning in pokertool.error_handling.sanitize_input: Input was sanitized, removed characters: {"'", '"'}
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.sanitize_input with message "Input was sanitized, removed characters: {"'", '"'}". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
 - [ ] **LOG-W-C4DF8E70D1** (2025-10-23) Warning in pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 4.00s...
   ```prompt
   You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
