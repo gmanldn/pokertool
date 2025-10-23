@@ -55,3 +55,14 @@ jest.mock('@xterm/addon-fit', () => ({
     dispose: jest.fn(),
   })),
 }));
+
+// Mock crypto.subtle for authentication tests
+Object.defineProperty(global, 'crypto', {
+  value: {
+    subtle: {
+      digest: jest.fn(),
+    },
+    getRandomValues: jest.fn((arr: any) => arr),
+  },
+  writable: true,
+});
