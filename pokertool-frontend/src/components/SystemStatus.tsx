@@ -284,7 +284,7 @@ export const SystemStatus: React.FC = () => {
 
   // Filter health checks
   const getFilteredChecks = () => {
-    if (!healthData) return [];
+    if (!healthData || !healthData.categories) return [];
 
     const allChecks: HealthStatus[] = [];
     Object.entries(healthData.categories).forEach(([category, data]) => {
