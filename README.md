@@ -71,9 +71,60 @@ python -m pokertool scrape
 - All 7 startup steps should complete in under 5 seconds
 - If frontend compilation errors occur, the app will auto-shutdown with details in `logs/frontend_compile_errors.log`
 
-### Restarting After Updates
+### Updating the Running Application
 
-After pulling updates or making configuration changes, use the restart script for a clean reboot:
+PokerTool includes a comprehensive **Update Manager** for safely applying code changes while the app is running. This system handles graceful shutdown, code updates, frontend rebuilds, and automatic restart.
+
+#### Quick Update (Recommended)
+
+```bash
+# Complete update cycle: stop -> pull changes -> rebuild -> restart
+./scripts/full_update.sh
+```
+
+#### Check Application Status
+
+```bash
+# View process status, CPU, memory, and health metrics
+./scripts/status.sh
+```
+
+#### Manual Update Process
+
+```bash
+# 1. Check if app is running
+./scripts/status.sh
+
+# 2. Gracefully stop the app (saves state, 30s timeout)
+./scripts/quiesce.sh
+
+# 3. Pull changes and rebuild frontend
+./scripts/update.sh
+
+# 4. Restart the application
+./scripts/resume.sh
+```
+
+**What the Update Manager Does:**
+- ✅ **Graceful Shutdown**: SIGTERM with 30-second timeout, state preservation
+- ✅ **Automatic Git Pull**: Fetches latest code changes
+- ✅ **Frontend Rebuild**: Runs `npm install` and `npm run build` automatically
+- ✅ **Dependency Updates**: Updates Python packages from requirements.txt
+- ✅ **Health Verification**: Ensures successful restart with CPU/memory monitoring
+- ✅ **Comprehensive Logging**: All operations logged to `logs/update_manager.log`
+
+**State Preservation:**
+- Application state saved to `.update_state.json` during shutdown
+- PID tracked in `.pokertool.pid` for process management
+- Safe recovery from interrupted updates
+
+**For detailed documentation, see:**
+- [Update Procedures Guide](docs/UPDATE_PROCEDURES.md) - Complete documentation (400+ lines)
+- [Scripts README](scripts/README.md) - Quick reference
+
+#### Legacy Restart Script
+
+For compatibility, the old restart script is still available:
 
 ```bash
 # Restart web application (kills old processes and starts fresh)
@@ -86,10 +137,7 @@ python restart.py --gui
 python restart.py --kill-only
 ```
 
-The restart script:
-- Gracefully stops all pokertool processes (backend API, frontend, GUI)
-- Cleans up stuck processes and releases ports
-- Relaunches the application with updated code/config
+**Note:** The new `full_update.sh` script is recommended as it provides better state management and logging.
 
 Additional commands:
 

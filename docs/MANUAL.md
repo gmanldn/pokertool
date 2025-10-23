@@ -150,6 +150,209 @@
   readers understand the flow and encourage them to use all the features
   in context.
 
+## Updating the Running Application
+
+PokerTool includes a comprehensive **Update Manager** that allows you to safely apply code updates while the application is running. This ensures minimal downtime and preserves application state during updates.
+
+### Quick Update (Recommended)
+
+The fastest way to update PokerTool is using the complete update script:
+
+```bash
+./scripts/full_update.sh
+```
+
+This single command will:
+1. Gracefully stop the application (preserving state)
+2. Pull the latest code changes from git
+3. Rebuild the frontend (if needed)
+4. Restart the application
+5. Verify successful restart with health checks
+
+### Checking Application Status
+
+Before or after an update, you can check if the application is running:
+
+```bash
+./scripts/status.sh
+```
+
+This displays:
+- Whether the app is running
+- Process ID (PID)
+- CPU and memory usage
+- Number of threads
+- When the application started
+
+### Manual Update Process
+
+For more control over the update process, you can run each step individually:
+
+```bash
+# 1. Check current status
+./scripts/status.sh
+
+# 2. Gracefully stop the application
+./scripts/quiesce.sh
+
+# 3. Pull code changes and rebuild
+./scripts/update.sh
+
+# 4. Restart the application
+./scripts/resume.sh
+```
+
+**Why use quiesce?** The quiesce process sends a SIGTERM signal to the application, allowing it 30 seconds to shut down gracefully and save its state. This is much safer than forcefully killing the process.
+
+### What the Update Manager Does
+
+The update manager provides several important features:
+
+- **✅ Graceful Shutdown:** Uses SIGTERM with a 30-second timeout to allow clean exit
+- **✅ State Preservation:** Saves application state to `.update_state.json` during shutdown
+- **✅ Automatic Git Pull:** Fetches the latest code changes from the repository
+- **✅ Frontend Rebuild:** Runs `npm install` and `npm run build` for the React frontend
+- **✅ Health Verification:** Monitors CPU, memory, and process health after restart
+- **✅ Comprehensive Logging:** All operations logged to `logs/update_manager.log`
+- **✅ PID Tracking:** Prevents multiple instances with `.pokertool.pid` file
+
+### Common Update Scenarios
+
+**Scenario 1: Regular Code Update**
+
+When you've pulled code changes and need to apply them:
+```bash
+./scripts/full_update.sh
+```
+
+**Scenario 2: Frontend-Only Changes**
+
+If you only changed frontend code:
+```bash
+./scripts/quiesce.sh
+cd pokertool-frontend
+npm run build
+cd ..
+./scripts/resume.sh
+```
+
+**Scenario 3: Emergency Stop**
+
+If something goes wrong and you need to stop the application immediately:
+```bash
+# Try graceful shutdown first
+./scripts/quiesce.sh
+
+# If that fails, find and kill the process
+ps aux | grep start.py
+kill -9 <PID>
+
+# Clean up PID file
+rm -f .pokertool.pid
+```
+
+### Files Created by Update Manager
+
+The update manager creates several files to track state:
+
+- `.pokertool.pid` - Contains the process ID of the running application
+- `.update_state.json` - Saves application state during shutdown
+- `logs/update_manager.log` - Detailed log of all update operations
+
+### Troubleshooting Updates
+
+**Problem: Application won't stop**
+```bash
+# Check if it's actually running
+./scripts/status.sh
+
+# Try quiesce again
+./scripts/quiesce.sh
+
+# Force kill if necessary
+pkill -9 -f start.py
+rm -f .pokertool.pid
+```
+
+**Problem: Update fails**
+```bash
+# Check git status
+git status
+git pull
+
+# Resolve any conflicts manually
+git diff
+```
+
+**Problem: Frontend build fails**
+```bash
+cd pokertool-frontend
+
+# Clean install
+rm -rf node_modules package-lock.json
+npm install
+
+# Build with verbose output
+npm run build -- --verbose
+```
+
+**Problem: Application won't start**
+```bash
+# Check logs
+tail -f logs/update_manager.log
+tail -f logs/app.log
+
+# Try starting manually to see errors
+python3 start.py
+
+# Check for port conflicts
+lsof -i :5001
+lsof -i :3000
+```
+
+### Best Practices
+
+**Before Updating:**
+1. Check that the app is running normally: `./scripts/status.sh`
+2. Backup critical data if you have important state
+3. Check for uncommitted changes: `git status`
+
+**During Update:**
+1. Use `full_update.sh` - it handles everything automatically
+2. Monitor logs: `tail -f logs/update_manager.log`
+3. Don't interrupt the process
+
+**After Update:**
+1. Verify status: `./scripts/status.sh`
+2. Check app health by opening http://localhost:3000
+3. Check backend API: http://localhost:5001/health
+4. Review logs: `tail -20 logs/update_manager.log`
+
+### Detailed Documentation
+
+For complete documentation on the update manager, including:
+- Detailed command explanations
+- State preservation details
+- Automation examples
+- Advanced usage
+
+See: [UPDATE_PROCEDURES.md](UPDATE_PROCEDURES.md)
+
+### Legacy Restart Method
+
+For backward compatibility, the legacy restart script is still available:
+```bash
+python restart.py
+```
+
+However, this method is **not recommended** for production use as it:
+- Does not preserve state
+- Uses hard process kill (SIGKILL)
+- Does not verify health after restart
+- Provides less detailed logging
+
+**Always prefer the update manager scripts** (`./scripts/full_update.sh`) for reliable, production-safe updates.
+
 ## Technical Deep-Dive (Developer Guide by Module)
 
 In this section, provide an in-depth explanation of the codebase for

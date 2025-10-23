@@ -378,7 +378,13 @@ git push origin develop
 ### Daily Commands
 
 ```bash
-# Start development server
+# Check application status
+./scripts/status.sh
+
+# Apply code updates (recommended)
+./scripts/full_update.sh
+
+# Start development server (legacy)
 python restart.py
 
 # Run tests
@@ -393,6 +399,39 @@ mypy src/
 # Update dependencies
 pip install -r requirements.txt --upgrade
 ```
+
+### Update Manager (Recommended for Live Updates)
+
+The Update Manager provides safe, graceful updates while the app is running:
+
+```bash
+# Complete update cycle (stop -> pull -> rebuild -> restart)
+./scripts/full_update.sh
+
+# Check app status (PID, CPU, memory, threads)
+./scripts/status.sh
+
+# Manual update steps (for fine-grained control):
+./scripts/quiesce.sh    # Gracefully stop app (saves state)
+./scripts/update.sh     # Pull code and rebuild frontend
+./scripts/resume.sh     # Restart application
+
+# Python API usage
+python3 scripts/update_manager.py status
+python3 scripts/update_manager.py quiesce
+python3 scripts/update_manager.py update
+python3 scripts/update_manager.py restart
+python3 scripts/update_manager.py full
+```
+
+**Features:**
+- Graceful shutdown with 30s timeout and SIGTERM
+- State preservation to `.update_state.json`
+- Automatic git pull, npm install, and frontend rebuild
+- Health checks and process monitoring
+- All operations logged to `logs/update_manager.log`
+
+**See:** [UPDATE_PROCEDURES.md](UPDATE_PROCEDURES.md) for complete documentation
 
 ### Code Quality
 
