@@ -286,9 +286,9 @@ Conventions
 - [ ] [P0][M] Improve dealer button detection to >98% accuracy — Use template matching + color detection. Handle different button styles. `src/pokertool/modules/poker_screen_scraper_betfair.py:600-700`
 - [ ] [P0][S] Add relative position calculation — Calculate each player's position relative to button (UTG, MP, CO, BTN, SB, BB). `src/pokertool/modules/poker_screen_scraper.py`
 - [ ] [P0][M] Implement button movement tracking — Track button as it moves around table. Validate movement logic. `src/pokertool/modules/poker_screen_scraper_betfair.py`
-- [ ] [P1][S] Add blind detection — Detect small blind and big blind amounts from table UI. `src/pokertool/modules/poker_screen_scraper.py`
+- [x] ✅ [P1][S] Add blind detection — ✅ Complete: BlindAnteDetector class with regex patterns for SB/BB detection. Supports multiple formats. Files: `src/pokertool/blind_ante_detector.py`, `tests/test_blind_ante_detector.py`.
 - [ ] [P1][M] Create position-aware stats tracking — Track stats by position (VPIP by position, aggression by position). `src/pokertool/database.py`
-- [ ] [P2][S] Add ante detection — Detect ante amounts in tournament play. `src/pokertool/modules/poker_screen_scraper.py`
+- [x] ✅ [P2][S] Add ante detection — ✅ Complete: Ante detection included in BlindAnteDetector class. Detects ante amounts from UI text. Files: `src/pokertool/blind_ante_detector.py`, `tests/test_blind_ante_detector.py`.
 
 #### Board Detection (6 tasks)
 - [ ] [P0][M] Improve board card detection to >99% — Detect flop/turn/river cards with high confidence. Handle animations. `src/pokertool/modules/poker_screen_scraper_betfair.py:1830-1860`
