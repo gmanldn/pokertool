@@ -18,16 +18,16 @@ describe('Dashboard Snapshot Tests', () => {
 
   it('renders correctly with sample messages', () => {
     const sampleMessages = [
-      { id: 1, type: 'info', text: 'Welcome to PokerTool', timestamp: new Date() },
-      { id: 2, type: 'success', text: 'Connected to server', timestamp: new Date() },
+      { type: 'stats_update', data: { handsPlayed: 10, profit: 50 }, timestamp: Date.now() },
+      { type: 'info', data: { message: 'Connected to server' }, timestamp: Date.now() },
     ];
 
     const { container } = render(<Dashboard messages={sampleMessages} />);
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('renders correctly in loading state', () => {
-    const { container } = render(<Dashboard messages={[]} isLoading={true} />);
+  it('renders correctly with no stats', () => {
+    const { container } = render(<Dashboard messages={[]} />);
     expect(container.firstChild).toMatchSnapshot();
   });
 });

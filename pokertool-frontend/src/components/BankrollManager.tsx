@@ -153,7 +153,7 @@ export const BankrollManager: React.FC = () => {
       },
       tooltip: {
         callbacks: {
-          label: (context: { parsed: { y: number } }) => {
+          label: (context: any) => {
             return `${bankroll.currency} ${context.parsed.y.toFixed(2)}`;
           },
         },

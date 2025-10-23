@@ -13,7 +13,7 @@ describe('EmptyState Snapshot Tests', () => {
   it('renders no-data state correctly', () => {
     const { container } = render(
       <EmptyState
-        type="no-data"
+        variant="no-data"
         title="No hands recorded yet"
         message="Start playing to see your stats here"
       />
@@ -24,7 +24,7 @@ describe('EmptyState Snapshot Tests', () => {
   it('renders error state correctly', () => {
     const { container } = render(
       <EmptyState
-        type="error"
+        variant="error"
         title="Connection Error"
         message="Could not connect to server"
       />
@@ -35,7 +35,7 @@ describe('EmptyState Snapshot Tests', () => {
   it('renders loading state correctly', () => {
     const { container } = render(
       <EmptyState
-        type="loading"
+        variant="loading"
         title="Loading..."
         message="Fetching your data"
       />
@@ -47,7 +47,7 @@ describe('EmptyState Snapshot Tests', () => {
     const mockAction = jest.fn();
     const { container } = render(
       <EmptyState
-        type="no-data"
+        variant="no-data"
         title="Get Started"
         message="Begin your poker journey"
         actionLabel="Start Session"

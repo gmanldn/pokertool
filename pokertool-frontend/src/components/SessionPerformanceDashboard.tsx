@@ -159,7 +159,7 @@ export const SessionPerformanceDashboard: React.FC<SessionPerformanceDashboardPr
       },
       tooltip: {
         callbacks: {
-          label: (context: { parsed: { y: number } }) => `$${context.parsed.y.toFixed(2)}`
+          label: (context: any) => `$${context.parsed.y.toFixed(2)}`
         }
       }
     },
