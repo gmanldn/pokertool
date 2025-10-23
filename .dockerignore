@@ -1,162 +1,156 @@
-# PokerTool - Enhanced Docker Build Context Exclusions
-# Reduces build context size by 80%+
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
 venv/
-.venv/
 ENV/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
+env/
+.venv
+
+# Testing
+.pytest_cache/
 .coverage
 .coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
+htmlcov/
+.tox/
+.nox/
+test_logs/
 *.log
-.git
-.mypy_cache
-.pytest_cache
-.hypothesis
-*.egg-info/
-*.egg
-.eggs/
-dist/
-build/
 
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.eslintcache
-package-lock.json
-
-# IDE & Editors
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*.swn
 *~
 .DS_Store
 
-# Testing
-tests/
-test_*.py
-*_test.py
-.pytest_cache/
-test_logs/
-testing-platform/
-evals/
+# Documentation builds
+docs/_build/
+docs/.doctrees/
 
-# Documentation
-docs/
-*.md
-!README.md
-*.rst
-*.txt
-!requirements.txt
-!requirements-dev.txt
-
-# CI/CD
-.github/
-.gitlab-ci.yml
-.circleci/
-.travis.yml
-Jenkinsfile
-
-# Logs
-logs/
-*.log
-
-# Config files that shouldn't be in image
-.env
-.env.*
-!.env.example
-poker_config.json
-poker_config.*.json
-!poker_config.example.json
-*.local
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
 
 # Git
 .git/
 .gitignore
 .gitattributes
-.gitmodules
 
-# Large media files
-*.mp4
-*.avi
-*.mov
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Development files
+*.md
+!README.md
+!INSTALL.md
+LICENSE
+CHANGELOG.md
+CONTRIBUTING.md
+*.txt
+!requirements.txt
+
+# Local configuration
+*.local
+.env.local
+poker_config.json
+
+# Debug and temporary files
 debug_*.png
-window_*.png
 test_*.png
-*.PNG
-*.jpg
-*.jpeg
-!assets/pokertool-icon.png
-!assets/icons/*.png
-
-# Backups & Temp
-*.backup
-*.bak
-*.old
+window_*.png
 *.tmp
 *.temp
 
-# Docker
-docker-compose*.yml
-Dockerfile*
-.dockerignore
+# Logs
+logs/
+*.log
 
-# Kubernetes
-k8s/
-charts/
+# Model data (can be large)
+model_calibration_data/
 
 # Exports
 exports/
 
-# Model data
-model_calibration_data/
+# Examples
+examples/
 
-# VectorCode
-VectorCode/
+# Testing
+tests/
+evals/
 
-# Walkthrough
+# Documentation
+docs/
 walkthrough/
 
-# Webview UI (built separately in Dockerfile)
-webview-ui/node_modules/
-webview-ui/build/
+# Tools
+tools/
+
+# Scripts (if not needed in container)
+scripts/
 
 # Standalone builds
 standalone/
 
-# Packaging artifacts
+# Packaging
 packaging/
-dist/
-*.spec
+
+# Kubernetes configs (not needed in container)
+k8s/
+
+# Locales (if not needed)
+locales/
+
+# Proto files (if already compiled)
+proto/
+
+# Ranges data
+ranges/
+
+# Frontend source (if building separately)
+pokertool-frontend/
+webview-ui/
 
 # Dead code reports
 dead_code_report.txt
+RBAC_AUDIT_REPORT.md
 
-# Dependency reports
-docs/dependency_report.json
-
-# Task files
+# Task tracking
 tasks_left.py
 COMPLETED_TASKS*.md
 TODO_*.md
 
-# Screenshots and debug images
-debug_*.png
-test_capture.png
+# Other
+Makefile
+docker-compose.yml
+Dockerfile
+.dockerignore
+kill_all.sh
+restart.py
+start.py
+test.py
