@@ -1,0 +1,84 @@
+.dialog {
+  z-index: 1300;
+}
+
+.title {
+  padding: 24px 24px 16px;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .iconContainer {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.iconError {
+  color: #f44336;
+  font-size: 24px;
+}
+
+.iconWarning {
+  color: #ff9800;
+  font-size: 24px;
+}
+
+.iconInfo {
+  color: #2196f3;
+  font-size: 24px;
+}
+
+.iconQuestion {
+  color: #9c27b0;
+  font-size: 24px;
+}
+
+.message {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.actions {
+  padding: 16px 24px 24px;
+  gap: 12px;
+}
+
+.cancelButton {
+  min-width: 100px;
+}
+
+.confirmButton {
+  min-width: 100px;
+}
+
+/* Animation */
+.dialog {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
