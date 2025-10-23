@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
 import { 
   Box, 
   Card, 
@@ -24,7 +25,6 @@ import {
   Info,
   Refresh
 } from '@mui/icons-material';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,16 +38,6 @@ import {
 } from 'chart.js';
 
 // Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  ChartTooltip,
-  Legend,
-  Filler
-);
 
 interface SessionStats {
   handsPlayed: number;
@@ -218,7 +208,7 @@ export const SessionPerformanceDashboard: React.FC<SessionPerformanceDashboardPr
             </Grid>
           </Grid>
           <Box sx={{ mt: 2, height: 100 }}>
-            <Line data={chartData} options={chartOptions} />
+            <LazyLineChart data={chartData} options={chartOptions} />
           </Box>
         </CardContent>
       </Card>
@@ -424,7 +414,7 @@ export const SessionPerformanceDashboard: React.FC<SessionPerformanceDashboardPr
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <Box sx={{ height: 250 }}>
-                <Line data={chartData} options={chartOptions} />
+                <LazyLineChart data={chartData} options={chartOptions} />
               </Box>
             </CardContent>
           </Card>

@@ -12,6 +12,7 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import React, { useState, useMemo } from 'react';
+import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
 import {
   Box,
   Typography,
@@ -52,7 +53,6 @@ import {
   Assessment,
   ShowChart,
 } from '@mui/icons-material';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -83,16 +83,6 @@ import {
 } from '../store/slices/bankrollSlice';
 
 // Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 export const BankrollManager: React.FC = () => {
   const theme = useTheme();
@@ -380,7 +370,7 @@ export const BankrollManager: React.FC = () => {
             Bankroll History
           </Typography>
           <Box sx={{ height: isMobile ? 250 : 400 }}>
-            <Line data={chartData} options={chartOptions} />
+            <LazyLineChart data={chartData} options={chartOptions} />
           </Box>
         </Paper>
       )}

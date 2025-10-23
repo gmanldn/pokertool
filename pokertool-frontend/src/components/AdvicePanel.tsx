@@ -14,6 +14,7 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
 import {
   Card,
   CardContent,
@@ -33,7 +34,6 @@ import {
   ExpandLess as ExpandLessIcon,
   TrendingDown,
 } from '@mui/icons-material';
-import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -46,14 +46,6 @@ import {
 import { useWebSocketSubscription, WebSocketMessage } from '../hooks/useWebSocket';
 
 // Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  ChartTooltip,
-  Legend
-);
 
 // Action types
 export enum ActionType {
@@ -451,7 +443,7 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
                 </Box>
 
                 <Box sx={{ height: compact ? 120 : 160, position: 'relative' }}>
-                  <Bar
+                  <LazyBarChart
                     data={getEVChartData()!}
                     options={{
                       responsive: true,
@@ -463,7 +455,7 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
                         },
                         tooltip: {
                           callbacks: {
-                            label: (context) => {
+                            label: (context: any) => {
                               const value = context.parsed.x;
                               if (value === null || value === undefined) return '';
                               
@@ -487,7 +479,7 @@ export const AdvicePanel: React.FC<AdvicePanelProps> = ({ messages, compact = fa
                           },
                           ticks: {
                             color: 'rgba(255,255,255,0.7)',
-                            callback: (value) => {
+                            callback: (value: any) => {
                               const numValue = typeof value === 'number' ? value : parseFloat(value as string);
                               return `${numValue >= 0 ? '+' : ''}${numValue} BB`;
                             },

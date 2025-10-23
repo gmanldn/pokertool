@@ -36,33 +36,7 @@ import {
   useTheme,
   SelectChangeEvent,
 } from '@mui/material';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  Filler,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  Filler
-);
+import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -323,7 +297,7 @@ export const Statistics: React.FC = () => {
                 Profit Trend
               </Typography>
               <Box sx={{ height: '85%' }}>
-                <Line data={profitChartData} options={chartOptions} />
+                <LazyLineChart data={profitChartData} options={chartOptions} />
               </Box>
             </Paper>
           </Grid>
@@ -430,7 +404,7 @@ export const Statistics: React.FC = () => {
                 Hand Strength Performance
               </Typography>
               <Box sx={{ height: '85%' }}>
-                <Bar data={handStrengthChartData} options={chartOptions} />
+                <LazyBarChart data={handStrengthChartData} options={chartOptions} />
               </Box>
             </Paper>
           </Grid>
@@ -440,7 +414,7 @@ export const Statistics: React.FC = () => {
                 Hand Distribution
               </Typography>
               <Box sx={{ height: '85%' }}>
-                <Doughnut data={handDistributionData} options={pieOptions} />
+                <LazyDoughnutChart data={handDistributionData} options={pieOptions} />
               </Box>
             </Paper>
           </Grid>
@@ -455,7 +429,7 @@ export const Statistics: React.FC = () => {
                 Opponent Types Encountered
               </Typography>
               <Box sx={{ height: '85%' }}>
-                <Bar data={opponentCountData} options={chartOptions} />
+                <LazyBarChart data={opponentCountData} options={chartOptions} />
               </Box>
             </Paper>
           </Grid>
@@ -465,7 +439,7 @@ export const Statistics: React.FC = () => {
                 Profit vs Opponent Types
               </Typography>
               <Box sx={{ height: '85%' }}>
-                <Bar data={opponentProfitData} options={chartOptions} />
+                <LazyBarChart data={opponentProfitData} options={chartOptions} />
               </Box>
             </Paper>
           </Grid>

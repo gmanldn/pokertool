@@ -12,6 +12,7 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import React, { useState, useMemo } from 'react';
+import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
 import {
   Box,
   Typography,
@@ -52,7 +53,6 @@ import {
   TrendingUp,
   TrendingDown,
 } from '@mui/icons-material';
-import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -80,17 +80,6 @@ import {
 import { recordBuyin, recordCashout } from '../store/slices/bankrollSlice';
 
 // Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 export const TournamentView: React.FC = () => {
   const theme = useTheme();
@@ -376,7 +365,7 @@ export const TournamentView: React.FC = () => {
                 Cumulative Profit
               </Typography>
               <Box sx={{ height: isMobile ? 250 : 300 }}>
-                <Line data={resultsChartData} options={chartOptions} />
+                <LazyLineChart data={resultsChartData} options={chartOptions} />
               </Box>
             </Paper>
           </Grid>
@@ -386,7 +375,7 @@ export const TournamentView: React.FC = () => {
                 ITM Distribution
               </Typography>
               <Box sx={{ height: isMobile ? 250 : 300 }}>
-                <Doughnut data={itmChartData} />
+                <LazyDoughnutChart data={itmChartData} />
               </Box>
             </Paper>
           </Grid>

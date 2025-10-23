@@ -33,34 +33,12 @@ import {
   Timer,
   Refresh,
 } from '@mui/icons-material';
-import { Line, Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js';
 import { WebSocketMessage } from '../hooks/useWebSocket';
 import { SessionGoalsTracker } from './SessionGoalsTracker';
 import { SessionClock } from './SessionClock';
 import { RELEASE_VERSION } from '../config/releaseVersion';
 import { NoHandsEmptyState } from './EmptyState';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+import { LazyLineChart, LazyDoughnutChart } from './charts';
 
 interface DashboardProps {
   messages: WebSocketMessage[];
@@ -339,7 +317,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ messages }) => 
               Weekly Profit Trend
             </Typography>
             <Box sx={{ height: isMobile ? 240 : 340 }}>
-              <Line
+              <LazyLineChart
                 data={profitChartData}
                 options={{
                   responsive: true,
@@ -368,6 +346,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ messages }) => 
                     },
                   },
                 }}
+                height={isMobile ? 240 : 340}
               />
             </Box>
           </Paper>
@@ -395,7 +374,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ messages }) => 
                 justifyContent: 'center',
               }}
             >
-              <Doughnut
+              <LazyDoughnutChart
                 data={gameTypeData}
                 options={{
                   responsive: true,
@@ -409,6 +388,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ messages }) => 
                     },
                   },
                 }}
+                height={isMobile ? 240 : 340}
               />
             </Box>
           </Paper>

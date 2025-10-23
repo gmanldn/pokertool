@@ -12,6 +12,7 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import React, { useState, useEffect } from 'react';
+import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
 import {
   Box,
   Typography,
@@ -30,7 +31,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -43,15 +43,6 @@ import {
 } from 'chart.js';
 
 // Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  ChartTooltip,
-  Legend
-);
 
 export enum ConfidenceLevel {
   VERY_HIGH = 'VERY_HIGH',
@@ -354,7 +345,7 @@ export const ConfidenceVisualization: React.FC<ConfidenceVisualizationProps> = (
 
           <Collapse in={showHistoryChart}>
             <Paper sx={{ p: 1.5, backgroundColor: 'rgba(255,255,255,0.05)', height: 200 }}>
-              <Line data={historyChartData} options={historyChartOptions} />
+              <LazyLineChart data={historyChartData} options={historyChartOptions} />
             </Paper>
           </Collapse>
         </Box>
