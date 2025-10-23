@@ -547,6 +547,244 @@ def reset_fps_counter(detection_type: Optional[str] = None):
             _fps_counter_instance.reset(detection_type)
 
 
+class DetectionCPUTracker:
+    """
+    CPU usage tracker for detection operations with per-type tracking.
+
+    Tracks CPU percentage and execution time for different detection types
+    (OCR, template matching, etc.) using process-level metrics.
+
+    Usage:
+        cpu_tracker = DetectionCPUTracker()
+
+        # Track CPU for a detection operation
+        with cpu_tracker.track('ocr_detection'):
+            perform_ocr()
+
+        # Get metrics
+        metrics = cpu_tracker.get_metrics('ocr_detection')
+        # {'cpu_percent': 15.3, 'total_time_ms': 1234.5, 'call_count': 50, 'avg_time_ms': 24.7}
+    """
+
+    def __init__(self, window_size: int = 100):
+        """
+        Initialize CPU tracker.
+
+        Args:
+            window_size: Number of samples to track in sliding window
+        """
+        self.window_size = window_size
+        self.cpu_samples: Dict[str, List[float]] = {}  # detection_type -> [cpu_percentages]
+        self.execution_times: Dict[str, List[float]] = {}  # detection_type -> [execution_ms]
+        self.call_counts: Dict[str, int] = {}  # detection_type -> count
+        self.lock = threading.Lock()
+        self.process = psutil.Process() if PSUTIL_AVAILABLE else None
+        self.start_time = time.time()
+
+    @contextmanager
+    def track(self, detection_type: str = 'default'):
+        """
+        Context manager to track CPU usage for a detection operation.
+
+        Args:
+            detection_type: Type of detection (e.g., 'ocr', 'template_matching', 'color_detection')
+
+        Example:
+            with cpu_tracker.track('ocr_detection'):
+                result = perform_ocr(image)
+        """
+        start_time = time.time()
+        start_cpu = self.process.cpu_percent(interval=None) if self.process else 0.0
+
+        try:
+            yield
+        finally:
+            end_time = time.time()
+            end_cpu = self.process.cpu_percent(interval=None) if self.process else 0.0
+
+            # Calculate metrics
+            execution_ms = (end_time - start_time) * 1000.0
+            cpu_percent = (start_cpu + end_cpu) / 2.0  # Average CPU during execution
+
+            # Record metrics
+            with self.lock:
+                if detection_type not in self.cpu_samples:
+                    self.cpu_samples[detection_type] = []
+                    self.execution_times[detection_type] = []
+                    self.call_counts[detection_type] = 0
+
+                self.cpu_samples[detection_type].append(cpu_percent)
+                self.execution_times[detection_type].append(execution_ms)
+                self.call_counts[detection_type] += 1
+
+                # Keep only last window_size samples
+                if len(self.cpu_samples[detection_type]) > self.window_size:
+                    self.cpu_samples[detection_type].pop(0)
+                    self.execution_times[detection_type].pop(0)
+
+    def get_metrics(self, detection_type: str = 'default') -> Dict[str, Any]:
+        """
+        Get CPU usage metrics for a specific detection type.
+
+        Args:
+            detection_type: Type of detection to get metrics for
+
+        Returns:
+            Dict with keys:
+            - cpu_percent: Average CPU % over window
+            - min_cpu_percent: Minimum CPU %
+            - max_cpu_percent: Maximum CPU %
+            - total_time_ms: Total execution time (all calls)
+            - avg_time_ms: Average execution time per call
+            - min_time_ms: Minimum execution time
+            - max_time_ms: Maximum execution time
+            - call_count: Number of calls recorded
+            - uptime_seconds: Time since tracker started
+        """
+        with self.lock:
+            if detection_type not in self.cpu_samples or not self.cpu_samples[detection_type]:
+                return {
+                    'cpu_percent': 0.0,
+                    'min_cpu_percent': 0.0,
+                    'max_cpu_percent': 0.0,
+                    'total_time_ms': 0.0,
+                    'avg_time_ms': 0.0,
+                    'min_time_ms': 0.0,
+                    'max_time_ms': 0.0,
+                    'call_count': 0,
+                    'uptime_seconds': time.time() - self.start_time
+                }
+
+            cpu_samples = self.cpu_samples[detection_type]
+            exec_times = self.execution_times[detection_type]
+            call_count = self.call_counts[detection_type]
+
+            return {
+                'cpu_percent': round(sum(cpu_samples) / len(cpu_samples), 2),
+                'min_cpu_percent': round(min(cpu_samples), 2),
+                'max_cpu_percent': round(max(cpu_samples), 2),
+                'total_time_ms': round(sum(exec_times), 2),
+                'avg_time_ms': round(sum(exec_times) / len(exec_times), 2),
+                'min_time_ms': round(min(exec_times), 2),
+                'max_time_ms': round(max(exec_times), 2),
+                'call_count': call_count,
+                'uptime_seconds': round(time.time() - self.start_time, 2)
+            }
+
+    def get_all_metrics(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Get CPU metrics for all detection types.
+
+        Returns:
+            Dict mapping detection_type to metrics dict
+        """
+        with self.lock:
+            detection_types = list(self.cpu_samples.keys())
+
+        return {dt: self.get_metrics(dt) for dt in detection_types}
+
+    def reset(self, detection_type: Optional[str] = None):
+        """
+        Reset CPU tracker for given type or all types.
+
+        Args:
+            detection_type: Type to reset, or None to reset all
+        """
+        with self.lock:
+            if detection_type:
+                if detection_type in self.cpu_samples:
+                    self.cpu_samples[detection_type] = []
+                    self.execution_times[detection_type] = []
+                    self.call_counts[detection_type] = 0
+            else:
+                self.cpu_samples = {}
+                self.execution_times = {}
+                self.call_counts = {}
+                self.start_time = time.time()
+
+    def log_metrics(self, detection_type: Optional[str] = None, logger_instance: Optional[logging.Logger] = None):
+        """
+        Log CPU metrics to logger.
+
+        Args:
+            detection_type: Specific type to log, or None for all types
+            logger_instance: Logger to use, or None for module logger
+        """
+        log = logger_instance or logger
+
+        if detection_type:
+            metrics = self.get_metrics(detection_type)
+            log.info(f"CPU [{detection_type}]: {metrics['cpu_percent']:.1f}% avg "
+                    f"({metrics['min_cpu_percent']:.1f}-{metrics['max_cpu_percent']:.1f}%), "
+                    f"{metrics['avg_time_ms']:.1f}ms avg time, {metrics['call_count']} calls")
+        else:
+            all_metrics = self.get_all_metrics()
+            for dt, metrics in all_metrics.items():
+                log.info(f"CPU [{dt}]: {metrics['cpu_percent']:.1f}% avg "
+                        f"({metrics['min_cpu_percent']:.1f}-{metrics['max_cpu_percent']:.1f}%), "
+                        f"{metrics['avg_time_ms']:.1f}ms avg time, {metrics['call_count']} calls")
+
+    def get_summary(self) -> Dict[str, Any]:
+        """
+        Get summary of CPU usage across all detection types.
+
+        Returns:
+            Dict with overall statistics
+        """
+        all_metrics = self.get_all_metrics()
+
+        if not all_metrics:
+            return {
+                'total_types': 0,
+                'total_calls': 0,
+                'avg_cpu_percent': 0.0,
+                'total_time_ms': 0.0,
+                'top_cpu_type': None,
+                'top_time_type': None
+            }
+
+        total_calls = sum(m['call_count'] for m in all_metrics.values())
+        avg_cpu = sum(m['cpu_percent'] for m in all_metrics.values()) / len(all_metrics)
+        total_time = sum(m['total_time_ms'] for m in all_metrics.values())
+
+        # Find top consumers
+        top_cpu_type = max(all_metrics.items(), key=lambda x: x[1]['cpu_percent'])[0]
+        top_time_type = max(all_metrics.items(), key=lambda x: x[1]['total_time_ms'])[0]
+
+        return {
+            'total_types': len(all_metrics),
+            'total_calls': total_calls,
+            'avg_cpu_percent': round(avg_cpu, 2),
+            'total_time_ms': round(total_time, 2),
+            'top_cpu_type': top_cpu_type,
+            'top_time_type': top_time_type
+        }
+
+
+# Global CPU tracker instance
+_cpu_tracker_instance: Optional[DetectionCPUTracker] = None
+_cpu_tracker_lock = threading.Lock()
+
+
+def get_cpu_tracker() -> DetectionCPUTracker:
+    """Get or create global CPU tracker instance."""
+    global _cpu_tracker_instance
+
+    with _cpu_tracker_lock:
+        if _cpu_tracker_instance is None:
+            _cpu_tracker_instance = DetectionCPUTracker()
+        return _cpu_tracker_instance
+
+
+def reset_cpu_tracker(detection_type: Optional[str] = None):
+    """Reset global CPU tracker."""
+    global _cpu_tracker_instance
+
+    with _cpu_tracker_lock:
+        if _cpu_tracker_instance:
+            _cpu_tracker_instance.reset(detection_type)
+
+
 # Decorator for automatic function timing
 def timed(category: str, operation: Optional[str] = None, capture_args: bool = False):
     """
@@ -659,6 +897,7 @@ __all__ = [
     'PerformanceTelemetry',
     'TelemetryEntry',
     'DetectionFPSCounter',
+    'DetectionCPUTracker',
     'timed',
     'telemetry_section',
     'telemetry_instant',
@@ -667,4 +906,6 @@ __all__ = [
     'shutdown_telemetry',
     'get_fps_counter',
     'reset_fps_counter',
+    'get_cpu_tracker',
+    'reset_cpu_tracker',
 ]
