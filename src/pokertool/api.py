@@ -74,7 +74,7 @@ try:
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
     from fastapi.responses import JSONResponse
     from fastapi.websockets import WebSocketState
-    from pydantic import BaseModel, Field, validator
+    from pydantic import BaseModel, Field, field_validator
     from slowapi import Limiter, _rate_limit_exceeded_handler
     from slowapi.util import get_remote_address
     from slowapi.errors import RateLimitExceeded
@@ -187,7 +187,8 @@ if FASTAPI_AVAILABLE:
             }
         }
 
-        @validator('hand')
+        @field_validator('hand')
+        @classmethod
         def validate_hand(cls, v):
             """Validate hand format."""
             import re
@@ -195,7 +196,8 @@ if FASTAPI_AVAILABLE:
                 raise ValueError('Invalid hand format')
             return v
 
-        @validator('board')
+        @field_validator('board')
+        @classmethod
         def validate_board(cls, v):
             """Validate board format."""
             if v is None:
