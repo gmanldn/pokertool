@@ -1,6 +1,6 @@
 {
   "name": "pokertool-frontend",
-  "version": "103.0.3",
+  "version": "103.0.4",
   "private": true,
   "dependencies": {
     "@babel/helper-string-parser": "7.25.9",
