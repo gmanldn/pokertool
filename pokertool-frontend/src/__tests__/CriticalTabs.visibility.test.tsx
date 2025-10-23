@@ -13,7 +13,6 @@ POKERTOOL-HEADER-END */
 
 import React from 'react';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter as Router } from 'react-router-dom';
 import App from '../App';
 import { renderWithProviders, mockBackendStatus } from '../test-utils/testHelpers';
 import '@testing-library/jest-dom';
@@ -31,9 +30,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
   describe('Detection Log Tab - CRITICAL', () => {
     it('Detection Log menu item MUST be visible in navigation', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -45,9 +42,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Detection Log route MUST be accessible', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/detection-log' }
       );
 
@@ -59,9 +54,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Detection Log component MUST render without errors', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/detection-log' }
       );
 
@@ -73,9 +66,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Detection Log must be clickable from dashboard', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -90,9 +81,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Detection Log icon MUST be in menu', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -105,9 +94,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
   describe('Tables Tab (LiveTable) - CRITICAL', () => {
     it('Tables menu item MUST be visible in navigation', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -119,9 +106,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Tables route MUST be accessible', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/tables' }
       );
 
@@ -133,9 +118,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Tables component MUST render without errors', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/tables' }
       );
 
@@ -147,9 +130,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Tables must be clickable from dashboard', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -164,9 +145,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Tables icon MUST be in menu', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -195,9 +174,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Can navigate from Tables to Detection Log', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/tables' }
       );
 
@@ -215,9 +192,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Can navigate from Detection Log to Tables', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/detection-log' }
       );
 
@@ -237,9 +212,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
   describe('Direct URL Access - CRITICAL', () => {
     it('Direct URL /detection-log MUST work', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/detection-log' }
       );
 
@@ -249,9 +222,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Direct URL /tables MUST work', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/tables' }
       );
 
@@ -263,9 +234,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
   describe('Menu Rendering - CRITICAL', () => {
     it('Menu MUST render both tabs on first load', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/' }
       );
 
@@ -276,9 +245,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Menu MUST show tabs after theme change', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -296,9 +263,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
   describe('Regression Prevention', () => {
     it('Detection Log MUST remain visible after 5 navigation cycles', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -324,9 +289,7 @@ describe('CRITICAL: Detection Log and Tables Tab Visibility', () => {
 
     it('Tables MUST remain visible after 5 navigation cycles', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 

@@ -13,7 +13,6 @@ POKERTOOL-HEADER-END */
 
 import React from 'react';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import App from '../App';
 import { renderWithProviders, mockBackendStatus, mockHealthData } from '../test-utils/testHelpers';
 import '@testing-library/jest-dom';
@@ -65,9 +64,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders app without crashing', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
       expect(screen.getByRole('banner')).toBeInTheDocument();
@@ -75,9 +72,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('displays Navigation component with all menu items', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -90,9 +85,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Dashboard tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
       expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
@@ -100,9 +93,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Tables tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/tables' }
       );
       expect(screen.getByText(/tables/i)).toBeInTheDocument();
@@ -110,9 +101,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Detection Log tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/detection-log' }
       );
       expect(screen.getByText(/detection log/i)).toBeInTheDocument();
@@ -120,9 +109,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Version History tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/version-history' }
       );
       expect(screen.getByText(/version history/i)).toBeInTheDocument();
@@ -130,9 +117,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Statistics tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/statistics' }
       );
       expect(screen.getByText(/statistics/i)).toBeInTheDocument();
@@ -140,9 +125,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Settings tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/settings' }
       );
       expect(screen.getByText(/settings/i)).toBeInTheDocument();
@@ -150,9 +133,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Bankroll tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/bankroll' }
       );
       expect(screen.getByText(/bankroll/i)).toBeInTheDocument();
@@ -160,9 +141,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Tournament tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/tournament' }
       );
       expect(screen.getByText(/tournament/i)).toBeInTheDocument();
@@ -170,9 +149,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders HUD Overlay tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/hud' }
       );
       expect(screen.getByText(/hud overlay/i)).toBeInTheDocument();
@@ -180,9 +157,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders GTO Trainer tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/gto' }
       );
       expect(screen.getByText(/gto trainer/i)).toBeInTheDocument();
@@ -190,9 +165,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Hand History tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/history' }
       );
       expect(screen.getByText(/hand history/i)).toBeInTheDocument();
@@ -200,9 +173,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders SmartHelper tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/smarthelper' }
       );
       expect(screen.getByText(/smarthelper/i)).toBeInTheDocument();
@@ -210,9 +181,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders AI Chat tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/ai-chat' }
       );
       expect(screen.getByText(/ai chat/i)).toBeInTheDocument();
@@ -220,9 +189,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Improve tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/improve' }
       );
       expect(screen.getByText(/improve/i)).toBeInTheDocument();
@@ -230,9 +197,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Backend tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/backend' }
       );
       expect(screen.getByText(/backend/i)).toBeInTheDocument();
@@ -240,9 +205,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders TODO tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/todo' }
       );
       expect(screen.getByText(/todo/i)).toBeInTheDocument();
@@ -250,9 +213,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Autopilot tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/autopilot' }
       );
       expect(screen.getByText(/autopilot/i)).toBeInTheDocument();
@@ -260,9 +221,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Analysis tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/analysis' }
       );
       expect(screen.getByText(/analysis/i)).toBeInTheDocument();
@@ -270,9 +229,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Model Calibration tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/model-calibration' }
       );
       expect(screen.getByText(/model calibration/i)).toBeInTheDocument();
@@ -280,9 +237,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Opponent Fusion tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/opponent-fusion' }
       );
       expect(screen.getByText(/opponent fusion/i)).toBeInTheDocument();
@@ -290,9 +245,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Active Learning tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/active-learning' }
       );
       expect(screen.getByText(/active learning/i)).toBeInTheDocument();
@@ -300,9 +253,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders Scraping Accuracy tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/scraping-accuracy' }
       );
       expect(screen.getByText(/scraping accuracy/i)).toBeInTheDocument();
@@ -310,9 +261,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('renders System Status tab', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/system-status' }
       );
       expect(screen.getByText(/system status/i)).toBeInTheDocument();
@@ -340,9 +289,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('navigates from Dashboard to Detection Log', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -356,9 +303,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('navigates from Dashboard to Version History', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -372,9 +317,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('navigates between multiple tabs in sequence', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -468,9 +411,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
   describe('Tab Accessibility - Keyboard Navigation', () => {
     it('allows keyboard navigation between tabs', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -484,9 +425,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
   describe('Tab Content Loading - Fallback States', () => {
     it('shows loading fallback while components load', async () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -500,9 +439,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
     it('handles errors gracefully with error boundaries', () => {
       // This test verifies that error boundaries are in place
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -514,9 +451,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
   describe('Tab Routing - Direct URL Access', () => {
     it('allows direct URL access to Dashboard', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
       expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
@@ -524,9 +459,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('allows direct URL access to Detection Log', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/detection-log' }
       );
       expect(screen.getByText(/detection log/i)).toBeInTheDocument();
@@ -534,9 +467,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('allows direct URL access to Version History', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/version-history' }
       );
       expect(screen.getByText(/version history/i)).toBeInTheDocument();
@@ -544,9 +475,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('allows direct URL access to Tables', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/tables' }
       );
       expect(screen.getByText(/tables/i)).toBeInTheDocument();
@@ -554,9 +483,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('redirects root path to Dashboard', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/' }
       );
       // Should redirect to dashboard which renders the navigation and main content
@@ -567,9 +494,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
   describe('Tab Count and Completeness', () => {
     it(`has exactly ${expectedTabs.length} menu items`, () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
@@ -586,9 +511,7 @@ describe('All Tabs and Routes - Comprehensive Tests', () => {
 
     it('has all expected tab labels', () => {
       renderWithProviders(
-        <Router>
-          <App />
-        </Router>,
+        <App />,
         { route: '/dashboard' }
       );
 
