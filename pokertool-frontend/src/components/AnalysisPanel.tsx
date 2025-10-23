@@ -30,17 +30,12 @@ import {
   Divider,
   Tabs,
   Tab,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Alert,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import {
   Calculate,
-  TrendingUp,
   Psychology,
   Casino,
   Timeline,
@@ -115,7 +110,6 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ sendMessage }) => 
   // Analysis Results
   const [handAnalysis, setHandAnalysis] = useState<HandAnalysis | null>(null);
   const [rangeAnalysis, setRangeAnalysis] = useState<RangeAnalysis | null>(null);
-  const [boardTexture, setBoardTexture] = useState<BoardTexture>('dry');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Listen for analysis results from backend
