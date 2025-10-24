@@ -2,15 +2,39 @@
 
 Detects and tracks multiple pots (main pot + side pots) in poker games.
 Side pots occur when players are all-in with different stack sizes.
+
+Enhanced Features:
+- Player-based pot calculation from bet amounts
+- Visual detection from screen regions
+- Pot odds calculations per pot
+- Eligible player tracking
 """
 
-from typing import List, Optional, Tuple
-from dataclasses import dataclass
+from typing import List, Optional, Tuple, Set, Dict
+from dataclasses import dataclass, field
+from enum import Enum
 import logging
 import cv2
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+class PotType(Enum):
+    """Type of pot."""
+    MAIN = "main"
+    SIDE = "side"
+
+
+@dataclass
+class Player:
+    """Player information for pot calculations."""
+    seat: int
+    name: str
+    stack: float
+    bet_amount: float
+    is_all_in: bool = False
+    is_folded: bool = False
 
 
 @dataclass
@@ -21,6 +45,14 @@ class PotInfo:
     is_main_pot: bool
     position: Tuple[int, int, int, int]  # (x0, y0, x1, y1)
     pot_number: int  # 0 for main pot, 1,2,3... for side pots
+    eligible_players: Set[int] = field(default_factory=set)  # Seat numbers
+    all_in_amount: Optional[float] = None
+
+    def get_pot_odds(self, bet_to_call: float) -> Optional[float]:
+        """Calculate pot odds for this pot."""
+        if bet_to_call <= 0:
+            return None
+        return self.amount / bet_to_call
 
 
 class SidePotDetector:
@@ -242,3 +274,150 @@ class SidePotDetector:
             'total': self.get_total_pot(),
             'side_pot_count': self.get_side_pot_count()
         }
+
+    def calculate_pots_from_players(
+        self,
+        players: List[Player],
+        total_pot: float
+    ) -> List[PotInfo]:
+        """
+        Calculate pots from player bet amounts (logic-based, not visual).
+
+        Args:
+            players: List of players with bet amounts and states
+            total_pot: Total pot amount
+
+        Returns:
+            List of PotInfo objects
+        """
+        # Filter active players
+        active_players = [p for p in players if not p.is_folded]
+
+        if not active_players:
+            return []
+
+        # Find all-in players
+        all_in_players = [p for p in active_players if p.is_all_in]
+
+        if not all_in_players:
+            # No side pots - just main pot
+            main_pot = PotInfo(
+                amount=total_pot,
+                confidence=0.95,
+                is_main_pot=True,
+                position=(0, 0, 0, 0),  # No visual position
+                pot_number=0,
+                eligible_players={p.seat for p in active_players}
+            )
+            return [main_pot]
+
+        # Calculate pots using algorithm
+        pots = self._calculate_pots_from_bets(active_players, all_in_players)
+
+        return pots
+
+    def _calculate_pots_from_bets(
+        self,
+        active_players: List[Player],
+        all_in_players: List[Player]
+    ) -> List[PotInfo]:
+        """
+        Calculate main pot and side pots from bet amounts.
+
+        Algorithm:
+        1. Sort all-in players by bet amount (lowest to highest)
+        2. Create pot for each all-in level
+        3. Track eligible players for each pot
+        """
+        pots: List[PotInfo] = []
+
+        # Sort all-in players by bet amount
+        sorted_all_ins = sorted(all_in_players, key=lambda p: p.bet_amount)
+
+        # Track remaining bets
+        remaining_bets = {p.seat: p.bet_amount for p in active_players}
+
+        pot_index = 0
+        previous_level = 0.0
+
+        # Create pots for each all-in level
+        for all_in_player in sorted_all_ins:
+            all_in_level = all_in_player.bet_amount
+
+            if all_in_level <= previous_level:
+                continue
+
+            # Calculate pot amount at this level
+            pot_amount = 0.0
+            eligible = set()
+
+            for player in active_players:
+                contribution = min(remaining_bets[player.seat], all_in_level) - previous_level
+
+                if contribution > 0:
+                    pot_amount += contribution
+                    remaining_bets[player.seat] -= contribution
+                    eligible.add(player.seat)
+
+            if pot_amount > 0:
+                is_main = pot_index == 0
+                pots.append(PotInfo(
+                    amount=pot_amount,
+                    confidence=0.90,
+                    is_main_pot=is_main,
+                    position=(0, 0, 0, 0),
+                    pot_number=pot_index,
+                    eligible_players=eligible,
+                    all_in_amount=all_in_level if not is_main else None
+                ))
+                pot_index += 1
+
+            previous_level = all_in_level
+
+        # Create final pot for remaining bets
+        final_amount = sum(remaining_bets.values())
+        if final_amount > 0:
+            eligible = {p.seat for p in active_players if remaining_bets[p.seat] > 0}
+            is_main = pot_index == 0
+
+            pots.append(PotInfo(
+                amount=final_amount,
+                confidence=0.90,
+                is_main_pot=is_main,
+                position=(0, 0, 0, 0),
+                pot_number=pot_index,
+                eligible_players=eligible,
+                all_in_amount=None
+            ))
+
+        return pots
+
+    def get_pots_for_player(self, seat: int) -> List[PotInfo]:
+        """Get all pots that a player is eligible for."""
+        return [pot for pot in self.last_pots if seat in pot.eligible_players]
+
+    def calculate_total_pot_odds(
+        self,
+        seat: int,
+        bet_to_call: float
+    ) -> Optional[float]:
+        """
+        Calculate combined pot odds for all pots player is eligible for.
+
+        Args:
+            seat: Player's seat number
+            bet_to_call: Amount player must call
+
+        Returns:
+            Combined pot odds or None if invalid
+        """
+        if bet_to_call <= 0:
+            return None
+
+        player_pots = self.get_pots_for_player(seat)
+        total_amount = sum(pot.amount for pot in player_pots)
+
+        if total_amount == 0:
+            return None
+
+        return total_amount / bet_to_call
