@@ -52,7 +52,6 @@ interface AnalysisPanelProps {
 
 type Position = 'UTG' | 'UTG+1' | 'MP' | 'MP+1' | 'CO' | 'BTN' | 'SB' | 'BB';
 type Street = 'preflop' | 'flop' | 'turn' | 'river';
-type BoardTexture = 'dry' | 'wet' | 'dynamic' | 'static';
 
 interface HandAnalysis {
   handStrength: number;

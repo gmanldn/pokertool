@@ -12,7 +12,7 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import React, { useState, useMemo } from 'react';
-import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
+import { LazyLineChart } from './charts';
 import {
   Box,
   Typography,
@@ -53,17 +53,6 @@ import {
   Assessment,
   ShowChart,
 } from '@mui/icons-material';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
 import { useAppSelector, useAppDispatch } from '../store';
 import {
   initializeBankroll,

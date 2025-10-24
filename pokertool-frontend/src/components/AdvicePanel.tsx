@@ -14,7 +14,7 @@ fixes:
 POKERTOOL-HEADER-END */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { LazyLineChart, LazyBarChart, LazyDoughnutChart } from './charts';
+import { LazyBarChart } from './charts';
 import {
   Card,
   CardContent,
@@ -34,15 +34,6 @@ import {
   ExpandLess as ExpandLessIcon,
   TrendingDown,
 } from '@mui/icons-material';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip as ChartTooltip,
-  Legend,
-} from 'chart.js';
 import { useWebSocketSubscription, WebSocketMessage } from '../hooks/useWebSocket';
 
 // Register Chart.js components
