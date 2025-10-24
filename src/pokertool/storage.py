@@ -58,6 +58,7 @@ import json
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Iterator
 from .error_handling import db_guard, log, sanitize_input, retry_on_failure
+from .hand_format_validator import normalize_hand_format
 
 __all__ = ['init_db', 'initialise_db_if_needed', 'SecureDatabase', 'get_secure_db']
 
@@ -240,7 +241,7 @@ class SecureDatabase:
         Securely save hand analysis with input validation.
 
         Args:
-            hand: The hand to analyze
+            hand: The hand to analyze (any supported format)
             board: The board cards
             result: The analysis result
             session_id: Optional session identifier
@@ -251,21 +252,44 @@ class SecureDatabase:
 
         Returns:
             The ID of the inserted record
+
+        Note:
+            Hand format is automatically normalized to standard "As Kh" format.
+            Supported input formats: "As Kh", "AsKh", "Ace of Spades King of Hearts"
         """
         self._rate_limit_check('save_hand', 50)
 
-        # Sanitize inputs
+        # Normalize hand format using the validator (handles all formats)
+        try:
+            from .hand_format_validator import get_validator
+            validator = get_validator()
+            parsed = validator.validate_and_parse(hand, allow_board=True)
+
+            # Database constraint expects:
+            # - Compact format (no space) for hole cards only: "AsKh"
+            # - Space-separated for hole + board: "AsKh Qh9c2d" (space before board, no spaces in board)
+            if parsed.board_cards:
+                # Hole cards + board: use compact hole cards + space + compact board
+                hole_compact = parsed.to_compact_format()
+                board_compact = "".join(str(card) for card in parsed.board_cards)
+                hand = f"{hole_compact} {board_compact}"
+            else:
+                # Hole cards only: use compact format
+                hand = parsed.to_compact_format()
+
+        except ValueError as e:
+            raise ValueError(f'Invalid hand format: {hand}. {str(e)}')
+
+        # Sanitize normalized hand (should already be clean, but safety first)
         hand = sanitize_input(hand, max_length=50)
+
         if board:
             board = sanitize_input(board, max_length=50)
+            # Validate board format using legacy validator
+            if not self._validate_board_format(board):
+                raise ValueError(f'Invalid board format: {board}')
+
         result = sanitize_input(result, max_length=2000)
-
-        # Validate hand format
-        if not self._validate_hand_format(hand):
-            raise ValueError(f'Invalid hand format: {hand}')
-
-        if board and not self._validate_board_format(board):
-            raise ValueError(f'Invalid board format: {board}')
 
         # Validate confidence score
         if confidence_score is not None:
