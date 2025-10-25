@@ -193,6 +193,9 @@ class ProductionDatabase:
                 # Initialize schema
                 self._create_postgresql_schema()
 
+                # Run any pending migrations
+                self._run_migrations('postgresql')
+
                 logger.info(f"PostgreSQL connection pool initialized: {self.config.host}:{self.config.port}/{self.config.database}")
                 return  # Success!
 
@@ -212,7 +215,31 @@ class ProductionDatabase:
     def _init_sqlite(self):
         """Initialize SQLite fallback."""
         self.sqlite_db = SecureDatabase(self.config.db_path)
+        # Run any pending migrations
+        self._run_migrations('sqlite')
         logger.info(f'SQLite database initialized: {self.config.db_path}')
+
+    def _run_migrations(self, db_type: str):
+        """Run any pending database migrations."""
+        try:
+            from pokertool.migration_runner import run_migrations_on_startup
+
+            if db_type == 'postgresql':
+                run_migrations_on_startup(
+                    db_type='postgresql',
+                    host=self.config.host,
+                    port=self.config.port,
+                    database=self.config.database,
+                    user=self.config.user,
+                    password=self.config.password
+                )
+            else:
+                run_migrations_on_startup(
+                    db_type='sqlite',
+                    db_path=self.config.db_path
+                )
+        except Exception as e:
+            logger.warning(f"Failed to run migrations: {e}. Database may be missing some columns/indexes.")
 
     @contextmanager
     def get_connection(self) -> Iterator[Any]:
