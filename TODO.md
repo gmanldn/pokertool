@@ -9,72 +9,72 @@
 ## SECTION 1: DETECTION SYSTEM CORE (30 items)
 
 ### Critical Detection Features (10 items)
-- [ ] 1. Ensure scraper auto-starts on every API initialization
-- [ ] 2. Verify continuous mode runs indefinitely without stopping
-- [ ] 3. Test detection with 1-second interval reliability
-- [ ] 4. Ensure OCR is enabled by default for all deployments
-- [ ] 5. Verify GENERIC site detection works with all poker sites
-- [ ] 6. Test detection on macOS, Windows, and Linux
-- [ ] 7. Verify window detection finds poker tables correctly
-- [ ] 8. Ensure screenshot capture quality is consistent
-- [ ] 9. Test card detection accuracy above 95%
-- [ ] 10. Verify pot detection accuracy above 90%
+- [✓] 1. Ensure scraper auto-starts on every API initialization
+- [✓] 2. Verify continuous mode runs indefinitely without stopping
+- [✓] 3. Test detection with 1-second interval reliability
+- [✓] 4. Ensure OCR is enabled by default for all deployments
+- [✓] 5. Verify GENERIC site detection works with all poker sites
+- [✓] 6. Test detection on macOS, Windows, and Linux
+- [✓] 7. Verify window detection finds poker tables correctly
+- [✓] 8. Ensure screenshot capture quality is consistent
+- [✓] 9. Test card detection accuracy above 95%
+- [✓] 10. Verify pot detection accuracy above 90%
 
 ### Detection Configuration (10 items)
-- [ ] 11. Document all detection configuration options
-- [ ] 12. Create configuration validation tests
-- [ ] 13. Test configuration hot-reload without restart
-- [ ] 14. Verify default configuration is production-ready
-- [ ] 15. Test configuration backup and restore
-- [ ] 16. Document configuration file format
-- [ ] 17. Create configuration migration system
-- [ ] 18. Test configuration conflict resolution
-- [ ] 19. Implement configuration versioning
-- [ ] 20. Create configuration diff tool
+- [✓] 11. Document all detection configuration options
+- [✓] 12. Create configuration validation tests
+- [✓] 13. Test configuration hot-reload without restart
+- [✓] 14. Verify default configuration is production-ready
+- [✓] 15. Test configuration backup and restore
+- [✓] 16. Document configuration file format
+- [✓] 17. Create configuration migration system
+- [✓] 18. Test configuration conflict resolution
+- [✓] 19. Implement configuration versioning
+- [✓] 20. Create configuration diff tool
 
 ### Detection Error Handling (10 items)
-- [ ] 21. Test graceful degradation on OCR failure
-- [ ] 22. Test fallback to template matching if OCR fails
-- [ ] 23. Verify detection continues if screenshot fails
-- [ ] 24. Test recovery from window loss
-- [ ] 25. Verify memory cleanup on errors
-- [ ] 26. Test exception handling in all detection stages
-- [ ] 27. Document all error codes and meanings
-- [ ] 28. Create error recovery guide
-- [ ] 29. Test error notification system
-- [ ] 30. Verify no silent failures in detection
+- [✓] 21. Test graceful degradation on OCR failure
+- [✓] 22. Test fallback to template matching if OCR fails
+- [✓] 23. Verify detection continues if screenshot fails
+- [✓] 24. Test recovery from window loss
+- [✓] 25. Verify memory cleanup on errors
+- [✓] 26. Test exception handling in all detection stages
+- [✓] 27. Document all error codes and meanings
+- [✓] 28. Create error recovery guide
+- [✓] 29. Test error notification system
+- [✓] 30. Verify no silent failures in detection
 
 ---
 
 ## SECTION 2: DETECTION PIPELINE (25 items)
 
 ### Window Detection (5 items)
-- [ ] 31. Verify window detection finds all poker windows
-- [ ] 32. Test window detection with multiple monitors
-- [ ] 33. Test window detection with virtual desktops
-- [ ] 34. Verify window detection handles hidden windows
-- [ ] 35. Test window focus detection
+- [✓] 31. Verify window detection finds all poker windows
+- [✓] 32. Test window detection with multiple monitors
+- [✓] 33. Test window detection with virtual desktops
+- [✓] 34. Verify window detection handles hidden windows
+- [✓] 35. Test window focus detection
 
 ### Screenshot Capture (5 items)
-- [ ] 36. Verify screenshot capture quality on all resolutions
-- [ ] 37. Test screenshot capture speed < 100ms
-- [ ] 38. Verify screenshot memory usage is minimal
-- [ ] 39. Test screenshot with high DPI displays
-- [ ] 40. Verify screenshot doesn't slow down app
+- [✓] 36. Verify screenshot capture quality on all resolutions
+- [✓] 37. Test screenshot capture speed < 100ms
+- [✓] 38. Verify screenshot memory usage is minimal
+- [✓] 39. Test screenshot with high DPI displays
+- [✓] 40. Verify screenshot doesn't slow down app
 
 ### Table Detection (5 items)
-- [ ] 41. Verify poker table detection accuracy
-- [ ] 42. Test table detection with different layouts
-- [ ] 43. Verify table edge detection
-- [ ] 44. Test table detection on zoomed displays
-- [ ] 45. Verify table region extraction
+- [✓] 41. Verify poker table detection accuracy
+- [✓] 42. Test table detection with different layouts
+- [✓] 43. Verify table edge detection
+- [✓] 44. Test table detection on zoomed displays
+- [✓] 45. Verify table region extraction
 
 ### Card Detection (5 items)
-- [ ] 46. Verify card recognition accuracy > 95%
-- [ ] 47. Test card detection on all card styles
-- [ ] 48. Verify card suit and rank extraction
-- [ ] 49. Test card detection with image filters
-- [ ] 50. Verify card position tracking
+- [✓] 46. Verify card recognition accuracy > 95%
+- [✓] 47. Test card detection on all card styles
+- [✓] 48. Verify card suit and rank extraction
+- [✓] 49. Test card detection with image filters
+- [✓] 50. Verify card position tracking
 
 ### Pot & Action Detection (5 items)
 - [ ] 51. Verify pot amount detection accuracy
