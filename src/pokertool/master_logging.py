@@ -565,11 +565,18 @@ class MasterLogger:
         """Log error level message with enhanced error tracking."""
         self._log(LogLevel.ERROR, message, category, exception=exception, **kwargs)
     
-    def critical(self, message: str, category: LogCategory = LogCategory.ERROR, 
+    def critical(self, message: str, category: LogCategory = LogCategory.ERROR,
                  exception: Optional[Exception] = None, **kwargs):
         """Log critical level message."""
         self._log(LogLevel.CRITICAL, message, category, exception=exception, **kwargs)
-    
+
+    def exception(self, message: str, category: LogCategory = LogCategory.ERROR, **kwargs):
+        """Log exception with automatic traceback capture."""
+        import sys
+        exc_info = sys.exc_info()
+        exception = exc_info[1] if exc_info[0] is not None else None
+        self.error(message, category=category, exception=exception, **kwargs)
+
     def security(self, message: str, **kwargs):
         """Log security-related events."""
         self._log(LogLevel.SECURITY, message, LogCategory.SECURITY, **kwargs)

@@ -242,6 +242,13 @@ class MasterLogger:
         """Log a critical error."""
         self.log('CRITICAL', message, error=exception, extra_data=kwargs)
 
+    def exception(self, message, **kwargs):
+        """Log an exception with full traceback."""
+        import sys
+        exc_info = sys.exc_info()
+        error = exc_info[1] if exc_info[0] is not None else None
+        self.log('ERROR', message, error=error, extra_data=kwargs)
+
     def warning(self, message, **kwargs):
         """Log a warning."""
         self.log('WARNING', message, extra_data=kwargs)

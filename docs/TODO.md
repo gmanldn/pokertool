@@ -1,5 +1,37 @@
 ## ⚠️ Automated Log Alerts
 
+- [ ] **LOG-E-EB204E82CA** (2025-10-25) Error in src.pokertool.master_logging.exception: Key error occurred
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from src.pokertool.master_logging.exception with message "Key error occurred". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-BD3A5EC119** (2025-10-25) Error in src.pokertool.master_logging.exception: Caught runtime error
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from src.pokertool.master_logging.exception with message "Caught runtime error". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-54265C5417** (2025-10-25) Error in src.pokertool.master_logging.exception: No exception context
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from src.pokertool.master_logging.exception with message "No exception context". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-4F0E1DE8CF** (2025-10-25) Error in src.pokertool.master_logging.exception: An error occurred
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from src.pokertool.master_logging.exception with message "An error occurred". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-BD71ECE443** (2025-10-24) Error in src.pokertool.error_handling.wrapper: All 4 attempts failed for save_hand_analysis
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from src.pokertool.error_handling.wrapper with message "All 4 attempts failed for save_hand_analysis". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-6BA57484DE** (2025-10-24) Warning in src.pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 4.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from src.pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-B530E331B1** (2025-10-24) Warning in src.pokertool.error_handling.wrapper: Attempt 2/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 2.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from src.pokertool.error_handling.wrapper with message "Attempt 2/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 2.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-670144E42D** (2025-10-24) Warning in src.pokertool.error_handling.wrapper: Attempt 1/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 1.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from src.pokertool.error_handling.wrapper with message "Attempt 1/4 failed for save_hand_analysis: 'MasterLogger' object has no attribute 'exception'. Retrying in 1.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
 - [ ] **LOG-W-890B2F48EB** (2025-10-23) Warning in pokertool.error_handling.sanitize_input: Input was sanitized, removed characters: {"'", '"'}
   ```prompt
   You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.sanitize_input with message "Input was sanitized, removed characters: {"'", '"'}". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
