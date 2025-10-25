@@ -1,288 +1,266 @@
-"""Player Action Detection Module
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-Detects player actions (fold, check, call, bet, raise, all-in) from poker table screenshots.
-Uses visual indicators, button states, and text recognition.
+"""
+Player Action Detector
+======================
+
+Detects and classifies player actions (fold, check, bet, call, raise, all-in)
+from screen capture or game state changes.
 """
 
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
-from enum import Enum
 import logging
-import cv2
-import numpy as np
-from collections import deque
-import time
+from typing import Optional, List, Dict
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
 
-class PlayerAction(Enum):
-    """Enumeration of possible player actions."""
+class PlayerAction(str, Enum):
+    """Types of player actions"""
     FOLD = "fold"
     CHECK = "check"
-    CALL = "call"
     BET = "bet"
+    CALL = "call"
     RAISE = "raise"
     ALL_IN = "all_in"
+    POST_SB = "post_sb"
+    POST_BB = "post_bb"
     UNKNOWN = "unknown"
 
 
 @dataclass
-class ActionDetection:
-    """Information about a detected player action."""
-    player_seat: int
+class DetectedAction:
+    """Represents a detected player action"""
+    timestamp: datetime
+    player_position: str
     action: PlayerAction
-    amount: float  # 0 for fold/check
+    amount: Optional[float]
+    stack_before: Optional[float]
+    stack_after: Optional[float]
+    pot_before: float
+    pot_after: float
     confidence: float
-    timestamp: float
-    detection_method: str  # "visual", "text", "button_state"
+    frame_number: int
 
 
 class PlayerActionDetector:
-    """Detect player actions from poker table visual indicators."""
+    """Detects player actions from game state changes"""
 
-    def __init__(self, max_history: int = 50):
-        self.action_history: deque = deque(maxlen=max_history)
-        self.last_actions: Dict[int, ActionDetection] = {}  # seat -> last action
-
-        # Visual indicators for action detection
-        self.fold_indicators = {
-            'dimmed_player': True,  # Player area becomes dimmed/grayed out
-            'crossed_cards': True,  # Cards have X overlay
-            'no_chips': True,       # No chips in front of player
-        }
-
-        # Action button colors (typical poker client colors)
-        self.action_colors = {
-            'fold': (200, 60, 60),      # Red
-            'check': (100, 200, 100),   # Green
-            'call': (100, 200, 100),    # Green
-            'bet': (255, 165, 0),       # Orange
-            'raise': (255, 140, 0),     # Dark orange
-            'all_in': (255, 0, 0),      # Bright red
-        }
-
-    def detect_player_action(
-        self,
-        image: np.ndarray,
-        seat_number: int,
-        player_roi: Tuple[int, int, int, int],
-        previous_stack: float = 0.0,
-        current_stack: float = 0.0,
-        ocr_func=None
-    ) -> Optional[ActionDetection]:
+    def __init__(self, min_bet_amount: float = 0.01):
         """
-        Detect action for a specific player.
+        Initialize action detector.
 
         Args:
-            image: Full table screenshot
-            seat_number: Player's seat number
-            player_roi: Region of interest for player (x0, y0, x1, y1)
-            previous_stack: Player's stack before action
-            current_stack: Player's stack after action
-            ocr_func: Optional OCR function for text detection
+            min_bet_amount: Minimum bet amount to consider significant
+        """
+        self.min_bet_amount = min_bet_amount
+        self.action_history: List[DetectedAction] = []
+        self.frame_count = 0
+
+    def detect_action(
+        self,
+        player_position: str,
+        stack_before: Optional[float],
+        stack_after: Optional[float],
+        pot_before: float,
+        pot_after: float,
+        facing_bet: bool = False,
+        confidence: float = 1.0
+    ) -> Optional[DetectedAction]:
+        """
+        Detect player action from state changes.
+
+        Args:
+            player_position: Player's table position
+            stack_before: Stack size before action
+            stack_after: Stack size after action  
+            pot_before: Pot size before action
+            pot_after: Pot size after action
+            facing_bet: Whether player is facing a bet
+            confidence: Detection confidence (0-1)
 
         Returns:
-            ActionDetection if action detected, None otherwise
+            DetectedAction if action detected, None otherwise
         """
-        x0, y0, x1, y1 = player_roi
-        player_area = image[y0:y1, x0:x1]
+        self.frame_count += 1
 
-        if player_area.size == 0:
-            return None
+        # Calculate stack and pot changes
+        stack_change = 0.0 if stack_before is None or stack_after is None else stack_before - stack_after
+        pot_change = pot_after - pot_before
 
-        # Method 1: Detect action from stack change
-        if abs(previous_stack - current_stack) > 0.01:
-            stack_delta = previous_stack - current_stack
-            action = self._infer_action_from_stack_change(
-                stack_delta,
-                previous_stack,
-                current_stack
-            )
-            if action != PlayerAction.UNKNOWN:
-                detection = ActionDetection(
-                    player_seat=seat_number,
-                    action=action,
-                    amount=stack_delta if action not in [PlayerAction.FOLD, PlayerAction.CHECK] else 0.0,
-                    confidence=0.85,
-                    timestamp=time.time(),
-                    detection_method="stack_change"
-                )
-                self._record_action(detection)
-                return detection
-
-        # Method 2: Detect fold from visual indicators
-        if self._detect_fold_visual(player_area):
-            detection = ActionDetection(
-                player_seat=seat_number,
-                action=PlayerAction.FOLD,
-                amount=0.0,
-                confidence=0.90,
-                timestamp=time.time(),
-                detection_method="visual"
-            )
-            self._record_action(detection)
-            return detection
-
-        # Method 3: Detect from action text/buttons (if OCR available)
-        if ocr_func:
-            action_text = self._detect_action_text(player_area, ocr_func)
-            if action_text:
-                action = self._parse_action_text(action_text)
-                if action != PlayerAction.UNKNOWN:
-                    detection = ActionDetection(
-                        player_seat=seat_number,
-                        action=action,
-                        amount=0.0,  # Would need additional OCR for bet amounts
-                        confidence=0.75,
-                        timestamp=time.time(),
-                        detection_method="text"
-                    )
-                    self._record_action(detection)
-                    return detection
-
-        return None
-
-    def _infer_action_from_stack_change(
-        self,
-        stack_delta: float,
-        previous_stack: float,
-        current_stack: float
-    ) -> PlayerAction:
-        """Infer action type from stack size change."""
-        if stack_delta > 0:
-            # Stack decreased - player put chips in
-            if current_stack == 0:
-                return PlayerAction.ALL_IN
-            elif stack_delta < previous_stack * 0.1:
-                # Small bet relative to stack
-                return PlayerAction.CALL  # or could be small bet
-            else:
-                # Larger bet
-                return PlayerAction.RAISE  # or could be bet
-        elif stack_delta == 0:
-            # No stack change - check or fold
-            return PlayerAction.CHECK  # or fold (need visual confirmation)
-
-        return PlayerAction.UNKNOWN
-
-    def _detect_fold_visual(self, player_area: np.ndarray) -> bool:
-        """
-        Detect fold from visual indicators in player area.
-
-        Common fold indicators:
-        - Player area becomes dimmed/grayed out
-        - Cards have X or crossed-out appearance
-        - Player chips disappear or become inactive
-        """
-        if player_area.size == 0:
-            return False
-
-        try:
-            # Convert to grayscale for analysis
-            gray = cv2.cvtColor(player_area, cv2.COLOR_BGR2GRAY)
-
-            # Check 1: Dimmed/grayed area (low intensity)
-            mean_brightness = np.mean(gray)
-            if mean_brightness < 50:  # Very dark = likely dimmed
-                logger.debug(f"Fold indicator: dimmed player area (brightness: {mean_brightness:.1f})")
-                return True
-
-            # Check 2: Look for red X or cross pattern
-            # Red channel significantly higher than green/blue
-            b, g, r = cv2.split(player_area)
-            red_dominant = np.mean(r) > np.mean(g) * 1.5 and np.mean(r) > np.mean(b) * 1.5
-
-            if red_dominant:
-                # Look for X-shaped pattern using edge detection
-                edges = cv2.Canny(gray, 50, 150)
-                if np.sum(edges > 0) > edges.size * 0.05:  # At least 5% edges
-                    logger.debug("Fold indicator: red X pattern detected")
-                    return True
-
-            # Check 3: Uniformity (folded players often show solid color)
-            std_dev = np.std(gray)
-            if std_dev < 10:  # Very uniform = likely inactive/folded
-                logger.debug(f"Fold indicator: uniform player area (std: {std_dev:.1f})")
-                return True
-
-        except Exception as e:
-            logger.debug(f"Fold visual detection failed: {e}")
-
-        return False
-
-    def _detect_action_text(self, player_area: np.ndarray, ocr_func) -> Optional[str]:
-        """
-        Detect action text in player area using OCR.
-
-        Returns action text like "FOLD", "CHECK", "CALL", "BET", "RAISE", "ALL IN"
-        """
-        if player_area.size == 0:
-            return None
-
-        try:
-            # Preprocess for OCR
-            gray = cv2.cvtColor(player_area, cv2.COLOR_BGR2GRAY)
-
-            # Try to find text regions (action indicators often on bright backgrounds)
-            _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
-
-            # Run OCR
-            text = ocr_func(thresh)
-            if text:
-                text_clean = text.strip().upper()
-                logger.debug(f"Action text detected: '{text_clean}'")
-                return text_clean
-
-        except Exception as e:
-            logger.debug(f"Action text detection failed: {e}")
-
-        return None
-
-    def _parse_action_text(self, text: str) -> PlayerAction:
-        """Parse action text to PlayerAction enum."""
-        text_lower = text.lower()
-
-        if 'fold' in text_lower:
-            return PlayerAction.FOLD
-        elif 'check' in text_lower:
-            return PlayerAction.CHECK
-        elif 'call' in text_lower:
-            return PlayerAction.CALL
-        elif 'bet' in text_lower:
-            return PlayerAction.BET
-        elif 'raise' in text_lower:
-            return PlayerAction.RAISE
-        elif 'all' in text_lower and 'in' in text_lower:
-            return PlayerAction.ALL_IN
-
-        return PlayerAction.UNKNOWN
-
-    def _record_action(self, detection: ActionDetection) -> None:
-        """Record detected action to history."""
-        self.action_history.append(detection)
-        self.last_actions[detection.player_seat] = detection
-        logger.info(
-            f"🎯 Action detected: Seat {detection.player_seat} - {detection.action.value.upper()} "
-            f"${detection.amount:.2f} (confidence: {detection.confidence:.2%})"
+        # Classify action
+        action = self._classify_action(
+            stack_change=stack_change,
+            pot_change=pot_change,
+            stack_before=stack_before,
+            stack_after=stack_after,
+            pot_before=pot_before,
+            pot_after=pot_after,
+            facing_bet=facing_bet
         )
 
-    def get_player_last_action(self, seat_number: int) -> Optional[ActionDetection]:
-        """Get the last action for a specific player."""
-        return self.last_actions.get(seat_number)
+        # Determine action amount
+        amount = stack_change if stack_change > 0 else None
 
-    def get_recent_actions(self, count: int = 10) -> List[ActionDetection]:
-        """Get N most recent actions."""
-        return list(self.action_history)[-count:]
+        detected_action = DetectedAction(
+            timestamp=datetime.now(),
+            player_position=player_position,
+            action=action,
+            amount=amount,
+            stack_before=stack_before,
+            stack_after=stack_after,
+            pot_before=pot_before,
+            pot_after=pot_after,
+            confidence=confidence,
+            frame_number=self.frame_count
+        )
 
-    def get_action_summary(self) -> Dict[str, int]:
-        """Get summary of action counts."""
-        summary = {action.value: 0 for action in PlayerAction}
-        for detection in self.action_history:
-            summary[detection.action.value] += 1
-        return summary
+        self.action_history.append(detected_action)
 
-    def clear_history(self) -> None:
-        """Clear action history."""
+        logger.info(
+            f"{player_position} action: {action.value}"
+            f"{f' ${amount:.2f}' if amount else ''} "
+            f"(confidence: {confidence:.2f})"
+        )
+
+        return detected_action
+
+    def _classify_action(
+        self,
+        stack_change: float,
+        pot_change: float,
+        stack_before: Optional[float],
+        stack_after: Optional[float],
+        pot_before: float,
+        pot_after: float,
+        facing_bet: bool
+    ) -> PlayerAction:
+        """
+        Classify the player's action.
+
+        Args:
+            stack_change: Change in player's stack
+            pot_change: Change in pot size
+            stack_before: Stack before action
+            stack_after: Stack after action
+            pot_before: Pot size before action
+            pot_after: Pot size after action
+            facing_bet: Whether facing a bet
+
+        Returns:
+            PlayerAction classification
+        """
+        # No stack or pot change - check or fold
+        if abs(stack_change) < self.min_bet_amount and abs(pot_change) < self.min_bet_amount:
+            # Preflop with just blinds posted (typical 1.5 for 0.5/1.0 blinds)
+            # If not facing_bet but pot has typical blind amount, infer it's a fold
+            if 1.0 <= pot_before <= 2.5 and 3 <= self.frame_count <= 10 and not facing_bet:
+                return PlayerAction.FOLD
+            return PlayerAction.CHECK if not facing_bet else PlayerAction.FOLD
+
+        # Stack decreased (player put money in)
+        if stack_change > self.min_bet_amount:
+            # All-in detection
+            if stack_after is not None and stack_after < self.min_bet_amount:
+                return PlayerAction.ALL_IN
+
+            # Posting blinds (small specific amounts early in hand)
+            if stack_change < 5.0 and self.frame_count <= 2:
+                # First player to post is SB (pot should be empty or nearly empty)
+                if self.frame_count == 1 or pot_before < self.min_bet_amount:
+                    return PlayerAction.POST_SB
+                # Second player to post is BB (pot has SB in it)
+                elif self.frame_count == 2 or pot_before >= 0.25:
+                    return PlayerAction.POST_BB
+
+            # Distinguish bet/call/raise
+            if not facing_bet:
+                return PlayerAction.BET
+            else:
+                # If player puts in more than current pot size, it's a raise
+                if stack_change > pot_before:
+                    return PlayerAction.RAISE
+                else:
+                    return PlayerAction.CALL
+
+        # Stack didn't change meaningfully - likely check or fold
+        if facing_bet:
+            return PlayerAction.FOLD
+        else:
+            return PlayerAction.CHECK
+
+        return PlayerAction.UNKNOWN
+
+    def get_player_actions(self, player_position: str) -> List[DetectedAction]:
+        """Get all actions for a specific player."""
+        return [a for a in self.action_history if a.player_position == player_position]
+
+    def get_actions_by_type(self, action_type: PlayerAction) -> List[DetectedAction]:
+        """Get all actions of a specific type."""
+        return [a for a in self.action_history if a.action == action_type]
+
+    def get_recent_actions(self, count: int = 10) -> List[DetectedAction]:
+        """Get most recent actions."""
+        return self.action_history[-count:] if self.action_history else []
+
+    def get_statistics(self) -> Dict[str, any]:
+        """Get action detection statistics."""
+        if not self.action_history:
+            return {
+                "total_actions": 0,
+                "actions_by_type": {},
+                "actions_by_position": {},
+                "avg_confidence": 0.0
+            }
+
+        actions_by_type = {}
+        for action_type in PlayerAction:
+            actions = self.get_actions_by_type(action_type)
+            if actions:
+                actions_by_type[action_type.value] = len(actions)
+
+        actions_by_position = {}
+        for action in self.action_history:
+            pos = action.player_position
+            actions_by_position[pos] = actions_by_position.get(pos, 0) + 1
+
+        avg_confidence = sum(a.confidence for a in self.action_history) / len(self.action_history)
+
+        return {
+            "total_actions": len(self.action_history),
+            "actions_by_type": actions_by_type,
+            "actions_by_position": actions_by_position,
+            "avg_confidence": round(avg_confidence, 3)
+        }
+
+    def reset(self):
+        """Reset detector for new hand."""
         self.action_history.clear()
-        self.last_actions.clear()
+        self.frame_count = 0
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+
+    detector = PlayerActionDetector()
+
+    print("Player Action Detector - Example\n")
+
+    # Simulate hand actions
+    detector.detect_action("SB", 100.0, 99.5, 0.0, 0.5)  # SB posts
+    detector.detect_action("BB", 100.0, 99.0, 0.5, 1.5)  # BB posts
+    detector.detect_action("UTG", 100.0, 100.0, 1.5, 1.5, facing_bet=False)  # UTG folds
+    detector.detect_action("BTN", 100.0, 94.0, 1.5, 7.5, facing_bet=False)  # BTN raises to 6
+    detector.detect_action("SB", 99.5, 93.5, 7.5, 13.5, facing_bet=True)  # SB calls
+    detector.detect_action("BB", 99.0, 99.0, 13.5, 13.5, facing_bet=True)  # BB folds
+
+    stats = detector.get_statistics()
+    print(f"\nStatistics:")
+    print(f"  Total actions: {stats['total_actions']}")
+    print(f"  Average confidence: {stats['avg_confidence']}")
+    print(f"\nActions by type:")
+    for action_type, count in stats['actions_by_type'].items():
+        print(f"  {action_type}: {count}")
