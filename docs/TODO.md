@@ -1,5 +1,53 @@
 ## ⚠️ Automated Log Alerts
 
+- [ ] **LOG-W-9FE8B0ED94** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 4.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-1CC5EFF7E0** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 2/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 2.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 2/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 2.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-8ECFE13BE3** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 1/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 1.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 1/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 1.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-DCAD67CEB1** (2025-10-25) Error in pokertool.master_logging.exception: saving hand analysis failed: no such table: poker_hands
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from pokertool.master_logging.exception with message "saving hand analysis failed: no such table: poker_hands". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-A091E1D0C2** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: Invalid board format: KsQsJs. Retrying in 4.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: Invalid board format: KsQsJs. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-B0E7BE545E** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 2/4 failed for save_hand_analysis: Invalid board format: KsQsJs. Retrying in 2.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 2/4 failed for save_hand_analysis: Invalid board format: KsQsJs. Retrying in 2.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-395C3BF469** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 1/4 failed for save_hand_analysis: Invalid board format: KsQsJs. Retrying in 1.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 1/4 failed for save_hand_analysis: Invalid board format: KsQsJs. Retrying in 1.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-51CF38F428** (2025-10-25) Error in pokertool.error_handling.call: Circuit breaker opened due to 2 failures
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from pokertool.error_handling.call with message "Circuit breaker opened due to 2 failures". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-D359BD0301** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 2/4 failed for failing_function: Temporary failure. Retrying in 0.20s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 2/4 failed for failing_function: Temporary failure. Retrying in 0.20s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-32EF1BBCEC** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 1/4 failed for failing_function: Temporary failure. Retrying in 0.10s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 1/4 failed for failing_function: Temporary failure. Retrying in 0.10s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-E2E8467C3E** (2025-10-25) Warning in pokertool.error_handling.sanitize_input: Input was sanitized, removed characters: {'E', "'", 'B', 'D', 'P', 'A', 'T', 'L', 'R', ';', 'O'}
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.sanitize_input with message "Input was sanitized, removed characters: {'E', "'", 'B', 'D', 'P', 'A', 'T', 'L', 'R', ';', 'O'}". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-F44636C53F** (2025-10-25) Error in pokertool.master_logging.exception: fetching recent hands failed: no such table: poker_hands
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from pokertool.master_logging.exception with message "fetching recent hands failed: no such table: poker_hands". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
 - [ ] **LOG-E-EB204E82CA** (2025-10-25) Error in src.pokertool.master_logging.exception: Key error occurred
   ```prompt
   You are assisting with PokerTool's logging stack. Investigate the error emitted from src.pokertool.master_logging.exception with message "Key error occurred". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
