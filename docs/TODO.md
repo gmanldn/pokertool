@@ -1,5 +1,21 @@
 ## ⚠️ Automated Log Alerts
 
+- [ ] **LOG-W-079B4612D1** (2025-10-25) Warning in pokertool.error_handling.sanitize_input: Input was sanitized, removed characters: {'"', "'"}
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.sanitize_input with message "Input was sanitized, removed characters: {'"', "'"}". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-202A3574B6** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: Invalid data for insertion: Data validation failed: - Hand format invalid: 'INVALID'. Expected format: 'As Kd'. Retrying in 4.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: Invalid data for insertion: Data validation failed: - Hand format invalid: 'INVALID'. Expected format: 'As Kd'. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-8F7F6F545D** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 2/4 failed for save_hand_analysis: Invalid data for insertion: Data validation failed: - Hand format invalid: 'INVALID'. Expected format: 'As Kd'. Retrying in 2.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 2/4 failed for save_hand_analysis: Invalid data for insertion: Data validation failed: - Hand format invalid: 'INVALID'. Expected format: 'As Kd'. Retrying in 2.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-W-04A3AE7084** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 1/4 failed for save_hand_analysis: Invalid data for insertion: Data validation failed: - Hand format invalid: 'INVALID'. Expected format: 'As Kd'. Retrying in 1.00s...
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 1/4 failed for save_hand_analysis: Invalid data for insertion: Data validation failed: - Hand format invalid: 'INVALID'. Expected format: 'As Kd'. Retrying in 1.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
 - [ ] **LOG-W-9FE8B0ED94** (2025-10-25) Warning in pokertool.error_handling.wrapper: Attempt 3/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 4.00s...
   ```prompt
   You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.wrapper with message "Attempt 3/4 failed for save_hand_analysis: no such table: poker_hands. Retrying in 4.00s...". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
