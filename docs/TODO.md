@@ -1,5 +1,13 @@
 ## ⚠️ Automated Log Alerts
 
+- [ ] **LOG-W-3FB3B3771E** (2025-10-25) Warning in pokertool.error_handling.sanitize_input: Input was sanitized, removed characters: {'P', 'L', "'", 'R', 'E', 'D', 'T', ';', 'O', 'B', 'A'}
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.sanitize_input with message "Input was sanitized, removed characters: {'P', 'L', "'", 'R', 'E', 'D', 'T', ';', 'O', 'B', 'A'}". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
+- [ ] **LOG-E-A41EC31B64** (2025-10-25) Error in pokertool.master_logging.exception: fetching recent hands failed: no such column: confidence_score
+  ```prompt
+  You are assisting with PokerTool's logging stack. Investigate the error emitted from pokertool.master_logging.exception with message "fetching recent hands failed: no such column: confidence_score". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
+  ```
 - [ ] **LOG-W-079B4612D1** (2025-10-25) Warning in pokertool.error_handling.sanitize_input: Input was sanitized, removed characters: {'"', "'"}
   ```prompt
   You are assisting with PokerTool's logging stack. Investigate the warning emitted from pokertool.error_handling.sanitize_input with message "Input was sanitized, removed characters: {'"', "'"}". Identify the root cause, outline corrective steps, and suggest code or documentation changes needed to prevent recurrence.
