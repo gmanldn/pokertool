@@ -1,189 +1,222 @@
-"""
-Equity Calculator
+#!/usr/bin/env python3
+"""Equity Calculator - Calculates hand equity"""
 
-Calculates hand equity and range-vs-range equity.
-Note: This is a simplified implementation. Production would use Monte Carlo simulation.
-"""
-from typing import List, Dict, Optional
 import logging
+from typing import List, Dict, Optional, Tuple
+from dataclasses import dataclass
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
 
+class Suit(Enum):
+    """Card suits"""
+    SPADES = "s"
+    HEARTS = "h"
+    DIAMONDS = "d"
+    CLUBS = "c"
+
+
+@dataclass
+class Card:
+    """Playing card"""
+    rank: str
+    suit: Suit
+
+
+@dataclass
+class EquityResult:
+    """Equity calculation result"""
+    hand: str
+    win_equity: float
+    tie_equity: float
+    total_equity: float
+    outs: int
+
+
 class EquityCalculator:
-    """Calculate poker hand equity"""
+    """Calculates poker hand equity."""
+
+    RANK_VALUES = {
+        'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
+        '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2
+    }
 
     def __init__(self):
-        # Simplified hand strength rankings (0-1 scale)
-        self.hand_strengths = self._build_hand_strengths()
+        """Initialize equity calculator."""
+        self.simulations = 1000
+        self.deck: List[Card] = []
+        self._build_deck()
 
-    def _build_hand_strengths(self) -> Dict[str, float]:
-        """Build approximate hand strength rankings"""
-        strengths = {}
+    def _build_deck(self):
+        """Build a standard 52-card deck."""
+        for suit in Suit:
+            for rank in self.RANK_VALUES.keys():
+                self.deck.append(Card(rank, suit))
 
-        # Pocket pairs (strongest)
-        pairs = ['AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77', '66', '55', '44', '33', '22']
-        for i, pair in enumerate(pairs):
-            strengths[pair] = 1.0 - (i * 0.05)  # AA=1.0, KK=0.95, etc.
-
-        # Suited broadway
-        suited_broadway = [
-            'AKs', 'AQs', 'AJs', 'ATs',
-            'KQs', 'KJs', 'KTs',
-            'QJs', 'QTs',
-            'JTs'
-        ]
-        for i, hand in enumerate(suited_broadway):
-            strengths[hand] = 0.85 - (i * 0.03)
-
-        # Offsuit broadway
-        offsuit_broadway = [
-            'AKo', 'AQo', 'AJo', 'ATo',
-            'KQo', 'KJo', 'KTo',
-            'QJo', 'QTo',
-            'JTo'
-        ]
-        for i, hand in enumerate(offsuit_broadway):
-            strengths[hand] = 0.75 - (i * 0.03)
-
-        # Suited connectors
-        suited_connectors = ['T9s', '98s', '87s', '76s', '65s', '54s']
-        for i, hand in enumerate(suited_connectors):
-            strengths[hand] = 0.60 - (i * 0.03)
-
-        # Medium pairs
-        med_pairs = ['A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s']
-        for i, hand in enumerate(med_pairs):
-            strengths[hand] = 0.55 - (i * 0.02)
-
-        # Default for unlisted hands
-        return strengths
-
-    def get_hand_strength(self, hand: str) -> float:
-        """Get approximate strength of a hand (0-1 scale)"""
-        return self.hand_strengths.get(hand, 0.3)  # Default to weak
-
-    def calculate_hand_vs_hand(self, hero_hand: str, villain_hand: str) -> float:
-        """
-        Calculate equity of hero hand vs villain hand (simplified)
-
-        Args:
-            hero_hand: Hero's hand notation (e.g., 'AKs')
-            villain_hand: Villain's hand notation (e.g., 'QQ')
-
-        Returns:
-            Hero's equity percentage (0-100)
-        """
-        hero_strength = self.get_hand_strength(hero_hand)
-        villain_strength = self.get_hand_strength(villain_hand)
-
-        # Simplified equity calculation
-        # In reality, would need to account for blockers, board texture, etc.
-        total_strength = hero_strength + villain_strength
-
-        if total_strength == 0:
-            return 50.0
-
-        equity = (hero_strength / total_strength) * 100
-
-        # Add variance for realism (±5%)
-        import random
-        variance = random.uniform(-5, 5)
-        equity = max(0, min(100, equity + variance))
-
-        logger.debug(f"{hero_hand} vs {villain_hand}: {equity:.1f}% equity")
-
-        return equity
-
-    def calculate_range_vs_range(
+    def calculate_equity(
         self,
-        hero_range: List[str],
-        villain_range: List[str]
-    ) -> Dict[str, float]:
-        """
-        Calculate range-vs-range equity (simplified)
+        hero_hand: List[Card],
+        villain_range: List[List[Card]],
+        board: Optional[List[Card]] = None
+    ) -> EquityResult:
+        """Calculate equity against a range."""
+        if board is None:
+            board = []
 
-        Args:
-            hero_range: List of hero hands
-            villain_range: List of villain hands
+        wins = 0
+        ties = 0
+        total = len(villain_range)
 
-        Returns:
-            Dictionary with equity stats
-        """
-        if not hero_range or not villain_range:
-            return {
-                'hero_equity': 50.0,
-                'villain_equity': 50.0,
-                'tie_equity': 0.0
-            }
+        for villain_hand in villain_range:
+            result = self._compare_hands(hero_hand, villain_hand, board)
+            if result > 0:
+                wins += 1
+            elif result == 0:
+                ties += 1
 
-        # Calculate average strength of each range
-        hero_avg_strength = sum(self.get_hand_strength(h) for h in hero_range) / len(hero_range)
-        villain_avg_strength = sum(self.get_hand_strength(h) for h in villain_range) / len(villain_range)
+        win_equity = round((wins / total) * 100, 2) if total > 0 else 0.0
+        tie_equity = round((ties / total) * 100, 2) if total > 0 else 0.0
+        total_equity = round(win_equity + (tie_equity / 2), 2)
 
-        total_strength = hero_avg_strength + villain_avg_strength
+        outs = self.count_outs(hero_hand, board)
 
-        if total_strength == 0:
-            hero_equity = 50.0
-        else:
-            hero_equity = (hero_avg_strength / total_strength) * 100
-
-        villain_equity = 100 - hero_equity
-
-        logger.info(
-            f"Range equity: Hero ({len(hero_range)} hands) {hero_equity:.1f}% "
-            f"vs Villain ({len(villain_range)} hands) {villain_equity:.1f}%"
+        return EquityResult(
+            hand=self._format_hand(hero_hand),
+            win_equity=win_equity,
+            tie_equity=tie_equity,
+            total_equity=total_equity,
+            outs=outs
         )
 
+    def _compare_hands(
+        self,
+        hand1: List[Card],
+        hand2: List[Card],
+        board: List[Card]
+    ) -> int:
+        """Compare two hands. Returns 1 if hand1 wins, -1 if hand2 wins, 0 for tie."""
+        # Simplified comparison based on high card
+        hand1_value = max(self.RANK_VALUES[c.rank] for c in hand1)
+        hand2_value = max(self.RANK_VALUES[c.rank] for c in hand2)
+
+        if hand1_value > hand2_value:
+            return 1
+        elif hand1_value < hand2_value:
+            return -1
+        else:
+            return 0
+
+    def count_outs(self, hand: List[Card], board: List[Card]) -> int:
+        """Count number of outs (simplified)."""
+        if not board:
+            return 0
+
+        # Count cards that could improve hand
+        used_cards = set((c.rank, c.suit) for c in hand + board)
+        remaining = 52 - len(used_cards)
+
+        # Simplified: count cards that beat board
+        outs = 0
+        board_high = max(self.RANK_VALUES[c.rank] for c in board) if board else 0
+        hand_high = max(self.RANK_VALUES[c.rank] for c in hand)
+
+        if hand_high < board_high:
+            # Count higher cards
+            for card in self.deck:
+                if (card.rank, card.suit) not in used_cards:
+                    if self.RANK_VALUES[card.rank] > board_high:
+                        outs += 1
+
+        return min(outs, remaining)
+
+    def calculate_pot_equity(self, equity: float, pot_size: float, bet_size: float) -> float:
+        """Calculate pot equity value."""
+        total_pot = pot_size + bet_size
+        equity_value = (equity / 100) * total_pot
+        return round(equity_value, 2)
+
+    def calculate_required_equity(self, pot_size: float, bet_to_call: float) -> float:
+        """Calculate required equity to call profitably."""
+        total = pot_size + bet_to_call
+        return round((bet_to_call / total) * 100, 2) if total > 0 else 0.0
+
+    def is_profitable_call(self, equity: float, pot_size: float, bet_to_call: float) -> bool:
+        """Check if call is profitable."""
+        required = self.calculate_required_equity(pot_size, bet_to_call)
+        return equity >= required
+
+    def calculate_outs_to_equity(self, outs: int, cards_to_come: int = 1) -> float:
+        """Convert outs to equity percentage."""
+        if cards_to_come == 1:
+            # Turn or river
+            remaining = 52 - 5  # Assume 2 hole cards + 3 flop cards seen
+            return round((outs / remaining) * 100, 2)
+        elif cards_to_come == 2:
+            # Turn and river
+            equity = 1 - ((47 - outs) / 47) * ((46 - outs) / 46)
+            return round(equity * 100, 2)
+        return 0.0
+
+    def calculate_ev(self, equity: float, pot_size: float, bet_size: float, call_amount: float) -> float:
+        """Calculate expected value of a call."""
+        win_ev = (equity / 100) * (pot_size + bet_size)
+        lose_ev = (1 - equity / 100) * call_amount
+        ev = win_ev - lose_ev
+        return round(ev, 2)
+
+    def _format_hand(self, hand: List[Card]) -> str:
+        """Format hand as string."""
+        if len(hand) != 2:
+            return ""
+        return f"{hand[0].rank}{hand[0].suit.value}{hand[1].rank}{hand[1].suit.value}"
+
+    def get_hand_vs_range_equity(
+        self,
+        hand_str: str,
+        range_size: int
+    ) -> Dict[str, float]:
+        """Get approximate equity vs range (simplified)."""
+        # Simplified equity calculation
+        hand_strength = self._estimate_hand_strength(hand_str)
+        base_equity = 50.0
+
+        if hand_strength > 0.7:
+            base_equity = 65.0
+        elif hand_strength > 0.5:
+            base_equity = 55.0
+        elif hand_strength < 0.3:
+            base_equity = 35.0
+
         return {
-            'hero_equity': hero_equity,
-            'villain_equity': villain_equity,
-            'tie_equity': 0.0,
-            'hero_range_size': len(hero_range),
-            'villain_range_size': len(villain_range),
-            'hero_avg_strength': hero_avg_strength,
-            'villain_avg_strength': villain_avg_strength
+            'win': round(base_equity, 2),
+            'tie': round(5.0, 2),
+            'total': round(base_equity + 2.5, 2)
         }
 
-    def calculate_hand_vs_range(
-        self,
-        hero_hand: str,
-        villain_range: List[str]
-    ) -> float:
-        """
-        Calculate equity of specific hand vs opponent range
+    def _estimate_hand_strength(self, hand_str: str) -> float:
+        """Estimate hand strength (simplified)."""
+        if len(hand_str) < 2:
+            return 0.0
 
-        Args:
-            hero_hand: Hero's specific hand
-            villain_range: Opponent's estimated range
+        rank1 = hand_str[0]
+        rank2 = hand_str[1] if len(hand_str) > 1 else rank1
 
-        Returns:
-            Hero's equity percentage
-        """
-        if not villain_range:
-            return 50.0
+        value1 = self.RANK_VALUES.get(rank1, 0)
+        value2 = self.RANK_VALUES.get(rank2, 0)
 
-        # Calculate equity vs each hand in range, then average
-        equities = []
-        for villain_hand in villain_range:
-            equity = self.calculate_hand_vs_hand(hero_hand, villain_hand)
-            equities.append(equity)
+        avg_value = (value1 + value2) / 2
+        normalized = (avg_value - 2) / 12  # Normalize to 0-1
 
-        avg_equity = sum(equities) / len(equities)
+        return round(normalized, 2)
 
-        logger.debug(f"{hero_hand} vs range ({len(villain_range)} hands): {avg_equity:.1f}% equity")
 
-        return avg_equity
+if __name__ == '__main__':
+    calc = EquityCalculator()
 
-    def get_equity_category(self, equity: float) -> str:
-        """Categorize equity into buckets"""
-        if equity >= 70:
-            return "Very Strong"
-        elif equity >= 55:
-            return "Strong"
-        elif equity >= 45:
-            return "Medium"
-        elif equity >= 30:
-            return "Weak"
-        else:
-            return "Very Weak"
+    # Example: AA vs KK
+    aa = [Card('A', Suit.SPADES), Card('A', Suit.HEARTS)]
+    kk = [Card('K', Suit.SPADES), Card('K', Suit.HEARTS)]
+
+    result = calc.calculate_equity(aa, [kk])
+    print(f"AA equity vs KK: {result.total_equity}%")
